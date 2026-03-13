@@ -1,0 +1,91 @@
+build:
+  maxIssues: 10
+  excludeCorrectable: false
+  exclude:
+    - "**/generated/**"
+    - "**/build/**"
+    - "**/target/**"
+    - "**/jteGenerated/**"
+    - "**/resources/**"
+  sources:
+    - src/main/kotlin
+    - src/test/kotlin
+
+config:
+  validation: true
+  warningsAsErrors: false
+
+processors:
+  active: true
+
+complexity:
+  active: true
+  LongParameterList:
+    threshold: 6
+  LongMethod:
+    threshold: 60
+  TooManyFunctions:
+    thresholdInFiles: 11
+    thresholdInClasses: 15
+    thresholdInInterfaces: 11
+
+style:
+  active: true
+  MaxLineLength:
+    maxLineLength: 150
+  MaxChainedCallsOnSameLine:
+    maxChainedCalls: 3
+  WildcardImport:
+    active: false
+
+comments:
+  active: true
+  UndocumentedPublicClass:
+    active: false
+  UndocumentedPublicFunction:
+    active: false
+  CommentOverPrivateFunction:
+    active: false
+  CommentOverPrivateProperty:
+    active: false
+
+potential-bugs:
+  active: true
+  ExplicitGarbageCollectionCall:
+    active: true
+  UnreachableCatchBlock:
+    active: true
+
+coroutines:
+  active: true
+
+naming:
+  active: true
+  FunctionNaming:
+    active: false
+
+performance:
+  active: true
+  SpreadOperator:
+    active: true
+  ArrayPrimitive:
+    active: true
+
+exceptions:
+  active: true
+  TooGenericExceptionCaught:
+    active: true
+
+empty-blocks:
+  active: true
+
+formatting:
+  active: true
+  Indentation:
+    active: false
+  NoBlankLineBeforeRbrace:
+    active: true
+  NoConsecutiveBlankLines:
+    active: true
+  NoUnusedImports:
+    active: true

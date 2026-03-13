@@ -1,0 +1,35 @@
+# Weblate configuration for BookTower
+# Add this file to your Weblate project for automatic translation updates
+
+# Weblate configuration file
+version: 1
+
+# Translation files
+files:
+  - filename: src/main/resources/messages.properties
+    template: src/main/resources/messages.properties
+    base: true
+  - filename: src/main/resources/messages_fr.properties
+
+# Language definitions
+languages:
+  - code: en
+    name: English
+  - code: fr
+    name: French
+
+# Project settings
+project:
+  name: BookTower
+  slug: booktower
+  web: https://github.com/yourorg/booktower
+  repo: https://github.com/yourorg/booktower.git
+  push: git@github.com:yourorg/booktower.git
+
+# Component settings
+component:
+  name: BookTower Translations
+  slug: booktower-translations
+  file_format: properties
+  format_options:
+    - key_separator: "."

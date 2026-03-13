@@ -1,0 +1,52 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  workflow_dispatch:
+    inputs:
+      run_e2e_tests:
+        description: 'Run full E2E tests (slow)'
+        required: true
+        type: boolean
+        default: false
+      run_unit_tests_only:
+        description: 'Run only unit tests (fast)'
+        required: true
+        type: boolean
+        default: false
+
+env:
+  BASE_URL: http://localhost:9999
+
+jobs:
+  unit-tests:
+    name: Unit Tests
+    if: ${{ inputs.run_unit_tests_only == 'true' || github.event_name == 'workflow_dispatch' && inputs.run_unit_tests_only != 'true' }}
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-unit-${{ hashFiles('**/pom.xml') }}
+
+      - name: Run unit tests with Maven
+        run: mvn test
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: target/surefire-reports

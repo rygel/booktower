@@ -1,0 +1,274 @@
+[
+  {
+    "id": "default",
+    "name": "Default",
+    "type": "light",
+    "colors": {
+      "background": "#FFFFFF",
+      "foreground": "#212529",
+      "selectionBackground": "#0d6efd",
+      "componentBackground": "#f8f9fa",
+      "borderColor": "#dee2e6",
+      "accent": "#0d6efd",
+      "success": "#198754",
+      "danger": "#dc3545",
+      "warning": "#ffc107"
+    }
+  },
+  {
+    "id": "dark",
+    "name": "Dark",
+    "type": "dark",
+    "colors": {
+      "background": "#1E1E1E",
+      "foreground": "#E0E0E0",
+      "selectionBackground": "#007ACC",
+      "componentBackground": "#252526",
+      "borderColor": "#3E3E42",
+      "accent": "#007ACC",
+      "success": "#4EC9B0",
+      "danger": "#F14C4C",
+      "warning": "#CCA700"
+    }
+  },
+  {
+    "id": "monokai-pro",
+    "name": "Monokai Pro",
+    "type": "dark",
+    "colors": {
+      "background": "#2D2A2E",
+      "foreground": "#F5F5F5",
+      "selectionBackground": "#A6E22E",
+      "componentBackground": "#3D3A3E",
+      "borderColor": "#5B595C",
+      "accent": "#78DCE8",
+      "success": "#A9DC76",
+      "danger": "#FF6188",
+      "warning": "#FFD866"
+    }
+  },
+  {
+    "id": "dracula",
+    "name": "Dracula",
+    "type": "dark",
+    "colors": {
+      "background": "#282A36",
+      "foreground": "#F8F8F2",
+      "selectionBackground": "#44475A",
+      "componentBackground": "#373844",
+      "borderColor": "#44475A",
+      "accent": "#BD93F9",
+      "success": "#50FA7B",
+      "danger": "#FF5555",
+      "warning": "#F1FA8C"
+    }
+  },
+  {
+    "id": "nord",
+    "name": "Nord",
+    "type": "dark",
+    "colors": {
+      "background": "#2E3440",
+      "foreground": "#D8DEE9",
+      "selectionBackground": "#4C566A",
+      "componentBackground": "#3B4252",
+      "borderColor": "#4C566A",
+      "accent": "#81A1C1",
+      "success": "#A3BE8C",
+      "danger": "#BF616A",
+      "warning": "#EBCB8B"
+    }
+  },
+  {
+    "id": "one-dark",
+    "name": "One Dark",
+    "type": "dark",
+    "colors": {
+      "background": "#282C34",
+      "foreground": "#ABB2BF",
+      "selectionBackground": "#3E4451",
+      "componentBackground": "#21252B",
+      "borderColor": "#181A1F",
+      "accent": "#61AFEF",
+      "success": "#98C379",
+      "danger": "#E06C75",
+      "warning": "#E5C07B"
+    }
+  },
+  {
+    "id": "gruvbox-dark",
+    "name": "Gruvbox Dark",
+    "type": "dark",
+    "colors": {
+      "background": "#282828",
+      "foreground": "#EBDBB2",
+      "selectionBackground": "#458588",
+      "componentBackground": "#1D2021",
+      "borderColor": "#3C3836",
+      "accent": "#458588",
+      "success": "#98971A",
+      "danger": "#CC241D",
+      "warning": "#D79921"
+    }
+  },
+  {
+    "id": "github-dark",
+    "name": "GitHub Dark",
+    "type": "dark",
+    "colors": {
+      "background": "#0D1117",
+      "foreground": "#C9D1D9",
+      "selectionBackground": "#264F78",
+      "componentBackground": "#161B22",
+      "borderColor": "#30363D",
+      "accent": "#58A6FF",
+      "success": "#7EE787",
+      "danger": "#FF7B72",
+      "warning": "#D29922"
+    }
+  },
+  {
+    "id": "catppuccin-mocha",
+    "name": "Catppuccin Mocha",
+    "type": "dark",
+    "colors": {
+      "background": "#1E1E2E",
+      "foreground": "#CDD6F4",
+      "selectionBackground": "#585B70",
+      "componentBackground": "#313244",
+      "borderColor": "#45475A",
+      "accent": "#89B4FA",
+      "success": "#A6E3A1",
+      "danger": "#F38BA8",
+      "warning": "#F9E2AF"
+    }
+  },
+  {
+    "id": "solarized-dark",
+    "name": "Solarized Dark",
+    "type": "dark",
+    "colors": {
+      "background": "#002B36",
+      "foreground": "#839496",
+      "selectionBackground": "#073642",
+      "componentBackground": "#073642",
+      "borderColor": "#586E75",
+      "accent": "#268BD2",
+      "success": "#859900",
+      "danger": "#DC322F",
+      "warning": "#B58900"
+    }
+  },
+  {
+    "id": "solarized-light",
+    "name": "Solarized Light",
+    "type": "light",
+    "colors": {
+      "background": "#FDF6E3",
+      "foreground": "#657B83",
+      "selectionBackground": "#EEE8D5",
+      "componentBackground": "#EEE8D5",
+      "borderColor": "#93A1A1",
+      "accent": "#268BD2",
+      "success": "#859900",
+      "danger": "#DC322F",
+      "warning": "#B58900"
+    }
+  },
+  {
+    "id": "tokyo-night",
+    "name": "Tokyo Night",
+    "type": "dark",
+    "colors": {
+      "background": "#1A1B26",
+      "foreground": "#A9B1D6",
+      "selectionBackground": "#3B4261",
+      "componentBackground": "#24283B",
+      "borderColor": "#414868",
+      "accent": "#7AA2F7",
+      "success": "#9ECE6A",
+      "danger": "#F7768E",
+      "warning": "#E0AF68"
+    }
+  },
+  {
+    "id": "ayu-dark",
+    "name": "Ayu Dark",
+    "type": "dark",
+    "colors": {
+      "background": "#0B0E14",
+      "foreground": "#B3B1AD",
+      "selectionBackground": "#344561",
+      "componentBackground": "#151A21",
+      "borderColor": "#5F6672",
+      "accent": "#6A95FF",
+      "success": "#AAD94C",
+      "danger": "#FF3333",
+      "warning": "#FF8F3F"
+    }
+  },
+  {
+    "id": "night-owl",
+    "name": "Night Owl",
+    "type": "dark",
+    "colors": {
+      "background": "#011627",
+      "foreground": "#D6DEEB",
+      "selectionBackground": "#1E3A52",
+      "componentBackground": "#0B2941",
+      "borderColor": "#445577",
+      "accent": "#82AAFF",
+      "success": "#7FDB83",
+      "danger": "#EF5350",
+      "warning": "#FFDC5E"
+    }
+  },
+  {
+    "id": "material",
+    "name": "Material",
+    "type": "dark",
+    "colors": {
+      "background": "#263238",
+      "foreground": "#EEFFFF",
+      "selectionBackground": "#31443F",
+      "componentBackground": "#31443F",
+      "borderColor": "#546E7A",
+      "accent": "#82AAFF",
+      "success": "#C3E88D",
+      "danger": "#EF5350",
+      "warning": "#F2E9BF"
+    }
+  },
+  {
+    "id": "ocean",
+    "name": "Ocean",
+    "type": "dark",
+    "colors": {
+      "background": "#2C3E50",
+      "foreground": "#C5C8C6",
+      "selectionBackground": "#34495E",
+      "componentBackground": "#34495E",
+      "borderColor": "#46637F",
+      "accent": "#3498DB",
+      "success": "#2ECC71",
+      "danger": "#E74C3C",
+      "warning": "#F1C40F"
+    }
+  },
+  {
+    "id": "zenburn",
+    "name": "Zenburn",
+    "type": "dark",
+    "colors": {
+      "background": "#262626",
+      "foreground": "#DCDCDC",
+      "selectionBackground": "#484848",
+      "componentBackground": "#333333",
+      "borderColor": "#555555",
+      "accent": "#8FB0D9",
+      "success": "#A8CFA0",
+      "danger": "#D78787",
+      "warning": "#E0C980"
+    }
+  }
+]
