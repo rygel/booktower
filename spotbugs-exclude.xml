@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+    <!-- Exclude JTE generated code from analysis -->
+    <Match>
+        <Class name="~gg\.jte\.generated\..*" />
+    </Match>
+    
+    <!-- EI_EXPOSE_REP: Jdbi is immutable -->
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP" />
+        <Class name="org.booktower.config.Database" />
+    </Match>
+    
+    <!-- EI_EXPOSE_REP2: Jdbi and services are immutable/DI-managed -->
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP2" />
+        <Or>
+            <Class name="org.booktower.services.AuthService" />
+            <Class name="org.booktower.services.LibraryService" />
+            <Class name="org.booktower.config.Database" />
+            <Class name="org.booktower.handlers.AppHandler" />
+            <Class name="org.booktower.handlers.BookHandler2" />
+            <Class name="org.booktower.handlers.LibraryHandler2" />
+            <Class name="org.booktower.weblate.WeblateHandler" />
+            <Class name="org.booktower.services.BookService" />
+        </Or>
+    </Match>
+    
+    <!-- OBL_UNSATISFIED_OBLIGATION: Kotlin's 'use' handles resource cleanup -->
+    <Match>
+        <Bug pattern="OBL_UNSATISFIED_OBLIGATION" />
+        <Class name="org.booktower.weblate.WeblateBridge" />
+    </Match>
+    
+    <!-- BC_BAD_CAST_TO_ABSTRACT_COLLECTION: Likely in generated code -->
+    <Match>
+        <Bug pattern="BC_BAD_CAST_TO_ABSTRACT_COLLECTION" />
+        <Class name="org.booktower.handlers.AppHandler" />
+    </Match>
+</FindBugsFilter>

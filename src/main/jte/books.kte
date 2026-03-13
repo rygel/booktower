@@ -18,13 +18,13 @@
                 <div class="w-full h-48 bg-gray-200 flex items-center justify-center">
                     <span class="text-4xl text-gray-400">📚</span>
                 </div>
-            @end
+            @endif
             <div class="p-3">
                 <h3 class="font-medium text-sm truncate" title="${book.title}">${book.title}</h3>
                 <p class="text-gray-500 text-xs truncate" title="${book.author ?: "Unknown"}">${book.author ?: "Unknown"}</p>
                 @if(book.pageCount != null)
-                    <p class="text-gray-400 text-xs mt-1">${book.pageCount} pages</p>
-                @end
+                    <p class="text-gray-400 text-xs mt-1">${book.pageCount.toString()} pages</p>
+                @endif
                 @if(book.progress != null)
                     <div class="mt-2">
                         <div class="w-full bg-gray-200 rounded-full h-1.5">
@@ -32,10 +32,10 @@
                         </div>
                         <p class="text-xs text-gray-500 mt-1">Page ${book.progress.currentPage}</p>
                     </div>
-                @end
+                @endif
             </div>
         </div>
-    @end
+    @endfor
 
     @if(total > pageSize)
         <div class="col-span-full flex justify-center gap-2 mt-4">
@@ -44,14 +44,14 @@
                         hx-get="/api/books?page=${page - 1}" hx-target="#books-container">
                     Previous
                 </button>
-            @end
+            @endif
             <span class="px-4 py-2">Page ${page} of ${(total + pageSize - 1) / pageSize}</span>
             @if(page * pageSize < total)
                 <button class="px-4 py-2 border rounded-lg hover:bg-gray-50"
                         hx-get="/api/books?page=${page + 1}" hx-target="#books-container">
                     Next
                 </button>
-            @end
+            @endif
         </div>
-    @end
-@end
+    @endif
+@endif

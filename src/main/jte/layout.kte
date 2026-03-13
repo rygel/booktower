@@ -2,6 +2,8 @@
 @param themeCss: String
 @param isAuthenticated: Boolean
 @param content: String
+@param theme: String = "dark"
+@param lang: String = "en"
 
 <!DOCTYPE html>
 <html lang="en">
@@ -171,21 +173,21 @@
         <div class="theme-selector">
             <label class="form-label">Theme</label>
             <select onchange="document.cookie='app_theme='+this.value+';location.reload()">
-                <option value="dark" ${theme == "dark" ? "selected" : ""}>Dark</option>
-                <option value="light" ${theme == "light" ? "selected" : ""}>Light</option>
-                <option value="nord" ${theme == "nord" ? "selected" : ""}>Nord</option>
-                <option value="dracula" ${theme == "dracula" ? "selected" : ""}>Dracula</option>
-                <option value="monokai-pro" ${theme == "monokai-pro" ? "selected" : ""}>Monokai Pro</option>
-                <option value="one-dark" ${theme == "one-dark" ? "selected" : ""}>One Dark</option>
-                <option value="catppuccin-mocha" ${theme == "catppuccin-mocha" ? "selected" : ""}>Catppuccin</option>
+                @if(theme == "dark")<option value="dark" selected>Dark</option>@else<option value="dark">Dark</option>@endif
+                @if(theme == "light")<option value="light" selected>Light</option>@else<option value="light">Light</option>@endif
+                @if(theme == "nord")<option value="nord" selected>Nord</option>@else<option value="nord">Nord</option>@endif
+                @if(theme == "dracula")<option value="dracula" selected>Dracula</option>@else<option value="dracula">Dracula</option>@endif
+                @if(theme == "monokai-pro")<option value="monokai-pro" selected>Monokai Pro</option>@else<option value="monokai-pro">Monokai Pro</option>@endif
+                @if(theme == "one-dark")<option value="one-dark" selected>One Dark</option>@else<option value="one-dark">One Dark</option>@endif
+                @if(theme == "catppuccin-mocha")<option value="catppuccin-mocha" selected>Catppuccin</option>@else<option value="catppuccin-mocha">Catppuccin</option>@endif
             </select>
         </div>
         
         <div class="lang-selector">
             <label class="form-label">Language</label>
             <select onchange="document.cookie='app_lang='+this.value+';location.reload()">
-                <option value="en" ${lang == "en" ? "selected" : ""}>English</option>
-                <option value="fr" ${lang == "fr" ? "selected" : ""}>Français</option>
+                @if(lang == "en")<option value="en" selected>English</option>@else<option value="en">English</option>@endif
+                @if(lang == "fr")<option value="fr" selected>Français</option>@else<option value="fr">Français</option>@endif
             </select>
         </div>
         
@@ -193,9 +195,9 @@
             <a href="/" class="nav-link">Home</a>
             <a href="/login" class="nav-link">Login</a>
             <a href="/register" class="nav-link">Register</a>
-            @if(isAuthenticated) {
+            @if(isAuthenticated)
                 <a href="/api/libraries" class="nav-link">My Libraries</a>
-            }
+            @endif
         </nav>
     </aside>
     

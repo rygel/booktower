@@ -1,7 +1,5 @@
 package org.booktower
 
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 import org.booktower.config.AppConfig
 import org.booktower.config.Database
 import org.booktower.handlers.AppHandler
@@ -20,35 +18,38 @@ import org.http4k.routing.bind
 import org.http4k.routing.routes
 import org.http4k.server.Jetty
 import org.http4k.server.asServer
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 fun main() {
     val logger: Logger = LoggerFactory.getLogger("booktower.Main")
-    
+
     logger.info("Starting BookTower application...")
 
     val config = AppConfig.load()
     config.storage.ensureDirectories()
     val database = Database.connect(config.database)
-    
+
     val jwtService = JwtService(config.security)
-    val authService = AuthService(database.jdbi, jwtService)
-    val libraryService = LibraryService(database.jdbi, config.storage)
-    val bookService = BookService(database.jdbi, config.storage)
-    
+    val authService = AuthService(database.getJdbi(), jwtService)
+    val libraryService = LibraryService(database.getJdbi(), config.storage)
+    val bookService = BookService(database.getJdbi(), config.storage)
+
     val appHandler = AppHandler(authService, libraryService, bookService, jwtService)
-    
+
     val healthHandler: HttpHandler = { Response(OK).body("OK") }
-    
-    val app: RoutingHttpHandler = routes(
-        "/health" bind Method.GET to healthHandler,
-        appHandler.routes()
-    )
-    
+
+    val app: RoutingHttpHandler =
+        routes(
+            "/health" bind Method.GET to healthHandler,
+            appHandler.routes(),
+        )
+
     val filteredApp = ServerFilters.CatchAll().then(app)
-    
+
     logger.info("Starting server on http://${config.host}:${config.port}")
-    
+
     filteredApp.asServer(Jetty(config.port)).start()
-    
+
     logger.info("BookTower started successfully!")
 }

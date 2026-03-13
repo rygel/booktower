@@ -25,7 +25,6 @@
     <module name="RegexpSingleline">
         <property name="format" value="System\.(out|err).*println"/>
         <property name="message" value="Avoid System.out/err.println"/>
-        <property name="ignoreComments" value="true"/>
     </module>
 
     <module name="RegexpSingleline">

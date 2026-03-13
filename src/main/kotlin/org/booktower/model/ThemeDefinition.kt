@@ -1,8 +1,12 @@
 package org.booktower.model
 
-data class ThemeDefinition(
+class ThemeDefinition(
     val id: String,
     val name: String,
     val type: String,
-    val colors: Map<String, String>
-)
+    colors: Map<String, String>,
+) {
+    private val _colors: Map<String, String> = colors.toMap()
+
+    fun getColors(): Map<String, String> = _colors.toMap()
+}

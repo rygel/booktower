@@ -12,7 +12,7 @@ data class AppConfig(
     val database: DatabaseConfig,
     val security: SecurityConfig,
     val storage: StorageConfig,
-    val weblate: WeblateConfig
+    val weblate: WeblateConfig,
 ) {
     companion object {
         fun load(): AppConfig {
@@ -26,7 +26,7 @@ data class AppConfig(
                 database = DatabaseConfig.load(app.getConfig("database")),
                 security = SecurityConfig.load(app.getConfig("security")),
                 storage = StorageConfig.load(app.getConfig("storage")),
-                weblate = WeblateConfig.load(app.getConfig("weblate"))
+                weblate = WeblateConfig.load(app.getConfig("weblate")),
             ).also {
                 logger.info("Loaded configuration: appName=${it.name}, port=${it.port}")
             }
@@ -38,7 +38,7 @@ data class DatabaseConfig(
     val url: String,
     val username: String,
     val password: String,
-    val driver: String = "org.mariadb.jdbc.Driver"
+    val driver: String = "org.mariadb.jdbc.Driver",
 ) {
     companion object {
         fun load(config: com.typesafe.config.Config): DatabaseConfig {
@@ -46,7 +46,7 @@ data class DatabaseConfig(
                 url = config.getString("url"),
                 username = config.getString("username"),
                 password = config.getString("password"),
-                driver = config.getString("driver")
+                driver = config.getString("driver"),
             )
         }
     }
@@ -55,14 +55,14 @@ data class DatabaseConfig(
 data class SecurityConfig(
     val jwtSecret: String,
     val jwtIssuer: String,
-    val sessionTimeout: Int = 86400
+    val sessionTimeout: Int = 86400,
 ) {
     companion object {
         fun load(config: com.typesafe.config.Config): SecurityConfig {
             return SecurityConfig(
                 jwtSecret = config.getString("jwt-secret"),
                 jwtIssuer = config.getString("jwt-issuer"),
-                sessionTimeout = config.getInt("session-timeout")
+                sessionTimeout = config.getInt("session-timeout"),
             )
         }
     }
@@ -71,21 +71,24 @@ data class SecurityConfig(
 data class StorageConfig(
     val booksPath: String,
     val coversPath: String,
-    val tempPath: String
+    val tempPath: String,
 ) {
     companion object {
         fun load(config: com.typesafe.config.Config): StorageConfig {
             return StorageConfig(
                 booksPath = config.getString("books-path"),
                 coversPath = config.getString("covers-path"),
-                tempPath = config.getString("temp-path")
+                tempPath = config.getString("temp-path"),
             )
         }
     }
 
     fun ensureDirectories() {
         listOf(booksPath, coversPath, tempPath).forEach { path ->
-            java.io.File(path).mkdirs()
+            val dir = java.io.File(path)
+            if (!dir.exists() && !dir.mkdirs()) {
+                throw IllegalStateException("Failed to create directory: $path")
+            }
         }
     }
 }
@@ -94,7 +97,7 @@ data class WeblateConfig(
     val url: String,
     val apiToken: String,
     val component: String,
-    val enabled: Boolean = false
+    val enabled: Boolean = false,
 ) {
     companion object {
         fun load(config: com.typesafe.config.Config): WeblateConfig {
@@ -102,7 +105,7 @@ data class WeblateConfig(
                 url = config.getString("url"),
                 apiToken = config.getString("api-token"),
                 component = config.getString("component"),
-                enabled = config.getBoolean("enabled")
+                enabled = config.getBoolean("enabled"),
             )
         }
     }

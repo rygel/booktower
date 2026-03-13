@@ -48,15 +48,21 @@
         <!-- Code Quality Plugin Versions -->
         <detekt.version>1.23.8</detekt.version>
         <jacoco.version>0.8.14</jacoco.version>
-        <spotbugs.version>4.8.6</spotbugs.version>
-        <checkstyle.version>10.18.2</checkstyle.version>
-        <pmd.version>7.0.0</pmd.version>
+        <spotbugs.plugin.version>4.9.3.0</spotbugs.plugin.version>
+        <spotbugs.version>4.9.3</spotbugs.version>
+        <checkstyle.version>3.6.0</checkstyle.version>
+        <pmd.version>3.28.0</pmd.version>
         <errorprone.version>2.34.0</errorprone.version>
         <spotless.version>2.43.0</spotless.version>
-        <ktlint.version>1.3.1</ktlint.version>
+        <ktlint.version>3.5.0</ktlint.version>
         <sonar-scanner.version>4.10.0.2812</sonar-scanner.version>
-        <duplicate-finder.version>2.32.0</duplicate-finder.version>
-        <forbidden-apis.version>3.26.0</forbidden-apis.version>
+        <duplicate-finder.version>2.0.1</duplicate-finder.version>
+        <forbidden-apis.version>3.9</forbidden-apis.version>
+        
+        <!-- SonarQube Properties (Override via -D or settings.xml) -->
+        <sonar.host.url>http://localhost:9000</sonar.host.url>
+        <sonar.projectKey>org.booktower:booktower</sonar.projectKey>
+        <sonar.projectName>BookTower</sonar.projectName>
         
         <!-- Logging Versions -->
         <slf4j.version>2.0.17</slf4j.version>
@@ -64,14 +70,14 @@
         
         <!-- Other Versions -->
         <jackson.version>2.18.2</jackson.version>
-        <jwt.version>0.12.6</jwt.version>
+        <jwt.version>4.4.0</jwt.version>
         <bcrypt.version>0.4</bcrypt.version>
         <pdfbox.version>3.0.3</pdfbox.version>
         <jdbi3.version>3.46.0</jdbi3.version>
         <hikari.version>5.1.0</hikari.version>
         <http4k.version>6.1.0.0</http4k.version>
         <kotlin-logging.version>3.0.5</kotlin-logging.version>
-        <koin.version>4.0.2</koin.version>
+        <koin.version>3.5.6</koin.version>
     </properties>
 
     <dependencyManagement>
@@ -133,7 +139,7 @@
             <dependency>
                 <groupId>org.flywaydb</groupId>
                 <artifactId>flyway-core</artifactId>
-                <version>${flyway.version}</version>
+                <version>11.3.4</version>
             </dependency>
             <dependency>
                 <groupId>org.http4k</groupId>
@@ -181,8 +187,8 @@
                 <version>${kotlin-logging.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.koin</groupId>
-                <artifactId>koin-core-jvm</artifactId>
+                <groupId>io.insert-koin</groupId>
+                <artifactId>koin-core</artifactId>
                 <version>${koin.version}</version>
             </dependency>
             <dependency>
@@ -200,7 +206,7 @@
             <dependency>
                 <groupId>com.github.spotbugs</groupId>
                 <artifactId>spotbugs-annotations</artifactId>
-                <version>${spotbugs.version}</version>
+                <version>${spotbugs.plugin.version}</version>
                 <scope>provided</scope>
             </dependency>
             <dependency>
@@ -286,8 +292,8 @@
                 <artifactId>pdfbox</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.koin</groupId>
-                <artifactId>koin-core-jvm</artifactId>
+            <groupId>io.insert-koin</groupId>
+                <artifactId>koin-core</artifactId>
             <version>${koin.version}</version>
         </dependency>
         <dependency>
@@ -327,9 +333,8 @@
                 <artifactId>kotlin-maven-plugin</artifactId>
                 <version>${kotlin.version}</version>
                 <configuration>
-                    <jvmTarget>${java.version}</jvmTarget>
+                    <jvmTarget>21</jvmTarget>
                     <useDaemon>false</useDaemon>
-                    <executionStrategy>in-process</executionStrategy>
                 </configuration>
                 <executions>
                     <execution>
@@ -409,16 +414,12 @@
                             <goal>enforce</goal>
                         </goals>
                         <configuration>
-                            <rules>
-                                <requireJavaVersion>
-                                    <version>[${java.version}]</version>
-                                </requireJavaVersion>
-                                <requirePluginVersions>
-                                    <banDuplicatePomDependencyVersions>
-                                        <severity>FAIL</severity>
-                                    </banDuplicatePomDependencyVersions>
-                                </requirePluginVersions>
-                            </rules>
+                    <rules>
+                        <requireJavaVersion>
+                            <version>[${java.version}]</version>
+                        </requireJavaVersion>
+                        <banDuplicatePomDependencyVersions/>
+                    </rules>
                         </configuration>
                     </execution>
                 </executions>
@@ -447,6 +448,10 @@
                 <groupId>gg.jte</groupId>
                 <artifactId>jte-maven-plugin</artifactId>
                 <version>${jte.version}</version>
+                <configuration>
+                    <sourceDirectory>${project.basedir}/src/main/jte</sourceDirectory>
+                    <contentType>Html</contentType>
+                </configuration>
                 <executions>
                     <execution>
                         <id>jte-pre-compile</id>
@@ -468,7 +473,7 @@
             
             <!-- Detekt - Kotlin static analysis -->
             <plugin>
-                <groupId>io.gitlab.arturbosch.detekt</groupId>
+                <groupId>com.github.ozsie</groupId>
                 <artifactId>detekt-maven-plugin</artifactId>
                 <version>${detekt.version}</version>
                 <configuration>
@@ -478,7 +483,17 @@
                         <report>xml:${project.build.directory}/detekt-reports/detekt.xml</report>
                         <report>html:${project.build.directory}/detekt-reports/detekt.html</report>
                     </report>
+                    <failBuildOnMaxIssuesReached>false</failBuildOnMaxIssuesReached>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>detekt-check</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
 
             <!-- JaCoCo - Test coverage -->
@@ -492,7 +507,13 @@
                         <goals>
                             <goal>prepare-agent</goal>
                         </goals>
-                        <phase>process-classes</phase>
+                    </execution>
+                    <execution>
+                        <id>jacoco-report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
                     </execution>
                 </executions>
             </plugin>
@@ -501,7 +522,7 @@
             <plugin>
                 <groupId>com.github.spotbugs</groupId>
                 <artifactId>spotbugs-maven-plugin</artifactId>
-                <version>${spotbugs.version}</version>
+                <version>${spotbugs.plugin.version}</version>
                 <dependencies>
                     <dependency>
                         <groupId>com.github.spotbugs</groupId>
@@ -509,6 +530,18 @@
                         <version>${spotbugs.version}</version>
                     </dependency>
                 </dependencies>
+                <configuration>
+                    <excludeFilterFile>spotbugs-exclude.xml</excludeFilterFile>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>spotbugs-check</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
 
             <!-- Checkstyle - Code style checking -->
@@ -530,41 +563,79 @@
                 <artifactId>maven-pmd-plugin</artifactId>
                 <version>${pmd.version}</version>
                 <configuration>
-                    <rulesets>rulesets/java/quickstart.xml</rulesets>
+                    <rulesets>
+                        <ruleset>/category/java/bestpractices.xml</ruleset>
+                        <ruleset>/category/java/errorprone.xml</ruleset>
+                    </rulesets>
                     <failOnViolation>false</failOnViolation>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>pmd-check</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
 
-            <!-- PMD - Static analysis -->
+            <!-- Spotless - Code formatting -->
             <plugin>
                 <groupId>com.diffplug.spotless</groupId>
                 <artifactId>spotless-maven-plugin</artifactId>
                 <version>${spotless.version}</version>
                 <configuration>
-                    <java>
-                        <importOrder>
-                            <order>java,javax,org,net</order>
-                        </importOrder>
-                    </java>
                     <kotlin>
                         <ktlint>
-                            <disabled>true</disabled>
+                            <editorConfigPath>${project.basedir}/.editorconfig</editorConfigPath>
                         </ktlint>
+                        <trimTrailingWhitespace/>
+                        <endWithNewline/>
                     </kotlin>
+                    <java>
+                        <googleJavaFormat/>
+                        <trimTrailingWhitespace/>
+                        <endWithNewline/>
+                    </java>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>spotless-check</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
 
             <!-- Ktlint - Kotlin linter -->
             <plugin>
-                <groupId>com.github.pinterest.ktlint</groupId>
+                <groupId>com.github.gantsign.maven</groupId>
                 <artifactId>ktlint-maven-plugin</artifactId>
                 <version>${ktlint.version}</version>
                 <configuration>
                     <reporters>
-                        <reporter>html</reporter>
+                        <reporter>
+                            <name>plain</name>
+                            <output>${project.build.directory}/ktlint.txt</output>
+                        </reporter>
+                        <reporter>
+                            <name>checkstyle</name>
+                            <output>${project.build.directory}/ktlint-checkstyle.xml</output>
+                        </reporter>
                     </reporters>
-                    <report>target/ktlint-report.html</report>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>ktlint-check</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
 
             <!-- SonarQube Scanner -->
@@ -572,6 +643,15 @@
                 <groupId>org.sonarsource.scanner.maven</groupId>
                 <artifactId>sonar-maven-plugin</artifactId>
                 <version>${sonar-scanner.version}</version>
+                <configuration>
+                    <properties>
+                        <sonar.host.url>${sonar.host.url}</sonar.host.url>
+                        <sonar.projectKey>${sonar.projectKey}</sonar.projectKey>
+                        <sonar.projectName>${sonar.projectName}</sonar.projectName>
+                        <sonar.sourceEncoding>UTF-8</sonar.sourceEncoding>
+                        <sonar.kotlin.version>${kotlin.version}</sonar.kotlin.version>
+                    </properties>
+                </configuration>
             </plugin>
 
             <!-- Duplicate Finder -->
@@ -579,6 +659,20 @@
                 <groupId>org.basepom.maven</groupId>
                 <artifactId>duplicate-finder-maven-plugin</artifactId>
                 <version>${duplicate-finder.version}</version>
+                <configuration>
+                    <failBuildInCaseOfConflict>true</failBuildInCaseOfConflict>
+                    <failBuildInCaseOfDifferentContentConflict>true</failBuildInCaseOfDifferentContentConflict>
+                    <failBuildInCaseOfEqualContentConflict>false</failBuildInCaseOfEqualContentConflict>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>duplicate-finder-check</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
 
             <!-- Forbidden APIs -->
@@ -586,6 +680,25 @@
                 <groupId>de.thetaphi</groupId>
                 <artifactId>forbiddenapis</artifactId>
                 <version>${forbidden-apis.version}</version>
+                <configuration>
+                    <signatures>
+                        <signature>jdk-unsafe-1.8</signature>
+                        <signature>jdk-deprecated-1.8</signature>
+                        <signature>commons-io-unsafe-2.11</signature>
+                    </signatures>
+                    <failOnMissingClasses>false</failOnMissingClasses>
+                    <failOnViolation>true</failOnViolation>
+                    <failOnUnresolvableSignatures>true</failOnUnresolvableSignatures>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>forbiddenapis-check</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
 
             <!-- Native image -->

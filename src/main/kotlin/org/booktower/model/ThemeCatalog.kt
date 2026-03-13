@@ -17,15 +17,14 @@ object ThemeCatalog {
 
     fun allThemes(): List<ThemeDefinition> = themes
 
-    fun findTheme(themeId: String): ThemeDefinition =
-        themes.firstOrNull { it.id == themeId } ?: themes.first { it.id == "dark" }
+    fun findTheme(themeId: String): ThemeDefinition = themes.firstOrNull { it.id == themeId } ?: themes.first { it.id == "dark" }
 
     fun toCssVariables(themeId: String): String {
         val theme = findTheme(themeId)
 
         return buildString {
             append(":root {")
-            theme.colors.forEach { (key, value) ->
+            theme.getColors().forEach { (key, value) ->
                 append("--color-")
                 append(key)
                 append(": ")

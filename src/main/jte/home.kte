@@ -1,6 +1,6 @@
 @param isAuthenticated: Boolean
-@param libraries: List<org.booktower.model.LibraryDto>
-@param recentBooks: List<org.booktower.model.BookDto>
+@param libraries: List<org.booktower.models.LibraryDto>
+@param recentBooks: List<org.booktower.models.BookDto>
 @param themeCss: String = ""
 @param lang: String = "en"
 @param showLogin: Boolean = false
@@ -224,8 +224,16 @@
         <div class="lang-selector">
             <label class="form-label">Language</label>
             <select onchange="document.cookie='app_lang='+this.value+';location.reload()">
-                <option value="en" ${lang == "en" ? "selected" : ""}>English</option>
-                <option value="fr" ${lang == "fr" ? "selected" : ""}>Français</option>
+                @if(lang == "en")
+                    <option value="en" selected>English</option>
+                @else
+                    <option value="en">English</option>
+                @endif
+                @if(lang == "fr")
+                    <option value="fr" selected>Français</option>
+                @else
+                    <option value="fr">Français</option>
+                @endif
             </select>
         </div>
         
@@ -236,7 +244,7 @@
             @else
                 <a href="/login" class="nav-link">Login</a>
                 <a href="/register" class="nav-link">Register</a>
-            @end
+            @endif
         </nav>
     </aside>
     
@@ -291,7 +299,7 @@
                     <p>Never lose your place again</p>
                 </div>
             </div>
-        @end
+        @endif
     </main>
     
     @if(showLogin)
@@ -316,7 +324,7 @@
             Close
         </button>
     </dialog>
-    @end
+    @endif
     
     @if(showRegister)
     <div class="modal-overlay" onclick="document.getElementById('register-modal').close()"></div>
@@ -344,6 +352,6 @@
             Close
         </button>
     </dialog>
-    @end
+    @endif
 </body>
 </html>

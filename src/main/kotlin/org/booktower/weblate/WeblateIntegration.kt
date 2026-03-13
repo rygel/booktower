@@ -4,7 +4,7 @@ import org.booktower.config.WeblateConfig
 
 class WeblateIntegration(
     private val config: WeblateConfig,
-    private val translationsDir: String
+    private val translationsDir: String,
 ) {
     private val bridge: WeblateBridge? by lazy {
         if (config.enabled && config.url.isNotBlank() && config.apiToken.isNotBlank()) {

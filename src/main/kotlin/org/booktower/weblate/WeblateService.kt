@@ -9,12 +9,15 @@ import java.util.Properties
 
 class WeblateService(
     private val weblateUrl: String?,
-    private val apiToken: String?
+    private val apiToken: String?,
 ) {
     private val logger = LoggerFactory.getLogger(WeblateService::class.java)
     private val client = HttpClient.newHttpClient()
 
-    fun fetchTranslations(component: String, language: String): Properties? {
+    fun fetchTranslations(
+        component: String,
+        language: String,
+    ): Properties? {
         if (weblateUrl.isNullOrBlank() || apiToken.isNullOrBlank()) {
             logger.debug("Weblate not configured, skipping translation fetch")
             return null
@@ -24,11 +27,12 @@ class WeblateService(
             val url = "$weblateUrl/api/translations/$component/messages/$language/file/"
             logger.info("Fetching translations from Weblate: $url")
 
-            val request = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .header("Authorization", "Token $apiToken")
-                .GET()
-                .build()
+            val request =
+                HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .header("Authorization", "Token $apiToken")
+                    .GET()
+                    .build()
 
             val response = client.send(request, HttpResponse.BodyHandlers.ofString())
 
@@ -47,7 +51,11 @@ class WeblateService(
         }
     }
 
-    fun pushTranslation(component: String, language: String, properties: Properties): Boolean {
+    fun pushTranslation(
+        component: String,
+        language: String,
+        properties: Properties,
+    ): Boolean {
         if (weblateUrl.isNullOrBlank() || apiToken.isNullOrBlank()) {
             logger.debug("Weblate not configured, skipping translation push")
             return false
@@ -55,16 +63,18 @@ class WeblateService(
 
         return try {
             val url = "$weblateUrl/api/translations/$component/messages/$language/file/"
-            val body = Properties().apply {
-                putAll(properties)
-            }.toString()
+            val body =
+                Properties().apply {
+                    putAll(properties)
+                }.toString()
 
-            val request = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .header("Authorization", "Token $apiToken")
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .POST(HttpRequest.BodyPublishers.ofString(body))
-                .build()
+            val request =
+                HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .header("Authorization", "Token $apiToken")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .POST(HttpRequest.BodyPublishers.ofString(body))
+                    .build()
 
             val response = client.send(request, HttpResponse.BodyHandlers.ofString())
             response.statusCode() == 200
@@ -81,11 +91,12 @@ class WeblateService(
 
         return try {
             val url = "$weblateUrl/api/components/$component/"
-            val request = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .header("Authorization", "Token $apiToken")
-                .GET()
-                .build()
+            val request =
+                HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .header("Authorization", "Token $apiToken")
+                    .GET()
+                    .build()
 
             val response = client.send(request, HttpResponse.BodyHandlers.ofString())
 
@@ -116,14 +127,17 @@ class WeblateService(
     data class TranslationStatus(
         val translatedWords: Int,
         val totalWords: Int,
-        val fuzzyCount: Int
+        val fuzzyCount: Int,
     ) {
         val percentage: Double
             get() = if (totalWords > 0) (translatedWords.toDouble() / totalWords) * 100 else 0.0
     }
 
     companion object {
-        fun create(weblateUrl: String?, apiToken: String?): WeblateService? {
+        fun create(
+            weblateUrl: String?,
+            apiToken: String?,
+        ): WeblateService? {
             return if (!weblateUrl.isNullOrBlank() && !apiToken.isNullOrBlank()) {
                 WeblateService(weblateUrl, apiToken)
             } else {

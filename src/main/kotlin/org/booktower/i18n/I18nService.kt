@@ -14,7 +14,10 @@ class I18nService(private val bundleName: String) {
         this.bundle = ResourceBundle.getBundle(bundleName, locale)
     }
 
-    fun translate(key: String, vararg args: Any): String {
+    fun translate(
+        key: String,
+        vararg args: Any,
+    ): String {
         return try {
             val message = bundle.getString(key)
             if (args.isEmpty()) {

@@ -1,9 +1,9 @@
-name: Tests
+name: E2E Tests
 
 on:
   push:
     branches: [ main, develop ]
-  workflow_dispatch:
+    workflow_dispatch:
     inputs:
       run_e2e_tests:
         description: 'Run full E2E tests (slow)'
@@ -19,9 +19,13 @@ on:
 env:
   BASE_URL: http://localhost:9999
 
+concurrency:
+  group: e2e-tests
+  cancel-in-progress: true
+
 jobs:
   unit-tests:
-    name: Unit Tests
+    name: Run Unit Tests
     if: ${{ inputs.run_unit_tests_only == 'true' || github.event_name == 'workflow_dispatch' && inputs.run_unit_tests_only != 'true' }}
     runs-on: ubuntu-latest
     
@@ -50,3 +54,86 @@ jobs:
         with:
           name: test-results
           path: target/surefire-reports
+
+  full-e2e-tests:
+    name: Full E2E Tests
+    if: ${{ inputs.run_e2e_tests == 'true' }}
+    runs-on: ubuntu-latest
+    concurrency:
+      group: e2e-tests
+      cancel-in-progress: true
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-e2e-${{ hashFiles('**/pom.xml') }}
+
+      - name: Start application
+        run: |
+          echo "Starting BookTower application..."
+          mvn compile exec:java -Dexec.mainClass="org.booktower.BookTowerAppKt" &
+          APP_PID=$!
+          echo "Started application with PID: $APP_PID"
+          echo "Waiting for application to start (15s)..."
+          sleep 15
+          if ! kill -0 $APP_PID 2>/dev/null; then
+            echo "✓ Application started successfully"
+            echo "APP_PID=$APP_PID" >> $GITHUB_ENV
+          else
+            echo "✗ Failed to start application"
+            exit 1
+          fi
+
+      - name: Run E2E tests
+        env:
+          BASE_URL: http://localhost:9999
+          APP_PID: ${{ env.APP_PID }}
+        run: |
+          chmod +x src/test/kotlin/test-config.example.sh
+          
+          cp src/test/kotlin/test-config.example.sh src/test/kotlin/test-config.sh
+          sed -i 's|BASE_URL=.*|BASE_URL=http://localhost:9999|' src/test/kotlin/test-config.sh
+          sed -i 's|SKIP_STARTUP=true|SKIP_STARTUP=false|' src/test/test/kotlin/test-config.sh
+          sed -i 's|TEST_AUTHENTICATION=true|TEST_AUTHENTICATION=true|' src/test/kotlin/test-config.sh
+          sed -i 's|TEST_API_TESTS=true|TEST_API_TESTS=true|' src/test/kotlin/test-config.sh
+          sed -i 's|TEST_VALIDATION_TESTS=true|TEST_VALIDATION_TESTS=true|' src/test/kotlin/test-config.sh
+          sed -i 's|TEST_TIMEOUT=30|TEST_TIMEOUT=120|' src/test/kotlin/test-config.sh
+          
+          # Run E2E tests
+          ./e2e-test.sh || true
+          
+          # Stop application
+          if [ -n "$APP_PID" ]; then
+            echo "Stopping application (PID: $APP_PID)..."
+            kill $APP_PID 2>/dev/null || true
+            echo "✓ Application stopped"
+          fi
+
+      - name: Upload E2E test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-test-results
+          path: |
+            test-results/
+            e2e-test.log
+
+      - name: Stop application
+        if: always()
+        run: |
+          if [ -n "$APP_PID" ]; then
+            echo "Stopping application (PID: $APP_PID)..."
+            kill $APP_PID 2>/dev/null || true
+            echo "✓ Application stopped"
+          fi

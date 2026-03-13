@@ -10,7 +10,7 @@ data class User(
     val passwordHash: String,
     val createdAt: Instant,
     val updatedAt: Instant,
-    val isAdmin: Boolean = false
+    val isAdmin: Boolean = false,
 )
 
 data class UserDto(
@@ -18,23 +18,23 @@ data class UserDto(
     val username: String,
     val email: String,
     val createdAt: String,
-    val isAdmin: Boolean
+    val isAdmin: Boolean,
 )
 
 data class CreateUserRequest(
     val username: String,
     val email: String,
-    val password: String
+    val password: String,
 )
 
 data class LoginRequest(
     val username: String,
-    val password: String
+    val password: String,
 )
 
 data class LoginResponse(
     val token: String,
-    val user: UserDto
+    val user: UserDto,
 )
 
 data class Library(
@@ -43,7 +43,7 @@ data class Library(
     val name: String,
     val path: String,
     val createdAt: Instant,
-    val updatedAt: Instant
+    val updatedAt: Instant,
 )
 
 data class LibraryDto(
@@ -51,12 +51,12 @@ data class LibraryDto(
     val name: String,
     val path: String,
     val bookCount: Int = 0,
-    val createdAt: String
+    val createdAt: String,
 )
 
 data class CreateLibraryRequest(
     val name: String,
-    val path: String
+    val path: String,
 )
 
 data class Book(
@@ -74,7 +74,7 @@ data class Book(
     val pageCount: Int?,
     val coverPath: String?,
     val addedAt: Instant,
-    val updatedAt: Instant
+    val updatedAt: Instant,
 )
 
 data class BookDto(
@@ -86,21 +86,25 @@ data class BookDto(
     val pageCount: Int?,
     val fileSize: Long,
     val addedAt: String,
-    val progress: ReadingProgressDto?
+    val progress: ReadingProgressDto?,
 )
 
-data class BookListDto(
-    val books: List<BookDto>,
+class BookListDto(
+    books: List<BookDto>,
     val total: Int,
     val page: Int,
-    val pageSize: Int
-)
+    val pageSize: Int,
+) {
+    private val _books: List<BookDto> = books.toList()
+
+    fun getBooks(): List<BookDto> = _books.toList()
+}
 
 data class CreateBookRequest(
     val title: String,
     val author: String?,
     val description: String?,
-    val libraryId: String
+    val libraryId: String,
 )
 
 data class ReadingProgress(
@@ -111,18 +115,18 @@ data class ReadingProgress(
     val totalPages: Int?,
     val percentage: Double?,
     val lastReadAt: Instant,
-    val createdAt: Instant
+    val createdAt: Instant,
 )
 
 data class ReadingProgressDto(
     val currentPage: Int,
     val totalPages: Int?,
     val percentage: Double?,
-    val lastReadAt: String
+    val lastReadAt: String,
 )
 
 data class UpdateProgressRequest(
-    val currentPage: Int
+    val currentPage: Int,
 )
 
 data class Bookmark(
@@ -132,7 +136,7 @@ data class Bookmark(
     val page: Int,
     val title: String?,
     val note: String?,
-    val createdAt: Instant
+    val createdAt: Instant,
 )
 
 data class BookmarkDto(
@@ -140,21 +144,21 @@ data class BookmarkDto(
     val page: Int,
     val title: String?,
     val note: String?,
-    val createdAt: String
+    val createdAt: String,
 )
 
 data class CreateBookmarkRequest(
     val bookId: String,
     val page: Int,
     val title: String?,
-    val note: String?
+    val note: String?,
 )
 
 data class ErrorResponse(
     val error: String,
-    val message: String
+    val message: String,
 )
 
 data class SuccessResponse(
-    val message: String
+    val message: String,
 )

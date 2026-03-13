@@ -14,14 +14,14 @@ class WeblateBridge(
     private val weblateUrl: String,
     private val apiToken: String,
     private val component: String,
-    private val translationsDir: File
+    private val translationsDir: File,
 ) {
     private val logger = LoggerFactory.getLogger(WeblateBridge::class.java)
     private val client = HttpClient.newHttpClient()
 
     fun pullTranslations(languages: List<String> = listOf("en", "fr")): Map<String, Int> {
         val results = mutableMapOf<String, Int>()
-        
+
         for (lang in languages) {
             try {
                 val props = fetchTranslation(lang)
@@ -35,13 +35,13 @@ class WeblateBridge(
                 logger.error("Failed to pull translations for $lang: ${e.message}")
             }
         }
-        
+
         return results
     }
 
     fun pushTranslations(languages: List<String> = listOf("en", "fr")): Map<String, Boolean> {
         val results = mutableMapOf<String, Boolean>()
-        
+
         for (lang in languages) {
             try {
                 val file = getTranslationFile(lang)
@@ -56,18 +56,19 @@ class WeblateBridge(
                 results[lang] = false
             }
         }
-        
+
         return results
     }
 
     private fun fetchTranslation(language: String): Properties? {
         val url = "$weblateUrl/api/translations/$component/messages/$language/file/"
-        
-        val request = HttpRequest.newBuilder()
-            .uri(URI.create(url))
-            .header("Authorization", "Token $apiToken")
-            .GET()
-            .build()
+
+        val request =
+            HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .header("Authorization", "Token $apiToken")
+                .GET()
+                .build()
 
         val response = client.send(request, HttpResponse.BodyHandlers.ofString())
 
@@ -81,42 +82,52 @@ class WeblateBridge(
         }
     }
 
-    private fun pushTranslation(language: String, properties: Properties): Boolean {
+    private fun pushTranslation(
+        language: String,
+        properties: Properties,
+    ): Boolean {
         val url = "$weblateUrl/api/translations/$component/messages/$language/file/"
-        
+
         val bodyBuilder = StringBuilder()
         properties.forEach { key, value ->
             if (bodyBuilder.isNotEmpty()) bodyBuilder.append("\n")
             bodyBuilder.append("$key=$value")
         }
 
-        val request = HttpRequest.newBuilder()
-            .uri(URI.create(url))
-            .header("Authorization", "Token $apiToken")
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .POST(HttpRequest.BodyPublishers.ofString(bodyBuilder.toString()))
-            .build()
+        val request =
+            HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .header("Authorization", "Token $apiToken")
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .POST(HttpRequest.BodyPublishers.ofString(bodyBuilder.toString()))
+                .build()
 
         val response = client.send(request, HttpResponse.BodyHandlers.ofString())
         return response.statusCode() == 200
     }
 
     private fun getTranslationFile(language: String): File {
-        val filename = if (language == "en" || language == "en-US") {
-            "messages.properties"
-        } else {
-            "messages_$language.properties"
-        }
+        val filename =
+            if (language == "en" || language == "en-US") {
+                "messages.properties"
+            } else {
+                "messages_$language.properties"
+            }
         return File(translationsDir, filename)
     }
 
     private fun loadProperties(file: File): Properties {
-        return FileInputStream(file).use { fis ->
-            Properties().apply { load(fis) }
+        val properties = Properties()
+        FileInputStream(file).use { fis ->
+            properties.load(fis)
         }
+        return properties
     }
 
-    private fun saveProperties(properties: Properties, file: File) {
+    private fun saveProperties(
+        properties: Properties,
+        file: File,
+    ) {
         FileOutputStream(file).use { fos ->
             properties.store(fos, "BookTower translations - synced from Weblate")
         }
@@ -125,15 +136,16 @@ class WeblateBridge(
     fun getTranslationStatus(): WeblateStatus? {
         return try {
             val url = "$weblateUrl/api/components/$component/"
-            
-            val request = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .header("Authorization", "Token $apiToken")
-                .GET()
-                .build()
+
+            val request =
+                HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .header("Authorization", "Token $apiToken")
+                    .GET()
+                    .build()
 
             val response = client.send(request, HttpResponse.BodyHandlers.ofString())
-            
+
             if (response.statusCode() == 200) {
                 parseStatus(response.body())
             } else {
@@ -149,11 +161,11 @@ class WeblateBridge(
         val translated = json.extract("\"translated_words\":(\\d+)")?.toIntOrNull() ?: 0
         val total = json.extract("\"total_words\":(\\d+)")?.toIntOrNull() ?: 0
         val fuzzy = json.extract("\"fuzzy_words\":(\\d+)")?.toIntOrNull() ?: 0
-        
+
         return WeblateStatus(
             translatedWords = translated,
             totalWords = total,
-            fuzzyWords = fuzzy
+            fuzzyWords = fuzzy,
         )
     }
 
@@ -164,7 +176,7 @@ class WeblateBridge(
     data class WeblateStatus(
         val translatedWords: Int,
         val totalWords: Int,
-        val fuzzyWords: Int
+        val fuzzyWords: Int,
     ) {
         val progressPercent: Double
             get() = if (totalWords > 0) (translatedWords.toDouble() / totalWords) * 100 else 0.0
@@ -175,7 +187,7 @@ class WeblateBridge(
             weblateUrl: String?,
             apiToken: String?,
             component: String?,
-            translationsDir: String
+            translationsDir: String,
         ): WeblateBridge? {
             return if (!weblateUrl.isNullOrBlank() && !apiToken.isNullOrBlank() && !component.isNullOrBlank()) {
                 WeblateBridge(weblateUrl, apiToken, component, File(translationsDir))

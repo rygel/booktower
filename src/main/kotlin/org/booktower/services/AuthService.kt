@@ -1,6 +1,5 @@
 package org.booktower.services
 
-import org.booktower.config.SecurityConfig
 import org.booktower.models.*
 import org.jdbi.v3.core.Jdbi
 import org.jdbi.v3.core.result.RowView
@@ -13,28 +12,31 @@ private val logger = LoggerFactory.getLogger("booktower.AuthService")
 
 class AuthService(
     private val jdbi: Jdbi,
-    private val jwtService: JwtService
+    private val jwtService: JwtService,
 ) {
     fun register(request: CreateUserRequest): Result<LoginResponse> {
         val now = Instant.now()
         val userId = UUID.randomUUID()
-        
+
         jdbi.useHandle<Exception> { handle ->
-            val existing = handle.createQuery("SELECT id FROM users WHERE username = ?")
-                .bind(0, request.username)
-                .mapTo(String::class.java)
-                .first()
-            
+            val existing =
+                handle.createQuery("SELECT id FROM users WHERE username = ?")
+                    .bind(0, request.username)
+                    .mapTo(String::class.java)
+                    .first()
+
             if (existing != null) {
                 throw IllegalArgumentException("Username already exists")
             }
-            
+
             val passwordHash = BCrypt.hashpw(request.password, BCrypt.gensalt())
-            
-            handle.createUpdate("""
+
+            handle.createUpdate(
+                """
                 INSERT INTO users (id, username, email, password_hash, created_at, updated_at, is_admin)
                 VALUES (?, ?, ?, ?, ?, ?, 0)
-            """)
+            """,
+            )
                 .bind(0, userId.toString())
                 .bind(1, request.username)
                 .bind(2, request.email)
@@ -47,19 +49,22 @@ class AuthService(
         val token = jwtService.generateToken(User(userId, request.username, request.email, "", now, now, false))
         logger.info("User registered: ${request.username}")
 
-        return Result.success(LoginResponse(
-            token = token,
-            user = UserDto(userId.toString(), request.username, request.email, now.toString(), false)
-        ))
+        return Result.success(
+            LoginResponse(
+                token = token,
+                user = UserDto(userId.toString(), request.username, request.email, now.toString(), false),
+            ),
+        )
     }
 
     fun login(request: LoginRequest): Result<LoginResponse> {
-        val user = jdbi.withHandle<User?, Exception> { handle ->
-            handle.createQuery("SELECT * FROM users WHERE username = ?")
-                .bind(0, request.username)
-                .map { row -> mapUser(row) }
-                .firstOrNull()
-        } ?: return Result.failure(IllegalArgumentException("Invalid username or password"))
+        val user =
+            jdbi.withHandle<User?, Exception> { handle ->
+                handle.createQuery("SELECT * FROM users WHERE username = ?")
+                    .bind(0, request.username)
+                    .map { row -> mapUser(row) }
+                    .firstOrNull()
+            } ?: return Result.failure(IllegalArgumentException("Invalid username or password"))
 
         if (!BCrypt.checkpw(request.password, user.passwordHash)) {
             return Result.failure(IllegalArgumentException("Invalid username or password"))
@@ -68,10 +73,12 @@ class AuthService(
         val token = jwtService.generateToken(user)
         logger.info("User logged in: ${user.username}")
 
-        return Result.success(LoginResponse(
-            token = token,
-            user = UserDto(user.id.toString(), user.username, user.email, user.createdAt.toString(), user.isAdmin)
-        ))
+        return Result.success(
+            LoginResponse(
+                token = token,
+                user = UserDto(user.id.toString(), user.username, user.email, user.createdAt.toString(), user.isAdmin),
+            ),
+        )
     }
 
     fun getUserById(userId: UUID): User? {
@@ -91,7 +98,7 @@ class AuthService(
             passwordHash = row.getColumn("password_hash", String::class.java),
             createdAt = Instant.parse(row.getColumn("created_at", String::class.java)),
             updatedAt = Instant.parse(row.getColumn("updated_at", String::class.java)),
-            isAdmin = row.getColumn("is_admin", Boolean::class.java)
+            isAdmin = row.getColumn("is_admin", Boolean::class.java),
         )
     }
 }

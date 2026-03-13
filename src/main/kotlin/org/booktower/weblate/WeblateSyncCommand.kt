@@ -6,19 +6,20 @@ object WeblateSyncCommand {
     @JvmStatic
     fun main(args: Array<String>) {
         val config = loadConfig()
-        
+
         if (config.url.isBlank() || config.apiToken.isBlank()) {
             println("Weblate not configured. Set weblate.url and weblate.api-token in application.conf")
             println("Usage: mvn compile exec:java -Dexec.mainClass=\"org.booktower.weblate.WeblateSyncCommand\" -Dexec.args=\"pull\"")
             return
         }
 
-        val bridge = WeblateBridge(
-            weblateUrl = config.url,
-            apiToken = config.apiToken,
-            component = config.component,
-            translationsDir = getTranslationsDir()
-        )
+        val bridge =
+            WeblateBridge(
+                weblateUrl = config.url,
+                apiToken = config.apiToken,
+                component = config.component,
+                translationsDir = getTranslationsDir(),
+            )
 
         when (args.firstOrNull()) {
             "pull" -> {
@@ -67,7 +68,11 @@ object WeblateSyncCommand {
     private fun getTranslationsDir(): java.io.File {
         val resourcesDir = java.io.File("src/main/resources")
         if (!resourcesDir.exists()) {
-            java.io.File("target/classes").also { it.mkdirs() }
+            val fallbackDir = java.io.File("target/classes")
+            if (!fallbackDir.exists() && !fallbackDir.mkdirs()) {
+                throw IllegalStateException("Failed to create fallback directory: ${fallbackDir.absolutePath}")
+            }
+            return fallbackDir
         }
         return resourcesDir
     }

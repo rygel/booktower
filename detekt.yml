@@ -1,15 +1,7 @@
+# Detekt configuration
 build:
   maxIssues: 10
   excludeCorrectable: false
-  exclude:
-    - "**/generated/**"
-    - "**/build/**"
-    - "**/target/**"
-    - "**/jteGenerated/**"
-    - "**/resources/**"
-  sources:
-    - src/main/kotlin
-    - src/test/kotlin
 
 config:
   validation: true
@@ -21,10 +13,14 @@ processors:
 complexity:
   active: true
   LongParameterList:
-    threshold: 6
+    active: true
+    functionThreshold: 6
+    constructorThreshold: 7
   LongMethod:
+    active: true
     threshold: 60
   TooManyFunctions:
+    active: true
     thresholdInFiles: 11
     thresholdInClasses: 15
     thresholdInInterfaces: 11
@@ -32,8 +28,10 @@ complexity:
 style:
   active: true
   MaxLineLength:
+    active: true
     maxLineLength: 150
   MaxChainedCallsOnSameLine:
+    active: true
     maxChainedCalls: 3
   WildcardImport:
     active: false
@@ -78,14 +76,3 @@ exceptions:
 
 empty-blocks:
   active: true
-
-formatting:
-  active: true
-  Indentation:
-    active: false
-  NoBlankLineBeforeRbrace:
-    active: true
-  NoConsecutiveBlankLines:
-    active: true
-  NoUnusedImports:
-    active: true
