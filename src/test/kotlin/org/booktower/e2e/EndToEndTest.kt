@@ -311,9 +311,7 @@ class EndToEndTest {
         throw IllegalStateException("Failed to login and get token for test")
     }
 
-    private fun formBody(vararg pairs: Pair<String, String>): String {
-        return pairs.joinToString("&") { (k, v) -> "$k=$v" }
-    }
+    private fun formBody(vararg pairs: Pair<String, String>): String = pairs.joinToString("&") { (k, v) -> "$k=$v" }
 }
 
 fun main() {

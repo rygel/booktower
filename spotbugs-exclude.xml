@@ -37,4 +37,10 @@
         <Bug pattern="BC_BAD_CAST_TO_ABSTRACT_COLLECTION" />
         <Class name="org.booktower.handlers.AppHandler" />
     </Match>
+    
+    <!-- REC_CATCH_EXCEPTION: Catching Exception is valid in Kotlin request handlers -->
+    <Match>
+        <Bug pattern="REC_CATCH_EXCEPTION" />
+        <Class name="org.booktower.handlers.AuthHandler2" />
+    </Match>
 </FindBugsFilter>

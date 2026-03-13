@@ -17,21 +17,21 @@ object TemplateEngine {
         val libraries = model["libraries"] as? List<*> ?: emptyList<Any>()
 
         return """
-                    <!DOCTYPE html>
-                    <html lang="en">
-                    <head>
-                        <meta charset="UTF-8">
-                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                        <title>BookTower</title>
-                        <script src="https://unpkg.com/htmx.org@1.9.10"></script>
-                        <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-                    </head>
-                    <body class="bg-gray-50 min-h-screen">
-                        <nav class="bg-white shadow-sm border-b">
-                            <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-                                <a href="/" class="text-2xl font-bold text-indigo-600">BookTower</a>
-                                <div>
-                                    ${if (isAuth) {
+                                <!DOCTYPE html>
+                                <html lang="en">
+                                <head>
+                                    <meta charset="UTF-8">
+                                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                                    <title>BookTower</title>
+                                    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+                                    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+                                </head>
+                                <body class="bg-gray-50 min-h-screen">
+                                    <nav class="bg-white shadow-sm border-b">
+                                        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+                                            <a href="/" class="text-2xl font-bold text-indigo-600">BookTower</a>
+                                            <div>
+                                                ${if (isAuth) {
             """<a href="/settings" class="text-gray-600 mr-4">Settings</a>
                     <form action="/auth/logout" method="POST" class="inline">
                         <button type="submit" class="text-gray-600">Logout</button>
@@ -40,11 +40,11 @@ object TemplateEngine {
             """<a href="/login" class="text-indigo-600 mr-4">Login</a>
                     <a href="/register" class="bg-indigo-600 text-white px-4 py-2 rounded">Sign Up</a>"""
         }}
-                                </div>
-                            </div>
-                        </nav>
-                        <main class="max-w-7xl mx-auto px-4 py-8">
-                            ${if (isAuth) {
+                                            </div>
+                                        </div>
+                                    </nav>
+                                    <main class="max-w-7xl mx-auto px-4 py-8">
+                                        ${if (isAuth) {
             val libsHtml =
                 libraries.joinToString(
                     "",
@@ -57,9 +57,9 @@ object TemplateEngine {
                 <p class="text-xl text-gray-600 mb-8">Your personal digital library</p>
             </div>"""
         }}
-                        </main>
-                    </body>
-                    </html>
+                                    </main>
+                                </body>
+                                </html>
             """.trimIndent()
     }
 
