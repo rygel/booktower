@@ -1,0 +1,222 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+  workflow_dispatch:
+    inputs:
+      run_e2e_tests:
+        description: 'Run full E2E tests (slow)'
+        required: true
+        type: boolean
+        default: false
+
+env:
+  BASE_URL: http://localhost:9999
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  code-quality:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Run code quality checks
+        run: mvn verify -DskipTests -Dflyway.skip=true -Dsonar.skip=true
+
+      - name: Upload Checkstyle report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: checkstyle-report
+          path: target/checkstyle-result.xml
+
+      - name: Upload SpotBugs report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: spotbugs-report
+          path: target/spotbugsXml.xml
+
+      - name: Upload PMD report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pmd-report
+          path: target/pmd.xml
+
+      - name: Upload Detekt report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: detekt-report
+          path: target/detekt-reports/
+
+  unit-tests:
+    name: Unit Tests
+    needs: code-quality
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Run unit tests
+        run: mvn test -Dflyway.skip=true
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: target/surefire-reports
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: jacoco-report
+          path: target/site/jacoco/
+
+  build:
+    name: Build
+    needs: [code-quality, unit-tests]
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Build application
+        run: mvn package -DskipTests -Dflyway.skip=true
+
+      - name: Upload JAR artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: booktower-jar
+          path: target/booktower-*.jar
+
+  e2e-tests:
+    name: E2E Tests
+    needs: build
+    if: ${{ github.event.inputs.run_e2e_tests == 'true' || github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-e2e-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Build application
+        run: mvn package -DskipTests -Dflyway.skip=true
+
+      - name: Start application
+        run: |
+          echo "Starting BookTower application..."
+          java -jar target/booktower-*.jar &
+          APP_PID=$!
+          echo "Started application with PID: $APP_PID"
+          echo "APP_PID=$APP_PID" >> $GITHUB_ENV
+          
+          # Wait for application to be ready
+          echo "Waiting for application to start..."
+          for i in {1..30}; do
+            if curl -s http://localhost:9999/health > /dev/null 2>&1; then
+              echo "✓ Application started successfully"
+              break
+            fi
+            if [ $i -eq 30 ]; then
+              echo "✗ Timeout waiting for application"
+              exit 1
+            fi
+            sleep 2
+          done
+
+      - name: Run E2E tests
+        env:
+          BASE_URL: http://localhost:9999
+          APP_PID: ${{ env.APP_PID }}
+        run: |
+          chmod +x e2e-test.sh
+          ./e2e-test.sh
+
+      - name: Stop application
+        if: always()
+        run: |
+          if [ -n "$APP_PID" ]; then
+            echo "Stopping application (PID: $APP_PID)..."
+            kill $APP_PID 2>/dev/null || true
+            echo "✓ Application stopped"
+          fi
+
+      - name: Upload E2E test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-test-results
+          path: |
+            test-results/
+            e2e-test.log
