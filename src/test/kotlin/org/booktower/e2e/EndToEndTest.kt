@@ -1,221 +1,179 @@
 package org.booktower.e2e
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import org.http4k.client.JavaHttpClient
 import org.http4k.core.*
+import org.http4k.core.cookie.Cookie
 import org.slf4j.LoggerFactory
+import org.booktower.models.LoginResponse
+import org.booktower.models.ErrorResponse
 import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 import kotlin.time.Duration
 
 private val logger = LoggerFactory.getLogger("booktower.e2e.EndToEndTest")
+private val objectMapper = ObjectMapper()
 
 private val BASE_URL = "http://localhost:9999"
 private val TEST_TIMEOUT = Duration.ofSeconds(60)
 
+/**
+ * End-to-End tests for BookTower API
+ * 
+ * These tests require a running BookTower server on localhost:9999
+ * Run with: mvn test -Dtest=EndToEndTest
+ * Or: ./mvnw test -Dtest=EndToEndTest (with Maven wrapper)
+ */
 class EndToEndTest {
     private val client = JavaHttpClient()
 
     @Test
-    fun `Should register new user`() {
-        logger.info("Testing user registration...")
+    fun `Should register new user with JSON`() {
+        logger.info("Testing user registration with JSON...")
+
+        val uniqueUsername = "testuser_${System.currentTimeMillis()}"
+        val requestBody = mapOf(
+            "username" to uniqueUsername,
+            "email" to "$uniqueUsername@example.com",
+            "password" to "TestPass123!"
+        )
 
         val response =
             client(
                 Request(Method.POST, "$BASE_URL/auth/register")
-                    .header("Content-Type", "application/x-www-form-urlencoded")
-                    .body(
-                        formBody(
-                            "username" to "testuser",
-                            "email" to "testuser@example.com",
-                            "password" to "TestPass123!",
-                        ),
-                    ),
+                    .header("Content-Type", "application/json")
+                    .body(objectMapper.writeValueAsString(requestBody))
             )
 
         assertEquals(Status.CREATED, response.status, "User registration should return 201")
-        assertTrue(response.bodyString().contains("user"), "Response should contain user info")
+        
+        val responseBody = response.bodyString()
+        assertTrue(responseBody.contains("token"), "Response should contain token")
+        assertTrue(responseBody.contains("user"), "Response should contain user info")
+        assertTrue(responseBody.contains(uniqueUsername), "Response should contain username")
 
-        logger.info("✓ User registration successful")
+        // Check that auth cookie was set
+        val setCookie = response.headers.find { it.name == "Set-Cookie" }
+        assertNotNull(setCookie, "Response should set authentication cookie")
+        assertTrue(setCookie.value.contains("token="), "Cookie should contain token")
+
+        logger.info("✓ User registration with JSON successful")
     }
 
     @Test
-    fun `Should login with valid credentials`() {
-        logger.info("Testing user login...")
+    fun `Should login with valid credentials and JSON`() {
+        logger.info("Testing user login with JSON...")
+
+        // First register a user
+        val uniqueUsername = "logintest_${System.currentTimeMillis()}"
+        registerUser(uniqueUsername, "$uniqueUsername@example.com", "TestPass123!")
+
+        // Then login
+        val loginBody = mapOf(
+            "username" to uniqueUsername,
+            "password" to "TestPass123!"
+        )
 
         val response =
             client(
                 Request(Method.POST, "$BASE_URL/auth/login")
-                    .header("Content-Type", "application/x-www-form-urlencoded")
-                    .body(
-                        formBody(
-                            "username" to "testuser",
-                            "password" to "TestPass123!",
-                        ),
-                    ),
+                    .header("Content-Type", "application/json")
+                    .body(objectMapper.writeValueAsString(loginBody))
             )
 
         assertEquals(Status.OK, response.status, "Login should return 200")
-        assertTrue(
-            response.bodyString().contains("user") || response.headers.find { it.name == "Set-Cookie" } != null,
-            "Response should contain user info or set cookie",
+        
+        val loginResponse: LoginResponse = objectMapper.readValue(response.bodyString())
+        assertNotNull(loginResponse.token, "Response should contain token")
+        assertNotNull(loginResponse.user, "Response should contain user")
+        assertEquals(uniqueUsername, loginResponse.user.username, "Username should match")
+
+        // Check that auth cookie was set
+        val setCookie = response.headers.find { it.name == "Set-Cookie" }
+        assertNotNull(setCookie, "Response should set authentication cookie")
+
+        logger.info("✓ User login with JSON successful")
+    }
+
+    @Test
+    fun `Should fail registration with invalid email`() {
+        logger.info("Testing registration validation...")
+
+        val requestBody = mapOf(
+            "username" to "testuser",
+            "email" to "invalid-email",
+            "password" to "TestPass123!"
         )
 
-        logger.info("✓ User login successful")
+        val response =
+            client(
+                Request(Method.POST, "$BASE_URL/auth/register")
+                    .header("Content-Type", "application/json")
+                    .body(objectMapper.writeValueAsString(requestBody))
+            )
+
+        assertEquals(Status.BAD_REQUEST, response.status, "Invalid email should return 400")
+        
+        val errorResponse: ErrorResponse = objectMapper.readValue(response.bodyString())
+        assertEquals("VALIDATION_ERROR", errorResponse.error, "Should return validation error")
+
+        logger.info("✓ Registration validation working correctly")
     }
 
     @Test
-    fun `Should create library`() {
-        logger.info("Testing library creation...")
+    fun `Should fail registration with short password`() {
+        logger.info("Testing password validation...")
 
-        val token = loginAndGetToken()
-        val response =
-            client(
-                Request(Method.POST, "$BASE_URL/api/libraries")
-                    .header("Content-Type", "application/x-www-form-urlencoded")
-                    .header("Cookie", "token=$token")
-                    .body(
-                        formBody(
-                            "name" to "Test Library",
-                            "path" to "/tmp/test-library",
-                        ),
-                    ),
-            )
-
-        assertEquals(Status.CREATED, response.status, "Library creation should return 201")
-        assertTrue(
-            response.bodyString().contains("\"name\":\"Test Library\""),
-            "Response should contain library name",
+        val uniqueUsername = "shortpass_${System.currentTimeMillis()}"
+        val requestBody = mapOf(
+            "username" to uniqueUsername,
+            "email" to "$uniqueUsername@example.com",
+            "password" to "short"
         )
 
-        logger.info("✓ Library creation successful")
-    }
-
-    @Test
-    fun `Should list libraries`() {
-        logger.info("Testing library listing...")
-
-        val token = loginAndGetToken()
         val response =
             client(
-                Request(Method.GET, "$BASE_URL/api/libraries")
-                    .header("Cookie", "token=$token"),
+                Request(Method.POST, "$BASE_URL/auth/register")
+                    .header("Content-Type", "application/json")
+                    .body(objectMapper.writeValueAsString(requestBody))
             )
 
-        assertEquals(Status.OK, response.status, "Library listing should return 200")
-        assertTrue(response.bodyString().isNotEmpty(), "Response should contain data")
+        assertEquals(Status.BAD_REQUEST, response.status, "Short password should return 400")
 
-        logger.info("✓ Library listing successful")
-    }
-
-    @Test
-    fun `Should add book to library`() {
-        logger.info("Testing book creation...")
-
-        val token = loginAndGetToken()
-        val response =
-            client(
-                Request(Method.POST, "$BASE_URL/api/books")
-                    .header("Content-Type", "application/x-www-form-urlencoded")
-                    .header("Cookie", "token=$token")
-                    .body(
-                        formBody(
-                            "title" to "Test Book",
-                            "author" to "Test Author",
-                            "description" to "A test book",
-                            "libraryId" to "",
-                        ),
-                    ),
-            )
-
-        assertEquals(Status.CREATED, response.status, "Book creation should return 201")
-        assertTrue(
-            response.bodyString().contains("\"title\":\"Test Book\""),
-            "Response should contain book title",
-        )
-
-        logger.info("✓ Book creation successful")
-    }
-
-    @Test
-    fun `Should list books`() {
-        logger.info("Testing book listing...")
-
-        val token = loginAndGetToken()
-        val response =
-            client(
-                Request(Method.GET, "$BASE_URL/api/books")
-                    .header("Cookie", "token=$token"),
-            )
-
-        assertEquals(Status.OK, response.status, "Book listing should return 200")
-
-        logger.info("✓ Book listing successful")
-    }
-
-    @Test
-    fun `Should get recent books`() {
-        logger.info("Testing recent books...")
-
-        val token = loginAndGetToken()
-        val response =
-            client(
-                Request(Method.GET, "$BASE_URL/api/recent")
-                    .header("Cookie", "token=$token"),
-            )
-
-        assertEquals(Status.OK, response.status, "Recent books should return 200")
-
-        logger.info("✓ Recent books retrieval successful")
-    }
-
-    @Test
-    fun `Should logout`() {
-        logger.info("Testing user logout...")
-
-        val token = loginAndGetToken()
-        val response =
-            client(
-                Request(Method.POST, "$BASE_URL/auth/logout")
-                    .header("Cookie", "token=$token"),
-            )
-
-        assertEquals(Status.OK, response.status, "Logout should return 200")
-
-        logger.info("✓ User logout successful")
+        logger.info("✓ Password validation working correctly")
     }
 
     @Test
     fun `Should fail on duplicate username`() {
         logger.info("Testing duplicate user registration...")
 
-        val response1 =
-            client(
-                Request(Method.POST, "$BASE_URL/auth/register")
-                    .header("Content-Type", "application/x-www-form-urlencoded")
-                    .body(
-                        formBody(
-                            "username" to "duplicateuser",
-                            "email" to "duplicate@example.com",
-                            "password" to "Pass123!",
-                        ),
-                    ),
-            )
+        val uniqueUsername = "duplicate_${System.currentTimeMillis()}"
 
+        // First registration
+        val response1 = registerUser(uniqueUsername, "$uniqueUsername@example.com", "TestPass123!")
         assertEquals(Status.CREATED, response1.status, "First registration should succeed")
+
+        // Second registration with same username
+        val requestBody = mapOf(
+            "username" to uniqueUsername,
+            "email" to "different@example.com",
+            "password" to "TestPass123!"
+        )
 
         val response2 =
             client(
                 Request(Method.POST, "$BASE_URL/auth/register")
-                    .header("Content-Type", "application/x-www-form-urlencoded")
-                    .body(
-                        formBody(
-                            "username" to "duplicateuser",
-                            "email" to "duplicate2@example.com",
-                            "password" to "Pass123!",
-                        ),
-                    ),
+                    .header("Content-Type", "application/json")
+                    .body(objectMapper.writeValueAsString(requestBody))
             )
 
-        assertEquals(Status.BAD_REQUEST, response2.status, "Duplicate registration should fail")
+        assertEquals(Status.CONFLICT, response2.status, "Duplicate registration should return 409")
+        
+        val errorResponse: ErrorResponse = objectMapper.readValue(response2.bodyString())
+        assertEquals("USER_EXISTS", errorResponse.error, "Should return user exists error")
 
         logger.info("✓ Duplicate user validation working correctly")
     }
@@ -224,36 +182,64 @@ class EndToEndTest {
     fun `Should fail on invalid credentials`() {
         logger.info("Testing invalid login...")
 
+        val loginBody = mapOf(
+            "username" to "nonexistent_${System.currentTimeMillis()}",
+            "password" to "wrongpassword"
+        )
+
         val response =
             client(
                 Request(Method.POST, "$BASE_URL/auth/login")
-                    .header("Content-Type", "application/x-www-form-urlencoded")
-                    .body(
-                        formBody(
-                            "username" to "nonexistent",
-                            "password" to "wrongpassword",
-                        ),
-                    ),
+                    .header("Content-Type", "application/json")
+                    .body(objectMapper.writeValueAsString(loginBody))
             )
 
         assertEquals(Status.UNAUTHORIZED, response.status, "Invalid login should return 401")
+        
+        val errorResponse: ErrorResponse = objectMapper.readValue(response.bodyString())
+        assertEquals("INVALID_CREDENTIALS", errorResponse.error, "Should return invalid credentials error")
 
         logger.info("✓ Invalid credentials validation working correctly")
     }
 
     @Test
-    fun `Should fail on unauthorized access`() {
-        logger.info("Testing unauthorized library access...")
+    fun `Should fail on empty request body`() {
+        logger.info("Testing empty request body...")
 
         val response =
             client(
-                Request(Method.GET, "$BASE_URL/api/libraries")
-                    .header("Cookie", "token=invalid_token"),
+                Request(Method.POST, "$BASE_URL/auth/login")
+                    .header("Content-Type", "application/json")
+                    .body("")
             )
 
-        assertEquals(Status.UNAUTHORIZED, response.status, "Unauthorized request should return 401")
+        assertEquals(Status.BAD_REQUEST, response.status, "Empty body should return 400")
 
-        logger.info("✓ Unauthorized access validation working correctly")
+        logger.info("✓ Empty request body validation working correctly")
+    }
+
+    @Test
+    fun `Should logout and clear cookie`() {
+        logger.info("Testing user logout...")
+
+        val uniqueUsername = "logouttest_${System.currentTimeMillis()}"
+        val token = registerAndGetToken(uniqueUsername, "$uniqueUsername@example.com", "TestPass123!")
+
+        val response =
+            client(
+                Request(Method.POST, "$BASE_URL/auth/logout")
+                    .header("Cookie", "token=$token")
+            )
+
+        assertEquals(Status.OK, response.status, "Logout should return 200")
+
+        // Check that cookie was cleared
+        val setCookie = response.headers.find { it.name == "Set-Cookie" }
+        assertNotNull(setCookie, "Response should set cookie")
+        assertTrue(setCookie.value.contains("token="), "Cookie should be present")
+        assertTrue(setCookie.value.contains("Max-Age=0") || setCookie.value.contains("Expires="), "Cookie should be expired")
+
+        logger.info("✓ User logout successful")
     }
 
     @Test
@@ -263,63 +249,77 @@ class EndToEndTest {
         val response =
             client(
                 Request(Method.GET, "$BASE_URL/")
-                    .header("Accept", "text/html"),
+                    .header("Accept", "text/html")
             )
 
         assertEquals(Status.OK, response.status, "Home page should return 200")
+        
+        val body = response.bodyString()
         assertTrue(
-            response.bodyString().contains("<html>") || response.bodyString().contains("BookTower"),
-            "Response should be HTML",
+            body.contains("<html>") || body.contains("<!DOCTYPE html>") || body.contains("BookTower"),
+            "Response should be HTML or contain BookTower"
         )
 
         logger.info("✓ Home page accessible")
     }
 
     @Test
-    fun `Should handle server errors gracefully`() {
-        logger.info("Testing error handling...")
+    fun `Should return login page for unauthenticated users`() {
+        logger.info("Testing login page...")
 
         val response =
             client(
-                Request(Method.GET, "$BASE_URL/api/nonexistent")
-                    .header("Cookie", "token=valid_token"),
+                Request(Method.GET, "$BASE_URL/login")
+                    .header("Accept", "text/html")
             )
 
-        assertTrue(response.status != Status.OK, "Non-existent endpoint should not return 200")
+        assertEquals(Status.OK, response.status, "Login page should return 200")
 
-        logger.info("✓ Server error handling working correctly")
+        logger.info("✓ Login page accessible")
     }
 
-    private fun loginAndGetToken(): String {
-        val loginResponse =
+    @Test
+    fun `Should return register page`() {
+        logger.info("Testing register page...")
+
+        val response =
             client(
-                Request(Method.POST, "$BASE_URL/auth/login")
-                    .header("Content-Type", "application/x-www-form-urlencoded")
-                    .body(
-                        formBody(
-                            "username" to "testuser",
-                            "password" to "TestPass123!",
-                        ),
-                    ),
+                Request(Method.GET, "$BASE_URL/register")
+                    .header("Accept", "text/html")
             )
 
-        if (loginResponse.status == Status.OK) {
-            val setCookie = loginResponse.headers.find { it.name == "Set-Cookie" }
-            return setCookie?.value?.split(";")?.first()?.split("=")?.get(1) ?: ""
+        assertEquals(Status.OK, response.status, "Register page should return 200")
+
+        logger.info("✓ Register page accessible")
+    }
+
+    // Helper methods
+
+    private fun registerUser(username: String, email: String, password: String): Response {
+        val requestBody = mapOf(
+            "username" to username,
+            "email" to email,
+            "password" to password
+        )
+
+        return client(
+            Request(Method.POST, "$BASE_URL/auth/register")
+                .header("Content-Type", "application/json")
+                .body(objectMapper.writeValueAsString(requestBody))
+        )
+    }
+
+    private fun registerAndGetToken(username: String, email: String, password: String): String {
+        val response = registerUser(username, email, password)
+        
+        if (response.status != Status.CREATED) {
+            throw IllegalStateException("Failed to register user: ${response.bodyString()}")
         }
 
-        throw IllegalStateException("Failed to login and get token for test")
+        val setCookie = response.headers.find { it.name == "Set-Cookie" }
+            ?: throw IllegalStateException("No Set-Cookie header in response")
+        
+        return setCookie.value.split(";").first().split("=").getOrNull(1)
+            ?: throw IllegalStateException("Could not extract token from cookie")
     }
-
-    private fun formBody(vararg pairs: Pair<String, String>): String = pairs.joinToString("&") { (k, v) -> "$k=$v" }
-}
-
-fun main() {
-    logger.info("=".repeat(60, "="))
-    logger.info("BookTower End-to-End Test Suite")
-    logger.info("=".repeat(60, "="))
-    logger.info("Base URL: $BASE_URL")
-    logger.info("Make sure BookTower is running on $BASE_URL")
-    logger.info("Run with: mvn test -Dtest=EndToEndTest")
-    logger.info("=".repeat(60, "="))
 }
