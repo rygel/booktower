@@ -9,7 +9,7 @@ import java.nio.file.Path
 object TemplateEngine {
     private val engine: TemplateEngine by lazy {
         val codeResolver = DirectoryCodeResolver(Path.of("src/main/jte"))
-        TemplateEngine.create(codeResolver, ContentType.Html)
+        TemplateEngine.create(codeResolver, Path.of("target/generated-sources/jte"), ContentType.Html, javaClass.classLoader)
     }
 
     fun render(

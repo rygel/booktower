@@ -1,6 +1,7 @@
 package org.booktower.handlers
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.KotlinModule
 import org.booktower.models.CreateUserRequest
 import org.booktower.models.ErrorResponse
 import org.booktower.models.LoginRequest
@@ -13,7 +14,7 @@ import org.http4k.core.cookie.cookie
 import org.slf4j.LoggerFactory
 
 private val logger = LoggerFactory.getLogger("booktower.AuthHandler")
-private val objectMapper = ObjectMapper()
+private val objectMapper = ObjectMapper().registerModule(KotlinModule.Builder().build())
 
 class AuthHandler2(private val authService: AuthService) {
     fun register(req: Request): Response {

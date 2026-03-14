@@ -1,11 +1,11 @@
 -- Users table
 CREATE TABLE IF NOT EXISTS users (
-    id BINARY(16) PRIMARY KEY,
+    id CHAR(36) PRIMARY KEY,
     username VARCHAR(50) NOT NULL UNIQUE,
     email VARCHAR(100) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     is_admin BOOLEAN NOT NULL DEFAULT FALSE,
     INDEX idx_users_username (username),
     INDEX idx_users_email (email)
@@ -13,20 +13,20 @@ CREATE TABLE IF NOT EXISTS users (
 
 -- Libraries table
 CREATE TABLE IF NOT EXISTS libraries (
-    id BINARY(16) PRIMARY KEY,
-    user_id BINARY(16) NOT NULL,
+    id CHAR(36) PRIMARY KEY,
+    user_id CHAR(36) NOT NULL,
     name VARCHAR(100) NOT NULL,
     path VARCHAR(500) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     INDEX idx_libraries_user_id (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Books table
 CREATE TABLE IF NOT EXISTS books (
-    id BINARY(16) PRIMARY KEY,
-    library_id BINARY(16) NOT NULL,
+    id CHAR(36) PRIMARY KEY,
+    library_id CHAR(36) NOT NULL,
     title VARCHAR(255) NOT NULL,
     author VARCHAR(255),
     description TEXT,
@@ -48,9 +48,9 @@ CREATE TABLE IF NOT EXISTS books (
 
 -- Reading progress table
 CREATE TABLE IF NOT EXISTS reading_progress (
-    id BINARY(16) PRIMARY KEY,
-    user_id BINARY(16) NOT NULL,
-    book_id BINARY(16) NOT NULL,
+    id CHAR(36) PRIMARY KEY,
+    user_id CHAR(36) NOT NULL,
+    book_id CHAR(36) NOT NULL,
     current_page INT NOT NULL DEFAULT 1,
     total_pages INT,
     percentage DECIMAL(5,2),
@@ -65,9 +65,9 @@ CREATE TABLE IF NOT EXISTS reading_progress (
 
 -- Bookmarks table
 CREATE TABLE IF NOT EXISTS bookmarks (
-    id BINARY(16) PRIMARY KEY,
-    user_id BINARY(16) NOT NULL,
-    book_id BINARY(16) NOT NULL,
+    id CHAR(36) PRIMARY KEY,
+    user_id CHAR(36) NOT NULL,
+    book_id CHAR(36) NOT NULL,
     page INT NOT NULL,
     title VARCHAR(255),
     note TEXT,
@@ -79,8 +79,8 @@ CREATE TABLE IF NOT EXISTS bookmarks (
 
 -- User settings table
 CREATE TABLE IF NOT EXISTS user_settings (
-    id BINARY(16) PRIMARY KEY,
-    user_id BINARY(16) NOT NULL,
+    id CHAR(36) PRIMARY KEY,
+    user_id CHAR(36) NOT NULL,
     setting_key VARCHAR(50) NOT NULL,
     setting_value TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -91,8 +91,8 @@ CREATE TABLE IF NOT EXISTS user_settings (
 
 -- Sessions table (for JWT refresh tokens)
 CREATE TABLE IF NOT EXISTS sessions (
-    id BINARY(16) PRIMARY KEY,
-    user_id BINARY(16) NOT NULL,
+    id CHAR(36) PRIMARY KEY,
+    user_id CHAR(36) NOT NULL,
     token_hash VARCHAR(255) NOT NULL,
     expires_at TIMESTAMP NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

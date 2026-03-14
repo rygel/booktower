@@ -17,19 +17,18 @@ class AuthService(
     fun register(request: CreateUserRequest): Result<LoginResponse> {
         val now = Instant.now()
         val userId = UUID.randomUUID()
+        val passwordHash = BCrypt.hashpw(request.password, BCrypt.gensalt())
 
         jdbi.useHandle<Exception> { handle ->
             val existing =
                 handle.createQuery("SELECT id FROM users WHERE username = ?")
                     .bind(0, request.username)
                     .mapTo(String::class.java)
-                    .first()
+                    .firstOrNull()
 
             if (existing != null) {
                 throw IllegalArgumentException("Username already exists")
             }
-
-            val passwordHash = BCrypt.hashpw(request.password, BCrypt.gensalt())
 
             handle.createUpdate(
                 """
@@ -46,7 +45,17 @@ class AuthService(
                 .execute()
         }
 
-        val token = jwtService.generateToken(User(userId, request.username, request.email, "", now, now, false))
+        val user =
+            User(
+                id = userId,
+                username = request.username,
+                email = request.email,
+                passwordHash = passwordHash,
+                createdAt = now,
+                updatedAt = now,
+                isAdmin = false,
+            )
+        val token = jwtService.generateToken(user)
         logger.info("User registered: ${request.username}")
 
         return Result.success(
@@ -59,7 +68,7 @@ class AuthService(
 
     fun login(request: LoginRequest): Result<LoginResponse> {
         val user =
-            jdbi.withHandle<User?, Exception> { handle ->
+            jdbi.withHandle<User, Exception> { handle ->
                 handle.createQuery("SELECT * FROM users WHERE username = ?")
                     .bind(0, request.username)
                     .map { row -> mapUser(row) }
