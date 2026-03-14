@@ -4,6 +4,8 @@ import org.booktower.config.Json
 import org.booktower.filters.AuthenticatedUser
 import org.booktower.models.CreateBookRequest
 import org.booktower.models.ErrorResponse
+import org.booktower.models.SuccessResponse
+import org.booktower.models.UpdateProgressRequest
 import org.booktower.services.BookService
 import org.http4k.core.Request
 import org.http4k.core.Response
@@ -87,6 +89,72 @@ class BookHandler2(private val bookService: BookService) {
             Response(Status.OK)
                 .header("Content-Type", "application/json")
                 .body(Json.mapper.writeValueAsString(book))
+        } else {
+            Response(Status.NOT_FOUND)
+                .header("Content-Type", "application/json")
+                .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "Book not found")))
+        }
+    }
+
+    fun delete(req: Request): Response {
+        val userId = AuthenticatedUser.from(req)
+        val bookId = req.uri.path.split("/").dropLast(0).let {
+            req.uri.path.split("/").lastOrNull()?.let { id ->
+                try { UUID.fromString(id) } catch (e: IllegalArgumentException) { null }
+            }
+        }
+
+        if (bookId == null) {
+            return Response(Status.BAD_REQUEST)
+                .header("Content-Type", "application/json")
+                .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Invalid book ID")))
+        }
+
+        val deleted = bookService.deleteBook(userId, bookId)
+        return if (deleted) {
+            Response(Status.OK)
+                .header("Content-Type", "application/json")
+                .body(Json.mapper.writeValueAsString(SuccessResponse("Book deleted successfully")))
+        } else {
+            Response(Status.NOT_FOUND)
+                .header("Content-Type", "application/json")
+                .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "Book not found")))
+        }
+    }
+
+    fun updateProgress(req: Request): Response {
+        val userId = AuthenticatedUser.from(req)
+        val pathParts = req.uri.path.split("/")
+        // path: /api/books/{id}/progress  → parts[-1]="progress", parts[-2]=id
+        val bookId = pathParts.dropLast(1).lastOrNull()?.let { id ->
+            try { UUID.fromString(id) } catch (e: IllegalArgumentException) { null }
+        }
+
+        if (bookId == null) {
+            return Response(Status.BAD_REQUEST)
+                .header("Content-Type", "application/json")
+                .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Invalid book ID")))
+        }
+
+        val requestBody = req.bodyString()
+        if (requestBody.isBlank()) {
+            return Response(Status.BAD_REQUEST)
+                .header("Content-Type", "application/json")
+                .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Request body is required")))
+        }
+
+        val progressRequest = Json.mapper.readValue(requestBody, UpdateProgressRequest::class.java)
+        if (progressRequest.currentPage < 0) {
+            return Response(Status.BAD_REQUEST)
+                .header("Content-Type", "application/json")
+                .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "currentPage must be non-negative")))
+        }
+
+        val progress = bookService.updateProgress(userId, bookId, progressRequest)
+        return if (progress != null) {
+            Response(Status.OK)
+                .header("Content-Type", "application/json")
+                .body(Json.mapper.writeValueAsString(progress))
         } else {
             Response(Status.NOT_FOUND)
                 .header("Content-Type", "application/json")

@@ -146,6 +146,8 @@ class SecurityIntegrationTest {
             Method.GET to "/api/books",
             Method.POST to "/api/books",
             Method.GET to "/api/books/00000000-0000-0000-0000-000000000000",
+            Method.DELETE to "/api/books/00000000-0000-0000-0000-000000000000",
+            Method.PUT to "/api/books/00000000-0000-0000-0000-000000000000/progress",
             Method.GET to "/api/recent",
         )
 
