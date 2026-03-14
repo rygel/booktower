@@ -9,6 +9,7 @@ import org.booktower.filters.RequestLoggingFilter
 import org.booktower.filters.StaticCacheFilter
 import org.booktower.handlers.AppHandler
 import org.booktower.services.AuthService
+import org.booktower.services.PdfMetadataService
 import org.http4k.core.Method
 import org.http4k.core.Response
 import org.http4k.core.Status.Companion.OK
@@ -32,9 +33,11 @@ fun main() {
     val config = koin.get<AppConfig>()
     val database = koin.get<Database>()
     val appHandler = koin.get<AppHandler>()
+    val pdfMetadataService = koin.get<PdfMetadataService>()
 
     Runtime.getRuntime().addShutdownHook(Thread {
         logger.info("Shutting down BookTower...")
+        pdfMetadataService.shutdown()
         database.close()
     })
 

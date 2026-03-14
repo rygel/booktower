@@ -76,11 +76,9 @@ class FileHandler(
 
         logger.info("File uploaded for book $bookId: ${bytes.size} bytes, ext=$ext")
 
-        // Extract PDF metadata and cover asynchronously (non-blocking for the upload response)
+        // Extract PDF metadata and cover asynchronously via managed executor
         if (ext == "pdf") {
-            Thread {
-                pdfMetadataService.extractAndStore(bookId.toString(), destFile)
-            }.also { it.isDaemon = true }.start()
+            pdfMetadataService.submitAsync(bookId.toString(), destFile)
         }
 
         return Response(Status.OK)

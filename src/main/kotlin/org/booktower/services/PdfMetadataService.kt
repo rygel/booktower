@@ -8,6 +8,9 @@ import org.jdbi.v3.core.Jdbi
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.time.Instant
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import javax.imageio.ImageIO
 
 private val logger = LoggerFactory.getLogger("booktower.PdfMetadataService")
@@ -20,6 +23,25 @@ data class PdfMetadata(
 )
 
 class PdfMetadataService(private val jdbi: Jdbi, private val coversPath: String) {
+
+    // Single-threaded so extractions are sequential and don't overwhelm memory
+    private val executor: ExecutorService = Executors.newSingleThreadExecutor { r ->
+        Thread(r, "pdf-metadata").also { it.isDaemon = true }
+    }
+
+    fun submitAsync(bookId: String, pdfFile: File) {
+        executor.submit {
+            extractAndStore(bookId, pdfFile)
+        }
+    }
+
+    fun shutdown(timeoutSeconds: Long = 30) {
+        executor.shutdown()
+        if (!executor.awaitTermination(timeoutSeconds, TimeUnit.SECONDS)) {
+            logger.warn("PDF metadata executor did not terminate in ${timeoutSeconds}s, forcing shutdown")
+            executor.shutdownNow()
+        }
+    }
 
     fun extractAndStore(bookId: String, pdfFile: File): PdfMetadata {
         var document: PDDocument? = null
