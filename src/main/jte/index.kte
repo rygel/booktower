@@ -1,0 +1,120 @@
+@param title: String
+@param isAuthenticated: Boolean
+@param username: String?
+@param libraries: List<Map<String, Any>>?
+@param showLogin: Boolean = false
+@param showRegister: Boolean = false
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${title}</title>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.1.0/fonts/remixicon.css">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col">
+    @template.components.header(isAuthenticated=isAuthenticated, username=username)
+    
+    <div class="flex flex-1">
+        @if(isAuthenticated)
+            <aside class="w-64 bg-white border-r min-h-screen flex-shrink-0">
+                <div class="p-6 space-y-8">
+                    <div>
+                        <h2 class="text-lg font-bold text-gray-800 mb-4">Appearance</h2>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Theme</label>
+                        <select name="theme" class="w-full rounded-lg border-gray-300 px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent" hx-post="/preferences/theme" hx-target="#theme-notice" hx-swap="innerHTML" hx-trigger="change">
+                            <option value="dark">Dark</option>
+                            <option value="light">Light</option>
+                            <option value="nord">Nord</option>
+                            <option value="dracula">Dracula</option>
+                            <option value="monokai-pro">Monokai Pro</option>
+                            <option value="one-dark">One Dark</option>
+                            <option value="catppuccin-mocha">Catppuccin</option>
+                        </select>
+                        <div id="theme-notice" class="mt-2 text-sm text-green-600 hidden"></div>
+
+                        <h2 class="text-lg font-bold text-gray-800 mb-4">Language</h2>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Language</label>
+                        <select name="lang" class="w-full rounded-lg border-gray-300 px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent" hx-post="/preferences/lang" hx-target="#lang-notice" hx-swap="innerHTML" hx-trigger="change">
+                            <option value="en">English</option>
+                            <option value="fr">Français</option>
+                        </select>
+                        <div id="lang-notice" class="mt-2 text-sm text-green-600 hidden"></div>
+
+                        <h2 class="text-lg font-bold text-gray-800 mb-4">Navigation</h2>
+                        <nav class="space-y-2">
+                            <a href="/" class="block px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors">Home</a>
+                            <a href="/api/libraries" class="block px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors">My Libraries</a>
+                            <a href="/api/books" class="block px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors">All Books</a>
+                            <a href="/settings" class="block px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors">Settings</a>
+                        </nav>
+                    </div>
+                </div>
+            </aside>
+        @endif
+        
+        <main class="flex-1 p-8">
+            @if(showLogin)
+                <div class="max-w-md mx-auto">
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h2 class="text-2xl font-bold mb-4">Login</h2>
+                        <form action="/auth/login" method="post" class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                <input type="email" name="email" class="w-full rounded-lg border-gray-300 px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                                <input type="password" name="password" class="w-full rounded-lg border-gray-300 px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                            </div>
+                            <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition-colors">Login</button>
+                        </form>
+                    </div>
+                </div>
+            @elseif(showRegister)
+                <div class="max-w-md mx-auto">
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h2 class="text-2xl font-bold mb-4">Register</h2>
+                        <form action="/auth/register" method="post" class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                <input type="email" name="email" class="w-full rounded-lg border-gray-300 px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                                <input type="password" name="password" class="w-full rounded-lg border-gray-300 px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                            </div>
+                            <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition-colors">Register</button>
+                        </form>
+                    </div>
+                </div>
+            @elseif(isAuthenticated && libraries != null)
+                <div>
+                    <h1 class="text-2xl font-bold mb-4">Your Libraries</h1>
+                    <div class="grid grid-cols-3 gap-4">
+                        @for(library in libraries)
+                            <div class="bg-white p-4 rounded shadow">
+                                <h3 class="font-medium">${library["name"] as String}</h3>
+                            </div>
+                        @endfor
+                    </div>
+                </div>
+            @else
+                <div class="text-center py-20">
+                    <h1 class="text-4xl font-bold mb-4">Welcome to BookTower</h1>
+                    <p class="text-xl text-gray-600 mb-8">Your personal digital library</p>
+                    <div class="flex justify-center gap-4">
+                        <a href="/login" class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition-colors">Login</a>
+                        <a href="/register" class="bg-white text-indigo-600 px-6 py-2 rounded-lg border border-indigo-600 hover:bg-gray-50 transition-colors">Sign Up</a>
+                    </div>
+                </div>
+            @endif
+        </main>
+    </div>
+    
+    @template.components.footer()
+</body>
+</html>

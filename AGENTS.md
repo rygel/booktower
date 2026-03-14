@@ -1,5 +1,19 @@
 # Agent Rules
 
+## Template Engine - JTE
+
+The project uses JTE (Java Template Engine) for server-side rendering. Key resources:
+- **JTE for Kotlin**: https://jte.gg/kotlin/
+- **JTE Maven Plugin**: https://jte.gg/maven-plugin/
+
+When working with JTE templates, remember:
+1. Templates are in `src/main/jte/` with `.jte` extension
+2. Template parameters must be declared with `@param` directive
+3. Use `@if`/`@endif` for conditionals (not curly braces)
+4. Variables use `${variableName}` syntax
+5. Template composition with `@template("path/to/template.kte", param1=value1)`
+6. The JTE Maven plugin generates Kotlin code during the `generate-sources` phase
+
 ## Code Quality Plugins
 
 When working with Maven code quality plugins (Checkstyle, PMD, SpotBugs, Detekt, JaCoCo, etc.), you **MUST**:
