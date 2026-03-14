@@ -8,6 +8,7 @@ import org.booktower.filters.GlobalErrorFilter
 import org.booktower.filters.RequestLoggingFilter
 import org.booktower.filters.StaticCacheFilter
 import org.booktower.handlers.AppHandler
+import org.booktower.services.AuthService
 import org.http4k.core.Method
 import org.http4k.core.Response
 import org.http4k.core.Status.Companion.OK
@@ -36,6 +37,19 @@ fun main() {
         logger.info("Shutting down BookTower...")
         database.close()
     })
+
+    if (System.getenv("BOOKTOWER_ENV")?.lowercase() != "production") {
+        val authService = koin.get<AuthService>()
+        val devLogin = authService.seedDevUser()
+        if (devLogin != null) {
+            logger.info("=================================================")
+            logger.info("  DEV USER READY")
+            logger.info("  Username: dev")
+            logger.info("  Password: dev12345")
+            logger.info("  Email:    dev@booktower.local")
+            logger.info("=================================================")
+        }
+    }
 
     val app = routes(
         "/health" bind Method.GET to { Response(OK).body("OK") },

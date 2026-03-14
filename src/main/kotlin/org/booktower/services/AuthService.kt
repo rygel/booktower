@@ -93,6 +93,27 @@ class AuthService(
         )
     }
 
+    fun seedDevUser(): LoginResponse? {
+        val devUsername = "dev"
+        val devEmail = "dev@booktower.local"
+        val devPassword = "dev12345"
+
+        val existing = jdbi.withHandle<String?, Exception> { handle ->
+            handle.createQuery("SELECT id FROM users WHERE username = ?")
+                .bind(0, devUsername)
+                .mapTo(String::class.java)
+                .firstOrNull()
+        }
+
+        if (existing != null) {
+            logger.info("Dev user already exists")
+            return login(LoginRequest(devUsername, devPassword)).getOrNull()
+        }
+
+        val result = register(CreateUserRequest(devUsername, devEmail, devPassword))
+        return result.getOrNull()
+    }
+
     fun getUserById(userId: UUID): User? {
         return jdbi.withHandle<User?, Exception> { handle ->
             handle.createQuery("SELECT * FROM users WHERE id = ?")
