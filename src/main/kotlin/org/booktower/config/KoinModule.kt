@@ -8,6 +8,7 @@ import org.booktower.services.JwtService
 import org.booktower.services.LibraryService
 import org.booktower.services.PdfMetadataService
 import org.booktower.services.UserSettingsService
+import org.booktower.weblate.WeblateHandler
 import org.koin.dsl.module
 
 val appModule = module {
@@ -35,5 +36,7 @@ val appModule = module {
 
     single { PdfMetadataService(get<Database>().getJdbi(), get<AppConfig>().storage.coversPath) }
 
-    single { AppHandler(get(), get(), get(), get(), get(), get(), get(), get<AppConfig>().storage, get()) }
+    single { WeblateHandler(get<AppConfig>().weblate) }
+
+    single { AppHandler(get(), get(), get(), get(), get(), get(), get(), get<AppConfig>().storage, get(), get()) }
 }

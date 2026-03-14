@@ -1,10 +1,13 @@
 package org.booktower.handlers
 
 import org.booktower.config.Json
+import org.booktower.model.ThemeCatalog
 import org.booktower.models.CreateUserRequest
 import org.booktower.models.ErrorResponse
 import org.booktower.models.LoginRequest
 import org.booktower.services.AuthService
+import org.booktower.services.UserSettingsService
+import org.booktower.web.WebContext
 import org.http4k.core.Request
 import org.http4k.core.Response
 import org.http4k.core.Status
@@ -12,10 +15,16 @@ import org.http4k.core.body.form
 import org.http4k.core.cookie.Cookie
 import org.http4k.core.cookie.cookie
 import org.slf4j.LoggerFactory
+import java.util.UUID
 
 private val logger = LoggerFactory.getLogger("booktower.AuthHandler")
+// Secure cookies in production; derived from the same env var used by SecurityConfig
+private val secureCookies = System.getenv("BOOKTOWER_ENV")?.lowercase() == "production"
 
-class AuthHandler2(private val authService: AuthService) {
+class AuthHandler2(
+    private val authService: AuthService,
+    private val userSettingsService: UserSettingsService,
+) {
     fun register(req: Request): Response {
         return try {
             val createRequest = parseRegisterRequest(req)
@@ -35,7 +44,7 @@ class AuthHandler2(private val authService: AuthService) {
             result.fold(
                 onSuccess = { loginResponse ->
                     logger.info("User registered successfully: ${loginResponse.user.username}")
-                    if (isFormRequest(req)) {
+                    val base = if (isFormRequest(req)) {
                         Response(Status.SEE_OTHER)
                             .header("Location", "/")
                             .cookie(createAuthCookie(loginResponse.token))
@@ -45,6 +54,7 @@ class AuthHandler2(private val authService: AuthService) {
                             .cookie(createAuthCookie(loginResponse.token))
                             .body(Json.mapper.writeValueAsString(loginResponse))
                     }
+                    applyPreferenceCookies(base, loginResponse.user.id)
                 },
                 onFailure = { error ->
                     logger.warn("Registration failed: ${error.message}")
@@ -92,7 +102,7 @@ class AuthHandler2(private val authService: AuthService) {
             result.fold(
                 onSuccess = { loginResponse ->
                     logger.info("User logged in successfully: ${loginResponse.user.username}")
-                    if (isFormRequest(req)) {
+                    val base = if (isFormRequest(req)) {
                         Response(Status.SEE_OTHER)
                             .header("Location", "/")
                             .cookie(createAuthCookie(loginResponse.token))
@@ -102,6 +112,7 @@ class AuthHandler2(private val authService: AuthService) {
                             .cookie(createAuthCookie(loginResponse.token))
                             .body(Json.mapper.writeValueAsString(loginResponse))
                     }
+                    applyPreferenceCookies(base, loginResponse.user.id)
                 },
                 onFailure = { error ->
                     logger.warn("Login failed: ${error.message}")
@@ -129,10 +140,12 @@ class AuthHandler2(private val authService: AuthService) {
 
     fun logout(req: Request): Response {
         logger.info("User logged out")
-        return Response(Status.OK)
-            .header("Content-Type", "application/json")
-            .cookie(createLogoutCookie())
-            .body(Json.mapper.writeValueAsString(mapOf("message" to "Logged out successfully")))
+        val base = Response(Status.OK).cookie(createLogoutCookie())
+        return if (req.header("HX-Request") != null) {
+            base.header("HX-Redirect", "/login")
+        } else {
+            Response(Status.SEE_OTHER).cookie(createLogoutCookie()).header("Location", "/login")
+        }
     }
 
     private fun isFormRequest(req: Request): Boolean {
@@ -198,12 +211,30 @@ class AuthHandler2(private val authService: AuthService) {
         return null
     }
 
+    private fun applyPreferenceCookies(response: Response, userId: String): Response {
+        val settings = try {
+            userSettingsService.getAll(UUID.fromString(userId))
+        } catch (e: Exception) {
+            return response
+        }
+        var r = response
+        val theme = settings["theme"]
+        if (theme != null && ThemeCatalog.isValid(theme)) {
+            r = r.cookie(Cookie(name = "app_theme", value = theme, path = "/", maxAge = 365L * 24 * 3600))
+        }
+        val lang = settings["language"]
+        if (lang != null && lang in WebContext.SUPPORTED_LANGS) {
+            r = r.cookie(Cookie(name = "app_lang", value = lang, path = "/", maxAge = 365L * 24 * 3600))
+        }
+        return r
+    }
+
     private fun createAuthCookie(token: String): Cookie {
         return Cookie(
             name = "token",
             value = token,
             httpOnly = true,
-            secure = false,
+            secure = secureCookies,
             path = "/",
             maxAge = 60 * 60 * 24 * 7,
         )
@@ -214,7 +245,7 @@ class AuthHandler2(private val authService: AuthService) {
             name = "token",
             value = "",
             httpOnly = true,
-            secure = false,
+            secure = secureCookies,
             path = "/",
             maxAge = 0,
         )

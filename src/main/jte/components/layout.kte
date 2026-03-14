@@ -1,0 +1,126 @@
+@import gg.jte.Content
+@import org.booktower.i18n.I18nService
+@import org.booktower.model.ThemeDefinition
+@param title: String
+@param username: String?
+@param currentPage: String = ""
+@param themeCss: String
+@param currentTheme: String
+@param lang: String
+@param themes: List<ThemeDefinition>
+@param i18n: I18nService
+@param content: Content
+
+<!DOCTYPE html>
+<html lang="${lang}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${title}</title>
+    <style id="theme-style" data-theme="${currentTheme}">${themeCss}</style>
+    <link rel="stylesheet" href="/static/css/app.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.1.0/fonts/remixicon.css">
+    <script src="https://unpkg.com/htmx.org@1.9.10" defer></script>
+</head>
+<body style="min-height:100vh; display:flex; flex-direction:column;">
+
+    <!-- Top bar -->
+    <header style="background:var(--bt-surface); border-bottom:1px solid var(--bt-border); flex-shrink:0;">
+        <div style="display:flex; align-items:center; justify-content:space-between; height:3.5rem; padding:0 1.25rem;">
+            <div style="display:flex; align-items:center; gap:0.625rem;">
+                <i class="ri-book-3-fill" style="font-size:1.25rem; color:var(--bt-accent-dim);"></i>
+                <span style="font-weight:700; color:var(--bt-text); font-size:1rem;">${i18n.translate("app.title")}</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:0.75rem;">
+                <span style="font-size:0.8rem; color:var(--bt-muted); display:flex; align-items:center; gap:0.375rem;">
+                    <i class="ri-user-line"></i>${username}
+                </span>
+                <button hx-post="/auth/logout"
+                    style="font-size:0.75rem; color:var(--bt-muted); padding:0.375rem 0.75rem; border-radius:0.5rem; border:1px solid var(--bt-border-input); background:transparent; cursor:pointer; transition:color 0.15s, border-color 0.15s;"
+                    onmouseover="this.style.color='var(--bt-danger)';this.style.borderColor='var(--bt-danger)'"
+                    onmouseout="this.style.color='var(--bt-muted)';this.style.borderColor='var(--bt-border-input)'">
+                    ${i18n.translate("auth.logout")}
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Body: sidebar + content -->
+    <div style="display:flex; flex:1; min-height:0; overflow:hidden;">
+
+        <!-- Sidebar -->
+        <nav style="width:14rem; background:var(--bt-surface); border-right:1px solid var(--bt-border); flex-shrink:0; display:flex; flex-direction:column;">
+            <div style="flex:1; padding:1.25rem 0.875rem; display:flex; flex-direction:column; gap:0.25rem; overflow-y:auto;">
+                <p style="font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--bt-subtle); padding:0 0.5rem; margin:0 0 0.625rem; font-weight:600;">${i18n.translate("nav.section")}</p>
+                <a href="/libraries" class="sidebar-link ${if (currentPage == "libraries" || currentPage == "library") "active" else ""}">
+                    <i class="ri-book-shelf-line" style="font-size:1rem; width:1rem; text-align:center;"></i>
+                    ${i18n.translate("nav.libraries")}
+                </a>
+                <a href="/search" class="sidebar-link ${if (currentPage == "search") "active" else ""}">
+                    <i class="ri-search-line" style="font-size:1rem; width:1rem; text-align:center;"></i>
+                    ${i18n.translate("nav.search")}
+                </a>
+            </div>
+
+            <!-- Theme selector -->
+            <div style="padding:0.875rem 0.875rem 0.75rem; border-top:1px solid var(--bt-border);">
+                <label style="display:block; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--bt-subtle); margin-bottom:0.4rem; font-weight:600;">${i18n.translate("sidebar.themes")}</label>
+                <select name="theme"
+                        hx-post="/preferences/theme"
+                        hx-trigger="change"
+                        hx-target="#theme-style"
+                        hx-swap="outerHTML"
+                        style="width:100%; font-size:0.78rem; padding:0.35rem 0.5rem; border-radius:0.4rem; cursor:pointer;">
+                    @for(theme in themes)
+                        @if(theme.id == currentTheme)
+                            <option value="${theme.id}" selected>${theme.name}</option>
+                        @else
+                            <option value="${theme.id}">${theme.name}</option>
+                        @endif
+                    @endfor
+                </select>
+            </div>
+
+            <!-- Language selector -->
+            <div style="padding:0 0.875rem 0.875rem;">
+                <label style="display:block; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--bt-subtle); margin-bottom:0.4rem; font-weight:600;">${i18n.translate("sidebar.language")}</label>
+                <select name="lang"
+                        hx-post="/preferences/lang"
+                        hx-trigger="change"
+                        style="width:100%; font-size:0.78rem; padding:0.35rem 0.5rem; border-radius:0.4rem; cursor:pointer;">
+                    @if(lang == "en")
+                        <option value="en" selected>${i18n.translate("language.en")}</option>
+                    @else
+                        <option value="en">${i18n.translate("language.en")}</option>
+                    @endif
+                    @if(lang == "fr")
+                        <option value="fr" selected>${i18n.translate("language.fr")}</option>
+                    @else
+                        <option value="fr">${i18n.translate("language.fr")}</option>
+                    @endif
+                    @if(lang == "de")
+                        <option value="de" selected>${i18n.translate("language.de")}</option>
+                    @else
+                        <option value="de">${i18n.translate("language.de")}</option>
+                    @endif
+                </select>
+            </div>
+
+        </nav>
+
+        <!-- Main content -->
+        <main style="flex:1; overflow:auto; background:var(--bt-bg);">
+            ${content}
+        </main>
+    </div>
+
+    <!-- Footer -->
+    <footer style="background:var(--bt-surface); border-top:1px solid var(--bt-border); flex-shrink:0;">
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:0.625rem 1.5rem; font-size:0.75rem; color:var(--bt-subtle);">
+            <span>&copy; 2026 BookTower. ${i18n.translate("footer.rights")}</span>
+            <span>${i18n.translate("footer.made.with")} <i class="ri-heart-fill" style="color:var(--bt-danger);"></i> Kotlin &amp; http4k</span>
+        </div>
+    </footer>
+
+</body>
+</html>

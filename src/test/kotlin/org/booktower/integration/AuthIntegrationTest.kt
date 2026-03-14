@@ -186,11 +186,43 @@ class AuthIntegrationTest : IntegrationTestBase() {
     fun `logout clears token cookie`() {
         val response = app(Request(Method.POST, "/auth/logout"))
 
-        assertEquals(Status.OK, response.status)
+        // logout redirects to /login (or returns 200 for API clients)
+        assertTrue(response.status == Status.OK || response.status == Status.SEE_OTHER)
         val cookie = response.cookies().find { it.name == "token" }
         assertNotNull(cookie)
         assertEquals("", cookie.value)
         assertEquals(0L, cookie.maxAge)
+    }
+
+    @Test
+    fun `login with email address via JSON succeeds`() {
+        val username = uniqueUser()
+        val email = "$username@test.com"
+        app(Request(Method.POST, "/auth/register").header("Content-Type", "application/json").body(registerJson(username, email)))
+
+        val response = app(
+            Request(Method.POST, "/auth/login")
+                .header("Content-Type", "application/json")
+                .body("""{"username":"$email","password":"password123"}"""),
+        )
+        assertEquals(Status.OK, response.status)
+        val body = Json.mapper.readValue(response.bodyString(), LoginResponse::class.java)
+        assertEquals(username, body.user.username)
+    }
+
+    @Test
+    fun `login with email address via form succeeds`() {
+        val username = uniqueUser()
+        val email = "$username@test.com"
+        app(Request(Method.POST, "/auth/register").header("Content-Type", "application/json").body(registerJson(username, email)))
+
+        val response = app(
+            Request(Method.POST, "/auth/login")
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .body("username=${email.replace("@", "%40")}&password=password123"),
+        )
+        assertEquals(Status.SEE_OTHER, response.status)
+        assertNotNull(response.cookies().find { it.name == "token" && it.value.isNotBlank() })
     }
 
     @Test

@@ -114,10 +114,8 @@ class BookHandler2(private val bookService: BookService) {
 
     fun delete(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
-        val bookId = req.uri.path.split("/").dropLast(0).let {
-            req.uri.path.split("/").lastOrNull()?.let { id ->
-                try { UUID.fromString(id) } catch (e: IllegalArgumentException) { null }
-            }
+        val bookId = req.uri.path.split("/").lastOrNull()?.let { id ->
+            try { UUID.fromString(id) } catch (e: IllegalArgumentException) { null }
         }
 
         if (bookId == null) {

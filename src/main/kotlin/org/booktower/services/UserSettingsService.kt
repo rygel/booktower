@@ -66,6 +66,17 @@ class UserSettingsService(private val jdbi: Jdbi) {
         return true
     }
 
+    fun delete(userId: UUID, key: String): Boolean {
+        val deleted = jdbi.withHandle<Int, Exception> { handle ->
+            handle.createUpdate("DELETE FROM user_settings WHERE user_id = ? AND setting_key = ?")
+                .bind(0, userId.toString())
+                .bind(1, key)
+                .execute()
+        }
+        if (deleted > 0) logger.info("Setting '$key' deleted for user $userId")
+        return deleted > 0
+    }
+
     private fun validateKey(key: String): String? {
         if (key.isBlank()) return "Setting key is required"
         if (key.length > 50) return "Setting key must be 50 characters or fewer"

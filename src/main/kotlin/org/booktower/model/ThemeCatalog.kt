@@ -21,12 +21,12 @@ object ThemeCatalog {
 
     fun toCssVariables(themeId: String): String {
         val theme = findTheme(themeId)
-
         return buildString {
             append(":root {")
             theme.getColors().forEach { (key, value) ->
-                append("--color-")
-                append(key)
+                // camelCase key → --bt-kebab-case (e.g. "borderInput" → "--bt-border-input")
+                val cssKey = "--bt-" + key.replace(Regex("([A-Z])")) { "-${it.value.lowercase()}" }
+                append(cssKey)
                 append(": ")
                 append(value)
                 append(";")
@@ -36,4 +36,6 @@ object ThemeCatalog {
             append("; }")
         }
     }
+
+    fun isValid(id: String): Boolean = themes.any { it.id == id }
 }

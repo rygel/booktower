@@ -67,6 +67,17 @@ class AuthServiceTest {
     }
 
     @Test
+    fun `login succeeds with email address`() {
+        val username = "emaillogin_${System.nanoTime()}"
+        val email = "$username@test.com"
+        val password = "password123"
+        authService.register(CreateUserRequest(username, email, password))
+        val result = authService.login(LoginRequest(email, password))
+        assertTrue(result.isSuccess)
+        assertEquals(username, result.getOrThrow().user.username)
+    }
+
+    @Test
     fun `getUserById returns registered user`() {
         val username = "getbyid_${System.nanoTime()}"
         val registerResult = authService.register(CreateUserRequest(username, "gbi_${System.nanoTime()}@test.com", "password123"))

@@ -1,0 +1,30 @@
+@import org.booktower.i18n.I18nService
+@import org.booktower.models.LibraryDto
+@param lib: LibraryDto
+@param i18n: I18nService
+
+<div id="library-${lib.id}" style="background:var(--bt-surface); border:1px solid var(--bt-border); border-radius:0.75rem; display:flex; flex-direction:column; transition:border-color 0.15s;"
+    onmouseover="this.style.borderColor='var(--bt-accent)'" onmouseout="this.style.borderColor='var(--bt-border)'">
+    <a href="/libraries/${lib.id}" style="flex:1; display:block; padding:1.25rem; text-decoration:none; border-radius:0.75rem 0.75rem 0 0;">
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:0.875rem;">
+            <div style="background:var(--bt-icon-bg); color:var(--bt-icon-text); border-radius:0.5rem; padding:0.625rem;">
+                <i class="ri-book-shelf-line" style="font-size:1.25rem;"></i>
+            </div>
+            <span style="font-size:0.75rem; color:var(--bt-subtle); background:var(--bt-bg); border-radius:9999px; padding:0.25rem 0.75rem; font-weight:500;">${lib.bookCount} ${i18n.translate("label.books")}</span>
+        </div>
+        <h3 style="font-size:1rem; font-weight:600; color:var(--bt-text); margin-bottom:0.25rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${lib.name}</h3>
+        <p style="font-size:0.75rem; color:var(--bt-faint); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-family:monospace;">${lib.path}</p>
+    </a>
+    <div style="padding:0.625rem 1.25rem; border-top:1px solid var(--bt-border); display:flex; justify-content:flex-end;">
+        <button
+            style="font-size:0.75rem; color:var(--bt-danger); background:transparent; border:none; cursor:pointer; display:flex; align-items:center; gap:0.25rem; padding:0.25rem 0.5rem; border-radius:0.375rem; transition:background 0.15s;"
+            onmouseover="this.style.background='var(--bt-danger-bg)'" onmouseout="this.style.background='transparent'"
+            hx-delete="/ui/libraries/${lib.id}"
+            hx-target="#library-${lib.id}"
+            hx-swap="outerHTML swap:300ms"
+            hx-confirm="${i18n.translate("confirm.delete.library", lib.name)}"
+        >
+            <i class="ri-delete-bin-line"></i> ${i18n.translate("action.delete")}
+        </button>
+    </div>
+</div>

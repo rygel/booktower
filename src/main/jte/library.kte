@@ -1,0 +1,96 @@
+@import org.booktower.i18n.I18nService
+@import org.booktower.model.ThemeDefinition
+@import org.booktower.models.LibraryDto
+@import org.booktower.models.BookDto
+@param username: String?
+@param library: LibraryDto
+@param books: List<BookDto>
+@param themeCss: String
+@param currentTheme: String
+@param lang: String
+@param themes: List<ThemeDefinition>
+@param i18n: I18nService
+
+@template.components.layout(title="${library.name} - BookTower", username=username, currentPage="library",
+    themeCss=themeCss, currentTheme=currentTheme, lang=lang, themes=themes, i18n=i18n, content = @`
+<div style="padding:2rem;">
+
+    <!-- Breadcrumb -->
+    <nav style="font-size:0.8rem; color:var(--bt-subtle); margin-bottom:1.5rem; display:flex; align-items:center; gap:0.375rem;">
+        <a href="/libraries" style="color:var(--bt-accent-dim); text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${i18n.translate("nav.libraries")}</a>
+        <i class="ri-arrow-right-s-line"></i>
+        <span style="color:var(--bt-text-dim); font-weight:500;">${library.name}</span>
+    </nav>
+
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.75rem; flex-wrap:wrap; gap:1rem;">
+        <div>
+            <h1 style="font-size:1.5rem; font-weight:700; color:var(--bt-text); margin-bottom:0.25rem;">${library.name}</h1>
+            <p style="font-size:0.8rem; color:var(--bt-subtle);">${library.bookCount} ${i18n.translate("label.books")} &middot; <span style="font-family:monospace; color:var(--bt-faint);">${library.path}</span></p>
+        </div>
+        <div style="display:flex; gap:0.75rem; align-items:center;">
+            <form action="/search" method="get" style="display:flex;">
+                <input type="hidden" name="libId" value="${library.id}">
+                <input type="text" name="q" placeholder="${i18n.translate("placeholder.search.books")}"
+                    style="border-radius:0.5rem 0 0 0.5rem; border:1px solid; border-right:none; padding:0.5rem 0.75rem; font-size:0.8rem; width:10rem;">
+                <button type="submit"
+                    style="border-radius:0 0.5rem 0.5rem 0; border:1px solid var(--bt-border-input); padding:0.5rem 0.75rem; background:var(--bt-input-bg); color:var(--bt-muted); cursor:pointer;">
+                    <i class="ri-search-line"></i>
+                </button>
+            </form>
+            <button class="btn-primary" style="display:flex; align-items:center; gap:0.5rem;"
+                onclick="document.getElementById('add-book-modal').style.display='flex'">
+                <i class="ri-add-line"></i> ${i18n.translate("page.library.add.book")}
+            </button>
+        </div>
+    </div>
+
+    <!-- Add Book Modal -->
+    <div id="add-book-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); align-items:center; justify-content:center; z-index:50;"
+         onclick="if(event.target===this)this.style.display='none'">
+        <div class="modal-panel" style="padding:1.5rem; width:100%; max-width:28rem; border-radius:0.75rem; border:1px solid var(--bt-border);" onclick="event.stopPropagation()">
+            <h2 style="font-size:1.125rem; font-weight:700; color:var(--bt-text); margin-bottom:1.25rem;">${i18n.translate("page.library.modal.title")}</h2>
+            <form
+                hx-post="/ui/libraries/${library.id}/books"
+                hx-target="#books-grid"
+                hx-swap="afterbegin"
+                hx-on:htmx:after-request="if(event.detail.successful){document.getElementById('add-book-modal').style.display='none';this.reset();document.getElementById('no-books-hint').style.display='none'}"
+            >
+                <div style="display:flex; flex-direction:column; gap:1rem;">
+                    <div>
+                        <label style="display:block; font-size:0.8rem; font-weight:500; color:var(--bt-muted); margin-bottom:0.375rem;">${i18n.translate("field.title")}</label>
+                        <input type="text" name="title" required placeholder="${i18n.translate("placeholder.book.title")}"
+                            style="width:100%; border-radius:0.5rem; border:1px solid; padding:0.5rem 0.75rem; font-size:0.875rem; box-sizing:border-box;">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:0.8rem; font-weight:500; color:var(--bt-muted); margin-bottom:0.375rem;">${i18n.translate("field.author")} <span style="color:var(--bt-subtle);">${i18n.translate("label.optional")}</span></label>
+                        <input type="text" name="author" placeholder="${i18n.translate("placeholder.author.name")}"
+                            style="width:100%; border-radius:0.5rem; border:1px solid; padding:0.5rem 0.75rem; font-size:0.875rem; box-sizing:border-box;">
+                    </div>
+                    <div style="display:flex; gap:0.75rem; padding-top:0.5rem;">
+                        <button type="submit" class="btn-primary" style="flex:1;">${i18n.translate("action.add")}</button>
+                        <button type="button" class="btn-secondary" style="flex:1;"
+                            onclick="document.getElementById('add-book-modal').style.display='none'">${i18n.translate("action.cancel")}</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Books grid -->
+    <div id="books-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:1rem;">
+        @for(book in books)
+            @template.components.bookCard(book=book, i18n=i18n)
+        @endfor
+    </div>
+
+    @if(books.isEmpty())
+        <div id="no-books-hint" style="text-align:center; padding:5rem 0;">
+            <i class="ri-book-2-line" style="font-size:4rem; display:block; margin-bottom:1rem; color:var(--bt-border);"></i>
+            <p style="font-size:1.125rem; font-weight:500; color:var(--bt-subtle);">${i18n.translate("page.library.empty.title")}</p>
+            <p style="font-size:0.875rem; margin-top:0.375rem; color:var(--bt-faint);">${i18n.translate("page.library.empty.hint")}</p>
+        </div>
+    @else
+        <div id="no-books-hint" style="display:none;"></div>
+    @endif
+</div>
+`)

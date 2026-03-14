@@ -3,6 +3,8 @@ package org.booktower.handlers
 import org.booktower.config.StorageConfig
 import org.booktower.config.TemplateRenderer
 import org.booktower.filters.JwtAuthFilter
+import org.booktower.filters.RateLimitFilter
+import org.booktower.model.ThemeCatalog
 import org.booktower.services.AuthService
 import org.booktower.services.BookmarkService
 import org.booktower.services.BookService
@@ -10,7 +12,11 @@ import org.booktower.services.JwtService
 import org.booktower.services.LibraryService
 import org.booktower.services.PdfMetadataService
 import org.booktower.services.UserSettingsService
+import org.booktower.web.WebContext
+import org.booktower.weblate.WeblateHandler
 import org.http4k.core.*
+import org.http4k.core.body.form
+import org.http4k.core.cookie.Cookie
 import org.http4k.core.cookie.cookie
 import org.http4k.routing.ResourceLoader
 import org.http4k.routing.RoutingHttpHandler
@@ -31,25 +37,48 @@ class AppHandler(
     private val jwtService: JwtService,
     private val storageConfig: StorageConfig,
     private val templateRenderer: TemplateRenderer,
+    private val weblateHandler: WeblateHandler,
 ) {
-    private val authHandler = AuthHandler2(authService)
+    private val authHandler = AuthHandler2(authService, userSettingsService)
     private val libraryHandler = LibraryHandler2(libraryService)
     private val bookHandler = BookHandler2(bookService)
     private val bookmarkHandler = BookmarkHandler(bookmarkService)
     private val fileHandler = FileHandler(bookService, pdfMetadataService, storageConfig)
     private val settingsHandler = UserSettingsHandler(userSettingsService)
+    private val pageHandler = PageHandler(jwtService, libraryService, bookService, bookmarkService, templateRenderer)
     private val authFilter = JwtAuthFilter(jwtService)
+    private val authRateLimit = RateLimitFilter(maxRequests = 10, windowSeconds = 60)
 
     fun routes(): RoutingHttpHandler {
         return routes(
             "/static" bind static(ResourceLoader.Classpath("/static")),
             "/covers/{filename}" bind Method.GET to fileHandler::cover,
+            // HTML pages
             "/" bind Method.GET to ::index,
             "/login" bind Method.GET to ::loginPage,
             "/register" bind Method.GET to ::registerPage,
-            "/auth/register" bind Method.POST to authHandler::register,
-            "/auth/login" bind Method.POST to authHandler::login,
+            "/libraries" bind Method.GET to pageHandler::libraries,
+            "/libraries/{id}" bind Method.GET to pageHandler::library,
+            "/books/{id}" bind Method.GET to pageHandler::book,
+            "/search" bind Method.GET to pageHandler::search,
+            // Auth (rate-limited: 10 requests per 60 s per IP)
+            "/auth/register" bind Method.POST to authRateLimit.then(authHandler::register),
+            "/auth/login" bind Method.POST to authRateLimit.then(authHandler::login),
             "/auth/logout" bind Method.POST to authHandler::logout,
+            // HTMX UI mutations
+            "/ui/libraries" bind Method.POST to pageHandler::createLibrary,
+            "/ui/libraries/{id}" bind Method.DELETE to pageHandler::deleteLibrary,
+            "/ui/libraries/{libId}/books" bind Method.POST to pageHandler::createBook,
+            "/ui/books/{id}" bind Method.DELETE to pageHandler::deleteBook,
+            "/ui/books/{id}/progress" bind Method.POST to pageHandler::updateProgress,
+            "/ui/books/{id}/bookmarks" bind Method.POST to pageHandler::createBookmark,
+            "/ui/bookmarks/{id}" bind Method.DELETE to pageHandler::deleteBookmark,
+            // Health
+            "/health" bind Method.GET to { Response(Status.OK).header("Content-Type", "application/json").body("""{"status":"ok"}""") },
+            // Preferences
+            "/preferences/theme" bind Method.POST to ::setTheme,
+            "/preferences/lang" bind Method.POST to ::setLanguage,
+            // JSON API
             "/api/libraries" bind Method.GET to authFilter.then(libraryHandler::list),
             "/api/libraries" bind Method.POST to authFilter.then(libraryHandler::create),
             "/api/libraries/{id}" bind Method.DELETE to authFilter.then(libraryHandler::delete),
@@ -67,116 +96,95 @@ class AppHandler(
             "/api/books/{id}/file" bind Method.GET to authFilter.then(fileHandler::download),
             "/api/settings" bind Method.GET to authFilter.then(settingsHandler::getAll),
             "/api/settings/{key}" bind Method.PUT to authFilter.then(settingsHandler::set),
-            "/preferences/theme" bind Method.POST to ::setTheme,
-            "/preferences/lang" bind Method.POST to ::setLanguage,
+            "/api/settings/{key}" bind Method.DELETE to authFilter.then(settingsHandler::delete),
+            // Weblate translation sync (admin-only endpoints, require Weblate to be enabled)
+            "/api/weblate/pull" bind Method.POST to weblateHandler::pull,
+            "/api/weblate/push" bind Method.POST to weblateHandler::push,
+            "/api/weblate/status" bind Method.GET to weblateHandler::status,
         )
     }
 
     private fun index(req: Request): Response {
         val token = req.cookie("token")?.value
         val isAuth = token != null && jwtService.extractUserId(token) != null
-
-        val content =
-            if (isAuth) {
-                val userId = jwtService.extractUserId(token)!!
-                val libraries = libraryService.getLibraries(userId)
-                templateRenderer.render(
-                    "index.kte",
-                    mapOf<String, Any?>(
-                        "title" to "BookTower",
-                        "isAuthenticated" to true,
-                        "username" to null,
-                        "libraries" to libraries.map { mapOf("id" to it.id, "name" to it.name) },
-                    ),
-                )
-            } else {
-                templateRenderer.render(
-                    "index.kte",
-                    mapOf<String, Any?>(
-                        "title" to "BookTower",
-                        "isAuthenticated" to false,
-                        "username" to null,
-                        "libraries" to null,
-                    ),
-                )
-            }
-
-        return Response(Status.OK)
-            .header("Content-Type", "text/html")
-            .body(content)
+        if (isAuth) {
+            return Response(Status.SEE_OTHER).header("Location", "/libraries")
+        }
+        val ctx = WebContext(req)
+        val content = templateRenderer.render(
+            "index.kte",
+            mapOf<String, Any?>(
+                "title" to "BookTower",
+                "isAuthenticated" to false,
+                "username" to null,
+                "libraries" to null,
+                "showLogin" to false,
+                "showRegister" to false,
+                "themeCss" to ctx.themeCss,
+                "currentTheme" to ctx.theme,
+                "lang" to ctx.lang,
+                "i18n" to ctx.i18n,
+            ),
+        )
+        return Response(Status.OK).header("Content-Type", "text/html; charset=utf-8").body(content)
     }
 
     private fun loginPage(req: Request): Response {
-        val content =
-            templateRenderer.render(
-                "index.kte",
-                mapOf<String, Any?>(
-                    "title" to "Login - BookTower",
-                    "isAuthenticated" to false,
-                    "username" to null,
-                    "libraries" to null,
-                    "showLogin" to true,
-                    "showRegister" to false,
-                ),
-            )
-        return Response(Status.OK)
-            .header("Content-Type", "text/html")
-            .body(content)
+        val ctx = WebContext(req)
+        val content = templateRenderer.render(
+            "index.kte",
+            mapOf<String, Any?>(
+                "title" to "Login - BookTower",
+                "isAuthenticated" to false,
+                "username" to null,
+                "libraries" to null,
+                "showLogin" to true,
+                "showRegister" to false,
+                "themeCss" to ctx.themeCss,
+                "currentTheme" to ctx.theme,
+                "lang" to ctx.lang,
+                "i18n" to ctx.i18n,
+            ),
+        )
+        return Response(Status.OK).header("Content-Type", "text/html; charset=utf-8").body(content)
     }
 
     private fun registerPage(req: Request): Response {
-        val content =
-            templateRenderer.render(
-                "index.kte",
-                mapOf<String, Any?>(
-                    "title" to "Register - BookTower",
-                    "isAuthenticated" to false,
-                    "username" to null,
-                    "libraries" to null,
-                    "showLogin" to false,
-                    "showRegister" to true,
-                ),
-            )
-        return Response(Status.OK)
-            .header("Content-Type", "text/html")
-            .body(content)
+        val ctx = WebContext(req)
+        val content = templateRenderer.render(
+            "index.kte",
+            mapOf<String, Any?>(
+                "title" to "Register - BookTower",
+                "isAuthenticated" to false,
+                "username" to null,
+                "libraries" to null,
+                "showLogin" to false,
+                "showRegister" to true,
+                "themeCss" to ctx.themeCss,
+                "currentTheme" to ctx.theme,
+                "lang" to ctx.lang,
+                "i18n" to ctx.i18n,
+            ),
+        )
+        return Response(Status.OK).header("Content-Type", "text/html; charset=utf-8").body(content)
     }
 
     private fun setTheme(req: Request): Response {
-        val isHtmx = req.header("HX-Request") != null
-
-        val theme = req.bodyString().trim().let {
-            if (it.isNotBlank()) it else "dark"
-        }
-
-        return if (isHtmx) {
-            Response(Status.OK)
-                .header("HX-Trigger", "theme-updated")
-                .header("HX-Reswap", "none")
-                .body("Theme updated to $theme")
-        } else {
-            Response(Status.SEE_OTHER)
-                .header("Location", "/")
-                .body("Theme updated. Redirecting...")
-        }
+        val themeId = req.form("theme")?.trim()?.takeIf { ThemeCatalog.isValid(it) } ?: "catppuccin-mocha"
+        val css = ThemeCatalog.toCssVariables(themeId)
+        val themeCookie = Cookie(name = "app_theme", value = themeId, path = "/", maxAge = 365L * 24 * 3600)
+        return Response(Status.OK)
+            .header("Content-Type", "text/html; charset=utf-8")
+            .cookie(themeCookie)
+            .body("""<style id="theme-style" data-theme="$themeId">$css</style>""")
     }
 
     private fun setLanguage(req: Request): Response {
-        val isHtmx = req.header("HX-Request") != null
-
-        val lang = req.bodyString().trim().let {
-            if (it.isNotBlank()) it else "en"
-        }
-
-        return if (isHtmx) {
-            Response(Status.OK)
-                .header("HX-Trigger", "lang-updated")
-                .header("HX-Reswap", "none")
-                .body("Language updated to $lang")
-        } else {
-            Response(Status.SEE_OTHER)
-                .header("Location", "/")
-                .body("Language updated. Redirecting...")
-        }
+        val lang = req.form("lang")?.trim()?.takeIf { it in WebContext.SUPPORTED_LANGS } ?: "en"
+        val langCookie = Cookie(name = "app_lang", value = lang, path = "/", maxAge = 365L * 24 * 3600)
+        return Response(Status.OK)
+            .cookie(langCookie)
+            .header("HX-Refresh", "true")
+            .body("")
     }
 }

@@ -7,6 +7,7 @@ import org.booktower.filters.CsrfFilter
 import org.booktower.filters.GlobalErrorFilter
 import org.booktower.filters.RequestLoggingFilter
 import org.booktower.filters.StaticCacheFilter
+import org.booktower.config.WeblateConfig
 import org.booktower.handlers.AppHandler
 import org.booktower.models.LibraryDto
 import org.booktower.models.LoginResponse
@@ -17,6 +18,7 @@ import org.booktower.services.UserSettingsService
 import org.booktower.services.BookService
 import org.booktower.services.JwtService
 import org.booktower.services.LibraryService
+import org.booktower.weblate.WeblateHandler
 import org.http4k.client.JettyClient
 import org.http4k.core.Method
 import org.http4k.core.Request
@@ -53,7 +55,7 @@ class RoundTripIntegrationTest {
         val bookmarkService = BookmarkService(jdbi)
         val userSettingsService = UserSettingsService(jdbi)
         val pdfMetadataService = PdfMetadataService(jdbi, config.storage.coversPath)
-        val appHandler = AppHandler(authService, libraryService, bookService, bookmarkService, userSettingsService, pdfMetadataService, jwtService, config.storage, TemplateRenderer())
+        val appHandler = AppHandler(authService, libraryService, bookService, bookmarkService, userSettingsService, pdfMetadataService, jwtService, config.storage, TemplateRenderer(), WeblateHandler(WeblateConfig("", "", "", false)))
 
         val app = routes(
             "/health" bind Method.GET to { Response(OK).body("OK") },

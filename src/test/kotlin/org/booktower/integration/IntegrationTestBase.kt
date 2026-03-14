@@ -4,6 +4,7 @@ import org.booktower.TestFixture
 import org.booktower.config.Json
 import org.booktower.config.TemplateRenderer
 import org.booktower.filters.GlobalErrorFilter
+import org.booktower.config.WeblateConfig
 import org.booktower.handlers.AppHandler
 import org.booktower.models.BookDto
 import org.booktower.models.LibraryDto
@@ -15,6 +16,7 @@ import org.booktower.services.JwtService
 import org.booktower.services.LibraryService
 import org.booktower.services.PdfMetadataService
 import org.booktower.services.UserSettingsService
+import org.booktower.weblate.WeblateHandler
 import org.http4k.core.HttpHandler
 import org.http4k.core.Method
 import org.http4k.core.Request
@@ -38,6 +40,7 @@ abstract class IntegrationTestBase {
         val appHandler = AppHandler(
             authService, libraryService, bookService, bookmarkService,
             userSettingsService, pdfMetadataService, jwtService, config.storage, TemplateRenderer(),
+            WeblateHandler(WeblateConfig("", "", "", false)),
         )
         app = GlobalErrorFilter().then(appHandler.routes())
     }

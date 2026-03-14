@@ -70,10 +70,12 @@ class AuthService(
     }
 
     fun login(request: LoginRequest): Result<LoginResponse> {
+        val credential = request.username.trim()
         val user =
             jdbi.withHandle<User, Exception> { handle ->
-                handle.createQuery("SELECT * FROM users WHERE username = ?")
-                    .bind(0, request.username)
+                handle.createQuery("SELECT * FROM users WHERE username = ? OR email = ?")
+                    .bind(0, credential)
+                    .bind(1, credential)
                     .map { row -> mapUser(row) }
                     .firstOrNull()
             } ?: return Result.failure(IllegalArgumentException("Invalid username or password"))

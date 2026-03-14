@@ -30,15 +30,15 @@ class PageIntegrationTest : IntegrationTestBase() {
     fun `index page returns HTML`() {
         val response = app(Request(Method.GET, "/"))
         assertEquals(Status.OK, response.status)
-        assertEquals("text/html", response.header("Content-Type"))
+        assertTrue(response.header("Content-Type")?.startsWith("text/html") == true)
         assertTrue(response.bodyString().contains("<html"))
     }
 
     @Test
     fun `index page without auth shows login and register links`() {
         val response = app(Request(Method.GET, "/"))
-        assertTrue(response.bodyString().contains("Login"))
-        assertTrue(response.bodyString().contains("Sign Up"))
+        assertTrue(response.bodyString().contains("Sign in") || response.bodyString().contains("Login"))
+        assertTrue(response.bodyString().contains("Sign up") || response.bodyString().contains("Sign Up"))
         assertFalse(response.bodyString().contains("hx-post=\"/auth/logout\""))
     }
 
@@ -52,7 +52,7 @@ class PageIntegrationTest : IntegrationTestBase() {
         )
         val token = Json.mapper.readValue(regResponse.bodyString(), LoginResponse::class.java).token
 
-        val response = app(Request(Method.GET, "/").header("Cookie", "token=$token"))
+        val response = app(Request(Method.GET, "/libraries").header("Cookie", "token=$token"))
         assertEquals(Status.OK, response.status)
         assertTrue(response.bodyString().contains("hx-post=\"/auth/logout\""))
     }
@@ -61,7 +61,7 @@ class PageIntegrationTest : IntegrationTestBase() {
     fun `index page with invalid token shows unauthenticated view`() {
         val response = app(Request(Method.GET, "/").header("Cookie", "token=bogus"))
         assertEquals(Status.OK, response.status)
-        assertTrue(response.bodyString().contains("Login"))
+        assertTrue(response.bodyString().contains("Sign in") || response.bodyString().contains("Login"))
         assertFalse(response.bodyString().contains("hx-post=\"/auth/logout\""))
     }
 
@@ -96,16 +96,15 @@ class PageIntegrationTest : IntegrationTestBase() {
                 .body("""{"name":"Page Test Library","path":"./data/test-page-${System.nanoTime()}"}"""),
         )
 
-        val response = app(Request(Method.GET, "/").header("Cookie", "token=$token"))
+        val response = app(Request(Method.GET, "/libraries").header("Cookie", "token=$token"))
         assertTrue(response.bodyString().contains("Page Test Library"))
     }
 
     @Test
-    fun `health endpoint returns OK`() {
-        // Health is mounted in BookTowerApp.main(), not in AppHandler,
-        // so we just verify that the app doesn't crash on unknown routes
-        val response = app(Request(Method.GET, "/nonexistent"))
-        // http4k returns 404 for unmatched routes
-        assertEquals(Status.NOT_FOUND, response.status)
+    fun `health endpoint returns 200 with status ok`() {
+        val response = app(Request(Method.GET, "/health"))
+        assertEquals(Status.OK, response.status)
+        assertTrue(response.header("Content-Type")?.contains("application/json") == true)
+        assertTrue(response.bodyString().contains("ok"))
     }
 }

@@ -21,6 +21,23 @@ class UserSettingsHandler(private val settingsService: UserSettingsService) {
             .body(Json.mapper.writeValueAsString(settings))
     }
 
+    fun delete(req: Request): Response {
+        val userId = AuthenticatedUser.from(req)
+        val key = req.uri.path.split("/").lastOrNull()
+            ?: return Response(Status.BAD_REQUEST)
+                .header("Content-Type", "application/json")
+                .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Setting key is required")))
+
+        val deleted = settingsService.delete(userId, key)
+        return if (deleted) {
+            Response(Status.NO_CONTENT)
+        } else {
+            Response(Status.NOT_FOUND)
+                .header("Content-Type", "application/json")
+                .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "Setting '$key' not found")))
+        }
+    }
+
     fun set(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
         val key = req.uri.path.split("/").lastOrNull()

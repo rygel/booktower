@@ -1,0 +1,43 @@
+@import org.booktower.i18n.I18nService
+@import org.booktower.models.BookDto
+@param book: BookDto
+@param i18n: I18nService
+
+<div id="book-${book.id}" style="background:var(--bt-surface); border:1px solid var(--bt-border); border-radius:0.75rem; display:flex; flex-direction:column; transition:border-color 0.15s;"
+    onmouseover="this.style.borderColor='var(--bt-accent)'" onmouseout="this.style.borderColor='var(--bt-border)'">
+    <a href="/books/${book.id}" style="flex:1; display:block; text-decoration:none;">
+        <div style="height:11rem; background:var(--bt-bg); border-radius:0.75rem 0.75rem 0 0; overflow:hidden; display:flex; align-items:center; justify-content:center;">
+            @if(book.coverUrl != null)
+                <img src="${book.coverUrl}" alt="${book.title}" style="width:100%; height:100%; object-fit:cover;">
+            @else
+                <i class="ri-book-2-line" style="font-size:3rem; color:var(--bt-border);"></i>
+            @endif
+        </div>
+        <div style="padding:0.75rem;">
+            <h3 style="font-size:0.8rem; font-weight:600; color:var(--bt-text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${book.title}</h3>
+            @if(book.author != null)
+                <p style="font-size:0.7rem; color:var(--bt-subtle); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:0.125rem;">${book.author}</p>
+            @endif
+            @if(book.progress != null && book.progress!!.percentage != null)
+                <div style="margin-top:0.625rem;">
+                    <div style="height:0.2rem; background:var(--bt-border); border-radius:9999px; overflow:hidden;">
+                        <div style="height:100%; background:var(--bt-accent); border-radius:9999px; width:${book.progress!!.percentage!!.toInt()}%;"></div>
+                    </div>
+                    <p style="font-size:0.65rem; color:var(--bt-subtle); margin-top:0.25rem;">${book.progress!!.percentage!!.toInt()}% &middot; p.${book.progress!!.currentPage}</p>
+                </div>
+            @endif
+        </div>
+    </a>
+    <div style="padding:0.375rem 0.75rem 0.5rem; border-top:1px solid var(--bt-border); display:flex; justify-content:flex-end;">
+        <button
+            style="font-size:0.7rem; color:var(--bt-danger); background:transparent; border:none; cursor:pointer; display:flex; align-items:center; gap:0.25rem; padding:0.25rem 0.5rem; border-radius:0.375rem; transition:background 0.15s;"
+            onmouseover="this.style.background='var(--bt-danger-bg)'" onmouseout="this.style.background='transparent'"
+            hx-delete="/ui/books/${book.id}"
+            hx-target="#book-${book.id}"
+            hx-swap="outerHTML swap:300ms"
+            hx-confirm="${i18n.translate("confirm.remove.book")}"
+        >
+            <i class="ri-delete-bin-line"></i> ${i18n.translate("action.remove")}
+        </button>
+    </div>
+</div>

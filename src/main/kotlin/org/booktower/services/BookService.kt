@@ -24,10 +24,18 @@ class BookService(private val jdbi: Jdbi, private val storageConfig: StorageConf
         val books =
             if (libraryId != null) {
                 jdbi.withHandle<List<BookDto>, Exception> { handle ->
-                    handle.createQuery("SELECT * FROM books WHERE library_id = ? ORDER BY title LIMIT ? OFFSET ?")
+                    handle.createQuery(
+                        """
+                        SELECT b.* FROM books b
+                        INNER JOIN libraries l ON b.library_id = l.id
+                        WHERE b.library_id = ? AND l.user_id = ?
+                        ORDER BY b.title LIMIT ? OFFSET ?
+                        """,
+                    )
                         .bind(0, libraryId)
-                        .bind(1, safePageSize)
-                        .bind(2, offset)
+                        .bind(1, userId.toString())
+                        .bind(2, safePageSize)
+                        .bind(3, offset)
                         .map { row -> mapBook(row) }.list()
                 }
             } else {
@@ -50,8 +58,11 @@ class BookService(private val jdbi: Jdbi, private val storageConfig: StorageConf
         val total =
             if (libraryId != null) {
                 jdbi.withHandle<Int, Exception> { handle ->
-                    handle.createQuery("SELECT COUNT(*) FROM books WHERE library_id = ?")
+                    handle.createQuery(
+                        "SELECT COUNT(*) FROM books b INNER JOIN libraries l ON b.library_id = l.id WHERE b.library_id = ? AND l.user_id = ?",
+                    )
                         .bind(0, libraryId)
+                        .bind(1, userId.toString())
                         .mapTo(Int::class.java).first() ?: 0
                 }
             } else {
@@ -119,9 +130,30 @@ class BookService(private val jdbi: Jdbi, private val storageConfig: StorageConf
         bookId: UUID,
     ): BookDto? {
         return jdbi.withHandle<BookDto?, Exception> { handle ->
-            handle.createQuery("SELECT * FROM books WHERE id = ?")
-                .bind(0, bookId.toString())
-                .map { row -> mapBook(row) }.firstOrNull()
+            handle.createQuery(
+                """
+                SELECT b.*, rp.current_page AS rp_current_page, rp.total_pages AS rp_total_pages,
+                       rp.percentage AS rp_percentage, rp.last_read_at AS rp_last_read_at
+                FROM books b
+                JOIN libraries l ON b.library_id = l.id
+                LEFT JOIN reading_progress rp ON rp.book_id = b.id AND rp.user_id = :userId
+                WHERE b.id = :bookId AND l.user_id = :userId
+                """,
+            )
+                .bind("userId", userId.toString())
+                .bind("bookId", bookId.toString())
+                .map { row ->
+                    val book = mapBook(row)
+                    val currentPage = try { row.getColumn("rp_current_page", java.lang.Integer::class.java)?.toInt() } catch (_: Exception) { null }
+                    if (currentPage != null) {
+                        book.copy(progress = ReadingProgressDto(
+                            currentPage = currentPage,
+                            totalPages = try { row.getColumn("rp_total_pages", java.lang.Integer::class.java)?.toInt() } catch (_: Exception) { null },
+                            percentage = try { row.getColumn("rp_percentage", java.lang.Double::class.java)?.toDouble() } catch (_: Exception) { null },
+                            lastReadAt = try { row.getColumn("rp_last_read_at", String::class.java) ?: "" } catch (_: Exception) { "" },
+                        ))
+                    } else book
+                }.firstOrNull()
         }
     }
 

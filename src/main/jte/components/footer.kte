@@ -1,24 +1,6 @@
-<footer class="bg-white border-t mt-auto">
-    <div class="max-w-7xl mx-auto px-6 py-8">
-        <div class="flex flex-col md:flex-row justify-between items-center gap-6">
-            <div class="flex items-center gap-4">
-                <a href="/" class="text-sm text-gray-600 hover:text-gray-900">Home</a>
-                <span class="text-gray-400">•</span>
-                <a href="/about" class="text-sm text-gray-600 hover:text-gray-900">About</a>
-                <span class="text-gray-400">•</span>
-                <a href="/help" class="text-sm text-gray-600 hover:text-gray-900">Help</a>
-                <span class="text-gray-400">•</span>
-                <a href="https://github.com/rygel/booktower" class="text-sm text-gray-600 hover:text-gray-900" target="_blank">
-                    <i class="ri-github-fill"></i>
-                    GitHub
-                </a>
-                <span class="text-gray-400">•</span>
-            </div>
-            <div class="text-sm text-gray-500">
-                &copy; 2026 BookTower. All rights reserved.
-                <span class="text-gray-400">Made with <i class="ri-heart-fill text-red-500"></i> Kotlin & http4k
-                </span>
-            </div>
-        </div>
+<footer style="background:#1f2937; border-top:1px solid #374151; flex-shrink:0;">
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:0.625rem 1.5rem; font-size:0.75rem; color:#6b7280;">
+        <span>&copy; 2026 BookTower. All rights reserved.</span>
+        <span>Made with <i class="ri-heart-fill" style="color:#ef4444;"></i> Kotlin &amp; http4k</span>
     </div>
 </footer>

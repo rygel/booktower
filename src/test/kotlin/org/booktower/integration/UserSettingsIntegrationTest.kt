@@ -160,4 +160,34 @@ class UserSettingsIntegrationTest : IntegrationTestBase() {
         )
         assertEquals(Status.OK, response.status)
     }
+
+    @Test
+    fun `delete setting removes it from the stored settings`() {
+        val token = registerAndGetToken()
+        app(Request(Method.PUT, "/api/settings/theme").header("Cookie", "token=$token").body("dark"))
+
+        val deleteResponse = app(
+            Request(Method.DELETE, "/api/settings/theme").header("Cookie", "token=$token"),
+        )
+        assertEquals(Status.NO_CONTENT, deleteResponse.status)
+
+        val getResponse = app(Request(Method.GET, "/api/settings").header("Cookie", "token=$token"))
+        val settings = Json.mapper.readTree(getResponse.bodyString())
+        assertTrue(settings.get("theme") == null || settings.get("theme").isNull)
+    }
+
+    @Test
+    fun `delete non-existent setting returns 404`() {
+        val token = registerAndGetToken()
+        val response = app(
+            Request(Method.DELETE, "/api/settings/theme").header("Cookie", "token=$token"),
+        )
+        assertEquals(Status.NOT_FOUND, response.status)
+    }
+
+    @Test
+    fun `delete setting without auth returns 401`() {
+        val response = app(Request(Method.DELETE, "/api/settings/theme"))
+        assertEquals(Status.UNAUTHORIZED, response.status)
+    }
 }

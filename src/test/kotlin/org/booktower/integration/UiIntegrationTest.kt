@@ -1,0 +1,333 @@
+package org.booktower.integration
+
+import org.booktower.config.Json
+import org.booktower.models.BookDto
+import org.booktower.models.LibraryDto
+import org.booktower.models.LoginResponse
+import org.http4k.core.Method
+import org.http4k.core.Request
+import org.http4k.core.Status
+import org.http4k.core.cookie.cookies
+import org.junit.jupiter.api.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
+
+/**
+ * Integration tests for the HTMX UI layer:
+ * - GET page routes (/libraries, /libraries/{id}, /books/{id}, /search)
+ * - POST/DELETE HTMX mutation endpoints (/ui/...)
+ * - Login form accepting email address
+ */
+class UiIntegrationTest : IntegrationTestBase() {
+
+    // ── Auth: login by email ────────────────────────────────────────────────
+
+    @Test
+    fun `login with email via JSON API returns token`() {
+        val username = "emailusr_${System.nanoTime()}"
+        val knownEmail = "$username@test.com"
+        app(
+            Request(Method.POST, "/auth/register")
+                .header("Content-Type", "application/json")
+                .body("""{"username":"$username","email":"$knownEmail","password":"password123"}"""),
+        )
+
+        val response = app(
+            Request(Method.POST, "/auth/login")
+                .header("Content-Type", "application/json")
+                .body("""{"username":"$knownEmail","password":"password123"}"""),
+        )
+        assertEquals(Status.OK, response.status)
+        val body = Json.mapper.readValue(response.bodyString(), LoginResponse::class.java)
+        assertEquals(username, body.user.username)
+    }
+
+    @Test
+    fun `login with email via form redirects with cookie`() {
+        val username = "emailfrm_${System.nanoTime()}"
+        val email = "$username@test.com"
+        app(
+            Request(Method.POST, "/auth/register")
+                .header("Content-Type", "application/json")
+                .body("""{"username":"$username","email":"$email","password":"password123"}"""),
+        )
+
+        val response = app(
+            Request(Method.POST, "/auth/login")
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .body("username=${email.replace("@", "%40")}&password=password123"),
+        )
+        assertEquals(Status.SEE_OTHER, response.status)
+        assertNotNull(response.cookies().find { it.name == "token" && it.value.isNotBlank() })
+    }
+
+    // ── Page routes: auth required ──────────────────────────────────────────
+
+    @Test
+    fun `GET libraries without auth redirects to login`() {
+        val response = app(Request(Method.GET, "/libraries"))
+        assertEquals(Status.SEE_OTHER, response.status)
+        assertEquals("/login", response.header("Location"))
+    }
+
+    @Test
+    fun `GET libraries with auth returns HTML page`() {
+        val token = registerAndGetToken("lib")
+        val response = app(Request(Method.GET, "/libraries").header("Cookie", "token=$token"))
+        assertEquals(Status.OK, response.status)
+        assertTrue(response.header("Content-Type")?.contains("text/html") == true)
+        assertTrue(response.bodyString().contains("My Libraries"))
+    }
+
+    @Test
+    fun `GET library detail without auth redirects to login`() {
+        val response = app(Request(Method.GET, "/libraries/00000000-0000-0000-0000-000000000000"))
+        assertEquals(Status.SEE_OTHER, response.status)
+    }
+
+    @Test
+    fun `GET library detail for own library returns HTML`() {
+        val token = registerAndGetToken("libdet")
+        val libId = createLibrary(token)
+
+        val response = app(Request(Method.GET, "/libraries/$libId").header("Cookie", "token=$token"))
+        assertEquals(Status.OK, response.status)
+        assertTrue(response.bodyString().contains("Add Book"))
+    }
+
+    @Test
+    fun `GET library detail for unknown id returns 404`() {
+        val token = registerAndGetToken("lib404")
+        val response = app(
+            Request(Method.GET, "/libraries/00000000-0000-0000-0000-000000000000")
+                .header("Cookie", "token=$token"),
+        )
+        assertEquals(Status.NOT_FOUND, response.status)
+    }
+
+    @Test
+    fun `GET book detail without auth redirects to login`() {
+        val response = app(Request(Method.GET, "/books/00000000-0000-0000-0000-000000000000"))
+        assertEquals(Status.SEE_OTHER, response.status)
+    }
+
+    @Test
+    fun `GET book detail for own book returns HTML`() {
+        val token = registerAndGetToken("bkdet")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId)
+
+        val response = app(Request(Method.GET, "/books/$bookId").header("Cookie", "token=$token"))
+        assertEquals(Status.OK, response.status)
+        val body = response.bodyString()
+        assertTrue(body.contains("Upload File"))
+        assertTrue(body.contains("Reading Progress"))
+        assertTrue(body.contains("Bookmarks"))
+    }
+
+    @Test
+    fun `GET book detail for unknown id returns 404`() {
+        val token = registerAndGetToken("bk404")
+        val response = app(
+            Request(Method.GET, "/books/00000000-0000-0000-0000-000000000000")
+                .header("Cookie", "token=$token"),
+        )
+        assertEquals(Status.NOT_FOUND, response.status)
+    }
+
+    @Test
+    fun `GET search without auth redirects to login`() {
+        val response = app(Request(Method.GET, "/search"))
+        assertEquals(Status.SEE_OTHER, response.status)
+    }
+
+    @Test
+    fun `GET search with auth returns HTML page`() {
+        val token = registerAndGetToken("srchui")
+        val response = app(Request(Method.GET, "/search").header("Cookie", "token=$token"))
+        assertEquals(Status.OK, response.status)
+        assertTrue(response.bodyString().contains("Search"))
+    }
+
+    @Test
+    fun `GET search with query returns results`() {
+        val token = registerAndGetToken("srchq")
+        val libId = createLibrary(token)
+        createBook(token, libId, "Unique Quantum Title")
+
+        val response = app(
+            Request(Method.GET, "/search?q=Quantum")
+                .header("Cookie", "token=$token"),
+        )
+        assertEquals(Status.OK, response.status)
+        assertTrue(response.bodyString().contains("Unique Quantum Title"))
+    }
+
+    // ── HTMX mutations ──────────────────────────────────────────────────────
+
+    @Test
+    fun `POST ui-libraries creates library and returns HTML card`() {
+        val token = registerAndGetToken("uicreatelib")
+        val response = app(
+            Request(Method.POST, "/ui/libraries")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .body("name=My+UI+Library&path=./data/test-ui-${System.nanoTime()}"),
+        )
+        assertEquals(Status.OK, response.status)
+        val body = response.bodyString()
+        assertTrue(body.contains("My UI Library"))
+        assertTrue(body.contains("hx-delete="))
+    }
+
+    @Test
+    fun `POST ui-libraries without auth returns 401`() {
+        val response = app(
+            Request(Method.POST, "/ui/libraries")
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .body("name=Hack&path=./data/hack"),
+        )
+        assertEquals(Status.UNAUTHORIZED, response.status)
+    }
+
+    @Test
+    fun `DELETE ui-libraries removes library`() {
+        val token = registerAndGetToken("uideletelib")
+        val libId = createLibrary(token)
+
+        val response = app(
+            Request(Method.DELETE, "/ui/libraries/$libId")
+                .header("Cookie", "token=$token"),
+        )
+        assertEquals(Status.OK, response.status)
+
+        val list = app(Request(Method.GET, "/api/libraries").header("Cookie", "token=$token"))
+        assertFalse(list.bodyString().contains(libId))
+    }
+
+    @Test
+    fun `POST ui-libraries-books creates book and returns HTML card`() {
+        val token = registerAndGetToken("uicreatebk")
+        val libId = createLibrary(token)
+
+        val response = app(
+            Request(Method.POST, "/ui/libraries/$libId/books")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .body("title=UI+Test+Book&author=Test+Author"),
+        )
+        assertEquals(Status.OK, response.status)
+        val body = response.bodyString()
+        assertTrue(body.contains("UI Test Book"))
+        assertTrue(body.contains("hx-delete="))
+    }
+
+    @Test
+    fun `DELETE ui-books removes book`() {
+        val token = registerAndGetToken("uideletebk")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId)
+
+        val response = app(
+            Request(Method.DELETE, "/ui/books/$bookId")
+                .header("Cookie", "token=$token"),
+        )
+        assertEquals(Status.OK, response.status)
+    }
+
+    @Test
+    fun `POST ui-books-progress updates reading progress`() {
+        val token = registerAndGetToken("uiprog")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId)
+
+        val response = app(
+            Request(Method.POST, "/ui/books/$bookId/progress")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .body("currentPage=42"),
+        )
+        assertEquals(Status.OK, response.status)
+
+        val bookResponse = app(
+            Request(Method.GET, "/api/books/$bookId").header("Cookie", "token=$token"),
+        )
+        assertTrue(bookResponse.bodyString().contains("42"))
+    }
+
+    @Test
+    fun `POST ui-books-bookmarks creates bookmark and returns HTML fragment`() {
+        val token = registerAndGetToken("uibm")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId)
+
+        val response = app(
+            Request(Method.POST, "/ui/books/$bookId/bookmarks")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .body("page=7&title=Chapter+One&note=Important+section"),
+        )
+        assertEquals(Status.OK, response.status)
+        val body = response.bodyString()
+        assertTrue(body.contains("7"))
+        assertTrue(body.contains("Chapter One"))
+        assertTrue(body.contains("hx-delete="))
+    }
+
+    @Test
+    fun `DELETE ui-bookmarks removes bookmark`() {
+        val token = registerAndGetToken("uibmdel")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId)
+
+        val bmResponse = app(
+            Request(Method.POST, "/api/bookmarks")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/json")
+                .body("""{"bookId":"$bookId","page":3,"title":"To delete","note":null}"""),
+        )
+        val bmId = Json.mapper.readTree(bmResponse.bodyString()).get("id").asText()
+
+        val response = app(
+            Request(Method.DELETE, "/ui/bookmarks/$bmId")
+                .header("Cookie", "token=$token"),
+        )
+        assertEquals(Status.OK, response.status)
+    }
+
+    @Test
+    fun `book detail page shows cover when available`() {
+        val token = registerAndGetToken("bkcover")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId, "Cover Book")
+
+        val response = app(Request(Method.GET, "/books/$bookId").header("Cookie", "token=$token"))
+        assertEquals(Status.OK, response.status)
+        // No cover yet -- placeholder icon should appear
+        assertTrue(response.bodyString().contains("ri-book-2-line"))
+    }
+
+    @Test
+    fun `library page shows books belonging to that library`() {
+        val token = registerAndGetToken("libbooks")
+        val libId = createLibrary(token)
+        createBook(token, libId, "Library Page Book")
+
+        val response = app(Request(Method.GET, "/libraries/$libId").header("Cookie", "token=$token"))
+        assertEquals(Status.OK, response.status)
+        assertTrue(response.bodyString().contains("Library Page Book"))
+    }
+
+    @Test
+    fun `user B cannot view user A book page`() {
+        val tokenA = registerAndGetToken("uibkA")
+        val tokenB = registerAndGetToken("uibkB")
+        val libId = createLibrary(tokenA)
+        val bookId = createBook(tokenA, libId)
+
+        val response = app(Request(Method.GET, "/books/$bookId").header("Cookie", "token=$tokenB"))
+        assertEquals(Status.NOT_FOUND, response.status)
+    }
+}

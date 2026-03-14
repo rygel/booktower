@@ -200,17 +200,125 @@ class SecurityIntegrationTest : IntegrationTestBase() {
                 .body("""{"title":"Secret Book","author":null,"description":null,"libraryId":"$libId"}"""),
         )
 
-        // User B queries with A's libraryId
+        // User B queries with A's libraryId — must see zero books
         val response = app(
             Request(Method.GET, "/api/books?libraryId=$libId")
                 .header("Cookie", "token=$tokenB"),
         )
         assertEquals(Status.OK, response.status)
-        // Books are fetched by libraryId directly - this reveals whether isolation is enforced
-        val body = response.bodyString()
-        // The current implementation fetches by libraryId without user check,
-        // so this test documents the current behavior
-        assertTrue(body.contains("total"))
+        val tree = Json.mapper.readTree(response.bodyString())
+        assertEquals(0, tree.get("total").asInt(), "User B must not see user A's books")
+        assertEquals(0, tree.get("books").size(), "User B must not see user A's books")
+    }
+
+    @Test
+    fun `user B cannot delete user A's library`() {
+        val tokenA = registerAndGetToken()
+        val tokenB = registerAndGetToken()
+
+        val libResponse = app(
+            Request(Method.POST, "/api/libraries")
+                .header("Cookie", "token=$tokenA")
+                .header("Content-Type", "application/json")
+                .body("""{"name":"A's Private Lib","path":"./data/test-sec-del-lib-${System.nanoTime()}"}"""),
+        )
+        val libId = Json.mapper.readTree(libResponse.bodyString()).get("id").asText()
+
+        val response = app(
+            Request(Method.DELETE, "/api/libraries/$libId")
+                .header("Cookie", "token=$tokenB"),
+        )
+        assertEquals(Status.NOT_FOUND, response.status, "User B must not be able to delete user A's library")
+    }
+
+    @Test
+    fun `user B cannot delete user A's book`() {
+        val tokenA = registerAndGetToken()
+        val tokenB = registerAndGetToken()
+
+        val libResponse = app(
+            Request(Method.POST, "/api/libraries")
+                .header("Cookie", "token=$tokenA")
+                .header("Content-Type", "application/json")
+                .body("""{"name":"A's Lib","path":"./data/test-sec-del-book-${System.nanoTime()}"}"""),
+        )
+        val libId = Json.mapper.readTree(libResponse.bodyString()).get("id").asText()
+
+        val bookResponse = app(
+            Request(Method.POST, "/api/books")
+                .header("Cookie", "token=$tokenA")
+                .header("Content-Type", "application/json")
+                .body("""{"title":"Secret Book","author":null,"description":null,"libraryId":"$libId"}"""),
+        )
+        val bookId = Json.mapper.readTree(bookResponse.bodyString()).get("id").asText()
+
+        val response = app(
+            Request(Method.DELETE, "/api/books/$bookId")
+                .header("Cookie", "token=$tokenB"),
+        )
+        assertEquals(Status.NOT_FOUND, response.status, "User B must not be able to delete user A's book")
+    }
+
+    @Test
+    fun `login endpoint returns 429 after too many requests from same IP`() {
+        // Dedicated test IP so this bucket doesn't collide with other tests
+        val testIp = "192.0.2.42"
+        repeat(10) {
+            app(
+                Request(Method.POST, "/auth/login")
+                    .header("X-Forwarded-For", testIp)
+                    .header("Content-Type", "application/json")
+                    .body("""{"username":"nobody","password":"nope"}"""),
+            )
+        }
+        val response = app(
+            Request(Method.POST, "/auth/login")
+                .header("X-Forwarded-For", testIp)
+                .header("Content-Type", "application/json")
+                .body("""{"username":"nobody","password":"nope"}"""),
+        )
+        assertEquals(Status.TOO_MANY_REQUESTS, response.status)
+        assertTrue(response.header("Retry-After") != null)
+    }
+
+    @Test
+    fun `register endpoint is also rate limited`() {
+        val testIp = "192.0.2.43"
+        repeat(10) {
+            app(
+                Request(Method.POST, "/auth/register")
+                    .header("X-Forwarded-For", testIp)
+                    .header("Content-Type", "application/json")
+                    .body("""{"username":"ratelimituser_$it","email":"rl$it@test.com","password":"password123"}"""),
+            )
+        }
+        val response = app(
+            Request(Method.POST, "/auth/register")
+                .header("X-Forwarded-For", testIp)
+                .header("Content-Type", "application/json")
+                .body("""{"username":"ratelimituser_overflow","email":"overflow@test.com","password":"password123"}"""),
+        )
+        assertEquals(Status.TOO_MANY_REQUESTS, response.status)
+    }
+
+    @Test
+    fun `GET api-books with invalid UUID returns 400`() {
+        val token = registerAndGetToken()
+        val response = app(
+            Request(Method.GET, "/api/books/not-a-valid-uuid")
+                .header("Cookie", "token=$token"),
+        )
+        assertEquals(Status.BAD_REQUEST, response.status)
+    }
+
+    @Test
+    fun `DELETE api-libraries with invalid UUID returns 400`() {
+        val token = registerAndGetToken()
+        val response = app(
+            Request(Method.DELETE, "/api/libraries/not-a-valid-uuid")
+                .header("Cookie", "token=$token"),
+        )
+        assertEquals(Status.BAD_REQUEST, response.status)
     }
 
     @Test

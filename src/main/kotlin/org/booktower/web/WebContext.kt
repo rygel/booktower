@@ -16,6 +16,7 @@ class WebContext(val request: Request) {
 
         const val LANG_COOKIE = "app_lang"
         const val THEME_COOKIE = "app_theme"
+        val SUPPORTED_LANGS = listOf("en", "fr", "de")
     }
 
     val lang: String by lazy {
@@ -25,8 +26,8 @@ class WebContext(val request: Request) {
     }
 
     val theme: String by lazy {
-        val value = request.query("theme") ?: request.cookie(THEME_COOKIE)?.value ?: "dark"
-        if (ThemeCatalog.allThemes().any { it.id == value }) value else "dark"
+        val value = request.query("theme") ?: request.cookie(THEME_COOKIE)?.value ?: "catppuccin-mocha"
+        if (ThemeCatalog.allThemes().any { it.id == value }) value else "catppuccin-mocha"
     }
 
     val i18n: I18nService by lazy {

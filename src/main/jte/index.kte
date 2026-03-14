@@ -1,124 +1,147 @@
+@import org.booktower.i18n.I18nService
 @param title: String
 @param isAuthenticated: Boolean
 @param username: String?
 @param libraries: List<Map<String, Any>>?
 @param showLogin: Boolean = false
 @param showRegister: Boolean = false
+@param themeCss: String
+@param currentTheme: String
+@param lang: String
+@param i18n: I18nService
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="${lang}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${title}</title>
-    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <style id="theme-style" data-theme="${currentTheme}">${themeCss}</style>
+    <link rel="stylesheet" href="/static/css/app.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.1.0/fonts/remixicon.css">
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/htmx.org@1.9.10" defer></script>
 </head>
-<body class="bg-gray-50 min-h-screen flex flex-col">
-    @template.components.header(isAuthenticated=isAuthenticated, username=username)
-    
-    <div class="flex flex-1">
-        @if(isAuthenticated)
-            <aside class="w-64 bg-white border-r min-h-screen flex-shrink-0">
-                <div class="p-6 space-y-8">
-                    <div>
-                        <h2 class="text-lg font-bold text-gray-800 mb-4">Appearance</h2>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Theme</label>
-                        <select name="theme" class="w-full rounded-lg border-gray-300 px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent" hx-post="/preferences/theme" hx-target="#theme-notice" hx-swap="innerHTML" hx-trigger="change">
-                            <option value="dark">Dark</option>
-                            <option value="light">Light</option>
-                            <option value="nord">Nord</option>
-                            <option value="dracula">Dracula</option>
-                            <option value="monokai-pro">Monokai Pro</option>
-                            <option value="one-dark">One Dark</option>
-                            <option value="catppuccin-mocha">Catppuccin</option>
-                        </select>
-                        <div id="theme-notice" class="mt-2 text-sm text-green-600 hidden"></div>
+<body style="min-height:100vh; display:flex; flex-direction:column;">
 
-                        <h2 class="text-lg font-bold text-gray-800 mb-4">Language</h2>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Language</label>
-                        <select name="lang" class="w-full rounded-lg border-gray-300 px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent" hx-post="/preferences/lang" hx-target="#lang-notice" hx-swap="innerHTML" hx-trigger="change">
-                            <option value="en">English</option>
-                            <option value="fr">Français</option>
-                        </select>
-                        <div id="lang-notice" class="mt-2 text-sm text-green-600 hidden"></div>
-
-                        <h2 class="text-lg font-bold text-gray-800 mb-4">Navigation</h2>
-                        <nav class="space-y-2">
-                            <a href="/" class="block px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors">Home</a>
-                            <a href="/api/libraries" class="block px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors">My Libraries</a>
-                            <a href="/api/books" class="block px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors">All Books</a>
-                            <a href="/settings" class="block px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors">Settings</a>
-                        </nav>
-                    </div>
-                </div>
-            </aside>
-        @endif
-        
-        <main class="flex-1 p-8">
-            @if(showLogin)
-                <div class="max-w-md mx-auto">
-                    <div class="bg-white rounded-lg shadow p-6">
-                        <h2 class="text-2xl font-bold mb-4">Login</h2>
-                        <form action="/auth/login" method="post" class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
-                                <input type="text" name="username" required class="w-full rounded-lg border-gray-300 px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                                <input type="password" name="password" required class="w-full rounded-lg border-gray-300 px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                            </div>
-                            <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition-colors">Login</button>
-                        </form>
-                    </div>
-                </div>
-            @elseif(showRegister)
-                <div class="max-w-md mx-auto">
-                    <div class="bg-white rounded-lg shadow p-6">
-                        <h2 class="text-2xl font-bold mb-4">Register</h2>
-                        <form action="/auth/register" method="post" class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
-                                <input type="text" name="username" required class="w-full rounded-lg border-gray-300 px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                                <input type="email" name="email" required class="w-full rounded-lg border-gray-300 px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                                <input type="password" name="password" required minlength="8" class="w-full rounded-lg border-gray-300 px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                            </div>
-                            <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition-colors">Register</button>
-                        </form>
-                    </div>
-                </div>
-            @elseif(isAuthenticated && libraries != null)
-                <div>
-                    <h1 class="text-2xl font-bold mb-4">Your Libraries</h1>
-                    <div class="grid grid-cols-3 gap-4">
-                        @for(library in libraries)
-                            <div class="bg-white p-4 rounded shadow">
-                                <h3 class="font-medium">${library["name"] as String}</h3>
-                            </div>
-                        @endfor
-                    </div>
-                </div>
-            @else
-                <div class="text-center py-20">
-                    <h1 class="text-4xl font-bold mb-4">Welcome to BookTower</h1>
-                    <p class="text-xl text-gray-600 mb-8">Your personal digital library</p>
-                    <div class="flex justify-center gap-4">
-                        <a href="/login" class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition-colors">Login</a>
-                        <a href="/register" class="bg-white text-indigo-600 px-6 py-2 rounded-lg border border-indigo-600 hover:bg-gray-50 transition-colors">Sign Up</a>
-                    </div>
+    <!-- Minimal top bar -->
+    <header style="background:var(--bt-surface); border-bottom:1px solid var(--bt-border);">
+        <div style="max-width:72rem; margin:0 auto; padding:0 1.5rem; height:3.5rem; display:flex; align-items:center; justify-content:space-between;">
+            <a href="/" style="display:flex; align-items:center; gap:0.625rem; text-decoration:none;">
+                <i class="ri-book-3-fill" style="font-size:1.25rem; color:var(--bt-accent-dim);"></i>
+                <span style="font-weight:700; color:var(--bt-text); font-size:1rem;">${i18n.translate("app.title")}</span>
+            </a>
+            @if(!isAuthenticated)
+                <div style="display:flex; gap:0.75rem;">
+                    <a href="/login" style="font-size:0.875rem; color:var(--bt-muted); padding:0.375rem 0.75rem; border-radius:0.5rem; text-decoration:none; border:1px solid var(--bt-border-input);"
+                        onmouseover="this.style.color='var(--bt-text)'" onmouseout="this.style.color='var(--bt-muted)'">${i18n.translate("action.signin")}</a>
+                    <a href="/register" style="font-size:0.875rem; color:#fff; padding:0.375rem 0.75rem; border-radius:0.5rem; text-decoration:none; background:var(--bt-accent-dark);"
+                        onmouseover="this.style.filter='brightness(1.15)'" onmouseout="this.style.filter='none'">${i18n.translate("action.signup")}</a>
                 </div>
             @endif
-        </main>
-    </div>
-    
-    @template.components.footer()
+        </div>
+    </header>
+
+    <main style="flex:1; display:flex; align-items:center; justify-content:center; padding:2rem;">
+        @if(showLogin)
+            <div style="width:100%; max-width:24rem;">
+                <div style="text-align:center; margin-bottom:2rem;">
+                    <i class="ri-book-3-fill" style="font-size:2.5rem; color:var(--bt-accent-dim);"></i>
+                    <h1 style="font-size:1.5rem; font-weight:700; color:var(--bt-text); margin-top:0.75rem; margin-bottom:0.25rem;">${i18n.translate("auth.login.title")}</h1>
+                    <p style="font-size:0.875rem; color:var(--bt-subtle);">${i18n.translate("auth.login.subtitle")}</p>
+                </div>
+                <div style="background:var(--bt-surface); border:1px solid var(--bt-border); border-radius:0.75rem; padding:1.75rem;">
+                    <form action="/auth/login" method="post" style="display:flex; flex-direction:column; gap:1rem;">
+                        <div>
+                            <label style="display:block; font-size:0.8rem; font-weight:500; color:var(--bt-muted); margin-bottom:0.375rem;">${i18n.translate("field.username.or.email")}</label>
+                            <input type="text" name="username" required autocomplete="username"
+                                style="width:100%; border-radius:0.5rem; border:1px solid; padding:0.625rem 0.75rem; font-size:0.875rem; box-sizing:border-box;">
+                        </div>
+                        <div>
+                            <label style="display:block; font-size:0.8rem; font-weight:500; color:var(--bt-muted); margin-bottom:0.375rem;">${i18n.translate("field.password")}</label>
+                            <div style="position:relative;">
+                                <input type="password" name="password" id="login-password" required autocomplete="current-password"
+                                    style="width:100%; border-radius:0.5rem; border:1px solid; padding:0.625rem 2.5rem 0.625rem 0.75rem; font-size:0.875rem; box-sizing:border-box;">
+                                <button type="button"
+                                    onclick="var f=document.getElementById('login-password');f.type=f.type==='password'?'text':'password';this.querySelector('i').className=f.type==='password'?'ri-eye-line':'ri-eye-off-line'"
+                                    style="position:absolute; right:0; top:0; bottom:0; padding:0 0.75rem; background:transparent; border:none; cursor:pointer; color:var(--bt-subtle);">
+                                    <i class="ri-eye-line"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-primary"
+                            style="width:100%; padding:0.625rem; margin-top:0.25rem;">
+                            ${i18n.translate("auth.login.submit")}
+                        </button>
+                    </form>
+                    <p style="text-align:center; margin-top:1.25rem; font-size:0.8rem; color:var(--bt-subtle);">
+                        ${i18n.translate("auth.no.account")} <a href="/register" style="color:var(--bt-accent-dim); text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${i18n.translate("action.signup")}</a>
+                    </p>
+                </div>
+            </div>
+
+        @elseif(showRegister)
+            <div style="width:100%; max-width:24rem;">
+                <div style="text-align:center; margin-bottom:2rem;">
+                    <i class="ri-book-3-fill" style="font-size:2.5rem; color:var(--bt-accent-dim);"></i>
+                    <h1 style="font-size:1.5rem; font-weight:700; color:var(--bt-text); margin-top:0.75rem; margin-bottom:0.25rem;">${i18n.translate("auth.register.title")}</h1>
+                    <p style="font-size:0.875rem; color:var(--bt-subtle);">${i18n.translate("auth.register.subtitle")}</p>
+                </div>
+                <div style="background:var(--bt-surface); border:1px solid var(--bt-border); border-radius:0.75rem; padding:1.75rem;">
+                    <form action="/auth/register" method="post" style="display:flex; flex-direction:column; gap:1rem;">
+                        <div>
+                            <label style="display:block; font-size:0.8rem; font-weight:500; color:var(--bt-muted); margin-bottom:0.375rem;">${i18n.translate("field.username")}</label>
+                            <input type="text" name="username" required
+                                style="width:100%; border-radius:0.5rem; border:1px solid; padding:0.625rem 0.75rem; font-size:0.875rem; box-sizing:border-box;">
+                        </div>
+                        <div>
+                            <label style="display:block; font-size:0.8rem; font-weight:500; color:var(--bt-muted); margin-bottom:0.375rem;">${i18n.translate("field.email")}</label>
+                            <input type="email" name="email" required
+                                style="width:100%; border-radius:0.5rem; border:1px solid; padding:0.625rem 0.75rem; font-size:0.875rem; box-sizing:border-box;">
+                        </div>
+                        <div>
+                            <label style="display:block; font-size:0.8rem; font-weight:500; color:var(--bt-muted); margin-bottom:0.375rem;">${i18n.translate("field.password")}</label>
+                            <div style="position:relative;">
+                                <input type="password" name="password" id="reg-password" required minlength="8" autocomplete="new-password"
+                                    style="width:100%; border-radius:0.5rem; border:1px solid; padding:0.625rem 2.5rem 0.625rem 0.75rem; font-size:0.875rem; box-sizing:border-box;">
+                                <button type="button"
+                                    onclick="var f=document.getElementById('reg-password');f.type=f.type==='password'?'text':'password';this.querySelector('i').className=f.type==='password'?'ri-eye-line':'ri-eye-off-line'"
+                                    style="position:absolute; right:0; top:0; bottom:0; padding:0 0.75rem; background:transparent; border:none; cursor:pointer; color:var(--bt-subtle);">
+                                    <i class="ri-eye-line"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-primary"
+                            style="width:100%; padding:0.625rem; margin-top:0.25rem;">
+                            ${i18n.translate("auth.register.submit")}
+                        </button>
+                    </form>
+                    <p style="text-align:center; margin-top:1.25rem; font-size:0.8rem; color:var(--bt-subtle);">
+                        ${i18n.translate("auth.already.have.account")} <a href="/login" style="color:var(--bt-accent-dim); text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${i18n.translate("auth.signin")}</a>
+                    </p>
+                </div>
+            </div>
+
+        @else
+            <!-- Landing / unauthenticated home -->
+            <div style="text-align:center; max-width:36rem;">
+                <i class="ri-book-3-fill" style="font-size:4rem; color:var(--bt-accent-dim); display:block; margin-bottom:1.5rem;"></i>
+                <h1 style="font-size:2.5rem; font-weight:800; color:var(--bt-text); margin-bottom:1rem;">${i18n.translate("app.title")}</h1>
+                <p style="font-size:1.125rem; color:var(--bt-subtle); margin-bottom:2rem;">${i18n.translate("app.tagline.detail")}</p>
+                <div style="display:flex; justify-content:center; gap:1rem;">
+                    <a href="/login" class="btn-primary" style="padding:0.75rem 2rem; text-decoration:none;">${i18n.translate("action.signin")}</a>
+                    <a href="/register"
+                        style="background:var(--bt-surface); color:var(--bt-text-dim); padding:0.75rem 2rem; border-radius:0.5rem; font-size:0.875rem; border:1px solid var(--bt-border); text-decoration:none;"
+                        onmouseover="this.style.background='var(--bt-border)'" onmouseout="this.style.background='var(--bt-surface)'">${i18n.translate("action.signup")}</a>
+                </div>
+            </div>
+        @endif
+    </main>
+
+    <footer style="background:var(--bt-surface); border-top:1px solid var(--bt-border);">
+        <div style="max-width:72rem; margin:0 auto; padding:0.75rem 1.5rem; display:flex; align-items:center; justify-content:space-between; font-size:0.75rem; color:var(--bt-subtle);">
+            <span>&copy; 2026 BookTower. ${i18n.translate("footer.rights")}</span>
+            <span>${i18n.translate("footer.made.with")} <i class="ri-heart-fill" style="color:var(--bt-danger);"></i> Kotlin &amp; http4k</span>
+        </div>
+    </footer>
 </body>
 </html>

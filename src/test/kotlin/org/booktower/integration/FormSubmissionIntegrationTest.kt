@@ -161,7 +161,7 @@ class FormSubmissionIntegrationTest : IntegrationTestBase() {
         )
         val token = registerResponse.cookies().find { it.name == "token" }!!.value
 
-        val indexResponse = app(Request(Method.GET, "/").header("Cookie", "token=$token"))
+        val indexResponse = app(Request(Method.GET, "/libraries").header("Cookie", "token=$token"))
         assertEquals(Status.OK, indexResponse.status)
         assertTrue(indexResponse.bodyString().contains("hx-post=\"/auth/logout\""))
     }
@@ -186,7 +186,7 @@ class FormSubmissionIntegrationTest : IntegrationTestBase() {
                 .body("""{"name":"Browser Flow Lib","path":"./data/test-bf-${System.nanoTime()}"}"""),
         )
 
-        val indexResponse = app(Request(Method.GET, "/").header("Cookie", "token=$token"))
+        val indexResponse = app(Request(Method.GET, "/libraries").header("Cookie", "token=$token"))
         assertTrue(indexResponse.bodyString().contains("Browser Flow Lib"))
     }
 

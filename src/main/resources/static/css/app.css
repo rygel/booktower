@@ -1,0 +1,91 @@
+/* BookTower — app.css
+   Theme colors are injected server-side as :root { --bt-xxx } via themes.json + ThemeCatalog.
+   This file contains only component styles that reference those CSS variables.
+*/
+
+/* ========================================
+   BASE
+   ======================================== */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: var(--bt-bg);
+  color: var(--bt-text);
+}
+
+/* Scrollbars */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bt-scroll-track); }
+::-webkit-scrollbar-thumb { background: var(--bt-scroll-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--bt-scroll-hover); }
+
+/* Form inputs — override browser defaults with theme colors */
+input, select, textarea {
+  background-color: var(--bt-input-bg) !important;
+  border-color: var(--bt-border-input) !important;
+  color: var(--bt-text) !important;
+}
+input::placeholder, textarea::placeholder { color: var(--bt-subtle); }
+input:focus, select:focus, textarea:focus {
+  outline: none !important;
+  border-color: var(--bt-accent) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--bt-accent) 25%, transparent) !important;
+}
+
+/* ========================================
+   COMPONENTS
+   ======================================== */
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s;
+  color: var(--bt-muted);
+  background: transparent;
+}
+.sidebar-link:hover { background-color: var(--bt-border); color: var(--bt-text); }
+.sidebar-link.active { background-color: var(--bt-border); color: var(--bt-text); }
+
+.card {
+  background-color: var(--bt-surface);
+  border: 1px solid var(--bt-border);
+  border-radius: 0.75rem;
+}
+
+.modal-panel {
+  background-color: var(--bt-surface);
+}
+
+.btn-primary {
+  background-color: var(--bt-accent-dark);
+  color: #fff;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: filter 0.15s;
+}
+.btn-primary:hover { filter: brightness(1.15); }
+
+.btn-secondary {
+  background-color: var(--bt-border);
+  color: var(--bt-text-dim);
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-secondary:hover { background-color: var(--bt-border-input); }
