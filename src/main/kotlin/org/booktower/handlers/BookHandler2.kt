@@ -1,6 +1,6 @@
 package org.booktower.handlers
 
-import com.fasterxml.jackson.databind.ObjectMapper
+import org.booktower.config.Json
 import org.booktower.filters.AuthenticatedUser
 import org.booktower.models.CreateBookRequest
 import org.booktower.models.ErrorResponse
@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory
 import java.util.UUID
 
 private val logger = LoggerFactory.getLogger("booktower.BookHandler")
-private val objectMapper = ObjectMapper()
 
 class BookHandler2(private val bookService: BookService) {
     fun list(req: Request): Response {
@@ -26,12 +25,12 @@ class BookHandler2(private val bookService: BookService) {
             val bookList = bookService.getBooks(userId, libraryId, page, pageSize)
             Response(Status.OK)
                 .header("Content-Type", "application/json")
-                .body(objectMapper.writeValueAsString(bookList))
+                .body(Json.mapper.writeValueAsString(bookList))
         } catch (e: Exception) {
             logger.error("Error listing books", e)
             Response(Status.INTERNAL_SERVER_ERROR)
                 .header("Content-Type", "application/json")
-                .body(objectMapper.writeValueAsString(ErrorResponse("INTERNAL_ERROR", "Failed to list books")))
+                .body(Json.mapper.writeValueAsString(ErrorResponse("INTERNAL_ERROR", "Failed to list books")))
         }
     }
 
@@ -43,16 +42,16 @@ class BookHandler2(private val bookService: BookService) {
             if (requestBody.isBlank()) {
                 return Response(Status.BAD_REQUEST)
                     .header("Content-Type", "application/json")
-                    .body(objectMapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Request body is required")))
+                    .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Request body is required")))
             }
 
-            val createRequest = objectMapper.readValue(requestBody, CreateBookRequest::class.java)
+            val createRequest = Json.mapper.readValue(requestBody, CreateBookRequest::class.java)
 
             val validationError = validateCreateBookRequest(createRequest)
             if (validationError != null) {
                 return Response(Status.BAD_REQUEST)
                     .header("Content-Type", "application/json")
-                    .body(objectMapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", validationError)))
+                    .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", validationError)))
             }
 
             val result = bookService.createBook(userId, createRequest)
@@ -62,20 +61,20 @@ class BookHandler2(private val bookService: BookService) {
                     logger.info("Book created: ${book.title}")
                     Response(Status.CREATED)
                         .header("Content-Type", "application/json")
-                        .body(objectMapper.writeValueAsString(book))
+                        .body(Json.mapper.writeValueAsString(book))
                 },
                 onFailure = { error ->
                     logger.error("Error creating book: ${error.message}")
                     Response(Status.INTERNAL_SERVER_ERROR)
                         .header("Content-Type", "application/json")
-                        .body(objectMapper.writeValueAsString(ErrorResponse("INTERNAL_ERROR", "Failed to create book")))
+                        .body(Json.mapper.writeValueAsString(ErrorResponse("INTERNAL_ERROR", "Failed to create book")))
                 },
             )
         } catch (e: Exception) {
             logger.error("Error creating book", e)
             Response(Status.INTERNAL_SERVER_ERROR)
                 .header("Content-Type", "application/json")
-                .body(objectMapper.writeValueAsString(ErrorResponse("INTERNAL_ERROR", "Failed to create book")))
+                .body(Json.mapper.writeValueAsString(ErrorResponse("INTERNAL_ERROR", "Failed to create book")))
         }
     }
 
@@ -87,12 +86,12 @@ class BookHandler2(private val bookService: BookService) {
             val books = bookService.getRecentBooks(userId, limit)
             Response(Status.OK)
                 .header("Content-Type", "application/json")
-                .body(objectMapper.writeValueAsString(books))
+                .body(Json.mapper.writeValueAsString(books))
         } catch (e: Exception) {
             logger.error("Error fetching recent books", e)
             Response(Status.INTERNAL_SERVER_ERROR)
                 .header("Content-Type", "application/json")
-                .body(objectMapper.writeValueAsString(ErrorResponse("INTERNAL_ERROR", "Failed to fetch recent books")))
+                .body(Json.mapper.writeValueAsString(ErrorResponse("INTERNAL_ERROR", "Failed to fetch recent books")))
         }
     }
 
@@ -106,24 +105,24 @@ class BookHandler2(private val bookService: BookService) {
             if (bookId == null) {
                 return Response(Status.BAD_REQUEST)
                     .header("Content-Type", "application/json")
-                    .body(objectMapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Invalid book ID")))
+                    .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Invalid book ID")))
             }
 
             val book = bookService.getBook(userId, bookId)
             if (book != null) {
                 Response(Status.OK)
                     .header("Content-Type", "application/json")
-                    .body(objectMapper.writeValueAsString(book))
+                    .body(Json.mapper.writeValueAsString(book))
             } else {
                 Response(Status.NOT_FOUND)
                     .header("Content-Type", "application/json")
-                    .body(objectMapper.writeValueAsString(ErrorResponse("NOT_FOUND", "Book not found")))
+                    .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "Book not found")))
             }
         } catch (e: Exception) {
             logger.error("Error fetching book", e)
             Response(Status.INTERNAL_SERVER_ERROR)
                 .header("Content-Type", "application/json")
-                .body(objectMapper.writeValueAsString(ErrorResponse("INTERNAL_ERROR", "Failed to fetch book")))
+                .body(Json.mapper.writeValueAsString(ErrorResponse("INTERNAL_ERROR", "Failed to fetch book")))
         }
     }
 

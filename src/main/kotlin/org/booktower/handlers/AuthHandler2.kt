@@ -1,7 +1,6 @@
 package org.booktower.handlers
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.KotlinModule
+import org.booktower.config.Json
 import org.booktower.models.CreateUserRequest
 import org.booktower.models.ErrorResponse
 import org.booktower.models.LoginRequest
@@ -14,7 +13,6 @@ import org.http4k.core.cookie.cookie
 import org.slf4j.LoggerFactory
 
 private val logger = LoggerFactory.getLogger("booktower.AuthHandler")
-private val objectMapper = ObjectMapper().registerModule(KotlinModule.Builder().build())
 
 class AuthHandler2(private val authService: AuthService) {
     fun register(req: Request): Response {
@@ -23,17 +21,16 @@ class AuthHandler2(private val authService: AuthService) {
             if (requestBody.isBlank()) {
                 return Response(Status.BAD_REQUEST)
                     .header("Content-Type", "application/json")
-                    .body(objectMapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Request body is required")))
+                    .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Request body is required")))
             }
 
-            val createRequest = objectMapper.readValue(requestBody, CreateUserRequest::class.java)
+            val createRequest = Json.mapper.readValue(requestBody, CreateUserRequest::class.java)
 
-            // Validate input
             val validationError = validateCreateUserRequest(createRequest)
             if (validationError != null) {
                 return Response(Status.BAD_REQUEST)
                     .header("Content-Type", "application/json")
-                    .body(objectMapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", validationError)))
+                    .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", validationError)))
             }
 
             val result = authService.register(createRequest)
@@ -44,7 +41,7 @@ class AuthHandler2(private val authService: AuthService) {
                     Response(Status.CREATED)
                         .header("Content-Type", "application/json")
                         .cookie(createAuthCookie(loginResponse.token))
-                        .body(objectMapper.writeValueAsString(loginResponse))
+                        .body(Json.mapper.writeValueAsString(loginResponse))
                 },
                 onFailure = { error ->
                     logger.warn("Registration failed: ${error.message}")
@@ -53,7 +50,7 @@ class AuthHandler2(private val authService: AuthService) {
                             Response(Status.CONFLICT)
                                 .header("Content-Type", "application/json")
                                 .body(
-                                    objectMapper.writeValueAsString(
+                                    Json.mapper.writeValueAsString(
                                         ErrorResponse("USER_EXISTS", error.message ?: "Username already exists"),
                                     ),
                                 )
@@ -61,7 +58,7 @@ class AuthHandler2(private val authService: AuthService) {
                         else ->
                             Response(Status.INTERNAL_SERVER_ERROR)
                                 .header("Content-Type", "application/json")
-                                .body(objectMapper.writeValueAsString(ErrorResponse("INTERNAL_ERROR", "An unexpected error occurred")))
+                                .body(Json.mapper.writeValueAsString(ErrorResponse("INTERNAL_ERROR", "An unexpected error occurred")))
                     }
                 },
             )
@@ -69,7 +66,7 @@ class AuthHandler2(private val authService: AuthService) {
             logger.error("Error during registration", e)
             Response(Status.INTERNAL_SERVER_ERROR)
                 .header("Content-Type", "application/json")
-                .body(objectMapper.writeValueAsString(ErrorResponse("INTERNAL_ERROR", "An unexpected error occurred")))
+                .body(Json.mapper.writeValueAsString(ErrorResponse("INTERNAL_ERROR", "An unexpected error occurred")))
         }
     }
 
@@ -79,17 +76,16 @@ class AuthHandler2(private val authService: AuthService) {
             if (requestBody.isBlank()) {
                 return Response(Status.BAD_REQUEST)
                     .header("Content-Type", "application/json")
-                    .body(objectMapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Request body is required")))
+                    .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Request body is required")))
             }
 
-            val loginRequest = objectMapper.readValue(requestBody, LoginRequest::class.java)
+            val loginRequest = Json.mapper.readValue(requestBody, LoginRequest::class.java)
 
-            // Validate input
             val validationError = validateLoginRequest(loginRequest)
             if (validationError != null) {
                 return Response(Status.BAD_REQUEST)
                     .header("Content-Type", "application/json")
-                    .body(objectMapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", validationError)))
+                    .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", validationError)))
             }
 
             val result = authService.login(loginRequest)
@@ -100,7 +96,7 @@ class AuthHandler2(private val authService: AuthService) {
                     Response(Status.OK)
                         .header("Content-Type", "application/json")
                         .cookie(createAuthCookie(loginResponse.token))
-                        .body(objectMapper.writeValueAsString(loginResponse))
+                        .body(Json.mapper.writeValueAsString(loginResponse))
                 },
                 onFailure = { error ->
                     logger.warn("Login failed: ${error.message}")
@@ -108,12 +104,12 @@ class AuthHandler2(private val authService: AuthService) {
                         is IllegalArgumentException ->
                             Response(Status.UNAUTHORIZED)
                                 .header("Content-Type", "application/json")
-                                .body(objectMapper.writeValueAsString(ErrorResponse("INVALID_CREDENTIALS", "Invalid username or password")))
+                                .body(Json.mapper.writeValueAsString(ErrorResponse("INVALID_CREDENTIALS", "Invalid username or password")))
 
                         else ->
                             Response(Status.INTERNAL_SERVER_ERROR)
                                 .header("Content-Type", "application/json")
-                                .body(objectMapper.writeValueAsString(ErrorResponse("INTERNAL_ERROR", "An unexpected error occurred")))
+                                .body(Json.mapper.writeValueAsString(ErrorResponse("INTERNAL_ERROR", "An unexpected error occurred")))
                     }
                 },
             )
@@ -121,7 +117,7 @@ class AuthHandler2(private val authService: AuthService) {
             logger.error("Error during login", e)
             Response(Status.INTERNAL_SERVER_ERROR)
                 .header("Content-Type", "application/json")
-                .body(objectMapper.writeValueAsString(ErrorResponse("INTERNAL_ERROR", "An unexpected error occurred")))
+                .body(Json.mapper.writeValueAsString(ErrorResponse("INTERNAL_ERROR", "An unexpected error occurred")))
         }
     }
 
@@ -130,7 +126,7 @@ class AuthHandler2(private val authService: AuthService) {
         return Response(Status.OK)
             .header("Content-Type", "application/json")
             .cookie(createLogoutCookie())
-            .body(objectMapper.writeValueAsString(mapOf("message" to "Logged out successfully")))
+            .body(Json.mapper.writeValueAsString(mapOf("message" to "Logged out successfully")))
     }
 
     private fun validateCreateUserRequest(request: CreateUserRequest): String? {

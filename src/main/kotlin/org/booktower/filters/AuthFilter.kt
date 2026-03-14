@@ -1,16 +1,14 @@
 package org.booktower.filters
 
+import org.booktower.config.Json
 import org.booktower.models.ErrorResponse
 import org.booktower.services.JwtService
-import com.fasterxml.jackson.databind.ObjectMapper
 import org.http4k.core.Filter
 import org.http4k.core.Request
 import org.http4k.core.Response
 import org.http4k.core.Status
 import org.http4k.core.cookie.cookie
 import java.util.UUID
-
-private val objectMapper = ObjectMapper()
 
 object AuthenticatedUser {
     const val USER_ID_HEADER = "X-Auth-User-Id"
@@ -30,7 +28,7 @@ fun JwtAuthFilter(jwtService: JwtService): Filter = Filter { next ->
             Response(Status.UNAUTHORIZED)
                 .header("Content-Type", "application/json")
                 .body(
-                    objectMapper.writeValueAsString(
+                    Json.mapper.writeValueAsString(
                         ErrorResponse("UNAUTHORIZED", "Authentication required"),
                     ),
                 )

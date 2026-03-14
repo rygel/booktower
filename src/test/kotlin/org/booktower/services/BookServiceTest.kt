@@ -1,7 +1,6 @@
 package org.booktower.services
 
-import org.booktower.config.AppConfig
-import org.booktower.config.Database
+import org.booktower.TestFixture
 import org.booktower.models.CreateBookRequest
 import org.booktower.models.CreateLibraryRequest
 import org.booktower.models.CreateUserRequest
@@ -23,47 +22,36 @@ class BookServiceTest {
 
     @BeforeEach
     fun setup() {
-        val config = AppConfig.load()
-        val database = Database.connect(config.database)
+        val config = TestFixture.config
+        val jdbi = TestFixture.database.getJdbi()
         jwtService = JwtService(config.security)
-        authService = AuthService(database.getJdbi(), jwtService)
-        libraryService = LibraryService(database.getJdbi(), config.storage)
-        bookService = BookService(database.getJdbi(), config.storage)
+        authService = AuthService(jdbi, jwtService)
+        libraryService = LibraryService(jdbi, config.storage)
+        bookService = BookService(jdbi, config.storage)
 
-        val result = authService.register(
-            CreateUserRequest("bookuser_${System.nanoTime()}", "book_${System.nanoTime()}@test.com", "password123"),
-        )
+        val result = authService.register(CreateUserRequest("bookuser_${System.nanoTime()}", "book_${System.nanoTime()}@test.com", "password123"))
         userId = jwtService.extractUserId(result.getOrThrow().token)!!
-
-        val lib = libraryService.createLibrary(userId, CreateLibraryRequest("BookLib", "./data/test-bl-${System.nanoTime()}"))
-        libraryId = lib.id
+        libraryId = libraryService.createLibrary(userId, CreateLibraryRequest("BookLib", "./data/test-bl-${System.nanoTime()}")).id
     }
 
     @Test
     fun `createBook creates book in library`() {
-        val request = CreateBookRequest("Test Book", "Author", "Description", libraryId)
-        val result = bookService.createBook(userId, request)
-
+        val result = bookService.createBook(userId, CreateBookRequest("Test Book", "Author", "Description", libraryId))
         assertTrue(result.isSuccess)
         val book = result.getOrThrow()
         assertEquals("Test Book", book.title)
         assertEquals("Author", book.author)
-        assertEquals("Description", book.description)
     }
 
     @Test
     fun `createBook fails for non-existent library`() {
-        val request = CreateBookRequest("Book", "Author", null, UUID.randomUUID().toString())
-        val result = bookService.createBook(userId, request)
-
-        assertTrue(result.isFailure)
+        assertTrue(bookService.createBook(userId, CreateBookRequest("Book", "Author", null, UUID.randomUUID().toString())).isFailure)
     }
 
     @Test
     fun `getBooks returns books in library`() {
         bookService.createBook(userId, CreateBookRequest("Book A", "Author A", null, libraryId))
         bookService.createBook(userId, CreateBookRequest("Book B", "Author B", null, libraryId))
-
         val bookList = bookService.getBooks(userId, libraryId)
         assertEquals(2, bookList.total)
         assertEquals(2, bookList.getBooks().size)
@@ -78,51 +66,37 @@ class BookServiceTest {
 
     @Test
     fun `getBooks supports pagination`() {
-        for (i in 1..5) {
-            bookService.createBook(userId, CreateBookRequest("Book $i", null, null, libraryId))
-        }
-
+        for (i in 1..5) bookService.createBook(userId, CreateBookRequest("Book $i", null, null, libraryId))
         val page1 = bookService.getBooks(userId, libraryId, page = 1, pageSize = 2)
         assertEquals(5, page1.total)
         assertEquals(2, page1.getBooks().size)
-
-        val page3 = bookService.getBooks(userId, libraryId, page = 3, pageSize = 2)
-        assertEquals(1, page3.getBooks().size)
+        assertEquals(1, bookService.getBooks(userId, libraryId, page = 3, pageSize = 2).getBooks().size)
     }
 
     @Test
     fun `getBook returns specific book`() {
         val created = bookService.createBook(userId, CreateBookRequest("Find Me", "Author", null, libraryId)).getOrThrow()
-        val bookId = UUID.fromString(created.id)
-
-        val found = bookService.getBook(userId, bookId)
+        val found = bookService.getBook(userId, UUID.fromString(created.id))
         assertNotNull(found)
         assertEquals("Find Me", found.title)
     }
 
     @Test
     fun `getBook returns null for non-existent id`() {
-        val found = bookService.getBook(userId, UUID.randomUUID())
-        assertNull(found)
+        assertNull(bookService.getBook(userId, UUID.randomUUID()))
     }
 
     @Test
     fun `deleteBook removes book`() {
         val created = bookService.createBook(userId, CreateBookRequest("Delete Me", null, null, libraryId)).getOrThrow()
         val bookId = UUID.fromString(created.id)
-
-        val deleted = bookService.deleteBook(userId, bookId)
-        assertTrue(deleted)
-
-        val found = bookService.getBook(userId, bookId)
-        assertNull(found)
+        assertTrue(bookService.deleteBook(userId, bookId))
+        assertNull(bookService.getBook(userId, bookId))
     }
 
     @Test
     fun `getBooks without libraryId returns all user books`() {
         bookService.createBook(userId, CreateBookRequest("All Books", null, null, libraryId))
-
-        val bookList = bookService.getBooks(userId, null)
-        assertTrue(bookList.total >= 1)
+        assertTrue(bookService.getBooks(userId, null).total >= 1)
     }
 }

@@ -2,7 +2,9 @@ package org.booktower
 
 import org.booktower.config.AppConfig
 import org.booktower.config.appModule
+import org.booktower.filters.CsrfFilter
 import org.booktower.filters.GlobalErrorFilter
+import org.booktower.filters.RequestLoggingFilter
 import org.booktower.filters.StaticCacheFilter
 import org.booktower.handlers.AppHandler
 import org.http4k.core.Method
@@ -34,6 +36,8 @@ fun main() {
     )
 
     val filteredApp = GlobalErrorFilter()
+        .then(RequestLoggingFilter())
+        .then(CsrfFilter(setOf("localhost", "127.0.0.1", config.host)))
         .then(StaticCacheFilter())
         .then(app)
 

@@ -1,58 +1,58 @@
 package org.booktower.weblate
 
-class WeblateHandler(
-    private val integration: WeblateIntegration,
-) {
-    fun pull(req: org.http4k.core.Request): org.http4k.core.Response {
-        if (!integration.isEnabled()) {
-            return org.http4k.core.Response(org.http4k.core.Status.SERVICE_UNAVAILABLE)
-                .body("Weblate integration not enabled")
-        }
+import org.booktower.config.Json
+import org.booktower.config.WeblateConfig
+import org.http4k.core.Request
+import org.http4k.core.Response
+import org.http4k.core.Status
 
-        val lang = req.query("lang")?.split(",") ?: listOf("en", "fr")
-        val results = integration.pullTranslations(lang)
-
-        return org.http4k.core.Response(org.http4k.core.Status.OK)
-            .header("Content-Type", "application/json")
-            .body("""{"status": "success", "results": $results}""")
-    }
-
-    fun push(req: org.http4k.core.Request): org.http4k.core.Response {
-        if (!integration.isEnabled()) {
-            return org.http4k.core.Response(org.http4k.core.Status.SERVICE_UNAVAILABLE)
-                .body("Weblate integration not enabled")
-        }
-
-        val lang = req.query("lang")?.split(",") ?: listOf("en", "fr")
-        val results = integration.pushTranslations(lang)
-
-        return org.http4k.core.Response(org.http4k.core.Status.OK)
-            .header("Content-Type", "application/json")
-            .body("""{"status": "success", "results": $results}""")
-    }
-
-    fun status(req: org.http4k.core.Request): org.http4k.core.Response {
-        if (!integration.isEnabled()) {
-            return org.http4k.core.Response(org.http4k.core.Status.SERVICE_UNAVAILABLE)
-                .body("Weblate integration not enabled")
-        }
-
-        val status = integration.getStatus()
-
-        return if (status != null) {
-            org.http4k.core.Response(org.http4k.core.Status.OK)
-                .header("Content-Type", "application/json")
-                .body(
-                    """{
-                    "translated": ${status.translatedWords},
-                    "total": ${status.totalWords},
-                    "fuzzy": ${status.fuzzyWords},
-                    "progress": ${status.progressPercent}
-                }""",
-                )
+class WeblateHandler(private val config: WeblateConfig) {
+    private val bridge: WeblateBridge? by lazy {
+        if (config.enabled && config.url.isNotBlank() && config.apiToken.isNotBlank()) {
+            WeblateBridge(config.url, config.apiToken, config.component, java.io.File("src/main/resources"))
         } else {
-            org.http4k.core.Response(org.http4k.core.Status.INTERNAL_SERVER_ERROR)
-                .body("Failed to fetch status")
+            null
         }
     }
+
+    fun pull(req: Request): Response {
+        val b = bridge ?: return unavailable()
+        val lang = req.query("lang")?.split(",") ?: listOf("en", "fr")
+        val results = b.pullTranslations(lang)
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(Json.mapper.writeValueAsString(mapOf("status" to "success", "results" to results)))
+    }
+
+    fun push(req: Request): Response {
+        val b = bridge ?: return unavailable()
+        val lang = req.query("lang")?.split(",") ?: listOf("en", "fr")
+        val results = b.pushTranslations(lang)
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(Json.mapper.writeValueAsString(mapOf("status" to "success", "results" to results)))
+    }
+
+    fun status(req: Request): Response {
+        val b = bridge ?: return unavailable()
+        val status = b.getTranslationStatus()
+            ?: return Response(Status.INTERNAL_SERVER_ERROR).body("Failed to fetch status")
+
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                Json.mapper.writeValueAsString(
+                    mapOf(
+                        "translated" to status.translatedWords,
+                        "total" to status.totalWords,
+                        "fuzzy" to status.fuzzyWords,
+                        "progress" to status.progressPercent,
+                    ),
+                ),
+            )
+    }
+
+    private fun unavailable() = Response(Status.SERVICE_UNAVAILABLE)
+        .header("Content-Type", "application/json")
+        .body(Json.mapper.writeValueAsString(mapOf("error" to "Weblate integration not enabled")))
 }

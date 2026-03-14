@@ -1,6 +1,6 @@
 package org.booktower.handlers
 
-import com.fasterxml.jackson.databind.ObjectMapper
+import org.booktower.config.Json
 import org.booktower.filters.AuthenticatedUser
 import org.booktower.models.CreateLibraryRequest
 import org.booktower.models.ErrorResponse
@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory
 import java.util.UUID
 
 private val logger = LoggerFactory.getLogger("booktower.LibraryHandler")
-private val objectMapper = ObjectMapper()
 
 class LibraryHandler2(private val libraryService: LibraryService) {
     fun list(req: Request): Response {
@@ -22,12 +21,12 @@ class LibraryHandler2(private val libraryService: LibraryService) {
             val libraries = libraryService.getLibraries(userId)
             Response(Status.OK)
                 .header("Content-Type", "application/json")
-                .body(objectMapper.writeValueAsString(libraries))
+                .body(Json.mapper.writeValueAsString(libraries))
         } catch (e: Exception) {
             logger.error("Error listing libraries", e)
             Response(Status.INTERNAL_SERVER_ERROR)
                 .header("Content-Type", "application/json")
-                .body(objectMapper.writeValueAsString(ErrorResponse("INTERNAL_ERROR", "Failed to list libraries")))
+                .body(Json.mapper.writeValueAsString(ErrorResponse("INTERNAL_ERROR", "Failed to list libraries")))
         }
     }
 
@@ -39,16 +38,16 @@ class LibraryHandler2(private val libraryService: LibraryService) {
             if (requestBody.isBlank()) {
                 return Response(Status.BAD_REQUEST)
                     .header("Content-Type", "application/json")
-                    .body(objectMapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Request body is required")))
+                    .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Request body is required")))
             }
 
-            val createRequest = objectMapper.readValue(requestBody, CreateLibraryRequest::class.java)
+            val createRequest = Json.mapper.readValue(requestBody, CreateLibraryRequest::class.java)
 
             val validationError = validateCreateLibraryRequest(createRequest)
             if (validationError != null) {
                 return Response(Status.BAD_REQUEST)
                     .header("Content-Type", "application/json")
-                    .body(objectMapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", validationError)))
+                    .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", validationError)))
             }
 
             val library = libraryService.createLibrary(userId, createRequest)
@@ -56,12 +55,12 @@ class LibraryHandler2(private val libraryService: LibraryService) {
 
             Response(Status.CREATED)
                 .header("Content-Type", "application/json")
-                .body(objectMapper.writeValueAsString(library))
+                .body(Json.mapper.writeValueAsString(library))
         } catch (e: Exception) {
             logger.error("Error creating library", e)
             Response(Status.INTERNAL_SERVER_ERROR)
                 .header("Content-Type", "application/json")
-                .body(objectMapper.writeValueAsString(ErrorResponse("INTERNAL_ERROR", "Failed to create library")))
+                .body(Json.mapper.writeValueAsString(ErrorResponse("INTERNAL_ERROR", "Failed to create library")))
         }
     }
 
@@ -75,24 +74,24 @@ class LibraryHandler2(private val libraryService: LibraryService) {
             if (libraryId == null) {
                 return Response(Status.BAD_REQUEST)
                     .header("Content-Type", "application/json")
-                    .body(objectMapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Invalid library ID")))
+                    .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Invalid library ID")))
             }
 
             val deleted = libraryService.deleteLibrary(userId, libraryId)
             if (deleted) {
                 Response(Status.OK)
                     .header("Content-Type", "application/json")
-                    .body(objectMapper.writeValueAsString(mapOf("message" to "Library deleted successfully")))
+                    .body(Json.mapper.writeValueAsString(mapOf("message" to "Library deleted successfully")))
             } else {
                 Response(Status.NOT_FOUND)
                     .header("Content-Type", "application/json")
-                    .body(objectMapper.writeValueAsString(ErrorResponse("NOT_FOUND", "Library not found")))
+                    .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "Library not found")))
             }
         } catch (e: Exception) {
             logger.error("Error deleting library", e)
             Response(Status.INTERNAL_SERVER_ERROR)
                 .header("Content-Type", "application/json")
-                .body(objectMapper.writeValueAsString(ErrorResponse("INTERNAL_ERROR", "Failed to delete library")))
+                .body(Json.mapper.writeValueAsString(ErrorResponse("INTERNAL_ERROR", "Failed to delete library")))
         }
     }
 

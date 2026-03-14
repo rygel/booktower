@@ -172,17 +172,9 @@ class BookService(private val jdbi: Jdbi, private val storageConfig: StorageConf
                     .bind(1, bookId.toString())
                     .map { row ->
                         ReadingProgressDto(
-                            currentPage = row.getColumn("current_page", Int::class.java),
-                            totalPages =
-                                row.getColumn(
-                                    "total_pages",
-                                    Int::class.java,
-                                ).takeIf { row.getColumn("total_pages", Any::class.java) != null },
-                            percentage =
-                                row.getColumn(
-                                    "percentage",
-                                    Double::class.java,
-                                ).takeIf { row.getColumn("percentage", Any::class.java) != null },
+                            currentPage = row.getColumn("current_page", java.lang.Integer::class.java)?.toInt() ?: 0,
+                            totalPages = row.getColumn("total_pages", java.lang.Integer::class.java)?.toInt(),
+                            percentage = row.getColumn("percentage", java.lang.Double::class.java)?.toDouble(),
                             lastReadAt = row.getColumn("last_read_at", String::class.java),
                         )
                     }.firstOrNull()
