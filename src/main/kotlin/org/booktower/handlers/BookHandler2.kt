@@ -16,113 +16,81 @@ private val logger = LoggerFactory.getLogger("booktower.BookHandler")
 class BookHandler2(private val bookService: BookService) {
     fun list(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
+        val libraryId = req.query("libraryId")
+        val page = req.query("page")?.toIntOrNull() ?: 1
+        val pageSize = req.query("pageSize")?.toIntOrNull() ?: 20
 
-        return try {
-            val libraryId = req.query("libraryId")
-            val page = req.query("page")?.toIntOrNull() ?: 1
-            val pageSize = req.query("pageSize")?.toIntOrNull() ?: 20
-
-            val bookList = bookService.getBooks(userId, libraryId, page, pageSize)
-            Response(Status.OK)
-                .header("Content-Type", "application/json")
-                .body(Json.mapper.writeValueAsString(bookList))
-        } catch (e: Exception) {
-            logger.error("Error listing books", e)
-            Response(Status.INTERNAL_SERVER_ERROR)
-                .header("Content-Type", "application/json")
-                .body(Json.mapper.writeValueAsString(ErrorResponse("INTERNAL_ERROR", "Failed to list books")))
-        }
+        val bookList = bookService.getBooks(userId, libraryId, page, pageSize)
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(Json.mapper.writeValueAsString(bookList))
     }
 
     fun create(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
-
-        return try {
-            val requestBody = req.bodyString()
-            if (requestBody.isBlank()) {
-                return Response(Status.BAD_REQUEST)
-                    .header("Content-Type", "application/json")
-                    .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Request body is required")))
-            }
-
-            val createRequest = Json.mapper.readValue(requestBody, CreateBookRequest::class.java)
-
-            val validationError = validateCreateBookRequest(createRequest)
-            if (validationError != null) {
-                return Response(Status.BAD_REQUEST)
-                    .header("Content-Type", "application/json")
-                    .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", validationError)))
-            }
-
-            val result = bookService.createBook(userId, createRequest)
-
-            result.fold(
-                onSuccess = { book ->
-                    logger.info("Book created: ${book.title}")
-                    Response(Status.CREATED)
-                        .header("Content-Type", "application/json")
-                        .body(Json.mapper.writeValueAsString(book))
-                },
-                onFailure = { error ->
-                    logger.error("Error creating book: ${error.message}")
-                    Response(Status.INTERNAL_SERVER_ERROR)
-                        .header("Content-Type", "application/json")
-                        .body(Json.mapper.writeValueAsString(ErrorResponse("INTERNAL_ERROR", "Failed to create book")))
-                },
-            )
-        } catch (e: Exception) {
-            logger.error("Error creating book", e)
-            Response(Status.INTERNAL_SERVER_ERROR)
+        val requestBody = req.bodyString()
+        if (requestBody.isBlank()) {
+            return Response(Status.BAD_REQUEST)
                 .header("Content-Type", "application/json")
-                .body(Json.mapper.writeValueAsString(ErrorResponse("INTERNAL_ERROR", "Failed to create book")))
+                .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Request body is required")))
         }
+
+        val createRequest = Json.mapper.readValue(requestBody, CreateBookRequest::class.java)
+
+        val validationError = validateCreateBookRequest(createRequest)
+        if (validationError != null) {
+            return Response(Status.BAD_REQUEST)
+                .header("Content-Type", "application/json")
+                .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", validationError)))
+        }
+
+        val result = bookService.createBook(userId, createRequest)
+
+        return result.fold(
+            onSuccess = { book ->
+                logger.info("Book created: ${book.title}")
+                Response(Status.CREATED)
+                    .header("Content-Type", "application/json")
+                    .body(Json.mapper.writeValueAsString(book))
+            },
+            onFailure = { error ->
+                logger.error("Error creating book: ${error.message}")
+                Response(Status.BAD_REQUEST)
+                    .header("Content-Type", "application/json")
+                    .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", error.message ?: "Failed to create book")))
+            },
+        )
     }
 
     fun recent(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
-
-        return try {
-            val limit = req.query("limit")?.toIntOrNull() ?: 10
-            val books = bookService.getRecentBooks(userId, limit)
-            Response(Status.OK)
-                .header("Content-Type", "application/json")
-                .body(Json.mapper.writeValueAsString(books))
-        } catch (e: Exception) {
-            logger.error("Error fetching recent books", e)
-            Response(Status.INTERNAL_SERVER_ERROR)
-                .header("Content-Type", "application/json")
-                .body(Json.mapper.writeValueAsString(ErrorResponse("INTERNAL_ERROR", "Failed to fetch recent books")))
-        }
+        val limit = req.query("limit")?.toIntOrNull() ?: 10
+        val books = bookService.getRecentBooks(userId, limit)
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(Json.mapper.writeValueAsString(books))
     }
 
     fun get(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
+        val pathParts = req.uri.path.split("/")
+        val bookId = pathParts.lastOrNull()?.let { UUID.fromString(it) }
 
-        return try {
-            val pathParts = req.uri.path.split("/")
-            val bookId = pathParts.lastOrNull()?.let { UUID.fromString(it) }
-
-            if (bookId == null) {
-                return Response(Status.BAD_REQUEST)
-                    .header("Content-Type", "application/json")
-                    .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Invalid book ID")))
-            }
-
-            val book = bookService.getBook(userId, bookId)
-            if (book != null) {
-                Response(Status.OK)
-                    .header("Content-Type", "application/json")
-                    .body(Json.mapper.writeValueAsString(book))
-            } else {
-                Response(Status.NOT_FOUND)
-                    .header("Content-Type", "application/json")
-                    .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "Book not found")))
-            }
-        } catch (e: Exception) {
-            logger.error("Error fetching book", e)
-            Response(Status.INTERNAL_SERVER_ERROR)
+        if (bookId == null) {
+            return Response(Status.BAD_REQUEST)
                 .header("Content-Type", "application/json")
-                .body(Json.mapper.writeValueAsString(ErrorResponse("INTERNAL_ERROR", "Failed to fetch book")))
+                .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Invalid book ID")))
+        }
+
+        val book = bookService.getBook(userId, bookId)
+        return if (book != null) {
+            Response(Status.OK)
+                .header("Content-Type", "application/json")
+                .body(Json.mapper.writeValueAsString(book))
+        } else {
+            Response(Status.NOT_FOUND)
+                .header("Content-Type", "application/json")
+                .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "Book not found")))
         }
     }
 

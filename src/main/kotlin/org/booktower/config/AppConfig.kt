@@ -13,6 +13,7 @@ data class AppConfig(
     val security: SecurityConfig,
     val storage: StorageConfig,
     val weblate: WeblateConfig,
+    val csrf: CsrfConfig,
 ) {
     companion object {
         fun load(): AppConfig {
@@ -27,6 +28,7 @@ data class AppConfig(
                 security = SecurityConfig.load(app.getConfig("security")),
                 storage = StorageConfig.load(app.getConfig("storage")),
                 weblate = WeblateConfig.load(app.getConfig("weblate")),
+                csrf = CsrfConfig.load(app.getConfig("csrf")),
             ).also {
                 logger.info("Loaded configuration: appName=${it.name}, port=${it.port}")
             }
@@ -105,6 +107,18 @@ data class StorageConfig(
             if (!dir.exists() && !dir.mkdirs()) {
                 throw IllegalStateException("Failed to create directory: $path")
             }
+        }
+    }
+}
+
+data class CsrfConfig(
+    val allowedHosts: Set<String>,
+) {
+    companion object {
+        fun load(config: com.typesafe.config.Config): CsrfConfig {
+            return CsrfConfig(
+                allowedHosts = config.getStringList("allowed-hosts").toSet(),
+            )
         }
     }
 }

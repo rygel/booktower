@@ -6,11 +6,13 @@ import org.flywaydb.core.Flyway
 import org.jdbi.v3.core.Jdbi
 import org.jdbi.v3.sqlobject.SqlObjectPlugin
 import org.slf4j.LoggerFactory
-import javax.sql.DataSource
 
 private val logger = LoggerFactory.getLogger("booktower.Database")
 
-class Database private constructor(private val jdbi: Jdbi) {
+class Database private constructor(
+    private val dataSource: HikariDataSource,
+    private val jdbi: Jdbi,
+) {
     companion object {
         fun connect(config: DatabaseConfig): Database {
             logger.info("Connecting to database: ${config.url}")
@@ -27,7 +29,7 @@ class Database private constructor(private val jdbi: Jdbi) {
                     connectionTimeout = 30000
                 }
 
-            val dataSource: DataSource = HikariDataSource(hikariConfig)
+            val dataSource = HikariDataSource(hikariConfig)
 
             val flyway =
                 Flyway.configure()
@@ -43,11 +45,19 @@ class Database private constructor(private val jdbi: Jdbi) {
             val jdbi = Jdbi.create(dataSource)
             jdbi.installPlugin(SqlObjectPlugin())
 
-            return Database(jdbi)
+            return Database(dataSource, jdbi)
         }
     }
 
     fun <T> onDemand(clazz: Class<T>): T = jdbi.onDemand(clazz)
 
     fun getJdbi(): Jdbi = jdbi
+
+    fun close() {
+        if (!dataSource.isClosed) {
+            logger.info("Closing database connection pool...")
+            dataSource.close()
+            logger.info("Database connection pool closed")
+        }
+    }
 }

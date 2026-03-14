@@ -45,8 +45,8 @@ class LibraryService(
         val count =
             handle.createQuery("SELECT COUNT(*) FROM books WHERE library_id = ?")
                 .bind(0, libId.toString())
-                .mapTo(Int::class.java)
-                .first() ?: 0
+                .mapTo(java.lang.Integer::class.java)
+                .first()?.toInt() ?: 0
 
         return LibraryDto(
             id = libId.toString(),

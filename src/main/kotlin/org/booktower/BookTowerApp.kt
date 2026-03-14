@@ -1,6 +1,7 @@
 package org.booktower
 
 import org.booktower.config.AppConfig
+import org.booktower.config.Database
 import org.booktower.config.appModule
 import org.booktower.filters.CsrfFilter
 import org.booktower.filters.GlobalErrorFilter
@@ -28,7 +29,13 @@ fun main() {
     val koin = GlobalContext.get()
 
     val config = koin.get<AppConfig>()
+    val database = koin.get<Database>()
     val appHandler = koin.get<AppHandler>()
+
+    Runtime.getRuntime().addShutdownHook(Thread {
+        logger.info("Shutting down BookTower...")
+        database.close()
+    })
 
     val app = routes(
         "/health" bind Method.GET to { Response(OK).body("OK") },
@@ -37,7 +44,7 @@ fun main() {
 
     val filteredApp = GlobalErrorFilter()
         .then(RequestLoggingFilter())
-        .then(CsrfFilter(setOf("localhost", "127.0.0.1", config.host)))
+        .then(CsrfFilter(config.csrf.allowedHosts))
         .then(StaticCacheFilter())
         .then(app)
 

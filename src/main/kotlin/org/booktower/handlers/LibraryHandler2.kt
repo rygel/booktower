@@ -16,82 +16,58 @@ private val logger = LoggerFactory.getLogger("booktower.LibraryHandler")
 class LibraryHandler2(private val libraryService: LibraryService) {
     fun list(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
-
-        return try {
-            val libraries = libraryService.getLibraries(userId)
-            Response(Status.OK)
-                .header("Content-Type", "application/json")
-                .body(Json.mapper.writeValueAsString(libraries))
-        } catch (e: Exception) {
-            logger.error("Error listing libraries", e)
-            Response(Status.INTERNAL_SERVER_ERROR)
-                .header("Content-Type", "application/json")
-                .body(Json.mapper.writeValueAsString(ErrorResponse("INTERNAL_ERROR", "Failed to list libraries")))
-        }
+        val libraries = libraryService.getLibraries(userId)
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(Json.mapper.writeValueAsString(libraries))
     }
 
     fun create(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
-
-        return try {
-            val requestBody = req.bodyString()
-            if (requestBody.isBlank()) {
-                return Response(Status.BAD_REQUEST)
-                    .header("Content-Type", "application/json")
-                    .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Request body is required")))
-            }
-
-            val createRequest = Json.mapper.readValue(requestBody, CreateLibraryRequest::class.java)
-
-            val validationError = validateCreateLibraryRequest(createRequest)
-            if (validationError != null) {
-                return Response(Status.BAD_REQUEST)
-                    .header("Content-Type", "application/json")
-                    .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", validationError)))
-            }
-
-            val library = libraryService.createLibrary(userId, createRequest)
-            logger.info("Library created: ${library.name}")
-
-            Response(Status.CREATED)
+        val requestBody = req.bodyString()
+        if (requestBody.isBlank()) {
+            return Response(Status.BAD_REQUEST)
                 .header("Content-Type", "application/json")
-                .body(Json.mapper.writeValueAsString(library))
-        } catch (e: Exception) {
-            logger.error("Error creating library", e)
-            Response(Status.INTERNAL_SERVER_ERROR)
-                .header("Content-Type", "application/json")
-                .body(Json.mapper.writeValueAsString(ErrorResponse("INTERNAL_ERROR", "Failed to create library")))
+                .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Request body is required")))
         }
+
+        val createRequest = Json.mapper.readValue(requestBody, CreateLibraryRequest::class.java)
+
+        val validationError = validateCreateLibraryRequest(createRequest)
+        if (validationError != null) {
+            return Response(Status.BAD_REQUEST)
+                .header("Content-Type", "application/json")
+                .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", validationError)))
+        }
+
+        val library = libraryService.createLibrary(userId, createRequest)
+        logger.info("Library created: ${library.name}")
+
+        return Response(Status.CREATED)
+            .header("Content-Type", "application/json")
+            .body(Json.mapper.writeValueAsString(library))
     }
 
     fun delete(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
+        val pathParts = req.uri.path.split("/")
+        val libraryId = pathParts.lastOrNull()?.let { UUID.fromString(it) }
 
-        return try {
-            val pathParts = req.uri.path.split("/")
-            val libraryId = pathParts.lastOrNull()?.let { UUID.fromString(it) }
-
-            if (libraryId == null) {
-                return Response(Status.BAD_REQUEST)
-                    .header("Content-Type", "application/json")
-                    .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Invalid library ID")))
-            }
-
-            val deleted = libraryService.deleteLibrary(userId, libraryId)
-            if (deleted) {
-                Response(Status.OK)
-                    .header("Content-Type", "application/json")
-                    .body(Json.mapper.writeValueAsString(mapOf("message" to "Library deleted successfully")))
-            } else {
-                Response(Status.NOT_FOUND)
-                    .header("Content-Type", "application/json")
-                    .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "Library not found")))
-            }
-        } catch (e: Exception) {
-            logger.error("Error deleting library", e)
-            Response(Status.INTERNAL_SERVER_ERROR)
+        if (libraryId == null) {
+            return Response(Status.BAD_REQUEST)
                 .header("Content-Type", "application/json")
-                .body(Json.mapper.writeValueAsString(ErrorResponse("INTERNAL_ERROR", "Failed to delete library")))
+                .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Invalid library ID")))
+        }
+
+        val deleted = libraryService.deleteLibrary(userId, libraryId)
+        return if (deleted) {
+            Response(Status.OK)
+                .header("Content-Type", "application/json")
+                .body(Json.mapper.writeValueAsString(mapOf("message" to "Library deleted successfully")))
+        } else {
+            Response(Status.NOT_FOUND)
+                .header("Content-Type", "application/json")
+                .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "Library not found")))
         }
     }
 

@@ -16,6 +16,8 @@ val appModule = module {
         Database.connect(config.database)
     }
 
+    single { TemplateRenderer() }
+
     single { JwtService(get<AppConfig>().security) }
 
     single { AuthService(get<Database>().getJdbi(), get()) }
@@ -24,5 +26,5 @@ val appModule = module {
 
     single { BookService(get<Database>().getJdbi(), get<AppConfig>().storage) }
 
-    single { AppHandler(get(), get(), get(), get()) }
+    single { AppHandler(get(), get(), get(), get(), get()) }
 }

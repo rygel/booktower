@@ -1,12 +1,11 @@
 package org.booktower.handlers
 
-import org.booktower.config.TemplateEngine
+import org.booktower.config.TemplateRenderer
 import org.booktower.filters.JwtAuthFilter
 import org.booktower.services.AuthService
 import org.booktower.services.BookService
 import org.booktower.services.JwtService
 import org.booktower.services.LibraryService
-import org.booktower.web.WebContext
 import org.http4k.core.*
 import org.http4k.core.cookie.cookie
 import org.http4k.routing.ResourceLoader
@@ -23,6 +22,7 @@ class AppHandler(
     private val libraryService: LibraryService,
     private val bookService: BookService,
     private val jwtService: JwtService,
+    private val templateRenderer: TemplateRenderer,
 ) {
     private val authHandler = AuthHandler2(authService)
     private val libraryHandler = LibraryHandler2(libraryService)
@@ -51,7 +51,6 @@ class AppHandler(
     }
 
     private fun index(req: Request): Response {
-        val ctx = WebContext(req)
         val token = req.cookie("token")?.value
         val isAuth = token != null && jwtService.extractUserId(token) != null
 
@@ -59,7 +58,7 @@ class AppHandler(
             if (isAuth) {
                 val userId = jwtService.extractUserId(token)!!
                 val libraries = libraryService.getLibraries(userId)
-                TemplateEngine.render(
+                templateRenderer.render(
                     "index.kte",
                     mapOf<String, Any?>(
                         "title" to "BookTower",
@@ -69,7 +68,7 @@ class AppHandler(
                     ),
                 )
             } else {
-                TemplateEngine.render(
+                templateRenderer.render(
                     "index.kte",
                     mapOf<String, Any?>(
                         "title" to "BookTower",
@@ -87,7 +86,7 @@ class AppHandler(
 
     private fun loginPage(req: Request): Response {
         val content =
-            TemplateEngine.render(
+            templateRenderer.render(
                 "index.kte",
                 mapOf<String, Any?>(
                     "title" to "Login - BookTower",
@@ -105,7 +104,7 @@ class AppHandler(
 
     private fun registerPage(req: Request): Response {
         val content =
-            TemplateEngine.render(
+            templateRenderer.render(
                 "index.kte",
                 mapOf<String, Any?>(
                     "title" to "Register - BookTower",
@@ -128,13 +127,13 @@ class AppHandler(
             if (it.isNotBlank()) it else "dark"
         }
 
-        if (isHtmx) {
-            return Response(Status.OK)
+        return if (isHtmx) {
+            Response(Status.OK)
                 .header("HX-Trigger", "theme-updated")
                 .header("HX-Reswap", "none")
                 .body("Theme updated to $theme")
         } else {
-            return Response(Status.SEE_OTHER)
+            Response(Status.SEE_OTHER)
                 .header("Location", "/")
                 .body("Theme updated. Redirecting...")
         }
@@ -147,13 +146,13 @@ class AppHandler(
             if (it.isNotBlank()) it else "en"
         }
 
-        if (isHtmx) {
-            return Response(Status.OK)
+        return if (isHtmx) {
+            Response(Status.OK)
                 .header("HX-Trigger", "lang-updated")
                 .header("HX-Reswap", "none")
                 .body("Language updated to $lang")
         } else {
-            return Response(Status.SEE_OTHER)
+            Response(Status.SEE_OTHER)
                 .header("Location", "/")
                 .body("Language updated. Redirecting...")
         }
