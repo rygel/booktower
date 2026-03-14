@@ -25,23 +25,7 @@ import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-class FileUploadIntegrationTest {
-    private lateinit var app: HttpHandler
-
-    @BeforeEach
-    fun setup() {
-        val config = TestFixture.config
-        val jdbi = TestFixture.database.getJdbi()
-        val jwtService = JwtService(config.security)
-        val authService = AuthService(jdbi, jwtService)
-        val libraryService = LibraryService(jdbi, config.storage)
-        val bookService = BookService(jdbi, config.storage)
-        val bookmarkService = BookmarkService(jdbi)
-        val userSettingsService = UserSettingsService(jdbi)
-        val pdfMetadataService = PdfMetadataService(jdbi, config.storage.coversPath)
-        val appHandler = AppHandler(authService, libraryService, bookService, bookmarkService, userSettingsService, pdfMetadataService, jwtService, config.storage, TemplateRenderer())
-        app = GlobalErrorFilter().then(appHandler.routes())
-    }
+class FileUploadIntegrationTest : IntegrationTestBase() {
 
     private fun uniqueUser() = "fu_${System.nanoTime()}"
 
@@ -88,7 +72,7 @@ class FileUploadIntegrationTest {
                 .header("Cookie", "token=$token")
                 .header("Content-Type", "application/octet-stream")
                 .header("X-Filename", "mybook.pdf")
-                .body(String(fakePdfBytes)),
+                .body(java.io.ByteArrayInputStream(fakePdfBytes)),
         )
 
         assertEquals(Status.OK, response.status)
@@ -107,7 +91,7 @@ class FileUploadIntegrationTest {
                 .header("Cookie", "token=$token")
                 .header("Content-Type", "application/octet-stream")
                 .header("X-Filename", "mybook.epub")
-                .body(String(fakeEpubBytes)),
+                .body(java.io.ByteArrayInputStream(fakeEpubBytes)),
         )
 
         assertEquals(Status.OK, response.status)
@@ -122,7 +106,7 @@ class FileUploadIntegrationTest {
             Request(Method.POST, "/api/books/$bookId/upload")
                 .header("Cookie", "token=$token")
                 .header("Content-Type", "application/octet-stream")
-                .body(String(fakePdfBytes)),
+                .body(java.io.ByteArrayInputStream(fakePdfBytes)),
         )
 
         assertEquals(Status.BAD_REQUEST, response.status)
@@ -170,7 +154,7 @@ class FileUploadIntegrationTest {
                 .header("Cookie", "token=$token")
                 .header("Content-Type", "application/octet-stream")
                 .header("X-Filename", "mybook.pdf")
-                .body(String(fakePdfBytes)),
+                .body(java.io.ByteArrayInputStream(fakePdfBytes)),
         )
 
         assertEquals(Status.NOT_FOUND, response.status)
@@ -182,7 +166,7 @@ class FileUploadIntegrationTest {
             Request(Method.POST, "/api/books/00000000-0000-0000-0000-000000000000/upload")
                 .header("Content-Type", "application/octet-stream")
                 .header("X-Filename", "mybook.pdf")
-                .body(String(fakePdfBytes)),
+                .body(java.io.ByteArrayInputStream(fakePdfBytes)),
         )
         assertEquals(Status.UNAUTHORIZED, response.status)
     }
@@ -197,7 +181,7 @@ class FileUploadIntegrationTest {
                 .header("Cookie", "token=$token")
                 .header("Content-Type", "application/octet-stream")
                 .header("X-Filename", "readable.pdf")
-                .body(String(fakePdfBytes)),
+                .body(java.io.ByteArrayInputStream(fakePdfBytes)),
         )
 
         val response = app(
@@ -252,7 +236,7 @@ class FileUploadIntegrationTest {
                 .header("Cookie", "token=$tokenA")
                 .header("Content-Type", "application/octet-stream")
                 .header("X-Filename", "private.pdf")
-                .body(String(fakePdfBytes)),
+                .body(java.io.ByteArrayInputStream(fakePdfBytes)),
         )
 
         val response = app(

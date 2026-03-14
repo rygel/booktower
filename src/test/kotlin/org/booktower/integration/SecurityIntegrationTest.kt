@@ -28,23 +28,7 @@ import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-class SecurityIntegrationTest {
-    private lateinit var app: HttpHandler
-
-    @BeforeEach
-    fun setup() {
-        val config = TestFixture.config
-        val jdbi = TestFixture.database.getJdbi()
-        val jwtService = JwtService(config.security)
-        val authService = AuthService(jdbi, jwtService)
-        val libraryService = LibraryService(jdbi, config.storage)
-        val bookService = BookService(jdbi, config.storage)
-        val bookmarkService = BookmarkService(jdbi)
-        val userSettingsService = UserSettingsService(jdbi)
-        val pdfMetadataService = PdfMetadataService(jdbi, config.storage.coversPath)
-        val appHandler = AppHandler(authService, libraryService, bookService, bookmarkService, userSettingsService, pdfMetadataService, jwtService, config.storage, TemplateRenderer())
-        app = GlobalErrorFilter().then(appHandler.routes())
-    }
+class SecurityIntegrationTest : IntegrationTestBase() {
 
     private fun uniqueUser() = "sec_${System.nanoTime()}"
 

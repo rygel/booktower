@@ -43,6 +43,7 @@ class AppHandler(
     fun routes(): RoutingHttpHandler {
         return routes(
             "/static" bind static(ResourceLoader.Classpath("/static")),
+            "/covers/{filename}" bind Method.GET to fileHandler::cover,
             "/" bind Method.GET to ::index,
             "/login" bind Method.GET to ::loginPage,
             "/register" bind Method.GET to ::registerPage,

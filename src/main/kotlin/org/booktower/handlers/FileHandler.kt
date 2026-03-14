@@ -124,6 +124,38 @@ class FileHandler(
             .body(file.inputStream())
     }
 
+    fun cover(req: Request): Response {
+        val filename = req.uri.path.split("/").lastOrNull()
+            ?: return Response(Status.NOT_FOUND)
+
+        // Reject path traversal attempts
+        if (filename.contains("..") || filename.contains("/") || filename.contains("\\")) {
+            return Response(Status.BAD_REQUEST)
+                .header("Content-Type", "application/json")
+                .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Invalid filename")))
+        }
+
+        val file = File(storageConfig.coversPath, filename)
+        if (!file.exists() || !file.isFile) {
+            return Response(Status.NOT_FOUND)
+                .header("Content-Type", "application/json")
+                .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "Cover not found")))
+        }
+
+        val contentType = when (file.extension.lowercase()) {
+            "jpg", "jpeg" -> "image/jpeg"
+            "png" -> "image/png"
+            "webp" -> "image/webp"
+            else -> "application/octet-stream"
+        }
+
+        return Response(Status.OK)
+            .header("Content-Type", contentType)
+            .header("Cache-Control", "public, max-age=86400")
+            .header("Content-Length", file.length().toString())
+            .body(file.inputStream())
+    }
+
     private fun badRequest(message: String) = Response(Status.BAD_REQUEST)
         .header("Content-Type", "application/json")
         .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", message)))
