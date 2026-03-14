@@ -109,6 +109,7 @@ class AuthHandler2(private val authService: AuthService) {
                         is IllegalArgumentException ->
                             Response(Status.UNAUTHORIZED)
                                 .header("Content-Type", "application/json")
+                                .header("WWW-Authenticate", "Bearer")
                                 .body(Json.mapper.writeValueAsString(ErrorResponse("INVALID_CREDENTIALS", "Invalid username or password")))
 
                         else ->

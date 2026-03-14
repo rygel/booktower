@@ -348,6 +348,12 @@
                 <version>${mockk.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.http4k</groupId>
+            <artifactId>http4k-client-jetty</artifactId>
+            <version>${http4k.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>

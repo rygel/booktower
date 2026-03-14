@@ -27,6 +27,7 @@ fun JwtAuthFilter(jwtService: JwtService): Filter = Filter { next ->
         } else {
             Response(Status.UNAUTHORIZED)
                 .header("Content-Type", "application/json")
+                .header("WWW-Authenticate", "Bearer")
                 .body(
                     Json.mapper.writeValueAsString(
                         ErrorResponse("UNAUTHORIZED", "Authentication required"),
