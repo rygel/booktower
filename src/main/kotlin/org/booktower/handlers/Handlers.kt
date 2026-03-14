@@ -8,6 +8,7 @@ import org.booktower.services.BookmarkService
 import org.booktower.services.BookService
 import org.booktower.services.JwtService
 import org.booktower.services.LibraryService
+import org.booktower.services.PdfMetadataService
 import org.booktower.services.UserSettingsService
 import org.http4k.core.*
 import org.http4k.core.cookie.cookie
@@ -26,6 +27,7 @@ class AppHandler(
     private val bookService: BookService,
     private val bookmarkService: BookmarkService,
     private val userSettingsService: UserSettingsService,
+    private val pdfMetadataService: PdfMetadataService,
     private val jwtService: JwtService,
     private val storageConfig: StorageConfig,
     private val templateRenderer: TemplateRenderer,
@@ -34,7 +36,7 @@ class AppHandler(
     private val libraryHandler = LibraryHandler2(libraryService)
     private val bookHandler = BookHandler2(bookService)
     private val bookmarkHandler = BookmarkHandler(bookmarkService)
-    private val fileHandler = FileHandler(bookService, storageConfig)
+    private val fileHandler = FileHandler(bookService, pdfMetadataService, storageConfig)
     private val settingsHandler = UserSettingsHandler(userSettingsService)
     private val authFilter = JwtAuthFilter(jwtService)
 
@@ -56,6 +58,7 @@ class AppHandler(
             "/api/books/{id}" bind Method.DELETE to authFilter.then(bookHandler::delete),
             "/api/books/{id}/progress" bind Method.PUT to authFilter.then(bookHandler::updateProgress),
             "/api/recent" bind Method.GET to authFilter.then(bookHandler::recent),
+            "/api/search" bind Method.GET to authFilter.then(bookHandler::search),
             "/api/bookmarks" bind Method.GET to authFilter.then(bookmarkHandler::list),
             "/api/bookmarks" bind Method.POST to authFilter.then(bookmarkHandler::create),
             "/api/bookmarks/{id}" bind Method.DELETE to authFilter.then(bookmarkHandler::delete),

@@ -12,6 +12,7 @@ import org.booktower.models.LibraryDto
 import org.booktower.models.LoginResponse
 import org.booktower.services.AuthService
 import org.booktower.services.BookmarkService
+import org.booktower.services.PdfMetadataService
 import org.booktower.services.UserSettingsService
 import org.booktower.services.BookService
 import org.booktower.services.JwtService
@@ -51,7 +52,8 @@ class RoundTripIntegrationTest {
         val bookService = BookService(jdbi, config.storage)
         val bookmarkService = BookmarkService(jdbi)
         val userSettingsService = UserSettingsService(jdbi)
-        val appHandler = AppHandler(authService, libraryService, bookService, bookmarkService, userSettingsService, jwtService, config.storage, TemplateRenderer())
+        val pdfMetadataService = PdfMetadataService(jdbi, config.storage.coversPath)
+        val appHandler = AppHandler(authService, libraryService, bookService, bookmarkService, userSettingsService, pdfMetadataService, jwtService, config.storage, TemplateRenderer())
 
         val app = routes(
             "/health" bind Method.GET to { Response(OK).body("OK") },

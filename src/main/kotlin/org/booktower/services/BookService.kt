@@ -65,6 +65,55 @@ class BookService(private val jdbi: Jdbi, private val storageConfig: StorageConf
         return BookListDto(books, total, safePage, safePageSize)
     }
 
+    fun searchBooks(
+        userId: UUID,
+        query: String,
+        page: Int = 1,
+        pageSize: Int = 20,
+    ): BookListDto {
+        val safePage = page.coerceAtLeast(1)
+        val safePageSize = pageSize.coerceIn(1, 100)
+        val offset = (safePage - 1) * safePageSize
+        val likeQuery = "%${query.trim().lowercase()}%"
+
+        val books = jdbi.withHandle<List<BookDto>, Exception> { handle ->
+            handle.createQuery(
+                """
+                SELECT b.* FROM books b
+                INNER JOIN libraries l ON b.library_id = l.id
+                WHERE l.user_id = ?
+                  AND (LOWER(b.title) LIKE ? OR LOWER(b.author) LIKE ? OR LOWER(b.description) LIKE ?)
+                ORDER BY b.title LIMIT ? OFFSET ?
+                """,
+            )
+                .bind(0, userId.toString())
+                .bind(1, likeQuery)
+                .bind(2, likeQuery)
+                .bind(3, likeQuery)
+                .bind(4, safePageSize)
+                .bind(5, offset)
+                .map { row -> mapBook(row) }.list()
+        }
+
+        val total = jdbi.withHandle<Int, Exception> { handle ->
+            handle.createQuery(
+                """
+                SELECT COUNT(*) FROM books b
+                INNER JOIN libraries l ON b.library_id = l.id
+                WHERE l.user_id = ?
+                  AND (LOWER(b.title) LIKE ? OR LOWER(b.author) LIKE ? OR LOWER(b.description) LIKE ?)
+                """,
+            )
+                .bind(0, userId.toString())
+                .bind(1, likeQuery)
+                .bind(2, likeQuery)
+                .bind(3, likeQuery)
+                .mapTo(java.lang.Integer::class.java).first()?.toInt() ?: 0
+        }
+
+        return BookListDto(books, total, safePage, safePageSize)
+    }
+
     fun getBook(
         userId: UUID,
         bookId: UUID,

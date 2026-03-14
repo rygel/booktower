@@ -5,6 +5,7 @@ import org.booktower.config.StorageConfig
 import org.booktower.filters.AuthenticatedUser
 import org.booktower.models.ErrorResponse
 import org.booktower.services.BookService
+import org.booktower.services.PdfMetadataService
 import org.http4k.core.Request
 import org.http4k.core.Response
 import org.http4k.core.Status
@@ -25,7 +26,11 @@ private val CONTENT_TYPES = mapOf(
 )
 private const val MAX_FILE_SIZE = 500L * 1024 * 1024 // 500 MB
 
-class FileHandler(private val bookService: BookService, private val storageConfig: StorageConfig) {
+class FileHandler(
+    private val bookService: BookService,
+    private val pdfMetadataService: PdfMetadataService,
+    private val storageConfig: StorageConfig,
+) {
 
     fun upload(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
@@ -70,6 +75,14 @@ class FileHandler(private val bookService: BookService, private val storageConfi
         }
 
         logger.info("File uploaded for book $bookId: ${bytes.size} bytes, ext=$ext")
+
+        // Extract PDF metadata and cover asynchronously (non-blocking for the upload response)
+        if (ext == "pdf") {
+            Thread {
+                pdfMetadataService.extractAndStore(bookId.toString(), destFile)
+            }.also { it.isDaemon = true }.start()
+        }
+
         return Response(Status.OK)
             .header("Content-Type", "application/json")
             .body(Json.mapper.writeValueAsString(mapOf("filename" to destFile.name, "size" to bytes.size)))

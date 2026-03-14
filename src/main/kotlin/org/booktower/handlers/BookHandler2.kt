@@ -96,6 +96,22 @@ class BookHandler2(private val bookService: BookService) {
         }
     }
 
+    fun search(req: Request): Response {
+        val userId = AuthenticatedUser.from(req)
+        val query = req.query("q")?.trim()
+        if (query.isNullOrBlank()) {
+            return Response(Status.BAD_REQUEST)
+                .header("Content-Type", "application/json")
+                .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Query parameter 'q' is required")))
+        }
+        val page = req.query("page")?.toIntOrNull() ?: 1
+        val pageSize = req.query("pageSize")?.toIntOrNull() ?: 20
+        val results = bookService.searchBooks(userId, query, page, pageSize)
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(Json.mapper.writeValueAsString(results))
+    }
+
     fun delete(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
         val bookId = req.uri.path.split("/").dropLast(0).let {
