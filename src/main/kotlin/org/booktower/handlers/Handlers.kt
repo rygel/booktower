@@ -3,6 +3,7 @@ package org.booktower.handlers
 import org.booktower.config.TemplateRenderer
 import org.booktower.filters.JwtAuthFilter
 import org.booktower.services.AuthService
+import org.booktower.services.BookmarkService
 import org.booktower.services.BookService
 import org.booktower.services.JwtService
 import org.booktower.services.LibraryService
@@ -21,12 +22,14 @@ class AppHandler(
     private val authService: AuthService,
     private val libraryService: LibraryService,
     private val bookService: BookService,
+    private val bookmarkService: BookmarkService,
     private val jwtService: JwtService,
     private val templateRenderer: TemplateRenderer,
 ) {
     private val authHandler = AuthHandler2(authService)
     private val libraryHandler = LibraryHandler2(libraryService)
     private val bookHandler = BookHandler2(bookService)
+    private val bookmarkHandler = BookmarkHandler(bookmarkService)
     private val authFilter = JwtAuthFilter(jwtService)
 
     fun routes(): RoutingHttpHandler {
@@ -47,6 +50,9 @@ class AppHandler(
             "/api/books/{id}" bind Method.DELETE to authFilter.then(bookHandler::delete),
             "/api/books/{id}/progress" bind Method.PUT to authFilter.then(bookHandler::updateProgress),
             "/api/recent" bind Method.GET to authFilter.then(bookHandler::recent),
+            "/api/bookmarks" bind Method.GET to authFilter.then(bookmarkHandler::list),
+            "/api/bookmarks" bind Method.POST to authFilter.then(bookmarkHandler::create),
+            "/api/bookmarks/{id}" bind Method.DELETE to authFilter.then(bookmarkHandler::delete),
             "/preferences/theme" bind Method.POST to ::setTheme,
             "/preferences/lang" bind Method.POST to ::setLanguage,
         )

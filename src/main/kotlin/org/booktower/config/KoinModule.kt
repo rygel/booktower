@@ -2,6 +2,7 @@ package org.booktower.config
 
 import org.booktower.handlers.AppHandler
 import org.booktower.services.AuthService
+import org.booktower.services.BookmarkService
 import org.booktower.services.BookService
 import org.booktower.services.JwtService
 import org.booktower.services.LibraryService
@@ -26,5 +27,7 @@ val appModule = module {
 
     single { BookService(get<Database>().getJdbi(), get<AppConfig>().storage) }
 
-    single { AppHandler(get(), get(), get(), get(), get()) }
+    single { BookmarkService(get<Database>().getJdbi()) }
+
+    single { AppHandler(get(), get(), get(), get(), get(), get()) }
 }
