@@ -49,9 +49,16 @@
                     @endif
                     <span><i class="ri-calendar-line" style="margin-right:0.25rem;"></i>${i18n.translate("label.added")} ${book.addedAt.take(10)}</span>
                 </div>
-                <a href="/api/books/${book.id}/file" class="btn-primary" style="display:inline-flex; align-items:center; gap:0.5rem; text-decoration:none;">
-                    <i class="ri-download-line"></i> ${i18n.translate("action.download")}
-                </a>
+                <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                    @if(book.fileSize > 0)
+                        <a href="/books/${book.id}/read" class="btn-primary" style="display:inline-flex; align-items:center; gap:0.5rem; text-decoration:none;">
+                            <i class="ri-book-open-line"></i> ${i18n.translate("action.read")}
+                        </a>
+                    @endif
+                    <a href="/api/books/${book.id}/file" class="btn-primary" style="display:inline-flex; align-items:center; gap:0.5rem; text-decoration:none; background:var(--bt-surface-raised); color:var(--bt-text-dim); border:1px solid var(--bt-border-input);">
+                        <i class="ri-download-line"></i> ${i18n.translate("action.download")}
+                    </a>
+                </div>
             </div>
         </div>
     </div>

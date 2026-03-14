@@ -78,6 +78,22 @@ class PageHandler(
         )))
     }
 
+    fun reader(req: Request): Response {
+        val userId = auth(req) ?: return redirectToLogin()
+        val ctx = WebContext(req)
+        val bookId = req.secondToLastPathSegment().toUuidOrNull() ?: return Response(Status.NOT_FOUND)
+        val book = bookService.getBook(userId, bookId) ?: return Response(Status.NOT_FOUND)
+        val bookmarks = bookmarkService.getBookmarks(userId, bookId)
+        return htmlOk(templateRenderer.render("reader.kte", mapOf(
+            "book" to book,
+            "bookmarks" to bookmarks,
+            "themeCss" to ctx.themeCss,
+            "currentTheme" to ctx.theme,
+            "lang" to ctx.lang,
+            "i18n" to ctx.i18n,
+        )))
+    }
+
     fun search(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
         val ctx = WebContext(req)

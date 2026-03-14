@@ -330,4 +330,109 @@ class UiIntegrationTest : IntegrationTestBase() {
         val response = app(Request(Method.GET, "/books/$bookId").header("Cookie", "token=$tokenB"))
         assertEquals(Status.NOT_FOUND, response.status)
     }
+
+    // ── Reader page ─────────────────────────────────────────────────────────
+
+    @Test
+    fun `GET books-id-read returns HTML reader page`() {
+        val token = registerAndGetToken("reader1")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId, "My PDF Book")
+
+        val response = app(Request(Method.GET, "/books/$bookId/read").header("Cookie", "token=$token"))
+        assertEquals(Status.OK, response.status)
+        assertTrue(response.header("Content-Type")?.contains("text/html") == true)
+        val body = response.bodyString()
+        assertTrue(body.contains("My PDF Book"))
+    }
+
+    @Test
+    fun `reader page without auth redirects to login`() {
+        val token = registerAndGetToken("reader2")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId)
+
+        val response = app(Request(Method.GET, "/books/$bookId/read"))
+        assertEquals(Status.SEE_OTHER, response.status)
+        assertEquals("/login", response.header("Location"))
+    }
+
+    @Test
+    fun `reader page shows no-file message when book has no uploaded file`() {
+        val token = registerAndGetToken("reader3")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId, "Unuploaded Book")
+
+        val response = app(Request(Method.GET, "/books/$bookId/read").header("Cookie", "token=$token"))
+        assertEquals(Status.OK, response.status)
+        val body = response.bodyString()
+        // No PDF.js script loaded when no file
+        assertFalse(body.contains("pdf.min.js"))
+    }
+
+    @Test
+    fun `reader page for non-existent book returns 404`() {
+        val token = registerAndGetToken("reader4")
+        val fakeId = "00000000-0000-0000-0000-000000000000"
+        val response = app(Request(Method.GET, "/books/$fakeId/read").header("Cookie", "token=$token"))
+        assertEquals(Status.NOT_FOUND, response.status)
+    }
+
+    @Test
+    fun `reader page contains PDF-js toolbar controls`() {
+        val token = registerAndGetToken("reader5")
+        val libId = createLibrary(token)
+        // Simulate a book with a file by checking via fileSize — we can't upload in unit tests,
+        // so we verify the toolbar is always rendered (PDF.js only loads when fileSize > 0)
+        val bookId = createBook(token, libId, "Reader Toolbar Test")
+
+        val response = app(Request(Method.GET, "/books/$bookId/read").header("Cookie", "token=$token"))
+        val body = response.bodyString()
+        // Toolbar elements always present
+        assertTrue(body.contains("btn-prev"))
+        assertTrue(body.contains("btn-next"))
+        assertTrue(body.contains("btn-bookmarks"))
+        assertTrue(body.contains("btn-zoom-in"))
+    }
+
+    @Test
+    fun `reader page includes back link to book detail`() {
+        val token = registerAndGetToken("reader6")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId, "Back Link Book")
+
+        val response = app(Request(Method.GET, "/books/$bookId/read").header("Cookie", "token=$token"))
+        assertTrue(response.bodyString().contains("/books/$bookId"))
+    }
+
+    @Test
+    fun `reader page reflects current theme`() {
+        val token = registerAndGetToken("reader7")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId)
+
+        val response = app(
+            Request(Method.GET, "/books/$bookId/read")
+                .header("Cookie", "token=$token; app_theme=dracula"),
+        )
+        assertTrue(response.bodyString().contains("data-theme=\"dracula\""))
+    }
+
+    @Test
+    fun `reader page shows bookmark list when bookmarks exist`() {
+        val token = registerAndGetToken("reader8")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId, "Bookmarked Book")
+        app(
+            Request(Method.POST, "/api/bookmarks")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/json")
+                .body("""{"bookId":"$bookId","page":5,"title":"Chapter 1","note":null}"""),
+        )
+
+        val response = app(Request(Method.GET, "/books/$bookId/read").header("Cookie", "token=$token"))
+        val body = response.bodyString()
+        assertTrue(body.contains("Chapter 1"))
+        assertTrue(body.contains("jumpToPage(5)"))
+    }
 }

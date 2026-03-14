@@ -60,6 +60,7 @@ class AppHandler(
             "/libraries" bind Method.GET to pageHandler::libraries,
             "/libraries/{id}" bind Method.GET to pageHandler::library,
             "/books/{id}" bind Method.GET to pageHandler::book,
+            "/books/{id}/read" bind Method.GET to pageHandler::reader,
             "/search" bind Method.GET to pageHandler::search,
             // Auth (rate-limited: 10 requests per 60 s per IP)
             "/auth/register" bind Method.POST to authRateLimit.then(authHandler::register),
