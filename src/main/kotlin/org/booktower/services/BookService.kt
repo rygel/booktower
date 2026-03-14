@@ -17,14 +17,16 @@ class BookService(private val jdbi: Jdbi, private val storageConfig: StorageConf
         page: Int = 1,
         pageSize: Int = 20,
     ): BookListDto {
-        val offset = (page - 1) * pageSize
+        val safePage = page.coerceAtLeast(1)
+        val safePageSize = pageSize.coerceIn(1, 100)
+        val offset = (safePage - 1) * safePageSize
 
         val books =
             if (libraryId != null) {
                 jdbi.withHandle<List<BookDto>, Exception> { handle ->
                     handle.createQuery("SELECT * FROM books WHERE library_id = ? ORDER BY title LIMIT ? OFFSET ?")
                         .bind(0, libraryId)
-                        .bind(1, pageSize)
+                        .bind(1, safePageSize)
                         .bind(2, offset)
                         .map { row -> mapBook(row) }.list()
                 }
@@ -39,7 +41,7 @@ class BookService(private val jdbi: Jdbi, private val storageConfig: StorageConf
                 """,
                     )
                         .bind(0, userId.toString())
-                        .bind(1, pageSize)
+                        .bind(1, safePageSize)
                         .bind(2, offset)
                         .map { row -> mapBook(row) }.list()
                 }
@@ -60,7 +62,7 @@ class BookService(private val jdbi: Jdbi, private val storageConfig: StorageConf
                 }
             }
 
-        return BookListDto(books, total, page, pageSize)
+        return BookListDto(books, total, safePage, safePageSize)
     }
 
     fun getBook(

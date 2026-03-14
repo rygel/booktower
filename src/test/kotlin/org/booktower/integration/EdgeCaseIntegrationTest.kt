@@ -61,16 +61,23 @@ class EdgeCaseIntegrationTest {
     }
 
     @Test
-    fun `pagination with page 0 produces negative offset and fails`() {
+    fun `pagination with page 0 is coerced to page 1`() {
         val token = registerAndGetToken()
         val libId = createLibrary(token)
+        app(
+            Request(Method.POST, "/api/books")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/json")
+                .body("""{"title":"Page Zero","author":null,"description":null,"libraryId":"$libId"}"""),
+        )
 
         val response = app(
             Request(Method.GET, "/api/books?libraryId=$libId&page=0&pageSize=10")
                 .header("Cookie", "token=$token"),
         )
-        // page=0 causes (0-1)*10 = -10 offset, which the DB rejects
-        assertTrue(response.status.code >= 400, "Negative offset should not succeed")
+        assertEquals(Status.OK, response.status)
+        val bookList = Json.mapper.readValue(response.bodyString(), BookListDto::class.java)
+        assertEquals(1, bookList.page)
     }
 
     @Test
@@ -88,14 +95,15 @@ class EdgeCaseIntegrationTest {
     }
 
     @Test
-    fun `pagination with negative pageSize produces negative offset and fails`() {
+    fun `pagination with negative pageSize is coerced to 1`() {
         val token = registerAndGetToken()
         val response = app(
             Request(Method.GET, "/api/books?page=1&pageSize=-1")
                 .header("Cookie", "token=$token"),
         )
-        // pageSize=-1 causes a negative LIMIT, which the DB rejects
-        assertTrue(response.status.code >= 400, "Negative limit should not succeed")
+        assertEquals(Status.OK, response.status)
+        val bookList = Json.mapper.readValue(response.bodyString(), BookListDto::class.java)
+        assertEquals(1, bookList.pageSize)
     }
 
     @Test
