@@ -8,6 +8,7 @@ import org.booktower.services.AuthService
 import org.http4k.core.Request
 import org.http4k.core.Response
 import org.http4k.core.Status
+import org.http4k.core.body.form
 import org.http4k.core.cookie.Cookie
 import org.http4k.core.cookie.cookie
 import org.slf4j.LoggerFactory
@@ -17,14 +18,10 @@ private val logger = LoggerFactory.getLogger("booktower.AuthHandler")
 class AuthHandler2(private val authService: AuthService) {
     fun register(req: Request): Response {
         return try {
-            val requestBody = req.bodyString()
-            if (requestBody.isBlank()) {
-                return Response(Status.BAD_REQUEST)
+            val createRequest = parseRegisterRequest(req)
+                ?: return Response(Status.BAD_REQUEST)
                     .header("Content-Type", "application/json")
                     .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Request body is required")))
-            }
-
-            val createRequest = Json.mapper.readValue(requestBody, CreateUserRequest::class.java)
 
             val validationError = validateCreateUserRequest(createRequest)
             if (validationError != null) {
@@ -38,10 +35,16 @@ class AuthHandler2(private val authService: AuthService) {
             result.fold(
                 onSuccess = { loginResponse ->
                     logger.info("User registered successfully: ${loginResponse.user.username}")
-                    Response(Status.CREATED)
-                        .header("Content-Type", "application/json")
-                        .cookie(createAuthCookie(loginResponse.token))
-                        .body(Json.mapper.writeValueAsString(loginResponse))
+                    if (isFormRequest(req)) {
+                        Response(Status.SEE_OTHER)
+                            .header("Location", "/")
+                            .cookie(createAuthCookie(loginResponse.token))
+                    } else {
+                        Response(Status.CREATED)
+                            .header("Content-Type", "application/json")
+                            .cookie(createAuthCookie(loginResponse.token))
+                            .body(Json.mapper.writeValueAsString(loginResponse))
+                    }
                 },
                 onFailure = { error ->
                     logger.warn("Registration failed: ${error.message}")
@@ -72,14 +75,10 @@ class AuthHandler2(private val authService: AuthService) {
 
     fun login(req: Request): Response {
         return try {
-            val requestBody = req.bodyString()
-            if (requestBody.isBlank()) {
-                return Response(Status.BAD_REQUEST)
+            val loginRequest = parseLoginRequest(req)
+                ?: return Response(Status.BAD_REQUEST)
                     .header("Content-Type", "application/json")
                     .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Request body is required")))
-            }
-
-            val loginRequest = Json.mapper.readValue(requestBody, LoginRequest::class.java)
 
             val validationError = validateLoginRequest(loginRequest)
             if (validationError != null) {
@@ -93,10 +92,16 @@ class AuthHandler2(private val authService: AuthService) {
             result.fold(
                 onSuccess = { loginResponse ->
                     logger.info("User logged in successfully: ${loginResponse.user.username}")
-                    Response(Status.OK)
-                        .header("Content-Type", "application/json")
-                        .cookie(createAuthCookie(loginResponse.token))
-                        .body(Json.mapper.writeValueAsString(loginResponse))
+                    if (isFormRequest(req)) {
+                        Response(Status.SEE_OTHER)
+                            .header("Location", "/")
+                            .cookie(createAuthCookie(loginResponse.token))
+                    } else {
+                        Response(Status.OK)
+                            .header("Content-Type", "application/json")
+                            .cookie(createAuthCookie(loginResponse.token))
+                            .body(Json.mapper.writeValueAsString(loginResponse))
+                    }
                 },
                 onFailure = { error ->
                     logger.warn("Login failed: ${error.message}")
@@ -127,6 +132,34 @@ class AuthHandler2(private val authService: AuthService) {
             .header("Content-Type", "application/json")
             .cookie(createLogoutCookie())
             .body(Json.mapper.writeValueAsString(mapOf("message" to "Logged out successfully")))
+    }
+
+    private fun isFormRequest(req: Request): Boolean {
+        val contentType = req.header("Content-Type") ?: ""
+        return contentType.contains("application/x-www-form-urlencoded")
+    }
+
+    private fun parseLoginRequest(req: Request): LoginRequest? {
+        if (isFormRequest(req)) {
+            val username = req.form("username") ?: return null
+            val password = req.form("password") ?: return null
+            return LoginRequest(username, password)
+        }
+        val body = req.bodyString()
+        if (body.isBlank()) return null
+        return Json.mapper.readValue(body, LoginRequest::class.java)
+    }
+
+    private fun parseRegisterRequest(req: Request): CreateUserRequest? {
+        if (isFormRequest(req)) {
+            val username = req.form("username") ?: return null
+            val email = req.form("email") ?: return null
+            val password = req.form("password") ?: return null
+            return CreateUserRequest(username, email, password)
+        }
+        val body = req.bodyString()
+        if (body.isBlank()) return null
+        return Json.mapper.readValue(body, CreateUserRequest::class.java)
     }
 
     private fun validateCreateUserRequest(request: CreateUserRequest): String? {
