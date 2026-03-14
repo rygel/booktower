@@ -1,31 +1,22 @@
 package org.booktower.handlers
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import org.booktower.filters.AuthenticatedUser
 import org.booktower.models.CreateLibraryRequest
 import org.booktower.models.ErrorResponse
-import org.booktower.models.LibraryDto
-import org.booktower.services.JwtService
 import org.booktower.services.LibraryService
 import org.http4k.core.Request
 import org.http4k.core.Response
 import org.http4k.core.Status
-import org.http4k.core.cookie.cookie
 import org.slf4j.LoggerFactory
 import java.util.UUID
 
 private val logger = LoggerFactory.getLogger("booktower.LibraryHandler")
 private val objectMapper = ObjectMapper()
 
-class LibraryHandler2(private val libraryService: LibraryService, private val jwtService: JwtService) {
+class LibraryHandler2(private val libraryService: LibraryService) {
     fun list(req: Request): Response {
-        val token = req.cookie("token")?.value
-        val userId = token?.let { jwtService.extractUserId(it) }
-
-        if (userId == null) {
-            return Response(Status.UNAUTHORIZED)
-                .header("Content-Type", "application/json")
-                .body(objectMapper.writeValueAsString(ErrorResponse("UNAUTHORIZED", "Authentication required")))
-        }
+        val userId = AuthenticatedUser.from(req)
 
         return try {
             val libraries = libraryService.getLibraries(userId)
@@ -41,14 +32,7 @@ class LibraryHandler2(private val libraryService: LibraryService, private val jw
     }
 
     fun create(req: Request): Response {
-        val token = req.cookie("token")?.value
-        val userId = token?.let { jwtService.extractUserId(it) }
-
-        if (userId == null) {
-            return Response(Status.UNAUTHORIZED)
-                .header("Content-Type", "application/json")
-                .body(objectMapper.writeValueAsString(ErrorResponse("UNAUTHORIZED", "Authentication required")))
-        }
+        val userId = AuthenticatedUser.from(req)
 
         return try {
             val requestBody = req.bodyString()
@@ -82,14 +66,7 @@ class LibraryHandler2(private val libraryService: LibraryService, private val jw
     }
 
     fun delete(req: Request): Response {
-        val token = req.cookie("token")?.value
-        val userId = token?.let { jwtService.extractUserId(it) }
-
-        if (userId == null) {
-            return Response(Status.UNAUTHORIZED)
-                .header("Content-Type", "application/json")
-                .body(objectMapper.writeValueAsString(ErrorResponse("UNAUTHORIZED", "Authentication required")))
-        }
+        val userId = AuthenticatedUser.from(req)
 
         return try {
             val pathParts = req.uri.path.split("/")

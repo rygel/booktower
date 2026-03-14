@@ -1,30 +1,22 @@
 package org.booktower.handlers
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import org.booktower.filters.AuthenticatedUser
 import org.booktower.models.CreateBookRequest
 import org.booktower.models.ErrorResponse
 import org.booktower.services.BookService
-import org.booktower.services.JwtService
 import org.http4k.core.Request
 import org.http4k.core.Response
 import org.http4k.core.Status
-import org.http4k.core.cookie.cookie
 import org.slf4j.LoggerFactory
 import java.util.UUID
 
 private val logger = LoggerFactory.getLogger("booktower.BookHandler")
 private val objectMapper = ObjectMapper()
 
-class BookHandler2(private val bookService: BookService, private val jwtService: JwtService) {
+class BookHandler2(private val bookService: BookService) {
     fun list(req: Request): Response {
-        val token = req.cookie("token")?.value
-        val userId = token?.let { jwtService.extractUserId(it) }
-
-        if (userId == null) {
-            return Response(Status.UNAUTHORIZED)
-                .header("Content-Type", "application/json")
-                .body(objectMapper.writeValueAsString(ErrorResponse("UNAUTHORIZED", "Authentication required")))
-        }
+        val userId = AuthenticatedUser.from(req)
 
         return try {
             val libraryId = req.query("libraryId")
@@ -44,14 +36,7 @@ class BookHandler2(private val bookService: BookService, private val jwtService:
     }
 
     fun create(req: Request): Response {
-        val token = req.cookie("token")?.value
-        val userId = token?.let { jwtService.extractUserId(it) }
-
-        if (userId == null) {
-            return Response(Status.UNAUTHORIZED)
-                .header("Content-Type", "application/json")
-                .body(objectMapper.writeValueAsString(ErrorResponse("UNAUTHORIZED", "Authentication required")))
-        }
+        val userId = AuthenticatedUser.from(req)
 
         return try {
             val requestBody = req.bodyString()
@@ -95,14 +80,7 @@ class BookHandler2(private val bookService: BookService, private val jwtService:
     }
 
     fun recent(req: Request): Response {
-        val token = req.cookie("token")?.value
-        val userId = token?.let { jwtService.extractUserId(it) }
-
-        if (userId == null) {
-            return Response(Status.UNAUTHORIZED)
-                .header("Content-Type", "application/json")
-                .body(objectMapper.writeValueAsString(ErrorResponse("UNAUTHORIZED", "Authentication required")))
-        }
+        val userId = AuthenticatedUser.from(req)
 
         return try {
             val limit = req.query("limit")?.toIntOrNull() ?: 10
@@ -119,14 +97,7 @@ class BookHandler2(private val bookService: BookService, private val jwtService:
     }
 
     fun get(req: Request): Response {
-        val token = req.cookie("token")?.value
-        val userId = token?.let { jwtService.extractUserId(it) }
-
-        if (userId == null) {
-            return Response(Status.UNAUTHORIZED)
-                .header("Content-Type", "application/json")
-                .body(objectMapper.writeValueAsString(ErrorResponse("UNAUTHORIZED", "Authentication required")))
-        }
+        val userId = AuthenticatedUser.from(req)
 
         return try {
             val pathParts = req.uri.path.split("/")

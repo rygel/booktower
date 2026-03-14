@@ -70,6 +70,7 @@
         
         <!-- Other Versions -->
         <jackson.version>2.18.2</jackson.version>
+        <jackson-kotlin.version>2.18.2</jackson-kotlin.version>
         <jwt.version>4.4.0</jwt.version>
         <bcrypt.version>0.4</bcrypt.version>
         <pdfbox.version>3.0.3</pdfbox.version>
@@ -82,12 +83,13 @@
 
     <dependencyManagement>
         <dependencies>
-            <dependency>
-                <groupId>io.mockk</groupId>
-                <artifactId>mockk</artifactId>
-                <version>${mockk.version}</version>
-            </dependency>
-            <dependency>
+        <dependency>
+            <groupId>io.mockk</groupId>
+            <artifactId>mockk</artifactId>
+            <version>${mockk.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
                 <groupId>org.junit</groupId>
                 <artifactId>junit-bom</artifactId>
                 <version>${junit.version}</version>
@@ -112,10 +114,25 @@
                 <scope>import</scope>
             </dependency>
             <dependency>
-                <groupId>gg.jte</groupId>
-                <artifactId>jte-kotlin</artifactId>
-                <version>${jte.version}</version>
+                <groupId>com.fasterxml.jackson.module</groupId>
+                <artifactId>jackson-module-kotlin</artifactId>
+                <version>2.18.2</version>
             </dependency>
+        <dependency>
+            <groupId>gg.jte</groupId>
+            <artifactId>jte</artifactId>
+            <version>${jte.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>gg.jte</groupId>
+            <artifactId>jte-kotlin</artifactId>
+            <version>${jte.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>gg.jte</groupId>
+            <artifactId>jte-html-support</artifactId>
+            <version>${jte.version}</version>
+        </dependency>
             <dependency>
                 <groupId>org.jdbi</groupId>
                 <artifactId>jdbi3-core</artifactId>
@@ -141,12 +158,17 @@
                 <artifactId>flyway-core</artifactId>
                 <version>11.3.4</version>
             </dependency>
-            <dependency>
-                <groupId>org.http4k</groupId>
-                <artifactId>http4k-core</artifactId>
-                <version>${http4k.version}</version>
-            </dependency>
-            <dependency>
+        <dependency>
+            <groupId>org.http4k</groupId>
+            <artifactId>http4k-core-jvm</artifactId>
+            <version>${http4k.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.http4k</groupId>
+            <artifactId>http4k-format-gson-jvm</artifactId>
+            <version>${http4k.version}</version>
+        </dependency>
+        <dependency>
                 <groupId>org.http4k</groupId>
                 <artifactId>http4k-server-jetty</artifactId>
                 <version>${http4k.version}</version>
@@ -188,7 +210,7 @@
             </dependency>
             <dependency>
                 <groupId>io.insert-koin</groupId>
-                <artifactId>koin-core</artifactId>
+                <artifactId>koin-core-jvm</artifactId>
                 <version>${koin.version}</version>
             </dependency>
             <dependency>
@@ -262,18 +284,22 @@
         <dependency>
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-core</artifactId>
+            <version>${flyway-maven-plugin.version}</version>
         </dependency>
         <dependency>
             <groupId>org.http4k</groupId>
             <artifactId>http4k-core</artifactId>
+            <version>${http4k.version}</version>
         </dependency>
         <dependency>
             <groupId>org.http4k</groupId>
                 <artifactId>http4k-server-jetty</artifactId>
+                <version>${http4k.version}</version>
         </dependency>
         <dependency>
             <groupId>org.http4k</groupId>
-                <artifactId>http4k-template-jte</artifactId>
+            <artifactId>http4k-template-jte</artifactId>
+            <version>${http4k.version}</version>
         </dependency>
         <dependency>
             <groupId>org.http4k</groupId>
@@ -293,7 +319,7 @@
         </dependency>
         <dependency>
             <groupId>io.insert-koin</groupId>
-                <artifactId>koin-core</artifactId>
+                <artifactId>koin-core-jvm</artifactId>
             <version>${koin.version}</version>
         </dependency>
         <dependency>
@@ -439,6 +465,10 @@
                 <configuration>
                     <locations>classpath:db/migration</locations>
                     <baselineOnMigrate>true</baselineOnMigrate>
+                    <url>jdbc:h2:mem:booktower;MODE=MySQL</url>
+                    <user>sa</user>
+                    <password></password>
+                    <driver>org.h2.Driver</driver>
                 </configuration>
                 <executions>
                     <execution>

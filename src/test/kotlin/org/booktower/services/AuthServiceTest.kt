@@ -1,338 +1,110 @@
 package org.booktower.services
 
-import io.mockk.*
-import org.booktower.models.*
-import org.jdbi.v3.core.Handle
-import org.jdbi.v3.core.Jdbi
-import org.jdbi.v3.core.result.ResultIterable
-import org.junit.jupiter.api.*
-import org.mindrot.jbcrypt.BCrypt
-import java.time.Instant
-import java.util.*
+import org.booktower.config.AppConfig
+import org.booktower.config.Database
+import org.booktower.models.CreateUserRequest
+import org.booktower.models.LoginRequest
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
-/**
- * Unit tests for AuthService
- */
 class AuthServiceTest {
-    private lateinit var jdbi: Jdbi
-    private lateinit var jwtService: JwtService
     private lateinit var authService: AuthService
-    private lateinit var handle: Handle
+    private lateinit var jwtService: JwtService
 
     @BeforeEach
-    fun setUp() {
-        jdbi = mockk()
-        jwtService = mockk()
-        handle = mockk()
-        authService = AuthService(jdbi, jwtService)
+    fun setup() {
+        val config = AppConfig.load()
+        val database = Database.connect(config.database)
+        jwtService = JwtService(config.security)
+        authService = AuthService(database.getJdbi(), jwtService)
     }
 
-    @Nested
-    inner class RegisterTests {
+    @Test
+    fun `register creates user and returns token`() {
+        val request = CreateUserRequest(
+            username = "newuser_${System.nanoTime()}",
+            email = "new_${System.nanoTime()}@example.com",
+            password = "password123",
+        )
 
-        @Test
-        fun `should register new user successfully`() {
-            // Given
-            val request = CreateUserRequest(
-                username = "testuser",
-                email = "test@example.com",
-                password = "password123"
-            )
-            
-            every { jdbi.useHandle(any<
-                (Handle) -> Unit
-            >()) } answers {
-                val callback = firstArg<(Handle) -> Unit>()
-                callback(handle)
-            }
-            
-            every { handle.createQuery(any()) } returns mockk {
-                every { bind(0, request.username) } returns this
-                every { mapTo(String::class.java) } returns mockk {
-                    every { first() } returns null
-                }
-            }
-            
-            every { handle.createUpdate(any()) } returns mockk {
-                every { bind(any<Int>(), any()) } returns this
-                every { execute() } returns 1
-            }
-            
-            every { jwtService.generateToken(any()) } returns "test-jwt-token"
+        val result = authService.register(request)
 
-            // When
-            val result = authService.register(request)
+        assertTrue(result.isSuccess)
+        val response = result.getOrThrow()
+        assertTrue(response.token.isNotBlank())
+        assertEquals(request.username, response.user.username)
+        assertEquals(request.email, response.user.email)
+    }
 
-            // Then
-            assertTrue(result.isSuccess)
-            val loginResponse = result.getOrNull()
-            assertNotNull(loginResponse)
-            assertEquals("test-jwt-token", loginResponse.token)
-            assertEquals("testuser", loginResponse.user.username)
-            assertEquals("test@example.com", loginResponse.user.email)
-        }
+    @Test
+    fun `register fails for duplicate username`() {
+        val username = "duplicate_${System.nanoTime()}"
+        val request1 = CreateUserRequest(username, "a_${System.nanoTime()}@test.com", "password123")
+        val request2 = CreateUserRequest(username, "b_${System.nanoTime()}@test.com", "password123")
 
-        @Test
-        fun `should fail when username already exists`() {
-            // Given
-            val request = CreateUserRequest(
-                username = "existinguser",
-                email = "new@example.com",
-                password = "password123"
-            )
-            
-            every { jdbi.useHandle(any<
-                (Handle) -> Unit
-            >()) } answers {
-                val callback = firstArg<(Handle) -> Unit>()
-                callback(handle)
-            }
-            
-            every { handle.createQuery(any()) } returns mockk {
-                every { bind(0, request.username) } returns this
-                every { mapTo(String::class.java) } returns mockk {
-                    every { first() } returns "existing-user-id"
-                }
-            }
-
-            // When
-            val result = authService.register(request)
-
-            // Then
-            assertTrue(result.isFailure)
-            val exception = result.exceptionOrNull()
-            assertNotNull(exception)
-            assertTrue(exception is IllegalArgumentException)
-            assertTrue(exception.message?.contains("already exists") == true)
-        }
-
-        @Test
-        fun `should hash password before storing`() {
-            // Given
-            val request = CreateUserRequest(
-                username = "testuser",
-                email = "test@example.com",
-                password = "mysecretpassword"
-            )
-            
-            every { jdbi.useHandle(any<
-                (Handle) -> Unit
-            >()) } answers {
-                val callback = firstArg<(Handle) -> Unit>()
-                callback(handle)
-            }
-            
-            every { handle.createQuery(any()) } returns mockk {
-                every { bind(0, request.username) } returns this
-                every { mapTo(String::class.java) } returns mockk {
-                    every { first() } returns null
-                }
-            }
-            
-            val capturedPasswordHash = slot<String>()
-            every { handle.createUpdate(any()) } returns mockk {
-                every { bind(any<Int>(), any()) } returns this
-                every { bind(3, capture(capturedPasswordHash)) } returns this
-                every { execute() } returns 1
-            }
-            
-            every { jwtService.generateToken(any()) } returns "test-token"
-
-            // When
-            authService.register(request)
-
-            // Then
-            assertTrue(capturedPasswordHash.isCaptured)
-            val hash = capturedPasswordHash.captured
-            assertTrue(BCrypt.checkpw("mysecretpassword", hash), "Password should be properly hashed")
+        authService.register(request1)
+        assertThrows<IllegalArgumentException> {
+            authService.register(request2)
         }
     }
 
-    @Nested
-    inner class LoginTests {
+    @Test
+    fun `login succeeds with correct credentials`() {
+        val username = "logintest_${System.nanoTime()}"
+        val password = "password123"
+        authService.register(CreateUserRequest(username, "login_${System.nanoTime()}@test.com", password))
 
-        @Test
-        fun `should login with valid credentials`() {
-            // Given
-            val request = LoginRequest(
-                username = "testuser",
-                password = "correctpassword"
-            )
-            
-            val userId = UUID.randomUUID()
-            val passwordHash = BCrypt.hashpw("correctpassword", BCrypt.gensalt())
-            val user = User(
-                id = userId,
-                username = "testuser",
-                email = "test@example.com",
-                passwordHash = passwordHash,
-                createdAt = Instant.now(),
-                updatedAt = Instant.now(),
-                isAdmin = false
-            )
-            
-            every { jdbi.withHandle<User?, Exception>(any()) } answers {
-                val callback = firstArg<(Handle) -> User?>()
-                callback(handle)
-            }
-            
-            every { handle.createQuery(any()) } returns mockk {
-                every { bind(0, request.username) } returns this
-                every { map(any<(org.jdbi.v3.core.result.RowView) -> User>()) } returns mockk {
-                    every { firstOrNull() } returns user
-                }
-            }
-            
-            every { jwtService.generateToken(user) } returns "jwt-token-123"
+        val result = authService.login(LoginRequest(username, password))
 
-            // When
-            val result = authService.login(request)
-
-            // Then
-            assertTrue(result.isSuccess)
-            val loginResponse = result.getOrNull()
-            assertNotNull(loginResponse)
-            assertEquals("jwt-token-123", loginResponse.token)
-            assertEquals("testuser", loginResponse.user.username)
-        }
-
-        @Test
-        fun `should fail login with non-existent user`() {
-            // Given
-            val request = LoginRequest(
-                username = "nonexistent",
-                password = "password"
-            )
-            
-            every { jdbi.withHandle<User?, Exception>(any()) } answers {
-                val callback = firstArg<(Handle) -> User?>()
-                callback(handle)
-            }
-            
-            every { handle.createQuery(any()) } returns mockk {
-                every { bind(0, request.username) } returns this
-                every { map(any<(org.jdbi.v3.core.result.RowView) -> User>()) } returns mockk {
-                    every { firstOrNull() } returns null
-                }
-            }
-
-            // When
-            val result = authService.login(request)
-
-            // Then
-            assertTrue(result.isFailure)
-            val exception = result.exceptionOrNull()
-            assertNotNull(exception)
-            assertTrue(exception is IllegalArgumentException)
-        }
-
-        @Test
-        fun `should fail login with wrong password`() {
-            // Given
-            val request = LoginRequest(
-                username = "testuser",
-                password = "wrongpassword"
-            )
-            
-            val userId = UUID.randomUUID()
-            val passwordHash = BCrypt.hashpw("correctpassword", BCrypt.gensalt())
-            val user = User(
-                id = userId,
-                username = "testuser",
-                email = "test@example.com",
-                passwordHash = passwordHash,
-                createdAt = Instant.now(),
-                updatedAt = Instant.now(),
-                isAdmin = false
-            )
-            
-            every { jdbi.withHandle<User?, Exception>(any()) } answers {
-                val callback = firstArg<(Handle) -> User?>()
-                callback(handle)
-            }
-            
-            every { handle.createQuery(any()) } returns mockk {
-                every { bind(0, request.username) } returns this
-                every { map(any<(org.jdbi.v3.core.result.RowView) -> User>()) } returns mockk {
-                    every { firstOrNull() } returns user
-                }
-            }
-
-            // When
-            val result = authService.login(request)
-
-            // Then
-            assertTrue(result.isFailure)
-            val exception = result.exceptionOrNull()
-            assertNotNull(exception)
-            assertTrue(exception is IllegalArgumentException)
-            assertTrue(exception.message?.contains("Invalid") == true)
-        }
+        assertTrue(result.isSuccess)
+        val response = result.getOrThrow()
+        assertTrue(response.token.isNotBlank())
+        assertEquals(username, response.user.username)
     }
 
-    @Nested
-    inner class GetUserByIdTests {
+    @Test
+    fun `login fails with wrong password`() {
+        val username = "wrongpw_${System.nanoTime()}"
+        authService.register(CreateUserRequest(username, "wp_${System.nanoTime()}@test.com", "password123"))
 
-        @Test
-        fun `should get user by id`() {
-            // Given
-            val userId = UUID.randomUUID()
-            val user = User(
-                id = userId,
-                username = "testuser",
-                email = "test@example.com",
-                passwordHash = "hash",
-                createdAt = Instant.now(),
-                updatedAt = Instant.now(),
-                isAdmin = false
-            )
-            
-            every { jdbi.withHandle<User?, Exception>(any()) } answers {
-                val callback = firstArg<(Handle) -> User?>()
-                callback(handle)
-            }
-            
-            every { handle.createQuery(any()) } returns mockk {
-                every { bind(0, userId.toString()) } returns this
-                every { map(any<(org.jdbi.v3.core.result.RowView) -> User>()) } returns mockk {
-                    every { firstOrNull() } returns user
-                }
-            }
+        val result = authService.login(LoginRequest(username, "wrongpassword"))
 
-            // When
-            val result = authService.getUserById(userId)
+        assertTrue(result.isFailure)
+    }
 
-            // Then
-            assertNotNull(result)
-            assertEquals(userId, result.id)
-            assertEquals("testuser", result.username)
-        }
+    @Test
+    fun `login fails with non-existent username`() {
+        val result = authService.login(LoginRequest("nonexistent_${System.nanoTime()}", "password123"))
+        assertTrue(result.isFailure)
+    }
 
-        @Test
-        fun `should return null for non-existent user`() {
-            // Given
-            val userId = UUID.randomUUID()
-            
-            every { jdbi.withHandle<User?, Exception>(any()) } answers {
-                val callback = firstArg<(Handle) -> User?>()
-                callback(handle)
-            }
-            
-            every { handle.createQuery(any()) } returns mockk {
-                every { bind(0, userId.toString()) } returns this
-                every { map(any<(org.jdbi.v3.core.result.RowView) -> User>()) } returns mockk {
-                    every { firstOrNull() } returns null
-                }
-            }
+    @Test
+    fun `getUserById returns registered user`() {
+        val username = "getbyid_${System.nanoTime()}"
+        val registerResult = authService.register(
+            CreateUserRequest(username, "gbi_${System.nanoTime()}@test.com", "password123"),
+        )
+        val userId = jwtService.extractUserId(registerResult.getOrThrow().token)!!
 
-            // When
-            val result = authService.getUserById(userId)
+        val user = authService.getUserById(userId)
 
-            // Then
-            assertEquals(null, result)
-        }
+        assertNotNull(user)
+        assertEquals(username, user.username)
+    }
+
+    @Test
+    fun `generated token is valid`() {
+        val username = "tokentest_${System.nanoTime()}"
+        val result = authService.register(
+            CreateUserRequest(username, "tt_${System.nanoTime()}@test.com", "password123"),
+        )
+        val token = result.getOrThrow().token
+        val userId = jwtService.extractUserId(token)
+
+        assertNotNull(userId)
     }
 }

@@ -1,403 +1,138 @@
-# BookTower Development Startup Script
-# Compiles and starts BookTower application locally
- 
+# BookTower Application Startup Script
+
 param(
     [switch]$SkipBuild,
     [switch]$OpenBrowser,
     [switch]$Clean,
     [string]$Port = "9999"
 )
- 
+
 $ErrorActionPreference = "Stop"
- 
+
 Write-Host "====================================" -ForegroundColor Cyan
-Write-Host "  BookTower Development Server" -ForegroundColor Cyan
+Write-Host "  BOOKTOWER APPLICATION SERVER" -ForegroundColor Cyan
 Write-Host "====================================" -ForegroundColor Cyan
 Write-Host ""
- 
-# Kill existing BookTower instances
-Write-Host "Checking for existing BookTower instances..." -ForegroundColor Yellow
-try {
-    $existingProcesses = Get-Process -Name java -ErrorAction SilentlyContinue | Where-Object { $_.CommandLine -match "org.booktower.BookTowerAppKt" }
-    if ($existingProcesses) {
-        Write-Host "Found $($existingProcesses.Count) existing BookTower instance(s). Stopping..." -ForegroundColor Yellow
-        foreach ($process in $existingProcesses) {
-            $process.Kill()
-            Write-Host "✓ Stopped existing instance (PID: $($process.Id))" -ForegroundColor Green
-        }
-        Write-Host ""
-    } else {
-        Write-Host "✓ No existing instances found" -ForegroundColor Green
-    }
-} catch {
-    Write-Host "✗ Error checking for existing instances: $_" -ForegroundColor Red
-}
- 
-# Check if Maven is installed
+
 Write-Host "Checking Maven installation..." -ForegroundColor Yellow
 try {
-    $mvnVersion = mvn --version 2>&1 | Select-String "Apache Maven"
-    if ($mvnVersion) {
-        Write-Host "✓ Maven installed: $($mvnVersion.Line.Trim())" -ForegroundColor Green
+    $mvnResult = mvn --version 2>&1
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "Maven installed" -ForegroundColor Green
     }
-} catch {
-    Write-Host "✗ Maven not found. Please install Maven first." -ForegroundColor Red
+}
+catch {
+    Write-Host "Maven not found. Please install Maven first." -ForegroundColor Red
     exit 1
 }
- 
-# Check if Java is installed
+
 Write-Host "Checking Java installation..." -ForegroundColor Yellow
 try {
-    $javaVersion = java -version 2>&1 | Select-String "version"
-    if ($javaVersion) {
-        Write-Host "✓ Java installed" -ForegroundColor Green
-    }
-} catch {
-    Write-Host "✗ Java not found. Please install Java 21+ first." -ForegroundColor Red
+    $null = java -version 2>&1
+    Write-Host "Java installed" -ForegroundColor Green
+}
+catch {
+    Write-Host "Java not found. Please install Java 21+ first." -ForegroundColor Red
     exit 1
 }
- 
+
 Write-Host ""
- 
-# Clean if requested
-if ($Clean) {
-    Write-Host "Cleaning project..." -ForegroundColor Yellow
-    mvn clean
-    if ($LASTEXITCODE -eq 0) {
-        Write-Host "✓ Clean complete" -ForegroundColor Green
-    } else {
-        Write-Host "✗ Clean failed!" -ForegroundColor Red
-        exit 1
-    }
-    Write-Host ""
-}
- 
-# Build project
-if (-not $SkipBuild) {
-    Write-Host "Building BookTower..." -ForegroundColor Yellow
-    Write-Host "This may take a few minutes on first run..." -ForegroundColor Gray
-    Write-Host ""
- 
-    try {
-        mvn clean compile -DskipTests
- 
-        if ($LASTEXITCODE -eq 0) {
-            Write-Host "✓ Build successful!" -ForegroundColor Green
-        } else {
-            Write-Host "✗ Build failed!" -ForegroundColor Red
-            exit 1
-        }
-    } catch {
-        Write-Host "✗ Build error: $_" -ForegroundColor Red
-        exit 1
-    }
- 
-    Write-Host ""
-}
- 
-# Create necessary directories
-Write-Host "Creating data directories..." -ForegroundColor Yellow
-$dataDirs = @("data/books", "data/covers", "data/temp")
-foreach ($dir in $dataDirs) {
-    if (-not (Test-Path $dir)) {
-        New-Item -ItemType Directory -Path $dir -Force | Out-Null
-        Write-Host "✓ Created $dir" -ForegroundColor Green
-    }
-}
- 
-Write-Host ""
- 
-# Start application
-Write-Host "====================================" -ForegroundColor Cyan
-Write-Host "  Starting BookTower Server..." -ForegroundColor Cyan
-Write-Host "====================================" -ForegroundColor Cyan
-Write-Host ""
- 
-Write-Host "Server will start on:" -ForegroundColor Yellow
-Write-Host "  → http://localhost:$Port" -ForegroundColor Green
-Write-Host ""
-Write-Host "Available endpoints:" -ForegroundColor Yellow
-Write-Host "  → Home: http://localhost:$Port/" -ForegroundColor Cyan
-Write-Host "  → Login: http://localhost:$Port/login" -ForegroundColor Cyan
-Write-Host "  → Register: http://localhost:$Port/register" -ForegroundColor Cyan
-Write-Host "  → Health: http://localhost:$Port/health" -ForegroundColor Cyan
-Write-Host ""
-Write-Host "API Endpoints:" -ForegroundColor Yellow
-Write-Host "  → POST /auth/register" -ForegroundColor Cyan
-Write-Host "  → POST /auth/login" -ForegroundColor Cyan
-Write-Host "  → GET /api/libraries" -ForegroundColor Cyan
-Write-Host "  → POST /api/libraries" -ForegroundColor Cyan
-Write-Host "  → GET /api/books" -ForegroundColor Cyan
-Write-Host "  → POST /api/books" -ForegroundColor Cyan
-Write-Host "  → GET /api/recent" -ForegroundColor Cyan
-Write-Host ""
-Write-Host "Press Ctrl+C to stop the server" -ForegroundColor Gray
-Write-Host ""
- 
-# Open browser if requested
-if ($OpenBrowser) {
-    Write-Host "Opening browser..." -ForegroundColor Yellow
-    Start-Process "http://localhost:$Port"
-    Start-Sleep -Seconds 2
-}
- 
-Write-Host ""
- 
-# Start server
+
+Write-Host "Stopping any existing BookTower instances..." -ForegroundColor Yellow
+
 try {
-    Write-Host "Running: mvn exec:java -Dexec.mainClass=org.booktower.BookTowerAppKt" -ForegroundColor Gray
-    mvn exec:java "-Dexec.mainClass=org.booktower.BookTowerAppKt"
-} catch [System.Management.Automation.HaltCommandException] {
-    Write-Host "`n✓ Server stopped by user" -ForegroundColor Yellow
-} catch {
-    Write-Host "`n✗ Server error: $_" -ForegroundColor Red
-    Write-Host "`nTrying alternative method..." -ForegroundColor Yellow
-    try {
-        $classpath = "target/classes;target/dependency/*"
-        $env:CLASSPATH = "target/classes"
-        java org.booktower.BookTowerAppKt $Port
-    } catch {
-        Write-Host "`n✗ Alternative method also failed: $_" -ForegroundColor Red
-        exit 1
-    }
-}
-        Write-Host ""
-    } else {
-        Write-Host "✓ No existing instances found" -ForegroundColor Green
-    }
-} catch {
-    Write-Host "✗ Error checking for existing instances: $_" -ForegroundColor Red
-}
- 
-# Check if Maven is installed
-Write-Host "Checking Maven installation..." -ForegroundColor Yellow
-try {
-    $mvnVersion = mvn --version 2>&1 | Select-String "Apache Maven"
-    if ($mvnVersion) {
-        Write-Host "✓ Maven installed: $($mvnVersion.Line.Trim())" -ForegroundColor Green
-    }
-} catch {
-    Write-Host "✗ Maven not found. Please install Maven first." -ForegroundColor Red
-    exit 1
-}
- 
-# Check if Java is installed
-Write-Host "Checking Java installation..." -ForegroundColor Yellow
-try {
-    $javaVersion = java -version 2>&1 | Select-String "version"
-    if ($javaVersion) {
-        Write-Host "✓ Java installed" -ForegroundColor Green
-    }
-} catch {
-    Write-Host "✗ Java not found. Please install Java 21+ first." -ForegroundColor Red
-    exit 1
-}
- 
-Write-Host ""
- 
-# Clean if requested
-if ($Clean) {
-    Write-Host "Cleaning project..." -ForegroundColor Yellow
-    mvn clean
-    if ($LASTEXITCODE -eq 0) {
-        Write-Host "✓ Clean complete" -ForegroundColor Green
-    } else {
-        Write-Host "✗ Clean failed!" -ForegroundColor Red
-        exit 1
-    }
-    Write-Host ""
-}
- 
-# Build project
-if (-not $SkipBuild) {
-    Write-Host "Building BookTower..." -ForegroundColor Yellow
-    Write-Host "This may take a few minutes on first run..." -ForegroundColor Gray
-    Write-Host ""
- 
-    try {
-        mvn clean compile -DskipTests
+    $processes = Get-Process -Name java -ErrorAction SilentlyContinue | Where-Object { $_.CommandLine -match "BookTower" }
+    
+    if ($processes) {
+        Write-Host "Found $($processes.Count) BookTower instance(s)" -ForegroundColor Red
         
-        if ($LASTEXITCODE -eq 0) {
-            Write-Host "✓ Build successful!" -ForegroundColor Green
-        } else {
-            Write-Host "✗ Build failed!" -ForegroundColor Red
-            exit 1
+        foreach ($process in $processes) {
+            Write-Host "Stopping process (PID: $($process.Id))..." -ForegroundColor Yellow
+            Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
+            Write-Host "Stopped PID: $($process.Id)" -ForegroundColor Green
         }
-    } catch {
-        Write-Host "✗ Build error: $_" -ForegroundColor Red
-        exit 1
-    }
- 
-    Write-Host ""
-}
- 
-# Create necessary directories
-Write-Host "Creating data directories..." -ForegroundColor Yellow
-$dataDirs = @("data/books", "data/covers", "data/temp")
-foreach ($dir in $dataDirs) {
-    if (-not (Test-Path $dir)) {
-        New-Item -ItemType Directory -Path $dir -Force | Out-Null
-        Write-Host "✓ Created $dir" -ForegroundColor Green
+        
+        Start-Sleep -Seconds 3
+        
+        $stillRunning = Get-Process -Name java -ErrorAction SilentlyContinue | Where-Object { $_.CommandLine -match "BookTower" }
+        if ($stillRunning) {
+            Write-Host "Force killing remaining processes..." -ForegroundColor Yellow
+            foreach ($process in $stillRunning) {
+                taskkill /F /PID $process.Id | Out-Null
+                Write-Host "Force killed PID: $($process.Id)" -ForegroundColor Yellow
+            }
+        }
+    } else {
+        Write-Host "No BookTower instances running" -ForegroundColor Green
     }
 }
-
-Write-Host ""
- 
-# Start application
-Write-Host "====================================" -ForegroundColor Cyan
-Write-Host "  Starting BookTower Server..." -ForegroundColor Cyan
-Write-Host "====================================" -ForegroundColor Cyan
-Write-Host ""
- 
-Write-Host "Server will start on:" -ForegroundColor Yellow
-Write-Host "  → http://localhost:$Port" -ForegroundColor Green
-Write-Host ""
-Write-Host "Available endpoints:" -ForegroundColor Yellow
-Write-Host "  → Home: http://localhost:$Port/" -ForegroundColor Cyan
-Write-Host "  → Login: http://localhost:$Port/login" -ForegroundColor Cyan
-Write-Host "  → Register: http://localhost:$Port/register" -ForegroundColor Cyan
-Write-Host "  → Health: http://localhost:$Port/health" -ForegroundColor Cyan
-Write-Host ""
-Write-Host "API Endpoints:" -ForegroundColor Yellow
-Write-Host "  → POST /auth/register" -ForegroundColor Cyan
-Write-Host "  → POST /auth/login" -ForegroundColor Cyan
-Write-Host "  → GET /api/libraries" -ForegroundColor Cyan
-Write-Host "  → POST /api/libraries" -ForegroundColor Cyan
-Write-Host "  → GET /api/books" -ForegroundColor Cyan
-Write-Host "  → POST /api/books" -ForegroundColor Cyan
-Write-Host "  → GET /api/recent" -ForegroundColor Cyan
-Write-Host ""
-Write-Host "Press Ctrl+C to stop the server" -ForegroundColor Gray
-Write-Host ""
- 
-# Open browser if requested
-if ($OpenBrowser) {
-    Write-Host "Opening browser..." -ForegroundColor Yellow
-    Start-Process "http://localhost:$Port"
-    Start-Sleep -Seconds 2
-}
- 
-Write-Host ""
- 
-# Start server
-try {
-    Write-Host "Running: mvn exec:java -Dexec.mainClass=org.booktower.BookTowerAppKt" -ForegroundColor Gray
-    mvn exec:java "-Dexec.mainClass=org.booktower.BookTowerAppKt"
-} catch [System.Management.Automation.HaltCommandException] {
-    Write-Host "`n✓ Server stopped by user" -ForegroundColor Yellow
-} catch {
-    Write-Host "`n✗ Server error: $_" -ForegroundColor Red
-    exit 1
-}
-} catch {
-    Write-Host "✗ Maven not found. Please install Maven first." -ForegroundColor Red
-    exit 1
-}
-
-# Check if Java is installed
-Write-Host "Checking Java installation..." -ForegroundColor Yellow
-try {
-    $javaVersion = java -version 2>&1 | Select-String "version"
-    if ($javaVersion) {
-        Write-Host "✓ Java installed" -ForegroundColor Green
-    }
-} catch {
-    Write-Host "✗ Java not found. Please install Java 21+ first." -ForegroundColor Red
-    exit 1
+catch {
+    Write-Host "Error checking processes: $_" -ForegroundColor Yellow
 }
 
 Write-Host ""
 
-# Clean if requested
 if ($Clean) {
     Write-Host "Cleaning project..." -ForegroundColor Yellow
     mvn clean
     if ($LASTEXITCODE -eq 0) {
-        Write-Host "✓ Clean complete" -ForegroundColor Green
+        Write-Host "Clean complete" -ForegroundColor Green
     } else {
-        Write-Host "✗ Clean failed!" -ForegroundColor Red
+        Write-Host "Clean failed!" -ForegroundColor Red
         exit 1
     }
     Write-Host ""
 }
 
-# Build project
 if (-not $SkipBuild) {
     Write-Host "Building BookTower..." -ForegroundColor Yellow
     Write-Host "This may take a few minutes on first run..." -ForegroundColor Gray
     Write-Host ""
 
-    try {
-        mvn clean compile -DskipTests
-        
-        if ($LASTEXITCODE -eq 0) {
-            Write-Host "✓ Build successful!" -ForegroundColor Green
-        } else {
-            Write-Host "✗ Build failed!" -ForegroundColor Red
-            exit 1
-        }
-    } catch {
-        Write-Host "✗ Build error: $_" -ForegroundColor Red
+    mvn clean compile -DskipTests
+
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "Build successful!" -ForegroundColor Green
+    } else {
+        Write-Host "Build failed!" -ForegroundColor Red
         exit 1
     }
 
     Write-Host ""
 }
 
-# Create necessary directories
 Write-Host "Creating data directories..." -ForegroundColor Yellow
 $dataDirs = @("data/books", "data/covers", "data/temp")
 foreach ($dir in $dataDirs) {
     if (-not (Test-Path $dir)) {
         New-Item -ItemType Directory -Path $dir -Force | Out-Null
-        Write-Host "✓ Created $dir" -ForegroundColor Green
+        Write-Host "Created $dir" -ForegroundColor Green
     }
 }
+
+Write-Host ""
+Write-Host "====================================" -ForegroundColor Cyan
+Write-Host "  STARTING BOOKTOWER APPLICATION..." -ForegroundColor Cyan
+Write-Host "====================================" -ForegroundColor Cyan
 Write-Host ""
 
-# Start application
-Write-Host "====================================" -ForegroundColor Cyan
-Write-Host "  Starting BookTower Server..." -ForegroundColor Cyan
-Write-Host "====================================" -ForegroundColor Cyan
-Write-Host ""
-
-Write-Host "Server will start on:" -ForegroundColor Yellow
-Write-Host "  → http://localhost:$Port" -ForegroundColor Green
+Write-Host "Server will start on: http://localhost:$Port" -ForegroundColor Green
 Write-Host ""
 Write-Host "Available endpoints:" -ForegroundColor Yellow
-Write-Host "  → Home: http://localhost:$Port/" -ForegroundColor Cyan
-Write-Host "  → Login: http://localhost:$Port/login" -ForegroundColor Cyan
-Write-Host "  → Register: http://localhost:$Port/register" -ForegroundColor Cyan
-Write-Host "  → Health: http://localhost:$Port/health" -ForegroundColor Cyan
+Write-Host "  Home: http://localhost:$Port/" -ForegroundColor Cyan
+Write-Host "  Login: http://localhost:$Port/login" -ForegroundColor Cyan
+Write-Host "  Register: http://localhost:$Port/register" -ForegroundColor Cyan
+Write-Host "  Health: http://localhost:$Port/health" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "API Endpoints:" -ForegroundColor Yellow
-Write-Host "  → POST /auth/register" -ForegroundColor Cyan
-Write-Host "  → POST /auth/login" -ForegroundColor Cyan
-Write-Host "  → GET  /api/libraries" -ForegroundColor Cyan
-Write-Host "  → POST /api/libraries" -ForegroundColor Cyan
-Write-Host "  → GET  /api/books" -ForegroundColor Cyan
-Write-Host "  → POST /api/books" -ForegroundColor Cyan
-Write-Host "  → GET  /api/recent" -ForegroundColor Cyan
-Write-Host ""
-Write-Host "Press Ctrl+C to stop the server" -ForegroundColor Gray
+Write-Host "Press Ctrl+C to stop server" -ForegroundColor Gray
 Write-Host ""
 
-# Open browser if requested
 if ($OpenBrowser) {
     Write-Host "Opening browser..." -ForegroundColor Yellow
     Start-Process "http://localhost:$Port"
     Start-Sleep -Seconds 2
 }
 
-Write-Host ""
+Write-Host "Running: mvn exec:java -Dexec.mainClass=org.booktower.BookTowerAppKt" -ForegroundColor Gray
 
-# Start the server
-try {
-    Write-Host "Running: mvn exec:java -Dexec.mainClass=org.booktower.BookTowerAppKt" -ForegroundColor Gray
-    mvn exec:java "-Dexec.mainClass=org.booktower.BookTowerAppKt"
-} catch [System.Management.Automation.HaltCommandException] {
-    Write-Host "`n✓ Server stopped by user" -ForegroundColor Yellow
-} catch {
-    Write-Host "`n✗ Server error: $_" -ForegroundColor Red
-    exit 1
-}
+mvn exec:java "-Dexec.mainClass=org.booktower.BookTowerAppKt"

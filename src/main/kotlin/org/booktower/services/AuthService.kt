@@ -6,6 +6,9 @@ import org.jdbi.v3.core.result.RowView
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
 import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 import java.util.UUID
 
 private val logger = LoggerFactory.getLogger("booktower.AuthService")
@@ -105,9 +108,18 @@ class AuthService(
             username = row.getColumn("username", String::class.java),
             email = row.getColumn("email", String::class.java),
             passwordHash = row.getColumn("password_hash", String::class.java),
-            createdAt = Instant.parse(row.getColumn("created_at", String::class.java)),
-            updatedAt = Instant.parse(row.getColumn("updated_at", String::class.java)),
-            isAdmin = row.getColumn("is_admin", Boolean::class.java),
+            createdAt = parseTimestamp(row.getColumn("created_at", String::class.java)),
+            updatedAt = parseTimestamp(row.getColumn("updated_at", String::class.java)),
+            isAdmin = row.getColumn("is_admin", java.lang.Boolean::class.java)?.booleanValue() ?: false,
         )
+    }
+
+    private fun parseTimestamp(value: String): Instant {
+        return try {
+            Instant.parse(value)
+        } catch (e: Exception) {
+            LocalDateTime.parse(value, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss[.SSSSSS][.SSSSS][.SSSS][.SSS][.SS][.S]"))
+                .toInstant(ZoneOffset.UTC)
+        }
     }
 }

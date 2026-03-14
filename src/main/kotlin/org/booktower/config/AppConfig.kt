@@ -58,9 +58,25 @@ data class SecurityConfig(
     val sessionTimeout: Int = 86400,
 ) {
     companion object {
+        private const val DEFAULT_SECRET = "booktower-secret-key-change-in-production"
+
         fun load(config: com.typesafe.config.Config): SecurityConfig {
+            val secret = System.getenv("BOOKTOWER_JWT_SECRET")
+                ?: config.getString("jwt-secret")
+
+            if (secret == DEFAULT_SECRET) {
+                val isDev = System.getenv("BOOKTOWER_ENV")?.lowercase() != "production"
+                if (isDev) {
+                    logger.warn("Using default JWT secret. Set BOOKTOWER_JWT_SECRET env var for production.")
+                } else {
+                    throw IllegalStateException(
+                        "Default JWT secret cannot be used in production. Set BOOKTOWER_JWT_SECRET environment variable.",
+                    )
+                }
+            }
+
             return SecurityConfig(
-                jwtSecret = config.getString("jwt-secret"),
+                jwtSecret = secret,
                 jwtIssuer = config.getString("jwt-issuer"),
                 sessionTimeout = config.getInt("session-timeout"),
             )

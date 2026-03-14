@@ -1,7 +1,7 @@
 package org.booktower.handlers
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import org.booktower.config.TemplateEngine
+import org.booktower.filters.JwtAuthFilter
 import org.booktower.services.AuthService
 import org.booktower.services.BookService
 import org.booktower.services.JwtService
@@ -17,7 +17,6 @@ import org.http4k.routing.static
 import org.slf4j.LoggerFactory
 
 private val logger = LoggerFactory.getLogger("booktower.handlers")
-private val objectMapper = ObjectMapper()
 
 class AppHandler(
     private val authService: AuthService,
@@ -26,8 +25,9 @@ class AppHandler(
     private val jwtService: JwtService,
 ) {
     private val authHandler = AuthHandler2(authService)
-    private val libraryHandler = LibraryHandler2(libraryService, jwtService)
-    private val bookHandler = BookHandler2(bookService, jwtService)
+    private val libraryHandler = LibraryHandler2(libraryService)
+    private val bookHandler = BookHandler2(bookService)
+    private val authFilter = JwtAuthFilter(jwtService)
 
     fun routes(): RoutingHttpHandler {
         return routes(
@@ -38,13 +38,13 @@ class AppHandler(
             "/auth/register" bind Method.POST to authHandler::register,
             "/auth/login" bind Method.POST to authHandler::login,
             "/auth/logout" bind Method.POST to authHandler::logout,
-            "/api/libraries" bind Method.GET to libraryHandler::list,
-            "/api/libraries" bind Method.POST to libraryHandler::create,
-            "/api/libraries/{id}" bind Method.DELETE to libraryHandler::delete,
-            "/api/books" bind Method.GET to bookHandler::list,
-            "/api/books" bind Method.POST to bookHandler::create,
-            "/api/books/{id}" bind Method.GET to bookHandler::get,
-            "/api/recent" bind Method.GET to bookHandler::recent,
+            "/api/libraries" bind Method.GET to authFilter.then(libraryHandler::list),
+            "/api/libraries" bind Method.POST to authFilter.then(libraryHandler::create),
+            "/api/libraries/{id}" bind Method.DELETE to authFilter.then(libraryHandler::delete),
+            "/api/books" bind Method.GET to authFilter.then(bookHandler::list),
+            "/api/books" bind Method.POST to authFilter.then(bookHandler::create),
+            "/api/books/{id}" bind Method.GET to authFilter.then(bookHandler::get),
+            "/api/recent" bind Method.GET to authFilter.then(bookHandler::recent),
             "/preferences/theme" bind Method.POST to ::setTheme,
             "/preferences/lang" bind Method.POST to ::setLanguage,
         )
@@ -123,11 +123,11 @@ class AppHandler(
 
     private fun setTheme(req: Request): Response {
         val isHtmx = req.header("HX-Request") != null
-        
-        val theme = req.bodyString().trim().let { 
-            if (it.isNotBlank()) it else "dark" 
+
+        val theme = req.bodyString().trim().let {
+            if (it.isNotBlank()) it else "dark"
         }
-        
+
         if (isHtmx) {
             return Response(Status.OK)
                 .header("HX-Trigger", "theme-updated")
@@ -142,11 +142,11 @@ class AppHandler(
 
     private fun setLanguage(req: Request): Response {
         val isHtmx = req.header("HX-Request") != null
-        
+
         val lang = req.bodyString().trim().let {
             if (it.isNotBlank()) it else "en"
         }
-        
+
         if (isHtmx) {
             return Response(Status.OK)
                 .header("HX-Trigger", "lang-updated")

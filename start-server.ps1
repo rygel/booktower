@@ -1,54 +1,84 @@
-# Quick Start Script - Assumes project is already compiled
-# Use start-dev.ps1 for full build and start
- 
+# BookTower Quick Start Script
+
 param(
     [string]$Port = "9999",
     [switch]$OpenBrowser
 )
- 
+
 $ErrorActionPreference = "Stop"
- 
-# Kill existing BookTower instances
-Write-Host "Checking for existing BookTower instances..." -ForegroundColor Yellow
+
+Write-Host "====================================" -ForegroundColor Cyan
+Write-Host "  BOOKTOWER QUICK START" -ForegroundColor Cyan
+Write-Host "====================================" -ForegroundColor Cyan
+Write-Host ""
+
+Write-Host "Checking Maven installation..." -ForegroundColor Yellow
 try {
-    $existingProcesses = Get-Process -Name java -ErrorAction SilentlyContinue | Where-Object { $_.CommandLine -match "org.booktower.BookTowerAppKt" }
-    if ($existingProcesses) {
-        Write-Host "Found $($existingProcesses.Count) existing BookTower instance(s). Stopping..." -ForegroundColor Yellow
-        foreach ($process in $existingProcesses) {
-            $process.Kill()
-            Write-Host "✓ Stopped existing instance (PID: $($process.Id))" -ForegroundColor Green
-        }
-        Write-Host ""
-    } else {
-        Write-Host "✓ No existing instances found" -ForegroundColor Green
+    $mvnResult = mvn --version 2>&1
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "Maven installed" -ForegroundColor Green
     }
-} catch {
-    Write-Host "✗ Error checking for existing instances: $_" -ForegroundColor Red
 }
- 
+catch {
+    Write-Host "Maven not found. Please install Maven first." -ForegroundColor Red
+    exit 1
+}
+
+Write-Host "Checking Java installation..." -ForegroundColor Yellow
+try {
+    $null = java -version 2>&1
+    Write-Host "Java installed" -ForegroundColor Green
+}
+catch {
+    Write-Host "Java not found. Please install Java 21+ first." -ForegroundColor Red
+    exit 1
+}
+
+Write-Host ""
+Write-Host "Stopping any existing BookTower instances..." -ForegroundColor Yellow
+
+try {
+    $processes = Get-Process -Name java -ErrorAction SilentlyContinue | Where-Object { $_.CommandLine -match "BookTower" }
+    
+    if ($processes) {
+        Write-Host "Found $($processes.Count) BookTower instance(s)" -ForegroundColor Red
+        
+        foreach ($process in $processes) {
+            Write-Host "Stopping process (PID: $($process.Id))..." -ForegroundColor Yellow
+            Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
+            Write-Host "Stopped PID: $($process.Id)" -ForegroundColor Green
+        }
+        
+        Start-Sleep -Seconds 3
+        
+        $stillRunning = Get-Process -Name java -ErrorAction SilentlyContinue | Where-Object { $_.CommandLine -match "BookTower" }
+        if ($stillRunning) {
+            Write-Host "Force killing remaining processes..." -ForegroundColor Yellow
+            foreach ($process in $stillRunning) {
+                taskkill /F /PID $process.Id | Out-Null
+                Write-Host "Force killed PID: $($process.Id)" -ForegroundColor Yellow
+            }
+        }
+    } else {
+        Write-Host "No BookTower instances running" -ForegroundColor Green
+    }
+}
+catch {
+    Write-Host "Error checking processes: $_" -ForegroundColor Yellow
+}
+
+Write-Host ""
 Write-Host "Starting BookTower server..." -ForegroundColor Green
 Write-Host "Server: http://localhost:$Port" -ForegroundColor Cyan
 Write-Host ""
- 
+
 if ($OpenBrowser) {
     Write-Host "Opening browser..." -ForegroundColor Yellow
     Start-Process "http://localhost:$Port"
     Start-Sleep -Seconds 2
 }
- 
-Write-Host "Running: mvn exec:java -Dexec.mainClass=org.booktower.BookTowerAppKt" -ForegroundColor Gray
-try {
-    mvn exec:java "-Dexec.mainClass=org.booktower.BookTowerAppKt"
-} catch [System.Management.Automation.HaltCommandException] {
-    Write-Host "`n✓ Server stopped by user" -ForegroundColor Yellow
-} catch {
-    Write-Host "`n✗ Server error: $_" -ForegroundColor Red
-    Write-Host "`nTrying alternative method..." -ForegroundColor Yellow
-    try {
-        $env:CLASSPATH = "target/classes"
-        java org.booktower.BookTowerAppKt
-    } catch {
-        Write-Host "`n✗ Alternative method also failed: $_" -ForegroundColor Red
-        exit 1
-    }
-}
+
+Write-Host "Press Ctrl+C to stop server" -ForegroundColor Gray
+Write-Host ""
+
+mvn exec:java -Dexec.mainClass="org.booktower.BookTowerAppKt"

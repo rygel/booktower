@@ -139,6 +139,16 @@ yarn-error.log*
 docs/_build/
 docs/site/
 
+# Generated JTE classes (should be in target/)
+jte-classes/
+
+# Application logs
+app.log
+
+# Non-PowerShell scripts (if you only use PowerShell)
+e2e-test.bat
+e2e-test.sh
+
 # Local configuration
 application-local.properties
 application-local.yml

@@ -18,19 +18,15 @@ $verboseArg = if ($Verbose) { "-X" } else { "" }
 
 $testSuites = @{
     "all" = ""
-    "frontend" = "FrontendHandlerTest,TemplateRenderingTest,JavaScriptIntegrationTest,FrontendE2ETest"
-    "auth" = "AuthServiceTest,AuthHandler2Test"
-    "services" = "JwtServiceTest,LibraryServiceTest,BookServiceTest"
-    "e2e" = "EndToEndTest,FrontendE2ETest"
-    "unit" = "AuthServiceTest,AuthHandler2Test,JwtServiceTest"
-    "handlers" = "FrontendHandlerTest,AuthHandler2Test"
+    "htmx" = "HtmxHandlerTest,TemplateRenderingTest"
     "templates" = "TemplateRenderingTest"
+    "unit" = "TemplateRenderingTest"
 }
 
 if (-not $testSuites.ContainsKey($Test)) {
     Write-Host "Available test suites:" -ForegroundColor Yellow
     foreach ($key in $testSuites.Keys) {
-        Write-Host "  • $key" -ForegroundColor Cyan
+        Write-Host "  * $key" -ForegroundColor Cyan
     }
     Write-Host ""
     Write-Host "Usage: .\run-tests.ps1 -Test <suite> [-SkipFlyway] [-Verbose]" -ForegroundColor Gray
@@ -61,12 +57,15 @@ try {
     }
 
     if ($LASTEXITCODE -eq 0) {
-        Write-Host "`n✓ All tests passed!" -ForegroundColor Green
+        Write-Host ""
+        Write-Host "All tests passed!" -ForegroundColor Green
     } else {
-        Write-Host "`n✗ Some tests failed!" -ForegroundColor Red
+        Write-Host ""
+        Write-Host "Some tests failed!" -ForegroundColor Red
         exit 1
     }
 } catch {
-    Write-Host "`n✗ Test error: $_" -ForegroundColor Red
+    Write-Host ""
+    Write-Host "Test error: $_" -ForegroundColor Red
     exit 1
 }

@@ -1,51 +1,41 @@
 package org.booktower
 
 import org.booktower.config.AppConfig
-import org.booktower.config.Database
+import org.booktower.config.appModule
+import org.booktower.filters.GlobalErrorFilter
+import org.booktower.filters.StaticCacheFilter
 import org.booktower.handlers.AppHandler
-import org.booktower.services.AuthService
-import org.booktower.services.BookService
-import org.booktower.services.JwtService
-import org.booktower.services.LibraryService
-import org.http4k.core.HttpHandler
 import org.http4k.core.Method
 import org.http4k.core.Response
 import org.http4k.core.Status.Companion.OK
 import org.http4k.core.then
-import org.http4k.filter.ServerFilters
-import org.http4k.routing.RoutingHttpHandler
 import org.http4k.routing.bind
 import org.http4k.routing.routes
 import org.http4k.server.Jetty
 import org.http4k.server.asServer
-import org.slf4j.Logger
+import org.koin.core.context.GlobalContext
+import org.koin.core.context.startKoin
 import org.slf4j.LoggerFactory
 
 fun main() {
-    val logger: Logger = LoggerFactory.getLogger("booktower.Main")
+    val logger = LoggerFactory.getLogger("booktower.Main")
 
     logger.info("Starting BookTower application...")
 
-    val config = AppConfig.load()
-    config.storage.ensureDirectories()
-    val database = Database.connect(config.database)
+    startKoin { modules(appModule) }
+    val koin = GlobalContext.get()
 
-    val jwtService = JwtService(config.security)
-    val authService = AuthService(database.getJdbi(), jwtService)
-    val libraryService = LibraryService(database.getJdbi(), config.storage)
-    val bookService = BookService(database.getJdbi(), config.storage)
+    val config = koin.get<AppConfig>()
+    val appHandler = koin.get<AppHandler>()
 
-    val appHandler = AppHandler(authService, libraryService, bookService, jwtService)
+    val app = routes(
+        "/health" bind Method.GET to { Response(OK).body("OK") },
+        appHandler.routes(),
+    )
 
-    val healthHandler: HttpHandler = { Response(OK).body("OK") }
-
-    val app: RoutingHttpHandler =
-        routes(
-            "/health" bind Method.GET to healthHandler,
-            appHandler.routes(),
-        )
-
-    val filteredApp = ServerFilters.CatchAll().then(app)
+    val filteredApp = GlobalErrorFilter()
+        .then(StaticCacheFilter())
+        .then(app)
 
     logger.info("Starting server on http://${config.host}:${config.port}")
 
