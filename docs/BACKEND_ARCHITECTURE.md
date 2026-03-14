@@ -1,8 +1,8 @@
-# BookLore Backend Architecture
+# BookTower Backend Architecture
 
 ## Overview
 
-BookLore is a self-hosted digital library management application built with **Spring Boot 4.0.3** and **Java 25**. The backend follows a layered architecture pattern with clear separation of concerns.
+BookTower is a self-hosted digital library management application built with **Spring Boot 4.0.3** and **Java 25**. The backend follows a layered architecture pattern with clear separation of concerns.
 
 ## Technology Stack
 
@@ -45,8 +45,8 @@ BookLore is a self-hosted digital library management application built with **Sp
 ## Directory Structure
 
 ```
-booklore-api/src/main/java/org/booklore/
-├── BookloreApplication.java    # Application entry point
+booktower-api/src/main/java/org/booktower/
+├── BookTowerApplication.java    # Application entry point
 ├── app/                        # Application-specific configuration
 ├── config/                     # Spring configuration classes
 │   ├── security/              # Security configuration

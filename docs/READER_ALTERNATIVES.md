@@ -17,7 +17,7 @@ This document provides alternative libraries and solutions for replacing the Ang
 
 **Pros:**
 - ✅ Industry standard, battle-tested
-- ✅ Already integrated in BookLore
+- ✅ Already integrated in BookTower
 - ✅ Supports annotations, forms, text selection
 - ✅ Works with HTMX (just needs container div)
 - ✅ Streaming/range request support

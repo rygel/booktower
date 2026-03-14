@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-**Short Answer:** For BookLore, **strategic refactoring is better than pure greenfield** because:
+**Short Answer:** For BookTower, **strategic refactoring is better than pure greenfield** because:
 - The Angular app has 404 files and 78 services with complex state management
 - Risk of breaking critical features (readers, WebSocket) is high
 - Users depend on the current functionality
@@ -14,7 +14,7 @@
 
 ### 1. Current State Assessment
 
-**BookLore Complexity:**
+**BookTower Complexity:**
 - 404 TypeScript files
 - 78 services (state management, API calls)
 - 57 backend controllers
@@ -152,9 +152,9 @@
 | **Team Stress** | Lower | Higher | 🏆 Refactoring |
 | **Code Quality** | Mixed (transitional) | High | 🏆 Greenfield |
 
-### 5. Specific BookLore Considerations
+### 5. Specific BookTower Considerations
 
-#### Why Refactoring is Safer for BookLore:
+#### Why Refactoring is Safer for BookTower:
 
 1. **Complex Readers**
    - PDF viewer with annotations
@@ -185,7 +185,7 @@
 
 1. **If starting a new product** (not applicable here)
 2. **If current app is small** (404 files is not small)
-3. **If no users yet** (BookLore has users)
+3. **If no users yet** (BookTower has users)
 4. **If team is expert in new stack** (learning curve exists)
 5. **If features are simple** (readers are complex)
 
@@ -246,14 +246,14 @@ Phase 5: Cleanup (Week 19-20)
 - ✅ Budget allows parallel running
 - ✅ Timeline is aggressive
 
-### 8. BookLore Recommendation
+### 8. BookTower Recommendation
 
-**For BookLore specifically:**
+**For BookTower specifically:**
 
 **🏆 RECOMMEND: Strategic Refactoring with Parallel Development**
 
 **Rationale:**
-1. **User Base**: BookLore is a self-hosted app with users who depend on it
+1. **User Base**: BookTower is a self-hosted app with users who depend on it
 2. **Complexity**: 404 files, complex readers, real-time features
 3. **Learning**: Team transitioning from TypeScript/Angular to Kotlin/http4k
 4. **Risk**: High risk of breaking readers or losing data
@@ -351,7 +351,7 @@ Phase 5: Cleanup (Week 19-20)
 
 ## Final Recommendation
 
-**For BookLore: Use "Safe Greenfield" Strategy**
+**For BookTower: Use "Safe Greenfield" Strategy**
 
 **Steps:**
 1. Build http4k + HTMX app in parallel (don't touch Angular)

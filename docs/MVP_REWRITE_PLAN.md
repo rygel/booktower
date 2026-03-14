@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-**Strategy:** Build BookLore v2 from scratch using http4k + HTMX, launching an MVP first, then iterating with user feedback.
+**Strategy:** Build BookTower v2 from scratch using http4k + HTMX, launching an MVP first, then iterating with user feedback.
 
 **Timeline:** 12-16 months total, but **MVP launches at Month 4**
 
@@ -305,7 +305,7 @@ data class ReadingProgress(
 **Design:**
 ```
 ┌─────────────────────────────────────┐
-│ BookLore    [Library ▼] [User ▼]   │
+│ BookTower    [Library ▼] [User ▼]   │
 ├─────────────────────────────────────┤
 │                                     │
 │  ┌──────┐  ┌──────┐  ┌──────┐     │
@@ -349,7 +349,7 @@ data class ReadingProgress(
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│  BookLore MVP (http4k + HTMX)                       │
+│  BookTower MVP (http4k + HTMX)                       │
 │                                                     │
 │  ┌──────────────────────────────────────────────┐  │
 │  │  HTTP Layer (http4k)                         │  │
@@ -451,7 +451,7 @@ CREATE TABLE user_settings (
 );
 ```
 
-**Total tables: 5** (vs 40+ in current BookLore)
+**Total tables: 5** (vs 40+ in current BookTower)
 
 ---
 
@@ -637,7 +637,7 @@ CREATE TABLE user_settings (
 
 ### Phase 6: Complete (Month 7-10)
 
-**Goal:** Feature parity with current BookLore
+**Goal:** Feature parity with current BookTower
 
 **Features:**
 - CBX reader
@@ -685,7 +685,7 @@ CREATE TABLE user_settings (
 ### Full Launch Success (Month 12)
 
 **Technical:**
-- ✅ Feature parity with current BookLore
+- ✅ Feature parity with current BookTower
 - ✅ Better performance
 - ✅ Lower resource usage
 - ✅ Zero data loss
@@ -779,7 +779,7 @@ CREATE TABLE user_settings (
 **What you get:**
 - Month 4: Working PDF library (simple but functional)
 - Month 6: EPUB + metadata (more useful)
-- Month 10: Feature-complete (full BookLore)
+- Month 10: Feature-complete (full BookTower)
 - Month 12: Polished (production-ready)
 
 **Key to success:**
@@ -790,4 +790,4 @@ CREATE TABLE user_settings (
 
 This is how successful rewrites happen. Not by rebuilding everything at once, but by building the core, shipping it, and iterating.
 
-**Ready to start?** Let's build BookLore v2, MVP first! 🚀
+**Ready to start?** Let's build BookTower v2, MVP first! 🚀

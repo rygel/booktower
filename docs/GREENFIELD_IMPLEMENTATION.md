@@ -1,8 +1,8 @@
-# Greenfield BookLore: Building from Scratch with http4k + HTMX
+# Greenfield BookTower: Building from Scratch with http4k + HTMX
 
 ## Executive Summary
 
-**The Question:** What if we forget the existing 879 Java files and 404 TypeScript files, and build BookLore completely from scratch using http4k + HTMX?
+**The Question:** What if we forget the existing 879 Java files and 404 TypeScript files, and build BookTower completely from scratch using http4k + HTMX?
 
 **Short Answer:** It's **technically possible** and would result in a cleaner architecture, but it's a **massive undertaking** requiring **40-52 weeks** (10-13 months) with a dedicated team.
 
@@ -13,11 +13,11 @@
 - ✅ Budget allows 1+ year without new features
 - ✅ The existing app is truly unmaintainable
 
-**For BookLore: Still recommend frontend-only migration** (5 months vs 12 months)
+**For BookTower: Still recommend frontend-only migration** (5 months vs 12 months)
 
 ---
 
-## Feature Inventory from Existing BookLore
+## Feature Inventory from Existing BookTower
 
 ### Backend Controllers (57 total)
 
@@ -115,9 +115,9 @@
 ### Backend (http4k + Kotlin)
 
 ```
-booklore-server/
-├── src/main/kotlin/org/booklore/
-│   ├── BookloreApp.kt              # Application entry
+booktower-server/
+├── src/main/kotlin/org/booktower/
+│   ├── BookTowerApp.kt              # Application entry
 │   ├── config/
 │   │   ├── DatabaseConfig.kt       # DB setup (Exposed)
 │   │   ├── SecurityConfig.kt       # JWT/OAuth2
@@ -580,7 +580,7 @@ class BookService(
 
 ## Code Size Estimates
 
-### Greenfield BookLore
+### Greenfield BookTower
 
 **Backend:**
 - Kotlin files: ~150-200
@@ -596,7 +596,7 @@ class BookService(
 
 ---
 
-### Current BookLore (for comparison)
+### Current BookTower (for comparison)
 
 **Backend:**
 - Java files: 879
@@ -688,7 +688,7 @@ class BookService(
 - Competitors move ahead
 - User needs change
 - Technology shifts
-- BookLore becomes irrelevant
+- BookTower becomes irrelevant
 
 ---
 
@@ -701,7 +701,7 @@ class BookService(
    - No data to migrate
 
 2. ✅ **Current app is unmaintainable**
-   - BookLore: Code is clean, maintainable
+   - BookTower: Code is clean, maintainable
 
 3. ✅ **Technology is end-of-life**
    - Spring Boot: Supported until 2029+
@@ -717,14 +717,14 @@ class BookService(
 
 6. ✅ **Feature set is small**
    - MVP only
-   - Not full BookLore
+   - Not full BookTower
 
 7. ✅ **Existing app has fundamental flaws**
    - Security issues
    - Performance issues
    - Scalability issues
 
-**BookLore: 0/7 conditions met**
+**BookTower: 0/7 conditions met**
 
 ---
 
@@ -779,7 +779,7 @@ Year 3-5: Eventually all services in Kotlin
 1. **Too long** - 17-23 months vs 6-7.5 months
 2. **Too risky** - Everything at once
 3. **No users** - No feedback during development
-4. **BookLore works** - Current code is fine
+4. **BookTower works** - Current code is fine
 5. **Market risk** - Competitors don't wait
 
 ### ✅ Do Frontend Migration + Gradual Backend Modernization
@@ -793,7 +793,7 @@ Year 3-5: Eventually all services in Kotlin
 
 ### 🟡 Consider Greenfield If:
 
-- Building BookLore **v2** as separate product
+- Building BookTower **v2** as separate product
 - Current app is truly broken
 - 2 years of runway with no revenue pressure
 - Team is expert Kotlin developers
@@ -831,7 +831,7 @@ Year 3-5: Eventually all services in Kotlin
 - ❌ High risk of project failure
 - ❌ Market opportunity loss
 
-**For BookLore:**
+**For BookTower:**
 - Keep existing Spring Boot backend
 - Migrate Angular → HTMX (6-7.5 months)
 - Gradually modernize backend if needed (3-5 years)

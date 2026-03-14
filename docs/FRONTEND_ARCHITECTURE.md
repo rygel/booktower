@@ -1,8 +1,8 @@
-# BookLore Frontend Architecture
+# BookTower Frontend Architecture
 
 ## Overview
 
-BookLore's frontend is built with **Angular 21** using modern Angular features including standalone components, signals, and the new application builder. It follows a feature-based architecture with clear module boundaries.
+BookTower's frontend is built with **Angular 21** using modern Angular features including standalone components, signals, and the new application builder. It follows a feature-based architecture with clear module boundaries.
 
 ## Technology Stack
 
@@ -49,7 +49,7 @@ BookLore's frontend is built with **Angular 21** using modern Angular features i
 ## Directory Structure
 
 ```
-booklore-ui/src/
+booktower-ui/src/
 ├── app/
 │   ├── app.component.ts           # Root component
 │   ├── app.routes.ts              # Route definitions

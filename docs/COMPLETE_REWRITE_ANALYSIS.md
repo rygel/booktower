@@ -428,19 +428,19 @@ Disadvantages:
 **Only if ALL these are true:**
 
 1. **Current system is unmaintainable**
-   - BookLore: Code is clean, maintainable ✅
+   - BookTower: Code is clean, maintainable ✅
 
 2. **No existing users depend on it**
-   - BookLore: Has active users ❌
+   - BookTower: Has active users ❌
 
 3. **Technology is end-of-life**
    - Spring Boot: Supported until 2029+ ❌
 
 4. **Performance is unsalvageable**
-   - BookLore: Performance is fine ❌
+   - BookTower: Performance is fine ❌
 
 5. **Security is fundamentally broken**
-   - BookLore: Security is fine ❌
+   - BookTower: Security is fine ❌
 
 6. **Team is expert in new stack**
    - Team learning Kotlin ❌
@@ -448,7 +448,7 @@ Disadvantages:
 7. **Budget allows 2 years of dev with no revenue**
    - ❌
 
-**BookLore: 0/7 conditions met** → Full rewrite NOT recommended
+**BookTower: 0/7 conditions met** → Full rewrite NOT recommended
 
 ---
 
@@ -514,7 +514,7 @@ API Gateway (Kong/Nginx)
 2. **Too risky** - everything breaks at once
 3. **No incremental value** - users see nothing for 1+ years
 4. **Working code thrown away** - 879 Java files
-5. **BookLore doesn't need it** - current stack is fine
+5. **BookTower doesn't need it** - current stack is fine
 
 ### ✅ DO Frontend Migration Only
 

@@ -1,6 +1,6 @@
 # http4k + HTMX Quick Start Guide
 
-This guide helps you get started with the http4k + HTMX migration for BookLore.
+This guide helps you get started with the http4k + HTMX migration for BookTower.
 
 ## Prerequisites
 
@@ -13,11 +13,11 @@ This guide helps you get started with the http4k + HTMX migration for BookLore.
 
 ### 1. Create New Module
 
-Create a new directory `booklore-web` in your project:
+Create a new directory `booktower-web` in your project:
 
 ```bash
-mkdir booklore-web
-cd booklore-web
+mkdir booktower-web
+cd booktower-web
 ```
 
 ### 2. Gradle Configuration
@@ -33,7 +33,7 @@ plugins {
     id("io.ktor.plugin") version "2.3.8" // For fat JAR
 }
 
-group = "org.booklore"
+group = "org.booktower"
 version = "1.0-SNAPSHOT"
 
 repositories {
@@ -86,14 +86,14 @@ tasks.withType<KotlinCompile> {
 }
 
 application {
-    mainClass.set("org.booklore.web.BookloreWebAppKt")
+    mainClass.set("org.booktower.web.BookTowerWebAppKt")
 }
 
 // Fat JAR for Docker
 tasks.shadowJar {
     archiveClassifier.set("fat")
     manifest {
-        attributes["Main-Class"] = "org.booklore.web.BookloreWebAppKt"
+        attributes["Main-Class"] = "org.booktower.web.BookTowerWebAppKt"
     }
 }
 ```
@@ -101,19 +101,19 @@ tasks.shadowJar {
 ### 3. Directory Structure
 
 ```bash
-mkdir -p src/main/kotlin/org/booklore/web/{config,handlers,models,services,utils}
+mkdir -p src/main/kotlin/org/booktower/web/{config,handlers,models,services,utils}
 mkdir -p src/main/resources/{templates,static/{css,js}}
-mkdir -p src/test/kotlin/org/booklore/web
+mkdir -p src/test/kotlin/org/booktower/web
 ```
 
 ## Basic Implementation
 
 ### 4. Main Application
 
-Create `src/main/kotlin/org/booklore/web/BookloreWebApp.kt`:
+Create `src/main/kotlin/org/booktower/web/BookTowerWebApp.kt`:
 
 ```kotlin
-package org.booklore.web
+package org.booktower.web
 
 import org.http4k.core.HttpHandler
 import org.http4k.core.Method.GET
@@ -143,7 +143,7 @@ fun main() {
     // Routes
     val app: HttpHandler = routes(
         "/" bind GET to { req: Request ->
-            val view = HomePage("BookLore", "Welcome to your library!")
+            val view = HomePage("BookTower", "Welcome to your library!")
             Response(OK).body(renderer(view))
         },
         
@@ -178,7 +178,7 @@ Create `src/main/resources/templates/home.html`:
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ title }} - BookLore</title>
+    <title>{{ title }} - BookTower</title>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <style>
         body { font-family: system-ui, sans-serif; max-width: 800px; margin: 0 auto; padding: 2rem; }
@@ -200,10 +200,10 @@ Create `src/main/resources/templates/home.html`:
 
 ### 6. API Client
 
-Create `src/main/kotlin/org/booklore/web/services/ApiClient.kt`:
+Create `src/main/kotlin/org/booktower/web/services/ApiClient.kt`:
 
 ```kotlin
-package org.booklore.web.services
+package org.booktower.web.services
 
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -265,13 +265,13 @@ data class Book(
 
 ### 7. Book Handlers
 
-Create `src/main/kotlin/org/booklore/web/handlers/BookHandlers.kt`:
+Create `src/main/kotlin/org/booktower/web/handlers/BookHandlers.kt`:
 
 ```kotlin
-package org.booklore.web.handlers
+package org.booktower.web.handlers
 
-import org.booklore.web.services.ApiClient
-import org.booklore.web.services.Book
+import org.booktower.web.services.ApiClient
+import org.booktower.web.services.Book
 import org.http4k.core.HttpHandler
 import org.http4k.core.Method.GET
 import org.http4k.core.Request
@@ -338,7 +338,7 @@ Create `src/main/resources/application.conf`:
 
 ```hocon
 app {
-  name = "BookLore Web"
+  name = "BookTower Web"
   port = 8080
   
   api {
@@ -353,10 +353,10 @@ app {
 }
 ```
 
-Create `src/main/kotlin/org/booklore/web/config/AppConfig.kt`:
+Create `src/main/kotlin/org/booktower/web/config/AppConfig.kt`:
 
 ```kotlin
-package org.booklore.web.config
+package org.booktower.web.config
 
 import com.typesafe.config.ConfigFactory
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -393,12 +393,12 @@ data class AppConfig(
 ### Local Development
 
 ```bash
-# From booklore-web directory
+# From booktower-web directory
 ./gradlew run
 
 # Or build and run JAR
 ./gradlew shadowJar
-java -jar build/libs/booklore-web-1.0-SNAPSHOT-fat.jar
+java -jar build/libs/booktower-web-1.0-SNAPSHOT-fat.jar
 ```
 
 ### Docker
@@ -422,46 +422,46 @@ Create `docker-compose.yml`:
 version: '3.8'
 
 services:
-  booklore-web:
-    build: ./booklore-web
+  booktower-web:
+    build: ./booktower-web
     ports:
       - "8080:8080"
     environment:
-      - API_BASE_URL=http://booklore-api:6060
+      - API_BASE_URL=http://booktower-api:6060
       - JWT_SECRET=your-secret-key
     depends_on:
-      - booklore-api
+      - booktower-api
   
-  booklore-api:
+  booktower-api:
     # Your existing Spring Boot app
-    image: booklore-api:latest
+    image: booktower-api:latest
     ports:
       - "6060:6060"
     environment:
-      - DATABASE_URL=jdbc:mariadb://mariadb:3306/booklore
+      - DATABASE_URL=jdbc:mariadb://mariadb:3306/booktower
       # ... other env vars
   
   mariadb:
     image: mariadb:11
     environment:
-      - MYSQL_ROOT_PASSWORD=booklore
-      - MYSQL_DATABASE=booklore
+      - MYSQL_ROOT_PASSWORD=booktower
+      - MYSQL_DATABASE=booktower
 ```
 
 ## Testing
 
-Create a simple test `src/test/kotlin/org/booklore/web/BookHandlerTest.kt`:
+Create a simple test `src/test/kotlin/org/booktower/web/BookHandlerTest.kt`:
 
 ```kotlin
-package org.booklore.web
+package org.booktower.web
 
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.mockk
-import org.booklore.web.handlers.bookRoutes
-import org.booklore.web.services.ApiClient
-import org.booklore.web.services.Book
+import org.booktower.web.handlers.bookRoutes
+import org.booktower.web.services.ApiClient
+import org.booktower.web.services.Book
 import org.http4k.core.Method.GET
 import org.http4k.core.Request
 import org.http4k.core.Status
