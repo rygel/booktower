@@ -510,6 +510,9 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>${exec-maven-plugin.version}</version>
+                <configuration>
+                    <mainClass>org.booktower.BookTowerAppKt</mainClass>
+                </configuration>
             </plugin>
 
             <!-- Code Quality Plugins -->
@@ -751,11 +754,26 @@
                 <version>0.10.5</version>
             </plugin>
 
-            <!-- File watcher -->
+            <!-- File watcher: mvn fizzed-watcher:run triggers recompile+restart on source changes -->
             <plugin>
                 <groupId>com.fizzed</groupId>
                 <artifactId>fizzed-watcher-maven-plugin</artifactId>
                 <version>1.10.6</version>
+                <configuration>
+                    <touchFile>target/watcher.trigger</touchFile>
+                    <watches>
+                        <watch>
+                            <directory>src/main/kotlin</directory>
+                        </watch>
+                        <watch>
+                            <directory>src/main/resources</directory>
+                        </watch>
+                    </watches>
+                    <goals>
+                        <goal>compile</goal>
+                        <goal>exec:java -Dexec.mainClass=org.booktower.BookTowerAppKt</goal>
+                    </goals>
+                </configuration>
             </plugin>
         </plugins>
     </build>
