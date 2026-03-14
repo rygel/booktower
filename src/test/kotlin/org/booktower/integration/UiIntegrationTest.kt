@@ -367,6 +367,94 @@ class UiIntegrationTest : IntegrationTestBase() {
         assertTrue(body.contains("""value="tolkien""""))
     }
 
+    @Test
+    fun `header search bar is present on search page itself`() {
+        val token = registerAndGetToken("srchbar5")
+        val body = app(Request(Method.GET, "/search").header("Cookie", "token=$token")).bodyString()
+        assertTrue(body.contains("""action="/search""""))
+        assertTrue(body.contains("""name="q""""))
+    }
+
+    @Test
+    fun `header search bar uses GET method`() {
+        val token = registerAndGetToken("srchbar6")
+        val body = app(Request(Method.GET, "/libraries").header("Cookie", "token=$token")).bodyString()
+        assertTrue(body.contains("""method="GET""""))
+    }
+
+    @Test
+    fun `header search bar uses type search`() {
+        val token = registerAndGetToken("srchbar7")
+        val body = app(Request(Method.GET, "/libraries").header("Cookie", "token=$token")).bodyString()
+        assertTrue(body.contains("""type="search""""))
+    }
+
+    @Test
+    fun `header search bar value is empty on non-search pages`() {
+        val token = registerAndGetToken("srchbar8")
+        val body = app(Request(Method.GET, "/libraries").header("Cookie", "token=$token")).bodyString()
+        assertTrue(body.contains("""value="""""))
+        assertFalse(body.contains("""value="t"""")) // no stale query leaking in
+    }
+
+    @Test
+    fun `header search bar is absent on login page`() {
+        val body = app(Request(Method.GET, "/login")).bodyString()
+        assertFalse(body.contains("""name="q""""))
+    }
+
+    @Test
+    fun `header search bar is absent on register page`() {
+        val body = app(Request(Method.GET, "/register")).bodyString()
+        assertFalse(body.contains("""name="q""""))
+    }
+
+    @Test
+    fun `header search bar is absent on unauthenticated home page`() {
+        val body = app(Request(Method.GET, "/")).bodyString()
+        assertFalse(body.contains("""name="q""""))
+    }
+
+    @Test
+    fun `reader page does not have header search bar`() {
+        val token = registerAndGetToken("srchbar9")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId)
+        val body = app(Request(Method.GET, "/books/$bookId/read").header("Cookie", "token=$token")).bodyString()
+        assertFalse(body.contains("""action="/search""""))
+    }
+
+    @Test
+    fun `multi-word query is pre-populated in search bar`() {
+        val token = registerAndGetToken("srchbar10")
+        val body = app(
+            Request(Method.GET, "/search?q=lord+of+the+rings").header("Cookie", "token=$token"),
+        ).bodyString()
+        assertTrue(body.contains("lord of the rings"))
+    }
+
+    @Test
+    fun `HTML special chars in query are escaped in search bar value`() {
+        val token = registerAndGetToken("srchbar11")
+        val body = app(
+            Request(Method.GET, "/search?q=%3Cscript%3E").header("Cookie", "token=$token"),
+        ).bodyString()
+        assertFalse(body.contains("<script>"), "Raw <script> tag must not appear unescaped in value attribute")
+    }
+
+    @Test
+    fun `search bar end-to-end finds a book matching the query`() {
+        val token = registerAndGetToken("srchbar12")
+        val libId = createLibrary(token)
+        createBook(token, libId, "The Hobbit")
+
+        val body = app(
+            Request(Method.GET, "/search?q=Hobbit").header("Cookie", "token=$token"),
+        ).bodyString()
+        assertTrue(body.contains("The Hobbit"))
+        assertTrue(body.contains("""value="Hobbit""""))
+    }
+
     // ── Reader page ─────────────────────────────────────────────────────────
 
     @Test
