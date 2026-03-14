@@ -331,6 +331,42 @@ class UiIntegrationTest : IntegrationTestBase() {
         assertEquals(Status.NOT_FOUND, response.status)
     }
 
+    // ── Persistent header search bar ────────────────────────────────────────
+
+    @Test
+    fun `header search bar is present on libraries page`() {
+        val token = registerAndGetToken("srchbar1")
+        val body = app(Request(Method.GET, "/libraries").header("Cookie", "token=$token")).bodyString()
+        assertTrue(body.contains("""action="/search""""))
+        assertTrue(body.contains("""name="q""""))
+    }
+
+    @Test
+    fun `header search bar is present on library detail page`() {
+        val token = registerAndGetToken("srchbar2")
+        val libId = createLibrary(token)
+        val body = app(Request(Method.GET, "/libraries/$libId").header("Cookie", "token=$token")).bodyString()
+        assertTrue(body.contains("""action="/search""""))
+    }
+
+    @Test
+    fun `header search bar is present on book detail page`() {
+        val token = registerAndGetToken("srchbar3")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId)
+        val body = app(Request(Method.GET, "/books/$bookId").header("Cookie", "token=$token")).bodyString()
+        assertTrue(body.contains("""action="/search""""))
+    }
+
+    @Test
+    fun `search page pre-populates header search bar with current query`() {
+        val token = registerAndGetToken("srchbar4")
+        val body = app(
+            Request(Method.GET, "/search?q=tolkien").header("Cookie", "token=$token"),
+        ).bodyString()
+        assertTrue(body.contains("""value="tolkien""""))
+    }
+
     // ── Reader page ─────────────────────────────────────────────────────────
 
     @Test

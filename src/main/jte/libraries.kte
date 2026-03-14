@@ -10,7 +10,7 @@
 @param i18n: I18nService
 
 @template.components.layout(title="${i18n.translate("page.libraries.title")} - BookTower", username=username, currentPage="libraries",
-    themeCss=themeCss, currentTheme=currentTheme, lang=lang, themes=themes, i18n=i18n, content = @`
+    themeCss=themeCss, currentTheme=currentTheme, lang=lang, themes=themes, i18n=i18n, searchQuery="", content = @`
 <div style="padding:2rem;">
 
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:2rem;">

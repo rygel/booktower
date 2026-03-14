@@ -12,7 +12,7 @@
 @param i18n: I18nService
 
 @template.components.layout(title="${i18n.translate("page.search.title")} - BookTower", username=username, currentPage="search",
-    themeCss=themeCss, currentTheme=currentTheme, lang=lang, themes=themes, i18n=i18n, content = @`
+    themeCss=themeCss, currentTheme=currentTheme, lang=lang, themes=themes, i18n=i18n, searchQuery=query, content = @`
 <div style="padding:2rem;">
     <h1 style="font-size:1.5rem; font-weight:700; color:var(--bt-text); margin-bottom:1.5rem;">${i18n.translate("page.search.title")}</h1>
 

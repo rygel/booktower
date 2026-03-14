@@ -12,7 +12,7 @@
 @param i18n: I18nService
 
 @template.components.layout(title="${book.title} - BookTower", username=username, currentPage="library",
-    themeCss=themeCss, currentTheme=currentTheme, lang=lang, themes=themes, i18n=i18n, content = @`
+    themeCss=themeCss, currentTheme=currentTheme, lang=lang, themes=themes, i18n=i18n, searchQuery="", content = @`
 <div style="padding:2rem; max-width:56rem; margin:0 auto;">
 
     <!-- Breadcrumb -->
