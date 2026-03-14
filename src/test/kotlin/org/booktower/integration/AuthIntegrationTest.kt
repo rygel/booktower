@@ -9,6 +9,7 @@ import org.booktower.models.ErrorResponse
 import org.booktower.models.LoginResponse
 import org.booktower.services.AuthService
 import org.booktower.services.BookmarkService
+import org.booktower.services.UserSettingsService
 import org.booktower.services.BookService
 import org.booktower.services.JwtService
 import org.booktower.services.LibraryService
@@ -36,7 +37,8 @@ class AuthIntegrationTest {
         val libraryService = LibraryService(jdbi, config.storage)
         val bookService = BookService(jdbi, config.storage)
         val bookmarkService = BookmarkService(jdbi)
-        val appHandler = AppHandler(authService, libraryService, bookService, bookmarkService, jwtService, TemplateRenderer())
+        val userSettingsService = UserSettingsService(jdbi)
+        val appHandler = AppHandler(authService, libraryService, bookService, bookmarkService, userSettingsService, jwtService, config.storage, TemplateRenderer())
         app = GlobalErrorFilter().then(appHandler.routes())
     }
 

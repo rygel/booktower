@@ -4,6 +4,7 @@ import org.booktower.TestFixture
 import org.booktower.config.TemplateRenderer
 import org.booktower.services.AuthService
 import org.booktower.services.BookmarkService
+import org.booktower.services.UserSettingsService
 import org.booktower.services.BookService
 import org.booktower.services.JwtService
 import org.booktower.services.LibraryService
@@ -27,7 +28,8 @@ class HtmxHandlerTest {
         val libraryService = LibraryService(jdbi, config.storage)
         val bookService = BookService(jdbi, config.storage)
         val bookmarkService = BookmarkService(jdbi)
-        appHandler = AppHandler(authService, libraryService, bookService, bookmarkService, jwtService, TemplateRenderer())
+        val userSettingsService = UserSettingsService(jdbi)
+        appHandler = AppHandler(authService, libraryService, bookService, bookmarkService, userSettingsService, jwtService, config.storage, TemplateRenderer())
     }
 
     @Test

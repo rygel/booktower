@@ -6,6 +6,7 @@ import org.booktower.services.BookmarkService
 import org.booktower.services.BookService
 import org.booktower.services.JwtService
 import org.booktower.services.LibraryService
+import org.booktower.services.UserSettingsService
 import org.koin.dsl.module
 
 val appModule = module {
@@ -29,5 +30,7 @@ val appModule = module {
 
     single { BookmarkService(get<Database>().getJdbi()) }
 
-    single { AppHandler(get(), get(), get(), get(), get(), get()) }
+    single { UserSettingsService(get<Database>().getJdbi()) }
+
+    single { AppHandler(get(), get(), get(), get(), get(), get(), get<AppConfig>().storage, get()) }
 }

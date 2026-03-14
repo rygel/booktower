@@ -1,5 +1,6 @@
 package org.booktower.handlers
 
+import org.booktower.config.StorageConfig
 import org.booktower.config.TemplateRenderer
 import org.booktower.filters.JwtAuthFilter
 import org.booktower.services.AuthService
@@ -7,6 +8,7 @@ import org.booktower.services.BookmarkService
 import org.booktower.services.BookService
 import org.booktower.services.JwtService
 import org.booktower.services.LibraryService
+import org.booktower.services.UserSettingsService
 import org.http4k.core.*
 import org.http4k.core.cookie.cookie
 import org.http4k.routing.ResourceLoader
@@ -23,13 +25,17 @@ class AppHandler(
     private val libraryService: LibraryService,
     private val bookService: BookService,
     private val bookmarkService: BookmarkService,
+    private val userSettingsService: UserSettingsService,
     private val jwtService: JwtService,
+    private val storageConfig: StorageConfig,
     private val templateRenderer: TemplateRenderer,
 ) {
     private val authHandler = AuthHandler2(authService)
     private val libraryHandler = LibraryHandler2(libraryService)
     private val bookHandler = BookHandler2(bookService)
     private val bookmarkHandler = BookmarkHandler(bookmarkService)
+    private val fileHandler = FileHandler(bookService, storageConfig)
+    private val settingsHandler = UserSettingsHandler(userSettingsService)
     private val authFilter = JwtAuthFilter(jwtService)
 
     fun routes(): RoutingHttpHandler {
@@ -53,6 +59,10 @@ class AppHandler(
             "/api/bookmarks" bind Method.GET to authFilter.then(bookmarkHandler::list),
             "/api/bookmarks" bind Method.POST to authFilter.then(bookmarkHandler::create),
             "/api/bookmarks/{id}" bind Method.DELETE to authFilter.then(bookmarkHandler::delete),
+            "/api/books/{id}/upload" bind Method.POST to authFilter.then(fileHandler::upload),
+            "/api/books/{id}/file" bind Method.GET to authFilter.then(fileHandler::download),
+            "/api/settings" bind Method.GET to authFilter.then(settingsHandler::getAll),
+            "/api/settings/{key}" bind Method.PUT to authFilter.then(settingsHandler::set),
             "/preferences/theme" bind Method.POST to ::setTheme,
             "/preferences/lang" bind Method.POST to ::setLanguage,
         )

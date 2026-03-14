@@ -157,6 +157,48 @@ class BookService(private val jdbi: Jdbi, private val storageConfig: StorageConf
         return true
     }
 
+    fun getBookFilePath(
+        userId: UUID,
+        bookId: UUID,
+    ): String? {
+        return jdbi.withHandle<String?, Exception> { handle ->
+            handle.createQuery(
+                """
+                SELECT b.file_path FROM books b
+                INNER JOIN libraries l ON b.library_id = l.id
+                WHERE b.id = ? AND l.user_id = ?
+                """,
+            )
+                .bind(0, bookId.toString())
+                .bind(1, userId.toString())
+                .mapTo(String::class.java).firstOrNull()
+        }
+    }
+
+    fun updateFileInfo(
+        userId: UUID,
+        bookId: UUID,
+        filePath: String,
+        fileSize: Long,
+    ): Boolean {
+        val updated = jdbi.withHandle<Int, Exception> { handle ->
+            handle.createUpdate(
+                """
+                UPDATE books SET file_path = ?, file_size = ?, updated_at = ?
+                WHERE id = ?
+                AND library_id IN (SELECT id FROM libraries WHERE user_id = ?)
+                """,
+            )
+                .bind(0, filePath)
+                .bind(1, fileSize)
+                .bind(2, java.time.Instant.now().toString())
+                .bind(3, bookId.toString())
+                .bind(4, userId.toString())
+                .execute()
+        }
+        return updated > 0
+    }
+
     fun updateProgress(
         userId: UUID,
         bookId: UUID,
