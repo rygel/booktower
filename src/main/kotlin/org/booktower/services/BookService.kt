@@ -592,6 +592,43 @@ class BookService(private val jdbi: Jdbi, private val analyticsService: Analytic
         }
     }
 
+    /** Returns all books for a user matching a shelf rule (no pagination limit). Used by MagicShelfService. */
+    fun getBooksForShelf(
+        userId: UUID,
+        statusFilter: String? = null,
+        tagFilter: String? = null,
+        ratingGte: Int? = null,
+    ): List<BookDto> {
+        val statusClause = if (statusFilter != null) " AND bs.status = ?" else ""
+        val tagClause = if (tagFilter != null)
+            " AND EXISTS (SELECT 1 FROM book_tags bt WHERE bt.book_id = b.id AND bt.user_id = ? AND bt.tag = ?)"
+        else ""
+        val ratingGteClause = if (ratingGte != null) " AND br.rating >= ?" else ""
+
+        val books = jdbi.withHandle<List<BookDto>, Exception> { handle ->
+            val q = handle.createQuery(
+                """
+                SELECT b.*, bs.status AS book_status_value, br.rating AS book_rating_value FROM books b
+                INNER JOIN libraries l ON b.library_id = l.id
+                LEFT JOIN book_status bs ON bs.book_id = b.id AND bs.user_id = ?
+                LEFT JOIN book_ratings br ON br.book_id = b.id AND br.user_id = ?
+                WHERE l.user_id = ?${statusClause}${tagClause}${ratingGteClause}
+                ORDER BY b.title
+                """,
+            )
+            q.bind(0, userId.toString())
+            q.bind(1, userId.toString())
+            q.bind(2, userId.toString())
+            var idx = 3
+            if (statusFilter != null) q.bind(idx++, statusFilter)
+            if (tagFilter != null) { q.bind(idx++, userId.toString()); q.bind(idx++, tagFilter) }
+            if (ratingGte != null) q.bind(idx++, ratingGte)
+            q.map { row -> mapBook(row) }.list()
+        }
+        val tagMap = fetchTagsForBooks(userId, books.map { it.id })
+        return books.map { it.copy(tags = tagMap[it.id] ?: emptyList()) }
+    }
+
     fun setTags(userId: UUID, bookId: UUID, tags: List<String>) {
         val cleanTags = tags.map { it.trim().lowercase() }
             .filter { it.isNotBlank() && it.length <= 50 }

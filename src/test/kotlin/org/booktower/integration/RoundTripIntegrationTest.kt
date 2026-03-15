@@ -67,6 +67,7 @@ class RoundTripIntegrationTest {
             userSettingsService, pdfMetadataService, adminService, jwtService,
             config.storage, TestFixture.templateRenderer, WeblateHandler(WeblateConfig("", "", "", false)),
             analyticsService, annotationService, metadataFetchService,
+            org.booktower.services.MagicShelfService(jdbi, bookService),
         )
 
         val app = routes(

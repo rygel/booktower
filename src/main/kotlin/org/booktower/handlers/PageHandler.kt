@@ -11,8 +11,11 @@ import org.booktower.models.UpdateBookRequest
 import org.booktower.models.UpdateLibraryRequest
 import org.booktower.models.UpdateProgressRequest
 import org.booktower.config.Json
+import org.booktower.models.CreateMagicShelfRequest
+import org.booktower.models.ShelfRuleType
 import org.booktower.services.AnalyticsService
 import org.booktower.services.AnnotationService
+import org.booktower.services.MagicShelfService
 import org.booktower.services.MetadataFetchService
 import org.booktower.services.AuthService
 import org.booktower.services.BookmarkService
@@ -39,6 +42,7 @@ class PageHandler(
     private val analyticsService: AnalyticsService,
     private val annotationService: AnnotationService,
     private val metadataFetchService: MetadataFetchService,
+    private val magicShelfService: MagicShelfService,
     private val templateRenderer: TemplateRenderer,
 ) {
     // ── Page routes ────────────────────────────────────────────────────────────
@@ -47,9 +51,11 @@ class PageHandler(
         val userId = auth(req) ?: return redirectToLogin()
         val ctx = WebContext(req)
         val libraries = libraryService.getLibraries(userId)
+        val shelves = magicShelfService.getShelves(userId)
         return htmlOk(templateRenderer.render("libraries.kte", mapOf(
             "username" to null,
             "libraries" to libraries,
+            "shelves" to shelves,
             "themeCss" to ctx.themeCss,
             "currentTheme" to ctx.theme,
             "lang" to ctx.lang,
@@ -57,6 +63,64 @@ class PageHandler(
             "i18n" to ctx.i18n,
             "isAdmin" to authIsAdmin(req),
         )))
+    }
+
+    /** GET /shelves/{id} */
+    fun magicShelf(req: Request): Response {
+        val userId = auth(req) ?: return redirectToLogin()
+        val ctx = WebContext(req)
+        val shelfId = req.lastPathSegment().toUuidOrNull() ?: return Response(Status.NOT_FOUND)
+        val shelf = magicShelfService.getShelf(userId, shelfId) ?: return Response(Status.NOT_FOUND)
+        val books = magicShelfService.resolveBooks(userId, shelf)
+        return htmlOk(templateRenderer.render("shelf.kte", mapOf(
+            "username" to null,
+            "shelf" to shelf,
+            "books" to books,
+            "themeCss" to ctx.themeCss,
+            "currentTheme" to ctx.theme,
+            "lang" to ctx.lang,
+            "themes" to ThemeCatalog.allThemes(),
+            "i18n" to ctx.i18n,
+            "isAdmin" to authIsAdmin(req),
+        )))
+    }
+
+    /** POST /ui/shelves */
+    fun createMagicShelf(req: Request): Response {
+        val userId = auth(req) ?: return Response(Status.UNAUTHORIZED)
+        val ctx = WebContext(req)
+        val name = req.form("name")?.trim()?.takeIf { it.isNotBlank() }
+            ?: return Response(Status.BAD_REQUEST).body("Name is required")
+        if (name.length > 100) return Response(Status.BAD_REQUEST).body("Name must be 100 characters or fewer")
+        val ruleTypeStr = req.form("ruleType")?.trim()
+            ?: return Response(Status.BAD_REQUEST).body("ruleType is required")
+        val ruleType = try { ShelfRuleType.valueOf(ruleTypeStr) }
+            catch (_: IllegalArgumentException) { return Response(Status.BAD_REQUEST).body("Invalid ruleType") }
+        val ruleValue: String? = when (ruleType) {
+            ShelfRuleType.STATUS -> req.form("ruleValueStatus")?.takeIf { it.isNotBlank() }
+                ?: return Response(Status.BAD_REQUEST).body("Status is required")
+            ShelfRuleType.TAG -> req.form("ruleValueTag")?.trim()?.lowercase()?.takeIf { it.isNotBlank() }
+                ?: return Response(Status.BAD_REQUEST).body("Tag is required")
+            ShelfRuleType.RATING_GTE -> req.form("ruleValueRating")?.toIntOrNull()
+                ?.coerceIn(1, 5)?.toString()
+                ?: return Response(Status.BAD_REQUEST).body("Rating is required")
+        }
+        val shelf = magicShelfService.createShelf(userId, CreateMagicShelfRequest(name, ruleType, ruleValue))
+        val rendered = templateRenderer.render("components/shelfCard.kte", mapOf("shelf" to shelf, "i18n" to ctx.i18n))
+        return Response(Status.CREATED)
+            .header("Content-Type", "text/html; charset=utf-8")
+            .header("HX-Trigger", toast(ctx.i18n.translate("msg.shelf-created")))
+            .body(rendered)
+    }
+
+    /** DELETE /ui/shelves/{id} */
+    fun deleteMagicShelf(req: Request): Response {
+        val userId = auth(req) ?: return Response(Status.UNAUTHORIZED)
+        val ctx = WebContext(req)
+        val shelfId = req.lastPathSegment().toUuidOrNull() ?: return Response(Status.BAD_REQUEST)
+        magicShelfService.deleteShelf(userId, shelfId)
+        return Response(Status.OK)
+            .header("HX-Trigger", toast(ctx.i18n.translate("msg.shelf-deleted")))
     }
 
     fun library(req: Request): Response {

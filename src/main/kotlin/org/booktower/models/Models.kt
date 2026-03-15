@@ -252,3 +252,20 @@ data class AnnotationDto(
     val color: String,
     val createdAt: String,
 )
+
+enum class ShelfRuleType { STATUS, TAG, RATING_GTE }
+
+data class MagicShelfDto(
+    val id: String,
+    val name: String,
+    val ruleType: ShelfRuleType,
+    val ruleValue: String?,
+    val bookCount: Int = 0,
+    val createdAt: String,
+)
+
+data class CreateMagicShelfRequest(
+    val name: String,
+    val ruleType: ShelfRuleType,
+    val ruleValue: String?,
+)

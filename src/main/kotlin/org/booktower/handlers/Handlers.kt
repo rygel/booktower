@@ -10,6 +10,7 @@ import org.booktower.filters.RateLimitFilter
 import org.booktower.model.ThemeCatalog
 import org.booktower.services.AdminService
 import org.booktower.services.AnnotationService
+import org.booktower.services.MagicShelfService
 import org.booktower.services.MetadataFetchService
 import org.booktower.services.AuthService
 import org.booktower.services.BookmarkService
@@ -45,6 +46,7 @@ class AppHandler(
     private val analyticsService: AnalyticsService,
     private val annotationService: AnnotationService,
     private val metadataFetchService: MetadataFetchService,
+    private val magicShelfService: MagicShelfService,
 ) {
     private val authHandler = AuthHandler2(authService, userSettingsService)
     private val libraryHandler = LibraryHandler2(libraryService)
@@ -53,7 +55,7 @@ class AppHandler(
     private val fileHandler = FileHandler(bookService, pdfMetadataService, storageConfig)
     private val settingsHandler = UserSettingsHandler(userSettingsService)
     private val adminHandler = AdminHandler(adminService, templateRenderer)
-    private val pageHandler = PageHandler(jwtService, authService, libraryService, bookService, bookmarkService, userSettingsService, analyticsService, annotationService, metadataFetchService, templateRenderer)
+    private val pageHandler = PageHandler(jwtService, authService, libraryService, bookService, bookmarkService, userSettingsService, analyticsService, annotationService, metadataFetchService, magicShelfService, templateRenderer)
     private val opdsHandler = OpdsHandler(authService, libraryService, bookService, storageConfig)
     private val authFilter = JwtAuthFilter(jwtService)
     private val adminFilter = authFilter.then(AdminFilter())
@@ -137,6 +139,10 @@ class AppHandler(
             "/api/weblate/pull" bind Method.POST to weblateHandler::pull,
             "/api/weblate/push" bind Method.POST to weblateHandler::push,
             "/api/weblate/status" bind Method.GET to weblateHandler::status,
+            // Smart shelves
+            "/shelves/{id}" bind Method.GET to pageHandler::magicShelf,
+            "/ui/shelves" bind Method.POST to pageHandler::createMagicShelf,
+            "/ui/shelves/{id}" bind Method.DELETE to pageHandler::deleteMagicShelf,
             // OPDS Catalog 1.2 (HTTP Basic Auth — no JWT required)
             "/opds/catalog" bind Method.GET to opdsHandler::catalog,
             "/opds/catalog/{libraryId}" bind Method.GET to opdsHandler::library,

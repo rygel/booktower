@@ -47,6 +47,7 @@ class HtmxHandlerTest {
             authService, libraryService, bookService, bookmarkService,
             userSettingsService, pdfMetadataService, adminService, jwtService,
             config.storage, TestFixture.templateRenderer, weblateHandler, analyticsService, annotationService, metadataFetchService,
+            org.booktower.services.MagicShelfService(jdbi, bookService),
         )
     }
 
