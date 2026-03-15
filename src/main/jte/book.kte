@@ -68,6 +68,15 @@
                     @if(book.pageCount != null)
                         <span><i class="ri-file-list-line" style="margin-right:0.25rem;"></i>${book.pageCount} ${i18n.translate("label.pages")}</span>
                     @endif
+                    @if(book.publisher != null)
+                        <span><i class="ri-building-line" style="margin-right:0.25rem;"></i>${book.publisher}</span>
+                    @endif
+                    @if(book.publishedDate != null)
+                        <span><i class="ri-calendar-event-line" style="margin-right:0.25rem;"></i>${book.publishedDate}</span>
+                    @endif
+                    @if(book.isbn != null)
+                        <span><i class="ri-barcode-line" style="margin-right:0.25rem;"></i>${book.isbn}</span>
+                    @endif
                     @if(book.fileSize > 0)
                         <span><i class="ri-hard-drive-line" style="margin-right:0.25rem;"></i>${(book.fileSize / 1048576.0 * 10).toInt() / 10.0} MB</span>
                     @endif

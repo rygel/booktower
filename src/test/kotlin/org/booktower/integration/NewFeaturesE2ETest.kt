@@ -226,7 +226,7 @@ class NewFeaturesE2ETest : IntegrationTestBase() {
     }
 
     @Test
-    fun `edited isbn pre-fills the book edit form`() {
+    fun `edited isbn appears in book detail page header and pre-fills the edit form`() {
         val token = registerAndGetToken("e2e9")
         val libId = createLibrary(token)
         val bookId = createBook(token, libId, "ISBN Book")
@@ -234,13 +234,15 @@ class NewFeaturesE2ETest : IntegrationTestBase() {
         editBook(token, bookId, mapOf("title" to "ISBN Book", "isbn" to "9780743273565"))
 
         val html = bookHtml(token, bookId)
-        // The edit form input has value="9780743273565"
+        // ISBN appears in the read-only metadata row (ri-barcode-line icon) and in the edit form input
         assertTrue(html.contains("9780743273565"),
-            "Saved ISBN must appear as pre-filled value in the edit form")
+            "Saved ISBN must appear in the book detail page (metadata row + edit form)")
+        assertTrue(html.contains("ri-barcode-line"),
+            "ISBN barcode icon must appear in the metadata row when ISBN is set")
     }
 
     @Test
-    fun `edited publisher pre-fills the book edit form`() {
+    fun `edited publisher appears in book detail page header and pre-fills the edit form`() {
         val token = registerAndGetToken("e2e10")
         val libId = createLibrary(token)
         val bookId = createBook(token, libId, "Publisher Book")
@@ -249,11 +251,13 @@ class NewFeaturesE2ETest : IntegrationTestBase() {
 
         val html = bookHtml(token, bookId)
         assertTrue(html.contains("Tor Books"),
-            "Saved publisher must appear as pre-filled value in the edit form")
+            "Saved publisher must appear in the book detail page (metadata row + edit form)")
+        assertTrue(html.contains("ri-building-line"),
+            "Publisher building icon must appear in the metadata row when publisher is set")
     }
 
     @Test
-    fun `edited publishedDate pre-fills the book edit form`() {
+    fun `edited publishedDate appears in book detail page header and pre-fills the edit form`() {
         val token = registerAndGetToken("e2e11")
         val libId = createLibrary(token)
         val bookId = createBook(token, libId, "Dated Book")
@@ -262,7 +266,9 @@ class NewFeaturesE2ETest : IntegrationTestBase() {
 
         val html = bookHtml(token, bookId)
         assertTrue(html.contains("1997-06-26"),
-            "Saved publishedDate must appear as pre-filled value in the edit form")
+            "Saved publishedDate must appear in the book detail page (metadata row + edit form)")
+        assertTrue(html.contains("ri-calendar-event-line"),
+            "Published date calendar icon must appear in the metadata row when date is set")
     }
 
     @Test
