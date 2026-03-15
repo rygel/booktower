@@ -332,12 +332,14 @@ class PageHandler(
         val ctx = WebContext(req)
         val user = authService.getUserById(userId)
         val analyticsEnabled = userSettingsService.get(userId, "analytics.enabled") == "true"
+        val libraries = libraryService.getLibraries(userId)
         return htmlOk(templateRenderer.render("profile.kte", mapOf(
             "username" to null,
             "userEmail" to (user?.email ?: ""),
             "userUsername" to (user?.username ?: ""),
             "memberSince" to (user?.createdAt?.toString()?.take(10) ?: ""),
             "analyticsEnabled" to analyticsEnabled,
+            "libraries" to libraries,
             "themeCss" to ctx.themeCss,
             "currentTheme" to ctx.theme,
             "lang" to ctx.lang,

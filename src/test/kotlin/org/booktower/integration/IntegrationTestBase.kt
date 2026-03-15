@@ -16,6 +16,7 @@ import org.booktower.services.AuthService
 import org.booktower.services.ComicService
 import org.booktower.services.EpubMetadataService
 import org.booktower.services.ExportService
+import org.booktower.services.GoodreadsImportService
 import org.booktower.services.MagicShelfService
 import org.booktower.services.MetadataFetchService
 import org.booktower.services.BookmarkService
@@ -56,6 +57,7 @@ abstract class IntegrationTestBase {
         val exportService = ExportService(jdbi)
         val epubMetadataService = EpubMetadataService(jdbi, config.storage.coversPath)
         val comicService = ComicService()
+        val goodreadsImportService = GoodreadsImportService(bookService)
         val appHandler = AppHandler(
             authService, libraryService, bookService, bookmarkService,
             userSettingsService, pdfMetadataService, epubMetadataService, adminService, jwtService, config.storage,
@@ -69,6 +71,7 @@ abstract class IntegrationTestBase {
             apiTokenService,
             exportService,
             comicService,
+            goodreadsImportService,
         )
         app = GlobalErrorFilter().then(appHandler.routes())
     }

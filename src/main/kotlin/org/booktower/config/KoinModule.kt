@@ -9,6 +9,7 @@ import org.booktower.services.ApiTokenService
 import org.booktower.services.ComicService
 import org.booktower.services.EpubMetadataService
 import org.booktower.services.ExportService
+import org.booktower.services.GoodreadsImportService
 import org.booktower.services.MagicShelfService
 import org.booktower.services.MetadataFetchService
 import org.booktower.services.AuthService
@@ -66,6 +67,8 @@ val appModule = module {
 
     single { ExportService(get<Database>().getJdbi()) }
 
+    single { GoodreadsImportService(get()) }
+
     single { ComicService() }
 
     single { BulkBookHandler(get()) }
@@ -74,5 +77,5 @@ val appModule = module {
 
     single { WeblateHandler(get<AppConfig>().weblate) }
 
-    single { AppHandler(get(), get(), get(), get(), get(), get(), get(), get(), get(), get<AppConfig>().storage, get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    single { AppHandler(get(), get(), get(), get(), get(), get(), get(), get(), get(), get<AppConfig>().storage, get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
 }

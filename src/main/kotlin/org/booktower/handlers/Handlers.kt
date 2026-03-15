@@ -14,6 +14,7 @@ import org.booktower.services.ApiTokenService
 import org.booktower.services.ComicService
 import org.booktower.services.EpubMetadataService
 import org.booktower.services.ExportService
+import org.booktower.services.GoodreadsImportService
 import org.booktower.services.MagicShelfService
 import org.booktower.services.MetadataFetchService
 import org.booktower.services.AuthService
@@ -57,6 +58,7 @@ class AppHandler(
     private val apiTokenService: ApiTokenService,
     private val exportService: ExportService,
     private val comicService: ComicService,
+    private val goodreadsImportService: GoodreadsImportService,
 ) {
     private val authHandler = AuthHandler2(authService, userSettingsService, passwordResetService)
     private val libraryHandler = LibraryHandler2(libraryService)
@@ -69,6 +71,7 @@ class AppHandler(
     private val opdsHandler = OpdsHandler(authService, libraryService, bookService, storageConfig, apiTokenService)
     private val apiTokenHandler = ApiTokenHandler(apiTokenService, jwtService)
     private val exportHandler = ExportHandler(exportService, jwtService)
+    private val goodreadsImportHandler = GoodreadsImportHandler(goodreadsImportService, jwtService)
     private val bulkBookHandler = BulkBookHandler(bookService)
     private val authFilter = JwtAuthFilter(jwtService)
     private val adminFilter = authFilter.then(AdminFilter())
@@ -169,8 +172,9 @@ class AppHandler(
             "/api/tokens" bind Method.GET to authFilter.then(apiTokenHandler::list),
             "/api/tokens" bind Method.POST to authFilter.then(apiTokenHandler::create),
             "/api/tokens/{id}" bind Method.DELETE to authFilter.then(apiTokenHandler::revoke),
-            // Export
+            // Export & Import
             "/api/export" bind Method.GET to authFilter.then(exportHandler::export),
+            "/api/import/goodreads" bind Method.POST to authFilter.then(goodreadsImportHandler::import),
             // Smart shelves
             "/shelves/{id}" bind Method.GET to pageHandler::magicShelf,
             "/ui/shelves" bind Method.POST to pageHandler::createMagicShelf,

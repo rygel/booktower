@@ -17,6 +17,7 @@ import org.booktower.services.AuthService
 import org.booktower.services.MetadataFetchService
 import org.booktower.services.BookmarkService
 import org.booktower.services.EpubMetadataService
+import org.booktower.services.GoodreadsImportService
 import org.booktower.services.PdfMetadataService
 import org.booktower.services.UserSettingsService
 import org.booktower.services.BookService
@@ -74,6 +75,7 @@ class RoundTripIntegrationTest {
             org.booktower.services.ApiTokenService(jdbi),
             org.booktower.services.ExportService(jdbi),
             org.booktower.services.ComicService(),
+            org.booktower.services.GoodreadsImportService(bookService),
         )
 
         val app = routes(

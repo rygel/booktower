@@ -1,10 +1,12 @@
 @import org.booktower.i18n.I18nService
 @import org.booktower.model.ThemeDefinition
+@import org.booktower.models.LibraryDto
 @param username: String?
 @param userEmail: String
 @param userUsername: String
 @param memberSince: String
 @param analyticsEnabled: Boolean = false
+@param libraries: List<LibraryDto> = emptyList()
 @param themeCss: String
 @param currentTheme: String
 @param lang: String
@@ -113,6 +115,33 @@
         <a href="/api/export" download class="btn-primary" style="display:inline-flex; align-items:center; gap:0.375rem; text-decoration:none;">
             <i class="ri-download-2-line"></i> ${i18n.translate("action.export")}
         </a>
+    </div>
+
+    <!-- Goodreads Import -->
+    <div class="card" style="padding:1.5rem; margin-bottom:1.25rem;">
+        <h2 style="font-size:0.9rem; font-weight:600; color:var(--bt-text-dim); margin-bottom:0.5rem; display:flex; align-items:center; gap:0.5rem;">
+            <i class="ri-upload-2-line" style="color:var(--bt-accent-dim);"></i>
+            ${i18n.translate("page.profile.import.goodreads")}
+        </h2>
+        <p style="font-size:0.8rem; color:var(--bt-subtle); margin-bottom:0.875rem;">${i18n.translate("page.profile.import.goodreads.hint")}</p>
+        <div id="import-result" style="display:none; margin-bottom:0.75rem; font-size:0.8rem; padding:0.5rem 0.75rem; border-radius:0.375rem; background:var(--bt-surface-dim); color:var(--bt-text-dim);"></div>
+        <div style="display:flex; gap:0.75rem; align-items:flex-end; flex-wrap:wrap;">
+            <div>
+                <label style="display:block; font-size:0.8rem; color:var(--bt-text-dim); margin-bottom:0.375rem;">${i18n.translate("page.profile.import.library")}</label>
+                <select id="import-library" style="border-radius:0.5rem; border:1px solid var(--bt-border-input); padding:0.5rem 0.75rem; font-size:0.875rem; background:var(--bt-bg); color:var(--bt-text);">
+                    @for(lib in libraries)
+                        <option value="${lib.id}">${lib.name}</option>
+                    @endfor
+                </select>
+            </div>
+            <div>
+                <label style="display:block; font-size:0.8rem; color:var(--bt-text-dim); margin-bottom:0.375rem;">${i18n.translate("page.profile.import.file")}</label>
+                <input type="file" id="import-file" accept=".csv" style="font-size:0.875rem; color:var(--bt-text);">
+            </div>
+            <button onclick="importGoodreads()" class="btn-primary" style="display:inline-flex; align-items:center; gap:0.375rem;">
+                <i class="ri-upload-2-line"></i> ${i18n.translate("action.import")}
+            </button>
+        </div>
     </div>
 
     <!-- Change Password -->
@@ -294,6 +323,35 @@ async function changePassword(event) {
         }
     } catch (e) {
         status.style.display = 'none';
+        toast('${i18n.translate("msg.error")}', 'error');
+    }
+}
+
+async function importGoodreads() {
+    var libraryId = document.getElementById('import-library').value;
+    var fileInput = document.getElementById('import-file');
+    var resultDiv = document.getElementById('import-result');
+    if (!libraryId) { toast('${i18n.translate("page.profile.import.no.library")}', 'error'); return; }
+    if (!fileInput.files.length) { toast('${i18n.translate("page.profile.import.no.file")}', 'error'); return; }
+    var file = fileInput.files[0];
+    try {
+        var resp = await fetch('/api/import/goodreads?libraryId=' + libraryId, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/csv' },
+            body: file
+        });
+        if (resp.ok) {
+            var data = await resp.json();
+            resultDiv.style.display = 'block';
+            resultDiv.textContent = '${i18n.translate("page.profile.import.result")}'
+                .replace('{0}', data.imported)
+                .replace('{1}', data.skipped)
+                .replace('{2}', data.errors);
+            toast('${i18n.translate("page.profile.import.success")}'.replace('{0}', data.imported), 'success');
+        } else {
+            toast('${i18n.translate("msg.error")}', 'error');
+        }
+    } catch (e) {
         toast('${i18n.translate("msg.error")}', 'error');
     }
 }
