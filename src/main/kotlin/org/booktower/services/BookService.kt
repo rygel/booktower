@@ -1,6 +1,5 @@
 package org.booktower.services
 
-import org.booktower.config.StorageConfig
 import org.booktower.models.*
 import org.jdbi.v3.core.Jdbi
 import org.jdbi.v3.core.result.RowView
@@ -10,7 +9,11 @@ import java.util.UUID
 
 private val logger = LoggerFactory.getLogger("booktower.BookService")
 
-class BookService(private val jdbi: Jdbi, private val storageConfig: StorageConfig) {
+class BookService(private val jdbi: Jdbi) {
+    companion object {
+        private const val MAX_PAGE_SIZE = 100
+        private const val PERCENTAGE_MULTIPLIER = 100.0
+    }
     fun getBooks(
         userId: UUID,
         libraryId: String?,
@@ -18,7 +21,7 @@ class BookService(private val jdbi: Jdbi, private val storageConfig: StorageConf
         pageSize: Int = 20,
     ): BookListDto {
         val safePage = page.coerceAtLeast(1)
-        val safePageSize = pageSize.coerceIn(1, 100)
+        val safePageSize = pageSize.coerceIn(1, MAX_PAGE_SIZE)
         val offset = (safePage - 1) * safePageSize
 
         val books =
@@ -83,7 +86,7 @@ class BookService(private val jdbi: Jdbi, private val storageConfig: StorageConf
         pageSize: Int = 20,
     ): BookListDto {
         val safePage = page.coerceAtLeast(1)
-        val safePageSize = pageSize.coerceIn(1, 100)
+        val safePageSize = pageSize.coerceIn(1, MAX_PAGE_SIZE)
         val offset = (safePage - 1) * safePageSize
         val likeQuery = "%${query.trim().lowercase()}%"
 
@@ -144,13 +147,21 @@ class BookService(private val jdbi: Jdbi, private val storageConfig: StorageConf
                 .bind("bookId", bookId.toString())
                 .map { row ->
                     val book = mapBook(row)
-                    val currentPage = try { row.getColumn("rp_current_page", java.lang.Integer::class.java)?.toInt() } catch (_: Exception) { null }
+                    val currentPage = try {
+                        row.getColumn("rp_current_page", java.lang.Integer::class.java)?.toInt()
+                    } catch (_: Exception) { null }
                     if (currentPage != null) {
                         book.copy(progress = ReadingProgressDto(
                             currentPage = currentPage,
-                            totalPages = try { row.getColumn("rp_total_pages", java.lang.Integer::class.java)?.toInt() } catch (_: Exception) { null },
-                            percentage = try { row.getColumn("rp_percentage", java.lang.Double::class.java)?.toDouble() } catch (_: Exception) { null },
-                            lastReadAt = try { row.getColumn("rp_last_read_at", String::class.java) ?: "" } catch (_: Exception) { "" },
+                            totalPages = try {
+                                row.getColumn("rp_total_pages", java.lang.Integer::class.java)?.toInt()
+                            } catch (_: Exception) { null },
+                            percentage = try {
+                                row.getColumn("rp_percentage", java.lang.Double::class.java)?.toDouble()
+                            } catch (_: Exception) { null },
+                            lastReadAt = try {
+                                row.getColumn("rp_last_read_at", String::class.java) ?: ""
+                            } catch (_: Exception) { "" },
                         ))
                     } else book
                 }.firstOrNull()
@@ -195,7 +206,11 @@ class BookService(private val jdbi: Jdbi, private val storageConfig: StorageConf
 
         jdbi.useHandle<Exception> { handle ->
             handle.createUpdate(
-                "INSERT INTO books (id, library_id, title, author, description, file_path, file_size, added_at, updated_at) VALUES (?, ?, ?, ?, ?, '', 0, ?, ?)",
+                """
+                INSERT INTO books (id, library_id, title, author, description,
+                    file_path, file_size, added_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, '', 0, ?, ?)
+                """,
             )
                 .bind(0, bookId.toString())
                 .bind(1, libId.toString())
@@ -329,7 +344,7 @@ class BookService(private val jdbi: Jdbi, private val storageConfig: StorageConf
         val book = getBook(userId, bookId) ?: return null
         val now = Instant.now()
         val totalPages = book.pageCount ?: 0
-        val percentage = if (totalPages > 0) (request.currentPage.toDouble() / totalPages) * 100 else null
+        val percentage = if (totalPages > 0) (request.currentPage.toDouble() / totalPages) * PERCENTAGE_MULTIPLIER else null
 
         val existing =
             jdbi.withHandle<ReadingProgressDto?, Exception> { handle ->
@@ -361,7 +376,11 @@ class BookService(private val jdbi: Jdbi, private val storageConfig: StorageConf
         } else {
             jdbi.useHandle<Exception> { handle ->
                 handle.createUpdate(
-                    "INSERT INTO reading_progress (id, user_id, book_id, current_page, total_pages, percentage, last_read_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                    """
+                    INSERT INTO reading_progress
+                        (id, user_id, book_id, current_page, total_pages, percentage, last_read_at, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
                 )
                     .bind(0, UUID.randomUUID().toString())
                     .bind(1, userId.toString())

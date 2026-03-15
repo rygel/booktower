@@ -33,23 +33,26 @@ class WeblateHandler(private val config: WeblateConfig) {
             .body(Json.mapper.writeValueAsString(mapOf("status" to "success", "results" to results)))
     }
 
+    @Suppress("UnusedParameter")
     fun status(req: Request): Response {
         val b = bridge ?: return unavailable()
         val status = b.getTranslationStatus()
-            ?: return Response(Status.INTERNAL_SERVER_ERROR).body("Failed to fetch status")
-
-        return Response(Status.OK)
-            .header("Content-Type", "application/json")
-            .body(
-                Json.mapper.writeValueAsString(
-                    mapOf(
-                        "translated" to status.translatedWords,
-                        "total" to status.totalWords,
-                        "fuzzy" to status.fuzzyWords,
-                        "progress" to status.progressPercent,
+        return if (status == null) {
+            Response(Status.INTERNAL_SERVER_ERROR).body("Failed to fetch status")
+        } else {
+            Response(Status.OK)
+                .header("Content-Type", "application/json")
+                .body(
+                    Json.mapper.writeValueAsString(
+                        mapOf(
+                            "translated" to status.translatedWords,
+                            "total" to status.totalWords,
+                            "fuzzy" to status.fuzzyWords,
+                            "progress" to status.progressPercent,
+                        ),
                     ),
-                ),
-            )
+                )
+        }
     }
 
     private fun unavailable() = Response(Status.SERVICE_UNAVAILABLE)

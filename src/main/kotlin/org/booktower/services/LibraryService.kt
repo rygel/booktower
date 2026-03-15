@@ -1,6 +1,5 @@
 package org.booktower.services
 
-import org.booktower.config.StorageConfig
 import org.booktower.models.*
 import org.jdbi.v3.core.Jdbi
 import org.jdbi.v3.core.result.RowView
@@ -15,7 +14,6 @@ private val SCANNABLE_EXTENSIONS = setOf("pdf", "epub", "mobi", "cbz", "cbr", "f
 
 class LibraryService(
     private val jdbi: Jdbi,
-    private val storageConfig: StorageConfig,
     private val pdfMetadataService: PdfMetadataService,
 ) {
     fun getLibraries(userId: UUID): List<LibraryDto> {
@@ -69,7 +67,7 @@ class LibraryService(
 
         val dir = File(request.path)
         if (!dir.exists() && !dir.mkdirs()) {
-            throw IllegalStateException("Failed to create library directory: ${request.path}")
+            error("Failed to create library directory: ${request.path}")
         }
 
         jdbi.useHandle<Exception> { handle ->

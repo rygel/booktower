@@ -42,7 +42,7 @@ object WeblateSyncCommand {
                     println("  Translated: ${status.translatedWords} words")
                     println("  Fuzzy: ${status.fuzzyWords} words")
                     println("  Total: ${status.totalWords} words")
-                    println("  Progress: ${String.format("%.1f", status.progressPercent)}%")
+                    println("  Progress: ${"%.1f".format(status.progressPercent)}%")
                 } ?: println("  Failed to fetch status")
             }
             else -> {
@@ -70,7 +70,7 @@ object WeblateSyncCommand {
         if (!resourcesDir.exists()) {
             val fallbackDir = java.io.File("target/classes")
             if (!fallbackDir.exists() && !fallbackDir.mkdirs()) {
-                throw IllegalStateException("Failed to create fallback directory: ${fallbackDir.absolutePath}")
+                error("Failed to create fallback directory: ${fallbackDir.absolutePath}")
             }
             return fallbackDir
         }

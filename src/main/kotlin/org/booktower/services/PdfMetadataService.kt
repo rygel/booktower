@@ -23,6 +23,9 @@ data class PdfMetadata(
 )
 
 class PdfMetadataService(private val jdbi: Jdbi, private val coversPath: String) {
+    companion object {
+        private const val COVER_DPI = 150f
+    }
 
     // Single-threaded so extractions are sequential and don't overwhelm memory
     private val executor: ExecutorService = Executors.newSingleThreadExecutor { r ->
@@ -71,7 +74,7 @@ class PdfMetadataService(private val jdbi: Jdbi, private val coversPath: String)
     private fun extractCover(bookId: String, document: PDDocument): String? {
         return try {
             val renderer = PDFRenderer(document)
-            val image = renderer.renderImageWithDPI(0, 150f, ImageType.RGB)
+            val image = renderer.renderImageWithDPI(0, COVER_DPI, ImageType.RGB)
 
             val coversDir = File(coversPath)
             if (!coversDir.exists()) coversDir.mkdirs()

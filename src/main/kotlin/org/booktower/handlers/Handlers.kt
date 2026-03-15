@@ -1,3 +1,5 @@
+@file:Suppress("MatchingDeclarationName") // file is the router/wiring hub and contains AppHandler
+
 package org.booktower.handlers
 
 import org.booktower.config.StorageConfig
@@ -23,10 +25,6 @@ import org.http4k.routing.RoutingHttpHandler
 import org.http4k.routing.bind
 import org.http4k.routing.routes
 import org.http4k.routing.static
-import org.slf4j.LoggerFactory
-
-private val logger = LoggerFactory.getLogger("booktower.handlers")
-
 class AppHandler(
     private val authService: AuthService,
     private val libraryService: LibraryService,

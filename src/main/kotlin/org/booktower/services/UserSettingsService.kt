@@ -8,6 +8,9 @@ import java.util.UUID
 private val logger = LoggerFactory.getLogger("booktower.UserSettingsService")
 
 class UserSettingsService(private val jdbi: Jdbi) {
+    companion object {
+        private const val MAX_KEY_LENGTH = 50
+    }
 
     fun getAll(userId: UUID): Map<String, String?> {
         return jdbi.withHandle<Map<String, String?>, Exception> { handle ->
@@ -77,10 +80,10 @@ class UserSettingsService(private val jdbi: Jdbi) {
         return deleted > 0
     }
 
-    private fun validateKey(key: String): String? {
-        if (key.isBlank()) return "Setting key is required"
-        if (key.length > 50) return "Setting key must be 50 characters or fewer"
-        if (!key.matches(Regex("^[a-zA-Z0-9_.-]+$"))) return "Setting key can only contain letters, numbers, underscores, dots, and dashes"
-        return null
+    private fun validateKey(key: String): String? = when {
+        key.isBlank() -> "Setting key is required"
+        key.length > MAX_KEY_LENGTH -> "Setting key must be $MAX_KEY_LENGTH characters or fewer"
+        !key.matches(Regex("^[a-zA-Z0-9_.-]+$")) -> "Setting key can only contain letters, numbers, underscores, dots, and dashes"
+        else -> null
     }
 }

@@ -21,6 +21,9 @@ class RateLimitFilter(
     private val maxRequests: Int = 10,
     private val windowSeconds: Long = 60,
 ) : Filter {
+    companion object {
+        private const val MS_PER_SECOND = 1000L
+    }
 
     private val buckets = ConcurrentHashMap<String, ArrayDeque<Long>>()
 
@@ -32,7 +35,7 @@ class RateLimitFilter(
             next(request)
         } else {
             val now = System.currentTimeMillis()
-            val windowMs = windowSeconds * 1000
+            val windowMs = windowSeconds * MS_PER_SECOND
             val bucket = buckets.getOrPut(ip) { ArrayDeque() }
 
             val allowed = synchronized(bucket) {

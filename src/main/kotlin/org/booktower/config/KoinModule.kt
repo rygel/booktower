@@ -26,9 +26,9 @@ val appModule = module {
 
     single { AuthService(get<Database>().getJdbi(), get()) }
 
-    single { LibraryService(get<Database>().getJdbi(), get<AppConfig>().storage, get()) }
+    single { LibraryService(get<Database>().getJdbi(), get()) }
 
-    single { BookService(get<Database>().getJdbi(), get<AppConfig>().storage) }
+    single { BookService(get<Database>().getJdbi()) }
 
     single { BookmarkService(get<Database>().getJdbi()) }
 

@@ -71,7 +71,7 @@ data class SecurityConfig(
                 if (isDev) {
                     logger.warn("Using default JWT secret. Set BOOKTOWER_JWT_SECRET env var for production.")
                 } else {
-                    throw IllegalStateException(
+                    error(
                         "Default JWT secret cannot be used in production. Set BOOKTOWER_JWT_SECRET environment variable.",
                     )
                 }
@@ -105,7 +105,7 @@ data class StorageConfig(
         listOf(booksPath, coversPath, tempPath).forEach { path ->
             val dir = java.io.File(path)
             if (!dir.exists() && !dir.mkdirs()) {
-                throw IllegalStateException("Failed to create directory: $path")
+                error("Failed to create directory: $path")
             }
         }
     }

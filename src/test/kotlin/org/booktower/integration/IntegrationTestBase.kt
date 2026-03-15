@@ -33,8 +33,8 @@ abstract class IntegrationTestBase {
         val jwtService = JwtService(config.security)
         val authService = AuthService(jdbi, jwtService)
         val pdfMetadataService = PdfMetadataService(jdbi, config.storage.coversPath)
-        val libraryService = LibraryService(jdbi, config.storage, pdfMetadataService)
-        val bookService = BookService(jdbi, config.storage)
+        val libraryService = LibraryService(jdbi, pdfMetadataService)
+        val bookService = BookService(jdbi)
         val bookmarkService = BookmarkService(jdbi)
         val userSettingsService = UserSettingsService(jdbi)
         val appHandler = AppHandler(

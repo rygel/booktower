@@ -12,7 +12,10 @@ import kotlin.test.assertTrue
 
 class BookUpdateIntegrationTest : IntegrationTestBase() {
 
-    private fun updateBook(token: String, bookId: String, title: String, author: String? = null, description: String? = null): org.http4k.core.Response {
+    private fun updateBook(
+        token: String, bookId: String, title: String,
+        author: String? = null, description: String? = null,
+    ): org.http4k.core.Response {
         val authorJson = if (author == null) "null" else "\"$author\""
         val descJson = if (description == null) "null" else "\"$description\""
         return app(

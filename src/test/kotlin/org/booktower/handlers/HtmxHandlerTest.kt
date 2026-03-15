@@ -31,12 +31,16 @@ class HtmxHandlerTest {
         val jwtService = JwtService(config.security)
         val authService = AuthService(jdbi, jwtService)
         val pdfMetadataService = PdfMetadataService(jdbi, config.storage.coversPath)
-        val libraryService = LibraryService(jdbi, config.storage, pdfMetadataService)
-        val bookService = BookService(jdbi, config.storage)
+        val libraryService = LibraryService(jdbi, pdfMetadataService)
+        val bookService = BookService(jdbi)
         val bookmarkService = BookmarkService(jdbi)
         val userSettingsService = UserSettingsService(jdbi)
         val weblateHandler = WeblateHandler(WeblateConfig("", "", "", false))
-        appHandler = AppHandler(authService, libraryService, bookService, bookmarkService, userSettingsService, pdfMetadataService, jwtService, config.storage, TemplateRenderer(), weblateHandler)
+        appHandler = AppHandler(
+            authService, libraryService, bookService, bookmarkService,
+            userSettingsService, pdfMetadataService, jwtService,
+            config.storage, TemplateRenderer(), weblateHandler,
+        )
     }
 
     @Test

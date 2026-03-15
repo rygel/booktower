@@ -2,7 +2,9 @@ name: Fast Unit Tests
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
   workflow_dispatch:
 
 # Quick feedback loop: run tests on all three platforms in parallel,

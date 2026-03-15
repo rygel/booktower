@@ -26,7 +26,7 @@ class LibraryServiceTest {
         jwtService = JwtService(config.security)
         authService = AuthService(jdbi, jwtService)
         val pdfMetadataService = PdfMetadataService(jdbi, config.storage.coversPath)
-        libraryService = LibraryService(jdbi, config.storage, pdfMetadataService)
+        libraryService = LibraryService(jdbi, pdfMetadataService)
 
         val result = authService.register(CreateUserRequest("libuser_${System.nanoTime()}", "lib_${System.nanoTime()}@test.com", "password123"))
         userId = jwtService.extractUserId(result.getOrThrow().token)!!

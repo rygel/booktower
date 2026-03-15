@@ -1,3 +1,5 @@
+@file:Suppress("MatchingDeclarationName") // file contains both AuthenticatedUser and JwtAuthFilter
+
 package org.booktower.filters
 
 import org.booktower.config.Json

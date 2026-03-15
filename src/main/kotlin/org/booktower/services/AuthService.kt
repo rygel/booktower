@@ -29,9 +29,7 @@ class AuthService(
                     .mapTo(String::class.java)
                     .firstOrNull()
 
-            if (existing != null) {
-                throw IllegalArgumentException("Username already exists")
-            }
+            require(existing == null) { "Username already exists" }
 
             handle.createUpdate(
                 """

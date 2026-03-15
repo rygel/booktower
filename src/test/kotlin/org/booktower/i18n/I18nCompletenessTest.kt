@@ -23,7 +23,6 @@ import kotlin.test.assertTrue
 class I18nCompletenessTest {
 
     private val baseLocale = "messages"
-    private val languageLocales = listOf("fr", "de")
 
     private fun loadProperties(resourceName: String): Properties {
         val props = Properties()

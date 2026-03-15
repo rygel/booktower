@@ -5,12 +5,9 @@ import org.booktower.model.ThemeCatalog
 import org.http4k.core.Request
 import org.http4k.core.cookie.cookie
 import org.http4k.lens.RequestKey
-import org.slf4j.LoggerFactory
 import java.util.Locale
 
 class WebContext(val request: Request) {
-    private val logger = LoggerFactory.getLogger(WebContext::class.java)
-
     companion object {
         val KEY = RequestKey.required<WebContext>("web.context")
 

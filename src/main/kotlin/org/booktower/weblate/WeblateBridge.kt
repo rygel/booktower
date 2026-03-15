@@ -72,7 +72,7 @@ class WeblateBridge(
 
         val response = client.send(request, HttpResponse.BodyHandlers.ofString())
 
-        return if (response.statusCode() == 200) {
+        return if (response.statusCode() == HTTP_OK) {
             val props = Properties()
             props.load(response.body().reader())
             props
@@ -103,7 +103,7 @@ class WeblateBridge(
                 .build()
 
         val response = client.send(request, HttpResponse.BodyHandlers.ofString())
-        return response.statusCode() == 200
+        return response.statusCode() == HTTP_OK
     }
 
     private fun getTranslationFile(language: String): File {
@@ -146,7 +146,7 @@ class WeblateBridge(
 
             val response = client.send(request, HttpResponse.BodyHandlers.ofString())
 
-            if (response.statusCode() == 200) {
+            if (response.statusCode() == HTTP_OK) {
                 parseStatus(response.body())
             } else {
                 null
@@ -179,10 +179,13 @@ class WeblateBridge(
         val fuzzyWords: Int,
     ) {
         val progressPercent: Double
-            get() = if (totalWords > 0) (translatedWords.toDouble() / totalWords) * 100 else 0.0
+            get() = if (totalWords > 0) (translatedWords.toDouble() / totalWords) * PERCENT else 0.0
     }
 
     companion object {
+        private const val HTTP_OK = 200
+        private const val PERCENT = 100.0
+
         fun create(
             weblateUrl: String?,
             apiToken: String?,
