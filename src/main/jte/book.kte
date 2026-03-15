@@ -107,13 +107,13 @@
             <h2 style="font-size:0.9rem; font-weight:600; color:var(--bt-text-dim); margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem;">
                 <i class="ri-upload-cloud-line" style="color:var(--bt-accent-dim);"></i> ${i18n.translate("page.book.upload.title")}
             </h2>
-            <div id="upload-status" style="display:none; margin-bottom:0.75rem; font-size:0.8rem; border-radius:0.5rem; padding:0.5rem 0.75rem;"></div>
+            <div id="upload-status" style="display:none; margin-bottom:0.75rem; font-size:0.8rem; color:var(--bt-muted);"></div>
             <input type="file" id="file-input" accept=".pdf,.epub"
                 style="display:block; width:100%; font-size:0.8rem; margin-bottom:0.75rem; background:transparent; border:none; cursor:pointer; color:var(--bt-muted);">
             <button onclick="uploadFile('${book.id}')" class="btn-primary" style="width:100%; margin-bottom:1rem;">${i18n.translate("action.upload")}</button>
             <hr style="border:none; border-top:1px solid var(--bt-border); margin-bottom:1rem;">
             <p style="font-size:0.8rem; font-weight:600; color:var(--bt-text-dim); margin-bottom:0.5rem;">${i18n.translate("page.book.cover.title")}</p>
-            <div id="cover-status" style="display:none; margin-bottom:0.75rem; font-size:0.8rem; border-radius:0.5rem; padding:0.5rem 0.75rem;"></div>
+            <div id="cover-status" style="display:none; margin-bottom:0.75rem; font-size:0.8rem; color:var(--bt-muted);"></div>
             <input type="file" id="cover-input" accept=".jpg,.jpeg,.png,.webp"
                 style="display:block; width:100%; font-size:0.8rem; margin-bottom:0.75rem; background:transparent; border:none; cursor:pointer; color:var(--bt-muted);">
             <button onclick="uploadCover('${book.id}')" class="btn-secondary" style="width:100%;">${i18n.translate("action.upload.cover")}</button>
@@ -138,7 +138,7 @@
             <form
                 hx-post="/ui/books/${book.id}/progress"
                 hx-swap="none"
-                hx-on:htmx:after-request="if(event.detail.successful){var el=document.getElementById('progress-saved');el.style.display='block';setTimeout(()=>el.style.display='none',2000)}"
+                hx-on:htmx:after-request="if(event.detail.successful){document.dispatchEvent(new CustomEvent('showToast',{detail:{message:'${i18n.translate("msg.progress.saved")}',type:'success'}}))}"
             >
                 <div style="display:flex; gap:0.5rem;">
                     <input type="number" name="currentPage" min="0"
@@ -147,7 +147,6 @@
                         placeholder="${i18n.translate("placeholder.page")}">
                     <button type="submit" class="btn-primary">${i18n.translate("action.save")}</button>
                 </div>
-                <p id="progress-saved" style="display:none; font-size:0.75rem; color:#34d399; margin-top:0.5rem;">${i18n.translate("msg.progress.saved")}</p>
             </form>
         </div>
     </div>
@@ -184,70 +183,59 @@
 </div>
 
 <script>
+function toast(msg, type) {
+    document.dispatchEvent(new CustomEvent('showToast', {detail: {message: msg, type: type || 'info'}}));
+}
 async function uploadCover(bookId) {
     const input = document.getElementById('cover-input');
     const status = document.getElementById('cover-status');
     const file = input.files[0];
-    if (!file) { alert('Select an image file first'); return; }
+    if (!file) { toast('${i18n.translate("msg.select-image")}', 'info'); return; }
     status.style.display = 'block';
-    status.style.background = 'var(--bt-badge-bg)';
-    status.style.color = 'var(--bt-badge-text)';
-    status.textContent = 'Uploading\u2026';
+    status.textContent = '${i18n.translate("msg.uploading")}';
     try {
         const resp = await fetch('/api/books/' + bookId + '/cover', {
             method: 'POST',
             headers: { 'Content-Type': 'application/octet-stream', 'X-Filename': file.name },
             body: file
         });
+        status.style.display = 'none';
         if (resp.ok) {
             const data = await resp.json();
-            status.style.background = '#14532d';
-            status.style.color = '#86efac';
-            status.textContent = 'Cover uploaded!';
+            toast('${i18n.translate("msg.cover-uploaded")}', 'success');
             const imgs = document.querySelectorAll('img[alt]');
             imgs.forEach(img => { if (img.getAttribute('alt')) img.src = data.coverUrl + '?t=' + Date.now(); });
             setTimeout(() => location.reload(), 800);
         } else {
-            const text = await resp.text();
-            status.style.background = '#4c0519';
-            status.style.color = '#fca5a5';
-            status.textContent = 'Upload failed: ' + text;
+            toast('${i18n.translate("msg.cover-failed")}', 'error');
         }
     } catch (e) {
-        status.style.background = '#4c0519';
-        status.style.color = '#fca5a5';
-        status.textContent = 'Upload error: ' + e.message;
+        status.style.display = 'none';
+        toast('${i18n.translate("msg.cover-failed")}', 'error');
     }
 }
 async function uploadFile(bookId) {
     const input = document.getElementById('file-input');
     const status = document.getElementById('upload-status');
     const file = input.files[0];
-    if (!file) { alert('Select a file first'); return; }
+    if (!file) { toast('${i18n.translate("msg.select-file")}', 'info'); return; }
     status.style.display = 'block';
-    status.style.background = 'var(--bt-badge-bg)';
-    status.style.color = 'var(--bt-badge-text)';
-    status.textContent = 'Uploading\u2026';
+    status.textContent = '${i18n.translate("msg.uploading")}';
     try {
         const resp = await fetch('/api/books/' + bookId + '/upload', {
             method: 'POST',
             headers: { 'Content-Type': 'application/octet-stream', 'X-Filename': file.name },
             body: file
         });
+        status.style.display = 'none';
         if (resp.ok) {
-            status.style.background = '#14532d';
-            status.style.color = '#86efac';
-            status.textContent = 'Upload successful! Cover and metadata extraction running in background.';
+            toast('${i18n.translate("msg.upload-success")}', 'success');
         } else {
-            const text = await resp.text();
-            status.style.background = '#4c0519';
-            status.style.color = '#fca5a5';
-            status.textContent = 'Upload failed: ' + text;
+            toast('${i18n.translate("msg.upload-failed")}', 'error');
         }
     } catch (e) {
-        status.style.background = '#4c0519';
-        status.style.color = '#fca5a5';
-        status.textContent = 'Upload error: ' + e.message;
+        status.style.display = 'none';
+        toast('${i18n.translate("msg.upload-failed")}', 'error');
     }
 }
 </script>

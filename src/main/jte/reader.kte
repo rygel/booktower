@@ -60,6 +60,11 @@
     <button id="btn-next" class="tool-btn" title="${i18n.translate("page.reader.next")} (→)" disabled>
         <i class="ri-arrow-right-s-line"></i>
     </button>
+    <input id="page-jump" type="number" min="1"
+        title="${i18n.translate("page.reader.jump.to.page")}"
+        placeholder="#"
+        style="width:3.25rem; text-align:center; border-radius:0.375rem; border:1px solid var(--bt-border-input); background:var(--bt-bg); color:var(--bt-text); font-size:0.75rem; padding:0.2rem 0.375rem;"
+        onkeydown="if(event.key==='Enter'){var p=parseInt(this.value);if(p>=1){window.jumpToPage(p);this.value='';this.blur();}return false;}">
     <div class="sep"></div>
     <button id="btn-zoom-out" class="tool-btn" title="${i18n.translate("page.reader.zoom.out")} (−)"><i class="ri-zoom-out-line"></i></button>
     <span id="zoom-pct">100%</span>
@@ -140,6 +145,7 @@
     const ctx        = canvas.getContext('2d');
     const loading    = document.getElementById('loading');
     const pageInfo   = document.getElementById('page-info');
+    const pageJump   = document.getElementById('page-jump');
     const zoomPct    = document.getElementById('zoom-pct');
     const btnPrev    = document.getElementById('btn-prev');
     const btnNext    = document.getElementById('btn-next');
@@ -195,6 +201,7 @@
         btnPrev.disabled     = currentPage <= 1;
         btnNext.disabled     = currentPage >= totalPages;
         zoomPct.textContent  = Math.round(zoomLevel * 100) + '%';
+        if (pageJump) pageJump.max = totalPages;
     }
 
     // ── Navigation ─────────────────────────────────────────────────────────────

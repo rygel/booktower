@@ -125,41 +125,31 @@
         <div id="no-books-hint" style="display:none;"></div>
     @endif
 
-    <div id="scan-result" style="display:none; margin-top:1rem; padding:0.75rem 1rem; border-radius:0.5rem; font-size:0.875rem;"></div>
 </div>
 
 <script>
+function toast(msg, type) {
+    document.dispatchEvent(new CustomEvent('showToast', {detail: {message: msg, type: type || 'info'}}));
+}
 async function scanLibrary(libraryId) {
     const btn = document.getElementById('scan-btn');
-    const result = document.getElementById('scan-result');
     btn.disabled = true;
     btn.textContent = '${i18n.translate("page.library.scan.running")}';
-    result.style.display = 'none';
     try {
         const resp = await fetch('/api/libraries/' + libraryId + '/scan', { method: 'POST' });
         const data = await resp.json();
         if (resp.ok) {
-            result.style.background = 'var(--bt-badge-bg)';
-            result.style.color = 'var(--bt-badge-text)';
-            result.style.border = '1px solid var(--bt-border)';
-            result.textContent = '${i18n.translate("page.library.scan.result")}'
+            const msg = '${i18n.translate("page.library.scan.result")}'
                 .replace('{0}', data.added)
                 .replace('{1}', data.skipped)
                 .replace('{2}', data.errors);
+            toast(msg, data.added > 0 ? 'success' : 'info');
             if (data.added > 0) { window.location.reload(); }
         } else {
-            result.style.background = '#4c0519';
-            result.style.color = '#fca5a5';
-            result.style.border = 'none';
-            result.textContent = data.message || 'Scan failed';
+            toast(data.message || '${i18n.translate("msg.scan-failed")}', 'error');
         }
-        result.style.display = 'block';
     } catch (e) {
-        result.style.background = '#4c0519';
-        result.style.color = '#fca5a5';
-        result.style.border = 'none';
-        result.textContent = 'Scan error: ' + e.message;
-        result.style.display = 'block';
+        toast('${i18n.translate("msg.scan-failed")}', 'error');
     } finally {
         btn.disabled = false;
         btn.innerHTML = '<i class="ri-folder-search-line"></i> ${i18n.translate("page.library.scan")}';
