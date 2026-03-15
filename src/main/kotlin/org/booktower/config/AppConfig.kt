@@ -14,6 +14,7 @@ data class AppConfig(
     val storage: StorageConfig,
     val weblate: WeblateConfig,
     val csrf: CsrfConfig,
+    val autoScanMinutes: Long = 60L,
 ) {
     companion object {
         fun load(): AppConfig {
@@ -29,8 +30,9 @@ data class AppConfig(
                 storage = StorageConfig.load(app.getConfig("storage")),
                 weblate = WeblateConfig.load(app.getConfig("weblate")),
                 csrf = CsrfConfig.load(app.getConfig("csrf")),
+                autoScanMinutes = System.getenv("BOOKTOWER_AUTO_SCAN_MINUTES")?.toLongOrNull() ?: 60L,
             ).also {
-                logger.info("Loaded configuration: appName=${it.name}, port=${it.port}")
+                logger.info("Loaded configuration: appName=${it.name}, port=${it.port}, autoScanMinutes=${it.autoScanMinutes}")
             }
         }
     }

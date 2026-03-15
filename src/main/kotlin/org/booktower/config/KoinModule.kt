@@ -1,7 +1,9 @@
 package org.booktower.config
 
 import org.booktower.handlers.AppHandler
+import org.booktower.handlers.BulkBookHandler
 import org.booktower.services.AdminService
+import org.booktower.services.ScanScheduleService
 import org.booktower.services.AnnotationService
 import org.booktower.services.ApiTokenService
 import org.booktower.services.ComicService
@@ -62,6 +64,10 @@ val appModule = module {
     single { ExportService(get<Database>().getJdbi()) }
 
     single { ComicService() }
+
+    single { BulkBookHandler(get()) }
+
+    single { ScanScheduleService(get<Database>().getJdbi(), get(), get<AppConfig>().autoScanMinutes) }
 
     single { WeblateHandler(get<AppConfig>().weblate) }
 

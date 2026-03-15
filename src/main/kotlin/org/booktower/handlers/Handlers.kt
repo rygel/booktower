@@ -67,6 +67,7 @@ class AppHandler(
     private val opdsHandler = OpdsHandler(authService, libraryService, bookService, storageConfig, apiTokenService)
     private val apiTokenHandler = ApiTokenHandler(apiTokenService, jwtService)
     private val exportHandler = ExportHandler(exportService, jwtService)
+    private val bulkBookHandler = BulkBookHandler(bookService)
     private val authFilter = JwtAuthFilter(jwtService)
     private val adminFilter = authFilter.then(AdminFilter())
     private val authRateLimit = RateLimitFilter(maxRequests = 10, windowSeconds = 60)
@@ -143,6 +144,10 @@ class AppHandler(
             "/api/books/{id}/file" bind Method.GET to authFilter.then(fileHandler::download),
             "/api/books/{id}/comic/pages" bind Method.GET to authFilter.then(::comicPages),
             "/api/books/{id}/comic/{page}" bind Method.GET to authFilter.then(::comicPage),
+            "/api/books/bulk/move" bind Method.POST to authFilter.then(bulkBookHandler::move),
+            "/api/books/bulk/delete" bind Method.POST to authFilter.then(bulkBookHandler::delete),
+            "/api/books/bulk/tag" bind Method.POST to authFilter.then(bulkBookHandler::tag),
+            "/api/books/bulk/status" bind Method.POST to authFilter.then(bulkBookHandler::status),
             "/api/auth/change-password" bind Method.POST to authRateLimit.then(authFilter.then(authHandler::changePassword)),
             "/api/auth/change-email" bind Method.POST to authRateLimit.then(authFilter.then(authHandler::changeEmail)),
             "/api/settings" bind Method.GET to authFilter.then(settingsHandler::getAll),

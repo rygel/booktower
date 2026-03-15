@@ -749,4 +749,101 @@ class BookService(private val jdbi: Jdbi, private val analyticsService: Analytic
         }
         logger.info("Book rating set to $rating for book $bookId")
     }
+
+    // ── Bulk operations ───────────────────────────────────────────────────────
+
+    fun bulkMove(userId: UUID, bookIds: List<UUID>, targetLibraryId: UUID): Int {
+        val targetExists = jdbi.withHandle<Boolean, Exception> { handle ->
+            handle.createQuery("SELECT COUNT(*) FROM libraries WHERE id = ? AND user_id = ?")
+                .bind(0, targetLibraryId.toString()).bind(1, userId.toString())
+                .mapTo(Int::class.java).first() > 0
+        }
+        if (!targetExists) return 0
+        return jdbi.withHandle<Int, Exception> { handle ->
+            val now = java.time.Instant.now().toString()
+            bookIds.count { bookId ->
+                handle.createUpdate(
+                    """UPDATE books SET library_id = ?, updated_at = ?
+                       WHERE id = ? AND library_id IN (SELECT id FROM libraries WHERE user_id = ?)""",
+                )
+                    .bind(0, targetLibraryId.toString()).bind(1, now)
+                    .bind(2, bookId.toString()).bind(3, userId.toString())
+                    .execute() > 0
+            }
+        }
+    }
+
+    fun bulkDelete(userId: UUID, bookIds: List<UUID>): Int =
+        jdbi.withHandle<Int, Exception> { handle ->
+            bookIds.count { bookId ->
+                handle.createUpdate(
+                    "DELETE FROM books WHERE id = ? AND library_id IN (SELECT id FROM libraries WHERE user_id = ?)",
+                )
+                    .bind(0, bookId.toString()).bind(1, userId.toString())
+                    .execute() > 0
+            }
+        }
+
+    fun bulkTag(userId: UUID, bookIds: List<UUID>, tags: List<String>): Int =
+        jdbi.withHandle<Int, Exception> { handle ->
+            bookIds.count { bookId ->
+                val owned = handle.createQuery(
+                    """SELECT COUNT(*) FROM books b INNER JOIN libraries l ON b.library_id = l.id
+                       WHERE b.id = ? AND l.user_id = ?""",
+                )
+                    .bind(0, bookId.toString()).bind(1, userId.toString())
+                    .mapTo(Int::class.java).first() > 0
+                if (!owned) return@count false
+                handle.createUpdate("DELETE FROM book_tags WHERE book_id = ?")
+                    .bind(0, bookId.toString()).execute()
+                tags.forEach { tag ->
+                    handle.createUpdate(
+                        "INSERT INTO book_tags (id, user_id, book_id, tag) VALUES (?, ?, ?, ?)",
+                    )
+                        .bind(0, UUID.randomUUID().toString())
+                        .bind(1, userId.toString())
+                        .bind(2, bookId.toString())
+                        .bind(3, tag)
+                        .execute()
+                }
+                true
+            }
+        }
+
+    fun bulkStatus(userId: UUID, bookIds: List<UUID>, status: String): Int {
+        val readStatus = if (status.isBlank() || status == "NONE") null
+                         else runCatching { ReadStatus.valueOf(status) }.getOrNull()
+        val now = java.time.Instant.now().toString()
+        return jdbi.withHandle<Int, Exception> { handle ->
+            bookIds.count { bookId ->
+                // Verify ownership
+                val owned = handle.createQuery(
+                    "SELECT COUNT(*) FROM books b INNER JOIN libraries l ON b.library_id = l.id WHERE b.id = ? AND l.user_id = ?",
+                )
+                    .bind(0, bookId.toString()).bind(1, userId.toString())
+                    .mapTo(Int::class.java).first() > 0
+                if (!owned) return@count false
+                val existing = handle.createQuery(
+                    "SELECT id FROM book_status WHERE user_id = ? AND book_id = ?",
+                )
+                    .bind(0, userId.toString()).bind(1, bookId.toString())
+                    .mapTo(String::class.java).firstOrNull()
+                if (readStatus == null) {
+                    if (existing != null) {
+                        handle.createUpdate("DELETE FROM book_status WHERE user_id = ? AND book_id = ?")
+                            .bind(0, userId.toString()).bind(1, bookId.toString()).execute()
+                    }
+                } else if (existing != null) {
+                    handle.createUpdate("UPDATE book_status SET status = ?, updated_at = ? WHERE user_id = ? AND book_id = ?")
+                        .bind(0, readStatus.name).bind(1, now)
+                        .bind(2, userId.toString()).bind(3, bookId.toString()).execute()
+                } else {
+                    handle.createUpdate("INSERT INTO book_status (id, user_id, book_id, status, updated_at) VALUES (?, ?, ?, ?, ?)")
+                        .bind(0, UUID.randomUUID().toString()).bind(1, userId.toString())
+                        .bind(2, bookId.toString()).bind(3, readStatus.name).bind(4, now).execute()
+                }
+                true
+            }
+        }
+    }
 }
