@@ -311,8 +311,8 @@ class UiIntegrationTest : IntegrationTestBase() {
 
         val response = app(Request(Method.GET, "/books/$bookId").header("Cookie", "token=$token"))
         assertEquals(Status.OK, response.status)
-        // No cover yet -- placeholder icon should appear
-        assertTrue(response.bodyString().contains("ri-book-2-line"))
+        // No cover yet -- styled placeholder should appear
+        assertTrue(response.bodyString().contains("ri-book-3-fill"))
     }
 
     @Test

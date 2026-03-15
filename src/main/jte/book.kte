@@ -38,7 +38,7 @@
                 @if(book.coverUrl != null)
                     <img src="${book.coverUrl}" alt="${book.title}" style="width:100%; height:100%; object-fit:cover;">
                 @else
-                    <i class="ri-book-2-line" style="font-size:2.5rem; color:var(--bt-border-input);"></i>
+                    @template.components.coverPlaceholder(title=book.title, author=book.author)
                 @endif
             </div>
             <div style="flex:1; min-width:0;">

@@ -39,7 +39,7 @@
                             @if(s.coverUrl != null)
                                 <img src="${s.coverUrl}" alt="${s.name}" style="width:100%; height:100%; object-fit:cover;">
                             @else
-                                <i class="ri-stack-line" style="font-size:2.5rem; color:var(--bt-border);"></i>
+                                @template.components.coverPlaceholder(title=s.name, author=null)
                             @endif
                         </div>
                         <div style="padding:0.625rem 0.75rem;">
