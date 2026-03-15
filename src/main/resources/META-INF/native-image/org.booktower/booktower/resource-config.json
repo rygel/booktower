@@ -1,0 +1,20 @@
+{
+  "resources": {
+    "includes": [
+      { "pattern": "messages\\.properties" },
+      { "pattern": "messages_.*\\.properties" },
+      { "pattern": "themes\\.json" },
+      { "pattern": "application\\.conf" },
+      { "pattern": "reference\\.conf" },
+      { "pattern": "logback\\.xml" },
+      { "pattern": "db/migration/.*\\.sql" },
+      { "pattern": "static/.*" },
+      { "pattern": "META-INF/services/.*" },
+      { "pattern": "META-INF/native-image/.*" },
+      { "pattern": "org/apache/pdfbox/.*" },
+      { "pattern": "org/apache/fontbox/.*" },
+      { "pattern": "org/bouncycastle/.*" }
+    ]
+  },
+  "bundles": []
+}

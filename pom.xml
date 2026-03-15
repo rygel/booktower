@@ -36,6 +36,7 @@
         <detekt-maven-plugin.version>1.23.8</detekt-maven-plugin.version>
         <jacoco-maven-plugin.version>0.8.14</jacoco-maven-plugin.version>
         <native-maven-plugin.version>0.10.5</native-maven-plugin.version>
+        <maven-shade-plugin.version>3.6.0</maven-shade-plugin.version>
         <fizzed-watcher-maven-plugin.version>1.10.6</fizzed-watcher-maven-plugin.version>
         
         <!-- Dependency Versions -->
@@ -750,11 +751,49 @@
                 </executions>
             </plugin>
 
-            <!-- Native image -->
+            <!-- Fat JAR: mvn package produces a self-contained booktower-*-fat.jar -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>${maven-shade-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals><goal>shade</goal></goals>
+                        <configuration>
+                            <shadedArtifactAttached>true</shadedArtifactAttached>
+                            <shadedClassifierName>fat</shadedClassifierName>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>org.booktower.BookTowerAppKt</mainClass>
+                                </transformer>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                                    <resource>reference.conf</resource>
+                                </transformer>
+                            </transformers>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Native image placeholder — real config lives in the native profile -->
             <plugin>
                 <groupId>org.graalvm.buildtools</groupId>
-                <artifactId>native-image-maven-plugin</artifactId>
-                <version>0.10.5</version>
+                <artifactId>native-maven-plugin</artifactId>
+                <version>${native-maven-plugin.version}</version>
             </plugin>
 
             <!-- File watcher: mvn fizzed-watcher:run triggers recompile+restart on source changes -->
@@ -780,4 +819,95 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>native</id>
+            <build>
+                <plugins>
+                    <!-- In native builds the fat JAR is not needed -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-shade-plugin</artifactId>
+                        <version>${maven-shade-plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <id>default</id>
+                                <phase>none</phase>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <!--
+                        Use the precompile goal so JTE writes .class files directly into
+                        target/classes — no Kotlin compiler step needed for templates.
+                        This runs after the main compile phase to avoid conflicts.
+                    -->
+                    <plugin>
+                        <groupId>gg.jte</groupId>
+                        <artifactId>jte-maven-plugin</artifactId>
+                        <version>${jte.version}</version>
+                        <configuration>
+                            <sourceDirectory>${project.basedir}/src/main/jte</sourceDirectory>
+                            <targetDirectory>${project.build.outputDirectory}</targetDirectory>
+                            <contentType>Html</contentType>
+                        </configuration>
+                        <executions>
+                            <!-- Override the default generate execution with precompile -->
+                            <execution>
+                                <id>jte-pre-compile</id>
+                                <goals><goal>precompile</goal></goals>
+                                <phase>process-classes</phase>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.graalvm.buildtools</groupId>
+                        <artifactId>native-maven-plugin</artifactId>
+                        <version>${native-maven-plugin.version}</version>
+                        <configuration>
+                            <imageName>booktower</imageName>
+                            <mainClass>org.booktower.BookTowerAppKt</mainClass>
+                            <!--
+                                Pull pre-written reflect/resource/proxy configs for known
+                                libraries (PDFBox, H2, Jackson, Logback, Flyway, HikariCP …)
+                                from the GraalVM Reachability Metadata Repository.
+                            -->
+                            <metadataRepository>
+                                <enabled>true</enabled>
+                            </metadataRepository>
+                            <buildArgs>
+                                <!-- Fail hard — no JVM fallback image -->
+                                <buildArg>--no-fallback</buildArg>
+                                <!-- PDF rendering needs headless AWT -->
+                                <buildArg>-Djava.awt.headless=true</buildArg>
+                                <!-- Classes safe to initialise at build time -->
+                                <buildArg>--initialize-at-build-time=org.slf4j,ch.qos.logback,kotlin.KotlinVersion</buildArg>
+                                <!-- Needed for HTTP client calls (Weblate integration) -->
+                                <buildArg>--enable-url-protocols=http,https</buildArg>
+                                <!--
+                                    compatibility march: produces a binary that runs on any
+                                    x86-64 / ARM64 CPU, not just the build machine's exact
+                                    microarchitecture.
+                                -->
+                                <buildArg>-march=compatibility</buildArg>
+                                <!-- Verbose exceptions in native image -->
+                                <buildArg>-H:+ReportExceptionStackTraces</buildArg>
+                                <!-- Include all charsets for international text -->
+                                <buildArg>-H:+AddAllCharsets</buildArg>
+                            </buildArgs>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>build-native</id>
+                                <goals><goal>compile-no-fork</goal></goals>
+                                <phase>package</phase>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

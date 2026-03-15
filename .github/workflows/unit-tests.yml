@@ -4,40 +4,38 @@ on:
   push:
     branches: [ main, develop ]
   workflow_dispatch:
-    inputs:
-      run_e2e_tests:
-        description: 'Run full E2E tests (slow)'
 
-env:
-  BASE_URL: http://localhost:9999
-
+# Quick feedback loop: run tests on all three platforms in parallel,
+# no code-quality gate so this completes in ~2-3 minutes.
 jobs:
-  unit-tests:
-    name: Run Unit Tests
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+  test:
+    name: Tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, macos-latest, windows-latest ]
 
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
         with:
           java-version: '21'
           distribution: 'temurin'
 
-      - name: Cache Maven packages
-        uses: actions/cache@v4
+      - uses: actions/cache@v4
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-unit-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-maven-
 
-      - name: Run unit tests with Maven
-        run: mvn test
+      - name: Run tests
+        run: mvn test -Dflyway.skip=true
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: test-results
-          path: target/surefire-reports
+          name: test-results-${{ matrix.os }}
+          path: target/surefire-reports/

@@ -1,0 +1,175 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'        # triggers on v0.1.0, v1.2.3, etc.
+
+permissions:
+  contents: write   # needed to create GitHub Releases and upload assets
+
+jobs:
+  # ── Fat JAR — runs fast on Linux, uploaded once ─────────────────────────
+  fat-jar:
+    name: Fat JAR
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-maven-
+
+      - name: Build fat JAR
+        run: mvn package -DskipTests -Dflyway.skip=true
+
+      - name: Rename fat JAR
+        run: |
+          FAT=$(ls target/booktower-*-fat.jar | head -1)
+          cp "$FAT" target/booktower-${{ github.ref_name }}.jar
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fat-jar
+          path: target/booktower-${{ github.ref_name }}.jar
+
+  # ── Native binaries — one job per platform ────────────────────────────────
+  native:
+    name: Native (${{ matrix.label }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            label: linux-x64
+            binary: booktower
+            asset: booktower-linux-x64
+
+          - os: ubuntu-24.04-arm
+            label: linux-arm64
+            binary: booktower
+            asset: booktower-linux-arm64
+
+          - os: macos-13          # Intel runner
+            label: macos-x64
+            binary: booktower
+            asset: booktower-macos-x64
+
+          - os: macos-latest      # Apple Silicon (M-series)
+            label: macos-arm64
+            binary: booktower
+            asset: booktower-macos-arm64
+
+          - os: windows-latest
+            label: windows-x64
+            binary: booktower.exe
+            asset: booktower-windows-x64.exe
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # GraalVM CE — includes native-image out of the box
+      - name: Set up GraalVM
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: '21'
+          distribution: 'graalvm-community'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-native-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-maven-
+
+      # Skip the maven-enforcer exact-version check — GraalVM reports a
+      # slightly different java.version string than stock Temurin.
+      - name: Build native binary
+        run: mvn package -Pnative -DskipTests -Dflyway.skip=true -Denforcer.skip=true
+
+      - name: Rename binary
+        shell: bash
+        run: |
+          cp target/${{ matrix.binary }} target/${{ matrix.asset }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: native-${{ matrix.label }}
+          path: target/${{ matrix.asset }}
+
+  # ── GitHub Release — collects all artifacts and publishes ────────────────
+  publish:
+    name: Publish Release
+    needs: [ fat-jar, native ]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist/
+
+      - name: List artifacts
+        run: find dist/ -type f | sort
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: BookTower ${{ github.ref_name }}
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}   # v1.0.0-rc1 → pre-release
+          body: |
+            ## BookTower ${{ github.ref_name }}
+
+            ### Quick start (self-hosted)
+
+            **Linux / macOS:**
+            ```bash
+            chmod +x booktower-linux-x64   # or macos-arm64, etc.
+            BOOKTOWER_QUICKSTART=true ./booktower-linux-x64
+            # Open http://localhost:9999  •  demo / demo1234
+            ```
+
+            **Windows:**
+            ```powershell
+            $env:BOOKTOWER_QUICKSTART="true"
+            .\booktower-windows-x64.exe
+            # Open http://localhost:9999  •  demo / demo1234
+            ```
+
+            **Fat JAR (requires Java 21+):**
+            ```bash
+            BOOKTOWER_QUICKSTART=true java -jar booktower-${{ github.ref_name }}.jar
+            ```
+
+            ### Downloads
+            | File | Platform |
+            |------|----------|
+            | `booktower-linux-x64` | Linux x86-64 |
+            | `booktower-linux-arm64` | Linux ARM64 (Raspberry Pi, AWS Graviton …) |
+            | `booktower-macos-x64` | macOS Intel |
+            | `booktower-macos-arm64` | macOS Apple Silicon |
+            | `booktower-windows-x64.exe` | Windows x86-64 |
+            | `booktower-${{ github.ref_name }}.jar` | Fat JAR (any platform, needs Java 21) |
+
+            > Native binaries include the JVM — no installation required.
+            > Set `BOOKTOWER_ENV=production` and `BOOKTOWER_JWT_SECRET=<random>` for production deployments.
+          files: |
+            dist/fat-jar/*
+            dist/native-linux-x64/*
+            dist/native-linux-arm64/*
+            dist/native-macos-x64/*
+            dist/native-macos-arm64/*
+            dist/native-windows-x64/*

@@ -4,6 +4,7 @@ import org.booktower.TestFixture
 import org.booktower.models.CreateBookRequest
 import org.booktower.models.CreateLibraryRequest
 import org.booktower.models.CreateUserRequest
+import org.booktower.services.PdfMetadataService
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.util.UUID
@@ -26,7 +27,8 @@ class BookServiceTest {
         val jdbi = TestFixture.database.getJdbi()
         jwtService = JwtService(config.security)
         authService = AuthService(jdbi, jwtService)
-        libraryService = LibraryService(jdbi, config.storage)
+        val pdfMetadataService = PdfMetadataService(jdbi, config.storage.coversPath)
+        libraryService = LibraryService(jdbi, config.storage, pdfMetadataService)
         bookService = BookService(jdbi, config.storage)
 
         val result = authService.register(CreateUserRequest("bookuser_${System.nanoTime()}", "book_${System.nanoTime()}@test.com", "password123"))

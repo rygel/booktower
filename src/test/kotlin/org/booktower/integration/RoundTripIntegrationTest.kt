@@ -50,11 +50,11 @@ class RoundTripIntegrationTest {
         val jdbi = TestFixture.database.getJdbi()
         val jwtService = JwtService(config.security)
         val authService = AuthService(jdbi, jwtService)
-        val libraryService = LibraryService(jdbi, config.storage)
+        val pdfMetadataService = PdfMetadataService(jdbi, config.storage.coversPath)
+        val libraryService = LibraryService(jdbi, config.storage, pdfMetadataService)
         val bookService = BookService(jdbi, config.storage)
         val bookmarkService = BookmarkService(jdbi)
         val userSettingsService = UserSettingsService(jdbi)
-        val pdfMetadataService = PdfMetadataService(jdbi, config.storage.coversPath)
         val appHandler = AppHandler(authService, libraryService, bookService, bookmarkService, userSettingsService, pdfMetadataService, jwtService, config.storage, TemplateRenderer(), WeblateHandler(WeblateConfig("", "", "", false)))
 
         val app = routes(

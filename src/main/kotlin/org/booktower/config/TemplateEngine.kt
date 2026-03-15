@@ -8,8 +8,24 @@ import java.nio.file.Path
 
 class TemplateRenderer {
     private val engine: TemplateEngine by lazy {
-        val codeResolver = DirectoryCodeResolver(Path.of("src/main/jte"))
-        TemplateEngine.create(codeResolver, Path.of("target/generated-sources/jte"), ContentType.Html, javaClass.classLoader)
+        // In development (BOOKTOWER_ENV != production and source tree present) use the dynamic
+        // engine so template changes are picked up without a full rebuild.
+        // In all other cases — including fat-JAR and native-image deployments — use the
+        // precompiled classes that the jte-maven-plugin (generate goal) + Kotlin compiler
+        // have already compiled into the classpath under gg.jte.generated.precompiled.
+        val isDev = System.getenv("BOOKTOWER_ENV")?.lowercase() != "production"
+        val sourceDir = Path.of("src/main/jte")
+
+        if (isDev && sourceDir.toFile().isDirectory) {
+            TemplateEngine.create(
+                DirectoryCodeResolver(sourceDir),
+                Path.of("target/generated-sources/jte"),
+                ContentType.Html,
+                javaClass.classLoader,
+            )
+        } else {
+            TemplateEngine.createPrecompiled(ContentType.Html)
+        }
     }
 
     fun render(

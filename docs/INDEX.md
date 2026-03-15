@@ -36,6 +36,10 @@ This directory contains all project documentation for the BookTower application.
 
 - [HTMX_TEST_COVERAGE](HTMX_TEST_COVERAGE.md) - HTMX testing coverage and documentation
 
+## Releases & Deployment
+
+- [RELEASES](RELEASES.md) - Release process, fat JAR, AOT native binaries, quickstart mode
+
 ## Development
 
 - [AGENTS](AGENTS.md) - Development agents and tools configuration

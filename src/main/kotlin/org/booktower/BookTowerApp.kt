@@ -8,7 +8,11 @@ import org.booktower.filters.GlobalErrorFilter
 import org.booktower.filters.RequestLoggingFilter
 import org.booktower.filters.StaticCacheFilter
 import org.booktower.handlers.AppHandler
+import org.booktower.models.CreateLibraryRequest
+import org.booktower.models.CreateUserRequest
 import org.booktower.services.AuthService
+import org.booktower.services.JwtService
+import org.booktower.services.LibraryService
 import org.booktower.services.PdfMetadataService
 import org.http4k.core.Method
 import org.http4k.core.Response
@@ -41,16 +45,39 @@ fun main() {
         database.close()
     })
 
-    if (System.getenv("BOOKTOWER_ENV")?.lowercase() != "production") {
+    val isProduction = System.getenv("BOOKTOWER_ENV")?.lowercase() == "production"
+    val isQuickstart = System.getenv("BOOKTOWER_QUICKSTART")?.lowercase() == "true"
+
+    if (!isProduction) {
         val authService = koin.get<AuthService>()
         val devLogin = authService.seedDevUser()
         if (devLogin != null) {
             logger.info("=================================================")
             logger.info("  DEV USER READY")
-            logger.info("  Username: dev")
-            logger.info("  Password: dev12345")
-            logger.info("  Email:    dev@booktower.local")
+            logger.info("  Username: dev  |  Password: dev12345")
             logger.info("=================================================")
+        }
+    }
+
+    if (isQuickstart) {
+        val authService = koin.get<AuthService>()
+        val jwtService = koin.get<JwtService>()
+        val libraryService = koin.get<LibraryService>()
+        val result = authService.register(
+            CreateUserRequest("demo", "demo@booktower.local", "demo1234"),
+        )
+        if (result.isSuccess) {
+            val userId = jwtService.extractUserId(result.getOrThrow().token)!!
+            libraryService.createLibrary(userId, CreateLibraryRequest("My Library", "${config.storage.booksPath}/demo"))
+            logger.info("=================================================")
+            logger.info("  QUICKSTART MODE")
+            logger.info("  Open:     http://localhost:${config.port}")
+            logger.info("  Username: demo")
+            logger.info("  Password: demo1234")
+            logger.info("=================================================")
+        } else {
+            // demo user already exists from a previous run — that is fine
+            logger.info("Quickstart: demo user already exists, skipping seed")
         }
     }
 

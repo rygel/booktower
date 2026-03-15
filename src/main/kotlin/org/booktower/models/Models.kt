@@ -175,3 +175,10 @@ data class ThemePreference(
 data class LanguagePreference(
     val lang: String,
 )
+
+data class ScanResult(
+    val added: Int,
+    val skipped: Int,
+    val errors: Int,
+    val books: List<BookDto>,
+)

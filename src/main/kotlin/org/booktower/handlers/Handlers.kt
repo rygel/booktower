@@ -83,6 +83,7 @@ class AppHandler(
             "/api/libraries" bind Method.GET to authFilter.then(libraryHandler::list),
             "/api/libraries" bind Method.POST to authFilter.then(libraryHandler::create),
             "/api/libraries/{id}" bind Method.DELETE to authFilter.then(libraryHandler::delete),
+            "/api/libraries/{id}/scan" bind Method.POST to authFilter.then(libraryHandler::scan),
             "/api/books" bind Method.GET to authFilter.then(bookHandler::list),
             "/api/books" bind Method.POST to authFilter.then(bookHandler::create),
             "/api/books/{id}" bind Method.GET to authFilter.then(bookHandler::get),

@@ -37,6 +37,10 @@
                     <i class="ri-search-line"></i>
                 </button>
             </form>
+            <button id="scan-btn" class="btn-secondary" style="display:flex; align-items:center; gap:0.5rem;"
+                onclick="scanLibrary('${library.id}')">
+                <i class="ri-folder-search-line"></i> ${i18n.translate("page.library.scan")}
+            </button>
             <button class="btn-primary" style="display:flex; align-items:center; gap:0.5rem;"
                 onclick="document.getElementById('add-book-modal').style.display='flex'">
                 <i class="ri-add-line"></i> ${i18n.translate("page.library.add.book")}
@@ -92,5 +96,46 @@
     @else
         <div id="no-books-hint" style="display:none;"></div>
     @endif
+
+    <div id="scan-result" style="display:none; margin-top:1rem; padding:0.75rem 1rem; border-radius:0.5rem; font-size:0.875rem;"></div>
 </div>
+
+<script>
+async function scanLibrary(libraryId) {
+    const btn = document.getElementById('scan-btn');
+    const result = document.getElementById('scan-result');
+    btn.disabled = true;
+    btn.textContent = '${i18n.translate("page.library.scan.running")}';
+    result.style.display = 'none';
+    try {
+        const resp = await fetch('/api/libraries/' + libraryId + '/scan', { method: 'POST' });
+        const data = await resp.json();
+        if (resp.ok) {
+            result.style.background = 'var(--bt-badge-bg)';
+            result.style.color = 'var(--bt-badge-text)';
+            result.style.border = '1px solid var(--bt-border)';
+            result.textContent = '${i18n.translate("page.library.scan.result")}'
+                .replace('{0}', data.added)
+                .replace('{1}', data.skipped)
+                .replace('{2}', data.errors);
+            if (data.added > 0) { window.location.reload(); }
+        } else {
+            result.style.background = '#4c0519';
+            result.style.color = '#fca5a5';
+            result.style.border = 'none';
+            result.textContent = data.message || 'Scan failed';
+        }
+        result.style.display = 'block';
+    } catch (e) {
+        result.style.background = '#4c0519';
+        result.style.color = '#fca5a5';
+        result.style.border = 'none';
+        result.textContent = 'Scan error: ' + e.message;
+        result.style.display = 'block';
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="ri-folder-search-line"></i> ${i18n.translate("page.library.scan")}';
+    }
+}
+</script>
 `)

@@ -180,6 +180,12 @@ class BookHandler2(private val bookService: BookService) {
         if (request.title.isBlank()) {
             return "Book title is required"
         }
+        if (request.title.length > 255) {
+            return "Book title must be 255 characters or fewer"
+        }
+        if ((request.author?.length ?: 0) > 255) {
+            return "Author must be 255 characters or fewer"
+        }
         if (request.libraryId.isBlank()) {
             return "Library ID is required"
         }

@@ -48,6 +48,26 @@ class LibraryHandler2(private val libraryService: LibraryService) {
             .body(Json.mapper.writeValueAsString(library))
     }
 
+    fun scan(req: Request): Response {
+        val userId = AuthenticatedUser.from(req)
+        val pathParts = req.uri.path.split("/")
+        // path: /api/libraries/{id}/scan  → second to last segment is the id
+        val libraryId = pathParts.getOrNull(pathParts.size - 2)?.let {
+            runCatching { UUID.fromString(it) }.getOrNull()
+        }
+
+        if (libraryId == null) {
+            return Response(Status.BAD_REQUEST)
+                .header("Content-Type", "application/json")
+                .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Invalid library ID")))
+        }
+
+        val result = libraryService.scanLibrary(userId, libraryId)
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(Json.mapper.writeValueAsString(result))
+    }
+
     fun delete(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
         val pathParts = req.uri.path.split("/")
