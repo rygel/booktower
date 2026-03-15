@@ -14,18 +14,26 @@ import java.util.UUID
 
 object AuthenticatedUser {
     const val USER_ID_HEADER = "X-Auth-User-Id"
+    const val IS_ADMIN_HEADER = "X-Auth-Is-Admin"
 
     fun from(request: Request): UUID =
         UUID.fromString(request.header(USER_ID_HEADER)!!)
+
+    fun isAdmin(request: Request): Boolean =
+        request.header(IS_ADMIN_HEADER)?.toBoolean() ?: false
 }
 
 fun JwtAuthFilter(jwtService: JwtService): Filter = Filter { next ->
     { req ->
         val token = req.cookie("token")?.value
         val userId = token?.let { jwtService.extractUserId(it) }
+        val isAdmin = token?.let { jwtService.extractIsAdmin(it) } ?: false
 
         if (userId != null) {
-            next(req.header(AuthenticatedUser.USER_ID_HEADER, userId.toString()))
+            next(
+                req.header(AuthenticatedUser.USER_ID_HEADER, userId.toString())
+                    .header(AuthenticatedUser.IS_ADMIN_HEADER, isAdmin.toString()),
+            )
         } else {
             Response(Status.UNAUTHORIZED)
                 .header("Content-Type", "application/json")

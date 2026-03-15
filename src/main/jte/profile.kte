@@ -6,9 +6,10 @@
 @param lang: String
 @param themes: List<ThemeDefinition>
 @param i18n: I18nService
+@param isAdmin: Boolean = false
 
 @template.components.layout(title="${i18n.translate("page.profile.title")} - BookTower", username=username, currentPage="profile",
-    themeCss=themeCss, currentTheme=currentTheme, lang=lang, themes=themes, i18n=i18n, searchQuery="", content = @`
+    themeCss=themeCss, currentTheme=currentTheme, lang=lang, themes=themes, i18n=i18n, searchQuery="", isAdmin=isAdmin, content = @`
 <div style="padding:2rem; max-width:36rem; margin:0 auto;">
     <h1 style="font-size:1.25rem; font-weight:700; color:var(--bt-text); margin-bottom:1.5rem; display:flex; align-items:center; gap:0.625rem;">
         <i class="ri-user-settings-line" style="color:var(--bt-accent-dim);"></i>

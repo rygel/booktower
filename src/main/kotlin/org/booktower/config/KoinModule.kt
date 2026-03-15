@@ -1,6 +1,7 @@
 package org.booktower.config
 
 import org.booktower.handlers.AppHandler
+import org.booktower.services.AdminService
 import org.booktower.services.AuthService
 import org.booktower.services.BookmarkService
 import org.booktower.services.BookService
@@ -36,7 +37,9 @@ val appModule = module {
 
     single { PdfMetadataService(get<Database>().getJdbi(), get<AppConfig>().storage.coversPath) }
 
+    single { AdminService(get<Database>().getJdbi()) }
+
     single { WeblateHandler(get<AppConfig>().weblate) }
 
-    single { AppHandler(get(), get(), get(), get(), get(), get(), get(), get<AppConfig>().storage, get(), get()) }
+    single { AppHandler(get(), get(), get(), get(), get(), get(), get(), get(), get<AppConfig>().storage, get(), get()) }
 }

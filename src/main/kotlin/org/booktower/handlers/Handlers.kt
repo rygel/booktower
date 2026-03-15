@@ -4,9 +4,11 @@ package org.booktower.handlers
 
 import org.booktower.config.StorageConfig
 import org.booktower.config.TemplateRenderer
+import org.booktower.filters.AdminFilter
 import org.booktower.filters.JwtAuthFilter
 import org.booktower.filters.RateLimitFilter
 import org.booktower.model.ThemeCatalog
+import org.booktower.services.AdminService
 import org.booktower.services.AuthService
 import org.booktower.services.BookmarkService
 import org.booktower.services.BookService
@@ -32,6 +34,7 @@ class AppHandler(
     private val bookmarkService: BookmarkService,
     private val userSettingsService: UserSettingsService,
     private val pdfMetadataService: PdfMetadataService,
+    private val adminService: AdminService,
     private val jwtService: JwtService,
     private val storageConfig: StorageConfig,
     private val templateRenderer: TemplateRenderer,
@@ -43,8 +46,10 @@ class AppHandler(
     private val bookmarkHandler = BookmarkHandler(bookmarkService)
     private val fileHandler = FileHandler(bookService, pdfMetadataService, storageConfig)
     private val settingsHandler = UserSettingsHandler(userSettingsService)
+    private val adminHandler = AdminHandler(adminService, templateRenderer)
     private val pageHandler = PageHandler(jwtService, libraryService, bookService, bookmarkService, templateRenderer)
     private val authFilter = JwtAuthFilter(jwtService)
+    private val adminFilter = authFilter.then(AdminFilter())
     private val authRateLimit = RateLimitFilter(maxRequests = 10, windowSeconds = 60)
 
     fun routes(): RoutingHttpHandler {
@@ -61,6 +66,7 @@ class AppHandler(
             "/books/{id}/read" bind Method.GET to pageHandler::reader,
             "/search" bind Method.GET to pageHandler::search,
             "/profile" bind Method.GET to pageHandler::profile,
+            "/admin" bind Method.GET to adminFilter.then(adminHandler::adminPage),
             // Auth (rate-limited: 10 requests per 60 s per IP)
             "/auth/register" bind Method.POST to authRateLimit.then(authHandler::register),
             "/auth/login" bind Method.POST to authRateLimit.then(authHandler::login),
@@ -103,6 +109,11 @@ class AppHandler(
             "/api/settings" bind Method.GET to authFilter.then(settingsHandler::getAll),
             "/api/settings/{key}" bind Method.PUT to authFilter.then(settingsHandler::set),
             "/api/settings/{key}" bind Method.DELETE to authFilter.then(settingsHandler::delete),
+            // Admin API
+            "/api/admin/users" bind Method.GET to adminFilter.then(adminHandler::listUsers),
+            "/api/admin/users/{userId}/promote" bind Method.POST to adminFilter.then(adminHandler::promote),
+            "/api/admin/users/{userId}/demote" bind Method.POST to adminFilter.then(adminHandler::demote),
+            "/api/admin/users/{userId}" bind Method.DELETE to adminFilter.then(adminHandler::deleteUser),
             // Weblate translation sync (admin-only endpoints, require Weblate to be enabled)
             "/api/weblate/pull" bind Method.POST to weblateHandler::pull,
             "/api/weblate/push" bind Method.POST to weblateHandler::push,

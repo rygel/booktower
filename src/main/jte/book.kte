@@ -10,9 +10,10 @@
 @param lang: String
 @param themes: List<ThemeDefinition>
 @param i18n: I18nService
+@param isAdmin: Boolean = false
 
 @template.components.layout(title="${book.title} - BookTower", username=username, currentPage="library",
-    themeCss=themeCss, currentTheme=currentTheme, lang=lang, themes=themes, i18n=i18n, searchQuery="", content = @`
+    themeCss=themeCss, currentTheme=currentTheme, lang=lang, themes=themes, i18n=i18n, searchQuery="", isAdmin=isAdmin, content = @`
 <div style="padding:2rem; max-width:56rem; margin:0 auto;">
 
     <!-- Breadcrumb -->

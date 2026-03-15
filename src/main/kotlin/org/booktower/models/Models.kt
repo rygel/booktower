@@ -197,3 +197,15 @@ data class ScanResult(
     val errors: Int,
     val books: List<BookDto>,
 )
+
+data class UserAdminDto(
+    val id: String,
+    val username: String,
+    val email: String,
+    val createdAt: String,
+    val isAdmin: Boolean,
+)
+
+data class SetAdminRequest(
+    val isAdmin: Boolean,
+)

@@ -50,4 +50,12 @@ class JwtService(private val config: SecurityConfig) {
             null
         }
     }
+
+    fun extractIsAdmin(token: String): Boolean {
+        return try {
+            verifyToken(token)?.getClaim("admin")?.asBoolean() ?: false
+        } catch (e: Exception) {
+            false
+        }
+    }
 }

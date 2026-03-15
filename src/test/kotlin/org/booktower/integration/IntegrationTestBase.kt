@@ -2,13 +2,13 @@ package org.booktower.integration
 
 import org.booktower.TestFixture
 import org.booktower.config.Json
-import org.booktower.config.TemplateRenderer
 import org.booktower.filters.GlobalErrorFilter
 import org.booktower.config.WeblateConfig
 import org.booktower.handlers.AppHandler
 import org.booktower.models.BookDto
 import org.booktower.models.LibraryDto
 import org.booktower.models.LoginResponse
+import org.booktower.services.AdminService
 import org.booktower.services.AuthService
 import org.booktower.services.BookmarkService
 import org.booktower.services.BookService
@@ -37,9 +37,11 @@ abstract class IntegrationTestBase {
         val bookService = BookService(jdbi)
         val bookmarkService = BookmarkService(jdbi)
         val userSettingsService = UserSettingsService(jdbi)
+        val adminService = AdminService(jdbi)
         val appHandler = AppHandler(
             authService, libraryService, bookService, bookmarkService,
-            userSettingsService, pdfMetadataService, jwtService, config.storage, TemplateRenderer(),
+            userSettingsService, pdfMetadataService, adminService, jwtService, config.storage,
+            TestFixture.templateRenderer,
             WeblateHandler(WeblateConfig("", "", "", false)),
         )
         app = GlobalErrorFilter().then(appHandler.routes())

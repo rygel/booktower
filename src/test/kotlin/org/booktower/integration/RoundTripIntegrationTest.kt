@@ -2,7 +2,6 @@ package org.booktower.integration
 
 import org.booktower.TestFixture
 import org.booktower.config.Json
-import org.booktower.config.TemplateRenderer
 import org.booktower.filters.CsrfFilter
 import org.booktower.filters.GlobalErrorFilter
 import org.booktower.filters.RequestLoggingFilter
@@ -11,6 +10,7 @@ import org.booktower.config.WeblateConfig
 import org.booktower.handlers.AppHandler
 import org.booktower.models.LibraryDto
 import org.booktower.models.LoginResponse
+import org.booktower.services.AdminService
 import org.booktower.services.AuthService
 import org.booktower.services.BookmarkService
 import org.booktower.services.PdfMetadataService
@@ -55,10 +55,11 @@ class RoundTripIntegrationTest {
         val bookService = BookService(jdbi)
         val bookmarkService = BookmarkService(jdbi)
         val userSettingsService = UserSettingsService(jdbi)
+        val adminService = AdminService(jdbi)
         val appHandler = AppHandler(
             authService, libraryService, bookService, bookmarkService,
-            userSettingsService, pdfMetadataService, jwtService,
-            config.storage, TemplateRenderer(), WeblateHandler(WeblateConfig("", "", "", false)),
+            userSettingsService, pdfMetadataService, adminService, jwtService,
+            config.storage, TestFixture.templateRenderer, WeblateHandler(WeblateConfig("", "", "", false)),
         )
 
         val app = routes(

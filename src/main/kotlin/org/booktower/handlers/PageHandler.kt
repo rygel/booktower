@@ -17,6 +17,7 @@ import org.http4k.core.Request
 import org.http4k.core.Response
 import org.http4k.core.Status
 import org.http4k.core.body.form
+import org.http4k.core.cookie.Cookie
 import org.http4k.core.cookie.cookie
 import java.util.UUID
 
@@ -41,6 +42,7 @@ class PageHandler(
             "lang" to ctx.lang,
             "themes" to ThemeCatalog.allThemes(),
             "i18n" to ctx.i18n,
+            "isAdmin" to authIsAdmin(req),
         )))
     }
 
@@ -59,6 +61,7 @@ class PageHandler(
             "lang" to ctx.lang,
             "themes" to ThemeCatalog.allThemes(),
             "i18n" to ctx.i18n,
+            "isAdmin" to authIsAdmin(req),
         )))
     }
 
@@ -77,6 +80,7 @@ class PageHandler(
             "lang" to ctx.lang,
             "themes" to ThemeCatalog.allThemes(),
             "i18n" to ctx.i18n,
+            "isAdmin" to authIsAdmin(req),
         )))
     }
 
@@ -112,6 +116,7 @@ class PageHandler(
             "lang" to ctx.lang,
             "themes" to ThemeCatalog.allThemes(),
             "i18n" to ctx.i18n,
+            "isAdmin" to authIsAdmin(req),
         )))
     }
 
@@ -125,6 +130,7 @@ class PageHandler(
             "lang" to ctx.lang,
             "themes" to ThemeCatalog.allThemes(),
             "i18n" to ctx.i18n,
+            "isAdmin" to authIsAdmin(req),
         )))
     }
 
@@ -141,7 +147,7 @@ class PageHandler(
         return htmlOk(templateRenderer.render("components/libraryCard.kte", mapOf(
             "lib" to library,
             "i18n" to ctx.i18n,
-        )))
+        ))).header("HX-Trigger", toast("Library created"))
     }
 
     fun deleteLibrary(req: Request): Response {
@@ -149,6 +155,7 @@ class PageHandler(
         val libId = req.lastPathSegment().toUuidOrNull() ?: return Response(Status.BAD_REQUEST)
         libraryService.deleteLibrary(userId, libId)
         return Response(Status.OK)
+            .header("HX-Trigger", toast("Library deleted"))
     }
 
     /** POST /ui/libraries/{id}/rename */
@@ -161,6 +168,8 @@ class PageHandler(
             ?: return Response(Status.NOT_FOUND)
         return Response(Status.OK)
             .header("HX-Redirect", "/libraries/${libId}")
+            .cookie(Cookie("flash_msg", "Library renamed", path = "/"))
+            .cookie(Cookie("flash_type", "success", path = "/"))
     }
 
     /** POST /ui/libraries/{libId}/books — path is .../SOME-UUID/books */
@@ -178,7 +187,7 @@ class PageHandler(
                 htmlOk(templateRenderer.render("components/bookCard.kte", mapOf(
                     "book" to b,
                     "i18n" to ctx.i18n,
-                )))
+                ))).header("HX-Trigger", toast("Book added"))
             },
             onFailure = { Response(Status.BAD_REQUEST).body(it.message ?: "Error creating book") },
         )
@@ -189,6 +198,7 @@ class PageHandler(
         val bookId = req.lastPathSegment().toUuidOrNull() ?: return Response(Status.BAD_REQUEST)
         bookService.deleteBook(userId, bookId)
         return Response(Status.OK)
+            .header("HX-Trigger", toast("Book deleted"))
     }
 
     /** POST /ui/books/{id}/meta */
@@ -204,6 +214,8 @@ class PageHandler(
             ?: return Response(Status.NOT_FOUND)
         return Response(Status.OK)
             .header("HX-Redirect", "/books/${bookId}")
+            .cookie(Cookie("flash_msg", "Book updated", path = "/"))
+            .cookie(Cookie("flash_type", "success", path = "/"))
     }
 
     /** POST /ui/books/{id}/progress — path ends in .../UUID/progress */
@@ -229,6 +241,7 @@ class PageHandler(
         return result.fold(
             onSuccess = { bm ->
                 htmlOk(templateRenderer.render("components/bookmarkItem.kte", mapOf("bookmark" to bm)))
+                    .header("HX-Trigger", toast("Bookmark saved"))
             },
             onFailure = { Response(Status.BAD_REQUEST).body(it.message ?: "Error") },
         )
@@ -239,6 +252,7 @@ class PageHandler(
         val bookmarkId = req.lastPathSegment().toUuidOrNull() ?: return Response(Status.BAD_REQUEST)
         bookmarkService.deleteBookmark(userId, bookmarkId)
         return Response(Status.OK)
+            .header("HX-Trigger", toast("Bookmark deleted"))
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────────
@@ -246,6 +260,11 @@ class PageHandler(
     private fun auth(req: Request): UUID? {
         val token = req.cookie("token")?.value ?: return null
         return jwtService.extractUserId(token)
+    }
+
+    private fun authIsAdmin(req: Request): Boolean {
+        val token = req.cookie("token")?.value ?: return false
+        return jwtService.extractIsAdmin(token)
     }
 
     private fun redirectToLogin() = Response(Status.SEE_OTHER).header("Location", "/login")
@@ -263,4 +282,7 @@ class PageHandler(
 
     private fun String?.toUuidOrNull(): UUID? =
         if (this == null) null else try { UUID.fromString(this) } catch (_: IllegalArgumentException) { null }
+
+    private fun toast(message: String, type: String = "success"): String =
+        """{"showToast":{"message":"${message.replace("\"", "\\\"")}","type":"$type"}}"""
 }
