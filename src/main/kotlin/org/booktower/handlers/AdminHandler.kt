@@ -50,9 +50,10 @@ class AdminHandler(
         val userId = extractSecondToLastId(req) ?: return badRequest("Invalid user ID")
         val ok = adminService.setAdmin(userId, true)
         return if (ok) {
+            val msg = WebContext(req).i18n.translate("msg.admin-granted")
             Response(Status.OK)
                 .header("HX-Redirect", "/admin")
-                .cookie(Cookie("flash_msg", "Admin status granted", path = "/"))
+                .cookie(Cookie("flash_msg", msg, path = "/"))
                 .cookie(Cookie("flash_type", "success", path = "/"))
         } else notFound("User not found")
     }
@@ -61,9 +62,10 @@ class AdminHandler(
         val userId = extractSecondToLastId(req) ?: return badRequest("Invalid user ID")
         val ok = adminService.setAdmin(userId, false)
         return if (ok) {
+            val msg = WebContext(req).i18n.translate("msg.admin-revoked")
             Response(Status.OK)
                 .header("HX-Redirect", "/admin")
-                .cookie(Cookie("flash_msg", "Admin status revoked", path = "/"))
+                .cookie(Cookie("flash_msg", msg, path = "/"))
                 .cookie(Cookie("flash_type", "success", path = "/"))
         } else notFound("User not found")
     }
@@ -74,10 +76,12 @@ class AdminHandler(
         return runCatching { adminService.deleteUser(actorId, userId) }
             .fold(
                 onSuccess = { deleted ->
-                    if (deleted) Response(Status.OK)
-                        .header("HX-Trigger", """{"showToast":{"message":"User deleted","type":"success"}}""")
-                        .body("")
-                    else notFound("User not found")
+                    if (deleted) {
+                        val msg = WebContext(req).i18n.translate("msg.user-deleted")
+                        Response(Status.OK)
+                            .header("HX-Trigger", toast(msg))
+                            .body("")
+                    } else notFound("User not found")
                 },
                 onFailure = { e -> badRequest(e.message ?: "Cannot delete user") },
             )
@@ -95,6 +99,9 @@ class AdminHandler(
             null
         }
     }
+
+    private fun toast(message: String, type: String = "success"): String =
+        """{"showToast":{"message":"${message.replace("\"", "\\\"")}","type":"$type"}}"""
 
     private fun ok(msg: String) = Response(Status.OK)
         .header("Content-Type", "application/json")

@@ -147,20 +147,22 @@ class PageHandler(
         return htmlOk(templateRenderer.render("components/libraryCard.kte", mapOf(
             "lib" to library,
             "i18n" to ctx.i18n,
-        ))).header("HX-Trigger", toast("Library created"))
+        ))).header("HX-Trigger", toast(ctx.i18n.translate("msg.library-created")))
     }
 
     fun deleteLibrary(req: Request): Response {
         val userId = auth(req) ?: return Response(Status.UNAUTHORIZED)
+        val ctx = WebContext(req)
         val libId = req.lastPathSegment().toUuidOrNull() ?: return Response(Status.BAD_REQUEST)
         libraryService.deleteLibrary(userId, libId)
         return Response(Status.OK)
-            .header("HX-Trigger", toast("Library deleted"))
+            .header("HX-Trigger", toast(ctx.i18n.translate("msg.library-deleted")))
     }
 
     /** POST /ui/libraries/{id}/rename */
     fun renameLibrary(req: Request): Response {
         val userId = auth(req) ?: return Response(Status.UNAUTHORIZED)
+        val ctx = WebContext(req)
         val libId = req.secondToLastPathSegment().toUuidOrNull() ?: return Response(Status.BAD_REQUEST)
         val name = req.form("name")?.trim()?.takeIf { it.isNotBlank() }
             ?: return Response(Status.BAD_REQUEST).body("Name is required")
@@ -168,7 +170,7 @@ class PageHandler(
             ?: return Response(Status.NOT_FOUND)
         return Response(Status.OK)
             .header("HX-Redirect", "/libraries/${libId}")
-            .cookie(Cookie("flash_msg", "Library renamed", path = "/"))
+            .cookie(Cookie("flash_msg", ctx.i18n.translate("msg.library-renamed"), path = "/"))
             .cookie(Cookie("flash_type", "success", path = "/"))
     }
 
@@ -187,7 +189,7 @@ class PageHandler(
                 htmlOk(templateRenderer.render("components/bookCard.kte", mapOf(
                     "book" to b,
                     "i18n" to ctx.i18n,
-                ))).header("HX-Trigger", toast("Book added"))
+                ))).header("HX-Trigger", toast(ctx.i18n.translate("msg.book-added")))
             },
             onFailure = { Response(Status.BAD_REQUEST).body(it.message ?: "Error creating book") },
         )
@@ -195,15 +197,17 @@ class PageHandler(
 
     fun deleteBook(req: Request): Response {
         val userId = auth(req) ?: return Response(Status.UNAUTHORIZED)
+        val ctx = WebContext(req)
         val bookId = req.lastPathSegment().toUuidOrNull() ?: return Response(Status.BAD_REQUEST)
         bookService.deleteBook(userId, bookId)
         return Response(Status.OK)
-            .header("HX-Trigger", toast("Book deleted"))
+            .header("HX-Trigger", toast(ctx.i18n.translate("msg.book-deleted")))
     }
 
     /** POST /ui/books/{id}/meta */
     fun editBook(req: Request): Response {
         val userId = auth(req) ?: return Response(Status.UNAUTHORIZED)
+        val ctx = WebContext(req)
         val bookId = req.secondToLastPathSegment().toUuidOrNull() ?: return Response(Status.BAD_REQUEST)
         val title = req.form("title")?.trim()?.takeIf { it.isNotBlank() }
             ?: return Response(Status.BAD_REQUEST).body("Title is required")
@@ -214,7 +218,7 @@ class PageHandler(
             ?: return Response(Status.NOT_FOUND)
         return Response(Status.OK)
             .header("HX-Redirect", "/books/${bookId}")
-            .cookie(Cookie("flash_msg", "Book updated", path = "/"))
+            .cookie(Cookie("flash_msg", ctx.i18n.translate("msg.book-updated"), path = "/"))
             .cookie(Cookie("flash_type", "success", path = "/"))
     }
 
@@ -231,6 +235,7 @@ class PageHandler(
     /** POST /ui/books/{id}/bookmarks — path ends in .../UUID/bookmarks */
     fun createBookmark(req: Request): Response {
         val userId = auth(req) ?: return Response(Status.UNAUTHORIZED)
+        val ctx = WebContext(req)
         val bookId = req.secondToLastPathSegment()
             ?: return Response(Status.BAD_REQUEST)
         val page = req.form("page")?.toIntOrNull()
@@ -241,7 +246,7 @@ class PageHandler(
         return result.fold(
             onSuccess = { bm ->
                 htmlOk(templateRenderer.render("components/bookmarkItem.kte", mapOf("bookmark" to bm)))
-                    .header("HX-Trigger", toast("Bookmark saved"))
+                    .header("HX-Trigger", toast(ctx.i18n.translate("msg.bookmark-saved")))
             },
             onFailure = { Response(Status.BAD_REQUEST).body(it.message ?: "Error") },
         )
@@ -249,10 +254,11 @@ class PageHandler(
 
     fun deleteBookmark(req: Request): Response {
         val userId = auth(req) ?: return Response(Status.UNAUTHORIZED)
+        val ctx = WebContext(req)
         val bookmarkId = req.lastPathSegment().toUuidOrNull() ?: return Response(Status.BAD_REQUEST)
         bookmarkService.deleteBookmark(userId, bookmarkId)
         return Response(Status.OK)
-            .header("HX-Trigger", toast("Bookmark deleted"))
+            .header("HX-Trigger", toast(ctx.i18n.translate("msg.bookmark-deleted")))
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────────
