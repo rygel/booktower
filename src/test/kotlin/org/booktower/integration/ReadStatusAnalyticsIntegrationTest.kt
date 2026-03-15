@@ -144,11 +144,15 @@ class ReadStatusAnalyticsIntegrationTest : IntegrationTestBase() {
         val bookId = createBook(token, libId, "Status Visible")
         setStatus(token, bookId, "READING")
 
-        val html = app(Request(Method.GET, "/books/$bookId").header("Cookie", "token=$token")).bodyString()
-        val readingIdx = html.indexOf("value=\"READING\"")
-        assertTrue(readingIdx >= 0, "READING option must exist in page")
-        val snippet = html.substring(readingIdx, minOf(readingIdx + 30, html.length))
-        assertTrue(snippet.contains("selected"), "READING should be selected: $snippet")
+        val response = app(Request(Method.GET, "/books/$bookId").header("Cookie", "token=$token"))
+        assertEquals(Status.OK, response.status, "Book page must return 200 (got: ${response.bodyString().take(300)})")
+        val html = response.bodyString()
+        // JTE HTML mode may emit `selected` (bare) or `selected="true"` — match either form.
+        // The regex finds an <option> tag that has both value="READING" and selected in any order.
+        val selectedReading = Regex("""<option\b[^>]*value="READING"[^>]*selected""").containsMatchIn(html)
+        val selectedReadingRev = Regex("""<option\b[^>]*selected[^>]*value="READING"""").containsMatchIn(html)
+        val selectorArea = html.substringAfter("book-status-select", "").take(600)
+        assertTrue(selectedReading || selectedReadingRev, "READING option must be selected in status dropdown. Selector area: $selectorArea")
     }
 
     @Test

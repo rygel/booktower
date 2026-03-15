@@ -49,11 +49,13 @@ class ReadStatusIntegrationTest : IntegrationTestBase() {
         val bookId = createBook(token, libId)
         setStatus(token, bookId, "READING")
 
-        val body = app(Request(Method.GET, "/books/$bookId").header("Cookie", "token=$token")).bodyString()
-        val readingIdx = body.indexOf("value=\"READING\"")
-        assertTrue(readingIdx >= 0, "READING option must exist")
-        val snippet = body.substring(readingIdx, minOf(readingIdx + 30, body.length))
-        assertTrue(snippet.contains("selected"), "READING should be selected after setting: $snippet")
+        val response = app(Request(Method.GET, "/books/$bookId").header("Cookie", "token=$token"))
+        assertEquals(Status.OK, response.status, "Book page must return 200 (got: ${response.bodyString().take(300)})")
+        val body = response.bodyString()
+        val selectedReading = Regex("""<option\b[^>]*value="READING"[^>]*selected""").containsMatchIn(body)
+        val selectedReadingRev = Regex("""<option\b[^>]*selected[^>]*value="READING"""").containsMatchIn(body)
+        val selectorArea = body.substringAfter("book-status-select", "").take(600)
+        assertTrue(selectedReading || selectedReadingRev, "READING should be selected after setting. Selector area: $selectorArea")
     }
 
     @Test
@@ -64,11 +66,13 @@ class ReadStatusIntegrationTest : IntegrationTestBase() {
         setStatus(token, bookId, "FINISHED")
         setStatus(token, bookId, "NONE")
 
-        val body = app(Request(Method.GET, "/books/$bookId").header("Cookie", "token=$token")).bodyString()
-        val noneIdx = body.indexOf("value=\"NONE\"")
-        assertTrue(noneIdx >= 0, "NONE option must exist")
-        val snippet = body.substring(noneIdx, minOf(noneIdx + 30, body.length))
-        assertTrue(snippet.contains("selected"), "NONE should be selected after clearing: $snippet")
+        val response = app(Request(Method.GET, "/books/$bookId").header("Cookie", "token=$token"))
+        assertEquals(Status.OK, response.status)
+        val body = response.bodyString()
+        val selectedNone = Regex("""<option\b[^>]*value="NONE"[^>]*selected""").containsMatchIn(body)
+        val selectedNoneRev = Regex("""<option\b[^>]*selected[^>]*value="NONE"""").containsMatchIn(body)
+        val selectorArea = body.substringAfter("book-status-select", "").take(600)
+        assertTrue(selectedNone || selectedNoneRev, "NONE should be selected after clearing. Selector area: $selectorArea")
     }
 
     // ── Library page filter ─────────────────────────────────────────────────────
@@ -173,11 +177,12 @@ class ReadStatusIntegrationTest : IntegrationTestBase() {
         setStatus(token2, bookId2, "READING")
 
         // user1's status should still be FINISHED, not affected by user2
-        val body1 = app(Request(Method.GET, "/books/$bookId").header("Cookie", "token=$token1")).bodyString()
-        val finishedIdx = body1.indexOf("value=\"FINISHED\"")
-        assertTrue(finishedIdx >= 0)
-        val snippet1 = body1.substring(finishedIdx, minOf(finishedIdx + 30, body1.length))
-        assertTrue(snippet1.contains("selected"), "User1 FINISHED status must be preserved")
+        val resp1 = app(Request(Method.GET, "/books/$bookId").header("Cookie", "token=$token1"))
+        assertEquals(Status.OK, resp1.status)
+        val body1 = resp1.bodyString()
+        val selFinished1 = Regex("""<option\b[^>]*value="FINISHED"[^>]*selected""").containsMatchIn(body1)
+        val selFinished1Rev = Regex("""<option\b[^>]*selected[^>]*value="FINISHED"""").containsMatchIn(body1)
+        assertTrue(selFinished1 || selFinished1Rev, "User1 FINISHED status must be preserved")
     }
 
     @Test
@@ -190,10 +195,11 @@ class ReadStatusIntegrationTest : IntegrationTestBase() {
         setStatus(token, bookId, "READING")
         setStatus(token, bookId, "FINISHED")
 
-        val body = app(Request(Method.GET, "/books/$bookId").header("Cookie", "token=$token")).bodyString()
-        val finishedIdx = body.indexOf("value=\"FINISHED\"")
-        assertTrue(finishedIdx >= 0)
-        val snippet = body.substring(finishedIdx, minOf(finishedIdx + 30, body.length))
-        assertTrue(snippet.contains("selected"), "Final status FINISHED should be selected")
+        val resp = app(Request(Method.GET, "/books/$bookId").header("Cookie", "token=$token"))
+        assertEquals(Status.OK, resp.status)
+        val body = resp.bodyString()
+        val selFinished = Regex("""<option\b[^>]*value="FINISHED"[^>]*selected""").containsMatchIn(body)
+        val selFinishedRev = Regex("""<option\b[^>]*selected[^>]*value="FINISHED"""").containsMatchIn(body)
+        assertTrue(selFinished || selFinishedRev, "Final status FINISHED should be selected")
     }
 }
