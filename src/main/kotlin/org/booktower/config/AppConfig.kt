@@ -40,7 +40,7 @@ data class DatabaseConfig(
     val url: String,
     val username: String,
     val password: String,
-    val driver: String = "org.mariadb.jdbc.Driver",
+    val driver: String = "org.h2.Driver",
 ) {
     companion object {
         fun load(config: com.typesafe.config.Config): DatabaseConfig {

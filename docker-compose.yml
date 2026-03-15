@@ -7,15 +7,15 @@ services:
     environment:
       BOOKTOWER_ENV: production
       BOOKTOWER_JWT_SECRET: ${BOOKTOWER_JWT_SECRET:?Set BOOKTOWER_JWT_SECRET in .env}
-      BOOKTOWER_DB_URL: jdbc:mariadb://mariadb:3306/booktower
-      BOOKTOWER_DB_USERNAME: ${MARIADB_USER:-booktower}
-      BOOKTOWER_DB_PASSWORD: ${MARIADB_PASSWORD:?Set MARIADB_PASSWORD in .env}
-      BOOKTOWER_DB_DRIVER: org.mariadb.jdbc.Driver
+      BOOKTOWER_DB_URL: jdbc:postgresql://postgres:5432/booktower
+      BOOKTOWER_DB_USERNAME: ${POSTGRES_USER:-booktower}
+      BOOKTOWER_DB_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      BOOKTOWER_DB_DRIVER: org.postgresql.Driver
       BOOKTOWER_CSRF_ALLOWED_HOSTS: ${BOOKTOWER_CSRF_ALLOWED_HOSTS:-localhost,127.0.0.1}
     volumes:
       - booktower-data:/data
     depends_on:
-      mariadb:
+      postgres:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:
@@ -25,23 +25,22 @@ services:
       start_period: 30s
       retries: 3
 
-  mariadb:
-    image: mariadb:11
+  postgres:
+    image: postgres:17
     environment:
-      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:?Set MARIADB_ROOT_PASSWORD in .env}
-      MARIADB_DATABASE: booktower
-      MARIADB_USER: ${MARIADB_USER:-booktower}
-      MARIADB_PASSWORD: ${MARIADB_PASSWORD:?Set MARIADB_PASSWORD in .env}
+      POSTGRES_DB: booktower
+      POSTGRES_USER: ${POSTGRES_USER:-booktower}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
     volumes:
-      - mariadb-data:/var/lib/mysql
+      - postgres-data:/var/lib/postgresql/data
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-booktower} -d booktower"]
       interval: 10s
       timeout: 5s
-      start_period: 30s
+      start_period: 20s
       retries: 10
 
 volumes:
   booktower-data:
-  mariadb-data:
+  postgres-data:
