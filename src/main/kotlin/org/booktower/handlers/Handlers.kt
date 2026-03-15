@@ -94,6 +94,8 @@ class AppHandler(
             "/books/{id}" bind Method.GET to pageHandler::book,
             "/books/{id}/read" bind Method.GET to pageHandler::reader,
             "/search" bind Method.GET to pageHandler::search,
+            "/series" bind Method.GET to authFilter.then(pageHandler::seriesList),
+            "/series/{name}" bind Method.GET to authFilter.then(pageHandler::series),
             "/profile" bind Method.GET to pageHandler::profile,
             "/analytics" bind Method.GET to pageHandler::analytics,
             "/ui/preferences/analytics" bind Method.POST to pageHandler::setAnalytics,

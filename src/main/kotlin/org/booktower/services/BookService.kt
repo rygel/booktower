@@ -569,6 +569,53 @@ class BookService(
         }
     }
 
+    /** Returns all distinct series that belong to the user, with book count and a cover. */
+    fun getSeries(userId: UUID): List<SeriesDto> =
+        jdbi.withHandle<List<SeriesDto>, Exception> { handle ->
+            handle.createQuery(
+                """
+                SELECT b.series, COUNT(*) AS book_count, MIN(b.cover_path) AS cover_path
+                FROM books b
+                JOIN libraries l ON b.library_id = l.id
+                WHERE l.user_id = ? AND b.series IS NOT NULL AND b.series <> ''
+                GROUP BY b.series
+                ORDER BY b.series ASC
+                """,
+            )
+                .bind(0, userId.toString())
+                .map { row ->
+                    SeriesDto(
+                        name = row.getColumn("series", String::class.java),
+                        bookCount = row.getColumn("book_count", java.lang.Integer::class.java)?.toInt() ?: 0,
+                        coverUrl = row.getColumn("cover_path", String::class.java)?.let { "/covers/$it" },
+                    )
+                }.list()
+        }
+
+    /** Returns all books in a named series for the user, sorted by series_index then title. */
+    fun getBooksBySeries(userId: UUID, series: String): List<BookDto> {
+        val books = jdbi.withHandle<List<BookDto>, Exception> { handle ->
+            handle.createQuery(
+                """
+                SELECT b.*, bs.status AS book_status_value, br.rating AS book_rating_value
+                FROM books b
+                JOIN libraries l ON b.library_id = l.id
+                LEFT JOIN book_status bs ON bs.book_id = b.id AND bs.user_id = ?
+                LEFT JOIN book_ratings br ON br.book_id = b.id AND br.user_id = ?
+                WHERE l.user_id = ? AND b.series = ?
+                ORDER BY b.series_index ASC NULLS LAST, b.title ASC
+                """,
+            )
+                .bind(0, userId.toString())
+                .bind(1, userId.toString())
+                .bind(2, userId.toString())
+                .bind(3, series)
+                .map { row -> mapBook(row) }.list()
+        }
+        val tagMap = fetchTagsForBooks(userId, books.map { it.id })
+        return books.map { it.copy(tags = tagMap[it.id] ?: emptyList()) }
+    }
+
     private fun mapBook(row: RowView): BookDto {
         val pageCount: Int? = try {
             row.getColumn("page_count", java.lang.Integer::class.java)?.toInt()

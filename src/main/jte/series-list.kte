@@ -1,0 +1,55 @@
+@import org.booktower.i18n.I18nService
+@import org.booktower.model.ThemeDefinition
+@import org.booktower.models.SeriesDto
+@param username: String?
+@param series: List<SeriesDto>
+@param themeCss: String
+@param currentTheme: String
+@param lang: String
+@param themes: List<ThemeDefinition>
+@param i18n: I18nService
+@param isAdmin: Boolean = false
+
+@template.components.layout(title="${i18n.translate("page.series.title")} - BookTower", username=username, currentPage="series",
+    themeCss=themeCss, currentTheme=currentTheme, lang=lang, themes=themes, i18n=i18n, searchQuery="", isAdmin=isAdmin, content = @`
+<div style="padding:2rem; max-width:72rem; margin:0 auto;">
+
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.75rem;">
+        <div>
+            <h1 style="font-size:1.5rem; font-weight:700; color:var(--bt-text); margin-bottom:0.25rem;">
+                <i class="ri-stack-line" style="color:var(--bt-accent-dim); margin-right:0.5rem;"></i>${i18n.translate("page.series.list.title")}
+            </h1>
+            <p style="font-size:0.8rem; color:var(--bt-subtle);">${series.size} ${i18n.translate("label.series").lowercase()}</p>
+        </div>
+    </div>
+
+    @if(series.isEmpty())
+        <div style="text-align:center; padding:5rem 0;">
+            <i class="ri-stack-line" style="font-size:4rem; display:block; margin-bottom:1rem; color:var(--bt-border);"></i>
+            <p style="font-size:1.125rem; font-weight:500; color:var(--bt-subtle);">${i18n.translate("page.series.empty.title")}</p>
+            <p style="font-size:0.875rem; margin-top:0.375rem; color:var(--bt-faint);">${i18n.translate("page.series.empty.hint")}</p>
+        </div>
+    @else
+        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(9rem, 1fr)); gap:1.25rem;">
+            @for(s in series)
+                <a href="/series/${java.net.URLEncoder.encode(s.name, "UTF-8").replace("+", "%20")}" style="text-decoration:none;">
+                    <div style="background:var(--bt-surface); border:1px solid var(--bt-border); border-radius:0.75rem; overflow:hidden; transition:border-color 0.15s;"
+                        onmouseover="this.style.borderColor='var(--bt-accent)'" onmouseout="this.style.borderColor='var(--bt-border)'">
+                        <div style="height:8rem; background:var(--bt-bg); display:flex; align-items:center; justify-content:center; overflow:hidden;">
+                            @if(s.coverUrl != null)
+                                <img src="${s.coverUrl}" alt="${s.name}" style="width:100%; height:100%; object-fit:cover;">
+                            @else
+                                <i class="ri-stack-line" style="font-size:2.5rem; color:var(--bt-border);"></i>
+                            @endif
+                        </div>
+                        <div style="padding:0.625rem 0.75rem;">
+                            <p style="font-size:0.8rem; font-weight:600; color:var(--bt-text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${s.name}</p>
+                            <p style="font-size:0.7rem; color:var(--bt-subtle); margin-top:0.125rem;">${i18n.translate("page.series.book.count", s.bookCount)}</p>
+                        </div>
+                    </div>
+                </a>
+            @endfor
+        </div>
+    @endif
+</div>
+`)

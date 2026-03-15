@@ -179,6 +179,12 @@ data class ReadingSessionDto(
     val sessionAt: String,
 )
 
+data class SeriesDto(
+    val name: String,
+    val bookCount: Int,
+    val coverUrl: String?,
+)
+
 data class UpdateProgressRequest(
     val currentPage: Int,
 )

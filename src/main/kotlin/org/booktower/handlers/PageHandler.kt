@@ -548,6 +548,44 @@ class PageHandler(
             .header("HX-Trigger", toast(ctx.i18n.translate("msg.bookmark-deleted")))
     }
 
+    /** GET /series — list all series for the user */
+    fun seriesList(req: Request): Response {
+        val userId = auth(req) ?: return redirectToLogin()
+        val ctx = WebContext(req)
+        val series = bookService.getSeries(userId)
+        return htmlOk(templateRenderer.render("series-list.kte", mapOf(
+            "username" to null,
+            "series" to series,
+            "themeCss" to ctx.themeCss,
+            "currentTheme" to ctx.theme,
+            "lang" to ctx.lang,
+            "themes" to ThemeCatalog.allThemes(),
+            "i18n" to ctx.i18n,
+            "isAdmin" to authIsAdmin(req),
+        )))
+    }
+
+    /** GET /series/{name} — books in a specific series */
+    fun series(req: Request): Response {
+        val userId = auth(req) ?: return redirectToLogin()
+        val ctx = WebContext(req)
+        val name = req.lastPathSegment()
+            ?.let { java.net.URLDecoder.decode(it, "UTF-8") }
+            ?: return Response(Status.NOT_FOUND)
+        val books = bookService.getBooksBySeries(userId, name)
+        return htmlOk(templateRenderer.render("series.kte", mapOf(
+            "username" to null,
+            "seriesName" to name,
+            "books" to books,
+            "themeCss" to ctx.themeCss,
+            "currentTheme" to ctx.theme,
+            "lang" to ctx.lang,
+            "themes" to ThemeCatalog.allThemes(),
+            "i18n" to ctx.i18n,
+            "isAdmin" to authIsAdmin(req),
+        )))
+    }
+
     // ── Helpers ────────────────────────────────────────────────────────────────
 
     private fun auth(req: Request): UUID? {

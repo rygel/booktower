@@ -78,6 +78,10 @@
                     <i class="ri-search-line" style="font-size:1rem; width:1rem; text-align:center;"></i>
                     ${i18n.translate("nav.search")}
                 </a>
+                <a href="/series" class="sidebar-link ${if (currentPage == "series") "active" else ""}">
+                    <i class="ri-stack-line" style="font-size:1rem; width:1rem; text-align:center;"></i>
+                    ${i18n.translate("nav.series")}
+                </a>
                 <a href="/analytics" class="sidebar-link ${if (currentPage == "analytics") "active" else ""}">
                     <i class="ri-bar-chart-line" style="font-size:1rem; width:1rem; text-align:center;"></i>
                     ${i18n.translate("nav.analytics")}
