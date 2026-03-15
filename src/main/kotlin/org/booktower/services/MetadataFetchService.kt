@@ -14,7 +14,7 @@ import java.time.Duration
 private val logger = LoggerFactory.getLogger("booktower.MetadataFetchService")
 private val mapper = ObjectMapper()
 
-class MetadataFetchService {
+open class MetadataFetchService {
 
     private val http = HttpClient.newBuilder()
         .connectTimeout(Duration.ofSeconds(8))
@@ -25,7 +25,7 @@ class MetadataFetchService {
      * Searches Open Library for a book by title and/or author and returns the best match.
      * Returns null on network error or no results.
      */
-    fun fetchMetadata(title: String, author: String?): FetchedMetadata? {
+    open fun fetchMetadata(title: String, author: String?): FetchedMetadata? {
         return try {
             val q = buildQuery(title, author)
             val url = "https://openlibrary.org/search.json?$q&limit=1&fields=title,author_name,description,isbn,publisher,first_publish_year,cover_i"

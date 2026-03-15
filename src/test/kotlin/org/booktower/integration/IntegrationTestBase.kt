@@ -43,7 +43,7 @@ abstract class IntegrationTestBase {
         val bookService = BookService(jdbi, analyticsService)
         val adminService = AdminService(jdbi)
         val annotationService = AnnotationService(jdbi)
-        val metadataFetchService = MetadataFetchService()
+        val metadataFetchService = createMetadataFetchService()
         val appHandler = AppHandler(
             authService, libraryService, bookService, bookmarkService,
             userSettingsService, pdfMetadataService, adminService, jwtService, config.storage,
@@ -55,6 +55,8 @@ abstract class IntegrationTestBase {
         )
         app = GlobalErrorFilter().then(appHandler.routes())
     }
+
+    protected open fun createMetadataFetchService(): MetadataFetchService = MetadataFetchService()
 
     protected fun registerAndGetToken(prefix: String = "test"): String {
         val username = "${prefix}_${System.nanoTime()}"

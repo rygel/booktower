@@ -340,7 +340,7 @@ class BookService(private val jdbi: Jdbi, private val analyticsService: Analytic
                 .bind(2, newDesc)
                 .bind(3, meta.isbn ?: book.isbn)
                 .bind(4, meta.publisher ?: book.publisher)
-                .bind(5, meta.publishedDate ?: book.publishedDate)
+                .bind(5, normalizeDate(meta.publishedDate ?: book.publishedDate))
                 .bind(6, Instant.now().toString())
                 .bind(7, bookId.toString())
                 .execute()
@@ -355,6 +355,10 @@ class BookService(private val jdbi: Jdbi, private val analyticsService: Analytic
             publishedDate = meta.publishedDate ?: book.publishedDate,
         )
     }
+
+    /** Converts a year-only string like "1984" to "1984-01-01" for DATE columns. */
+    private fun normalizeDate(date: String?): String? =
+        if (date != null && date.matches(Regex("\\d{4}"))) "$date-01-01" else date
 
     fun deleteBook(
         userId: UUID,
