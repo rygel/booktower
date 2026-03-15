@@ -9,12 +9,14 @@ import org.booktower.filters.JwtAuthFilter
 import org.booktower.filters.RateLimitFilter
 import org.booktower.model.ThemeCatalog
 import org.booktower.services.AdminService
+import org.booktower.services.AnnotationService
 import org.booktower.services.AuthService
 import org.booktower.services.BookmarkService
 import org.booktower.services.BookService
 import org.booktower.services.JwtService
 import org.booktower.services.LibraryService
 import org.booktower.services.PdfMetadataService
+import org.booktower.services.AnalyticsService
 import org.booktower.services.UserSettingsService
 import org.booktower.web.WebContext
 import org.booktower.weblate.WeblateHandler
@@ -39,6 +41,8 @@ class AppHandler(
     private val storageConfig: StorageConfig,
     private val templateRenderer: TemplateRenderer,
     private val weblateHandler: WeblateHandler,
+    private val analyticsService: AnalyticsService,
+    private val annotationService: AnnotationService,
 ) {
     private val authHandler = AuthHandler2(authService, userSettingsService)
     private val libraryHandler = LibraryHandler2(libraryService)
@@ -47,7 +51,7 @@ class AppHandler(
     private val fileHandler = FileHandler(bookService, pdfMetadataService, storageConfig)
     private val settingsHandler = UserSettingsHandler(userSettingsService)
     private val adminHandler = AdminHandler(adminService, templateRenderer)
-    private val pageHandler = PageHandler(jwtService, libraryService, bookService, bookmarkService, templateRenderer)
+    private val pageHandler = PageHandler(jwtService, authService, libraryService, bookService, bookmarkService, userSettingsService, analyticsService, annotationService, templateRenderer)
     private val authFilter = JwtAuthFilter(jwtService)
     private val adminFilter = authFilter.then(AdminFilter())
     private val authRateLimit = RateLimitFilter(maxRequests = 10, windowSeconds = 60)
@@ -66,6 +70,8 @@ class AppHandler(
             "/books/{id}/read" bind Method.GET to pageHandler::reader,
             "/search" bind Method.GET to pageHandler::search,
             "/profile" bind Method.GET to pageHandler::profile,
+            "/analytics" bind Method.GET to pageHandler::analytics,
+            "/ui/preferences/analytics" bind Method.POST to pageHandler::setAnalytics,
             "/admin" bind Method.GET to adminFilter.then(adminHandler::adminPage),
             // Auth (rate-limited: 10 requests per 60 s per IP)
             "/auth/register" bind Method.POST to authRateLimit.then(authHandler::register),
@@ -79,8 +85,15 @@ class AppHandler(
             "/ui/books/{id}" bind Method.DELETE to pageHandler::deleteBook,
             "/ui/books/{id}/meta" bind Method.POST to pageHandler::editBook,
             "/ui/books/{id}/progress" bind Method.POST to pageHandler::updateProgress,
+            "/ui/books/{id}/status" bind Method.POST to pageHandler::setStatus,
+            "/ui/books/{id}/rating" bind Method.POST to pageHandler::setRating,
+            "/ui/books/{id}/tags" bind Method.POST to pageHandler::setTags,
             "/ui/books/{id}/bookmarks" bind Method.POST to pageHandler::createBookmark,
             "/ui/bookmarks/{id}" bind Method.DELETE to pageHandler::deleteBookmark,
+            "/ui/goal" bind Method.POST to pageHandler::setGoal,
+            "/ui/books/{id}/annotations" bind Method.GET to pageHandler::getAnnotations,
+            "/ui/books/{id}/annotations" bind Method.POST to pageHandler::createAnnotation,
+            "/ui/annotations/{id}" bind Method.DELETE to pageHandler::deleteAnnotation,
             // Health
             "/health" bind Method.GET to { Response(Status.OK).header("Content-Type", "application/json").body("""{"status":"ok"}""") },
             // Preferences
@@ -106,6 +119,7 @@ class AppHandler(
             "/api/books/{id}/cover" bind Method.POST to authFilter.then(fileHandler::uploadCover),
             "/api/books/{id}/file" bind Method.GET to authFilter.then(fileHandler::download),
             "/api/auth/change-password" bind Method.POST to authRateLimit.then(authFilter.then(authHandler::changePassword)),
+            "/api/auth/change-email" bind Method.POST to authRateLimit.then(authFilter.then(authHandler::changeEmail)),
             "/api/settings" bind Method.GET to authFilter.then(settingsHandler::getAll),
             "/api/settings/{key}" bind Method.PUT to authFilter.then(settingsHandler::set),
             "/api/settings/{key}" bind Method.DELETE to authFilter.then(settingsHandler::delete),

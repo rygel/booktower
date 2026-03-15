@@ -1,5 +1,6 @@
 @import org.booktower.i18n.I18nService
 @import org.booktower.models.BookDto
+@import org.booktower.models.ReadStatus
 @param book: BookDto
 @param i18n: I18nService
 
@@ -17,6 +18,37 @@
             <h3 style="font-size:0.8rem; font-weight:600; color:var(--bt-text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${book.title}</h3>
             @if(book.author != null)
                 <p style="font-size:0.7rem; color:var(--bt-subtle); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:0.125rem;">${book.author}</p>
+            @endif
+            @if(book.status != null)
+                <div class="book-status-badge" style="margin-top:0.375rem;">
+                    @if(book.status == "WANT_TO_READ")
+                        <span style="font-size:0.6rem; font-weight:600; padding:0.15rem 0.5rem; border-radius:9999px; background:var(--bt-icon-bg); color:var(--bt-icon-text); display:inline-flex; align-items:center; gap:0.25rem;">
+                            <i class="ri-bookmark-line"></i> ${i18n.translate("status.want.to.read")}
+                        </span>
+                    @elseif(book.status == "READING")
+                        <span style="font-size:0.6rem; font-weight:600; padding:0.15rem 0.5rem; border-radius:9999px; background:var(--bt-icon-bg); color:var(--bt-accent-dim); display:inline-flex; align-items:center; gap:0.25rem;">
+                            <i class="ri-book-open-line"></i> ${i18n.translate("status.reading")}
+                        </span>
+                    @elseif(book.status == "FINISHED")
+                        <span style="font-size:0.6rem; font-weight:600; padding:0.15rem 0.5rem; border-radius:9999px; background:var(--bt-icon-bg); color:var(--bt-subtle); display:inline-flex; align-items:center; gap:0.25rem;">
+                            <i class="ri-checkbox-circle-line"></i> ${i18n.translate("status.finished")}
+                        </span>
+                    @endif
+                </div>
+            @endif
+            @if(book.rating != null)
+                <div class="book-rating-badge" style="margin-top:0.25rem; font-size:0.65rem; color:var(--bt-accent);">
+                    @for(s in 1..book.rating!!)
+                        &#9733;
+                    @endfor
+                </div>
+            @endif
+            @if(book.tags.isNotEmpty())
+                <div style="margin-top:0.25rem; display:flex; flex-wrap:wrap; gap:0.2rem;">
+                    @for(tag in book.tags.take(2))
+                        <span style="font-size:0.6rem; padding:0.1rem 0.35rem; background:var(--bt-icon-bg); color:var(--bt-accent-dim); border-radius:9999px;">${tag}</span>
+                    @endfor
+                </div>
             @endif
             @if(book.progress != null && book.progress!!.percentage != null)
                 <div style="margin-top:0.625rem;">

@@ -81,8 +81,21 @@ data class Book(
     val updatedAt: Instant,
 )
 
+enum class BookSortOrder(val sql: String, val label: String) {
+    TITLE("b.title", "sort.title"),
+    ADDED("b.added_at DESC, b.title", "sort.added"),
+    AUTHOR("COALESCE(b.author, ''), b.title", "sort.author"),
+}
+
+enum class ReadStatus(val label: String) {
+    WANT_TO_READ("status.want.to.read"),
+    READING("status.reading"),
+    FINISHED("status.finished"),
+}
+
 data class BookDto(
     val id: String,
+    val libraryId: String,
     val title: String,
     val author: String?,
     val description: String?,
@@ -91,6 +104,9 @@ data class BookDto(
     val fileSize: Long,
     val addedAt: String,
     val progress: ReadingProgressDto?,
+    val status: String? = null,
+    val rating: Int? = null,
+    val tags: List<String> = emptyList(),
 )
 
 class BookListDto(
@@ -120,6 +136,11 @@ data class UpdateBookRequest(
 data class ChangePasswordRequest(
     val currentPassword: String,
     val newPassword: String,
+)
+
+data class ChangeEmailRequest(
+    val currentPassword: String,
+    val newEmail: String,
 )
 
 data class ReadingProgress(
@@ -208,4 +229,13 @@ data class UserAdminDto(
 
 data class SetAdminRequest(
     val isAdmin: Boolean,
+)
+
+data class AnnotationDto(
+    val id: String,
+    val bookId: String,
+    val page: Int,
+    val selectedText: String,
+    val color: String,
+    val createdAt: String,
 )

@@ -3,6 +3,8 @@ package org.booktower.handlers
 import org.booktower.TestFixture
 import org.booktower.config.WeblateConfig
 import org.booktower.services.AdminService
+import org.booktower.services.AnalyticsService
+import org.booktower.services.AnnotationService
 import org.booktower.services.AuthService
 import org.booktower.services.BookmarkService
 import org.booktower.services.PdfMetadataService
@@ -32,15 +34,17 @@ class HtmxHandlerTest {
         val authService = AuthService(jdbi, jwtService)
         val pdfMetadataService = PdfMetadataService(jdbi, config.storage.coversPath)
         val libraryService = LibraryService(jdbi, pdfMetadataService)
-        val bookService = BookService(jdbi)
-        val bookmarkService = BookmarkService(jdbi)
         val userSettingsService = UserSettingsService(jdbi)
+        val analyticsService = AnalyticsService(jdbi, userSettingsService)
+        val bookService = BookService(jdbi, analyticsService)
+        val bookmarkService = BookmarkService(jdbi)
         val adminService = AdminService(jdbi)
+        val annotationService = AnnotationService(jdbi)
         val weblateHandler = WeblateHandler(WeblateConfig("", "", "", false))
         appHandler = AppHandler(
             authService, libraryService, bookService, bookmarkService,
             userSettingsService, pdfMetadataService, adminService, jwtService,
-            config.storage, TestFixture.templateRenderer, weblateHandler,
+            config.storage, TestFixture.templateRenderer, weblateHandler, analyticsService, annotationService,
         )
     }
 

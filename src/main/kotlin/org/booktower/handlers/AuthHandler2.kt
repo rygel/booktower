@@ -3,6 +3,7 @@ package org.booktower.handlers
 import org.booktower.config.Json
 import org.booktower.filters.AuthenticatedUser
 import org.booktower.model.ThemeCatalog
+import org.booktower.models.ChangeEmailRequest
 import org.booktower.models.ChangePasswordRequest
 import org.booktower.models.CreateUserRequest
 import org.booktower.models.ErrorResponse
@@ -208,6 +209,63 @@ class AuthHandler2(
             )
         } catch (e: Exception) {
             logger.error("Error during password change", e)
+            Response(Status.INTERNAL_SERVER_ERROR)
+                .header("Content-Type", "application/json")
+                .body(Json.mapper.writeValueAsString(ErrorResponse("INTERNAL_ERROR", "An unexpected error occurred")))
+        }
+    }
+
+    fun changeEmail(req: Request): Response {
+        val userId: UUID = AuthenticatedUser.from(req)
+        return try {
+            val body = req.bodyString()
+            if (body.isBlank()) {
+                return Response(Status.BAD_REQUEST)
+                    .header("Content-Type", "application/json")
+                    .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Request body is required")))
+            }
+            val changeRequest = Json.mapper.readValue(body, ChangeEmailRequest::class.java)
+
+            if (changeRequest.currentPassword.isBlank()) {
+                return Response(Status.BAD_REQUEST)
+                    .header("Content-Type", "application/json")
+                    .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Current password is required")))
+            }
+            if (changeRequest.newEmail.isBlank()) {
+                return Response(Status.BAD_REQUEST)
+                    .header("Content-Type", "application/json")
+                    .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "New email is required")))
+            }
+
+            val result = authService.changeEmail(
+                userId,
+                changeRequest.currentPassword,
+                changeRequest.newEmail,
+            )
+
+            result.fold(
+                onSuccess = {
+                    logger.info("Email changed for user $userId")
+                    Response(Status.OK)
+                        .header("Content-Type", "application/json")
+                        .body(Json.mapper.writeValueAsString(SuccessResponse("Email updated successfully")))
+                },
+                onFailure = { error ->
+                    logger.warn("Email change failed for user $userId: ${error.message}")
+                    when (error) {
+                        is IllegalArgumentException ->
+                            Response(Status.BAD_REQUEST)
+                                .header("Content-Type", "application/json")
+                                .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", error.message ?: "Invalid request")))
+                        else ->
+                            Response(Status.INTERNAL_SERVER_ERROR)
+                                .header("Content-Type", "application/json")
+                                .body(Json.mapper.writeValueAsString(ErrorResponse("INTERNAL_ERROR", "An unexpected error occurred")))
+                    }
+                },
+            )
+        } catch (e: Exception) {
+            logger.error("Error during email change", e)
             Response(Status.INTERNAL_SERVER_ERROR)
                 .header("Content-Type", "application/json")
                 .body(Json.mapper.writeValueAsString(ErrorResponse("INTERNAL_ERROR", "An unexpected error occurred")))

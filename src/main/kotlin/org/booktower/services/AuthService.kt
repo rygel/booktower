@@ -135,6 +135,42 @@ class AuthService(
         return Result.success(Unit)
     }
 
+    fun changeEmail(userId: UUID, currentPassword: String, newEmail: String): Result<Unit> {
+        val user = getUserById(userId)
+            ?: return Result.failure(IllegalArgumentException("User not found"))
+
+        if (!BCrypt.checkpw(currentPassword, user.passwordHash)) {
+            return Result.failure(IllegalArgumentException("Current password is incorrect"))
+        }
+
+        val trimmedEmail = newEmail.trim().lowercase()
+        if (!trimmedEmail.contains("@") || trimmedEmail.length > 100) {
+            return Result.failure(IllegalArgumentException("Invalid email address"))
+        }
+
+        val existing = jdbi.withHandle<String?, Exception> { handle ->
+            handle.createQuery("SELECT id FROM users WHERE email = ? AND id != ?")
+                .bind(0, trimmedEmail)
+                .bind(1, userId.toString())
+                .mapTo(String::class.java)
+                .firstOrNull()
+        }
+        if (existing != null) {
+            return Result.failure(IllegalArgumentException("Email already in use"))
+        }
+
+        jdbi.useHandle<Exception> { handle ->
+            handle.createUpdate("UPDATE users SET email = ?, updated_at = ? WHERE id = ?")
+                .bind(0, trimmedEmail)
+                .bind(1, Instant.now().toString())
+                .bind(2, userId.toString())
+                .execute()
+        }
+
+        logger.info("Email changed for user: ${user.username}")
+        return Result.success(Unit)
+    }
+
     fun getUserById(userId: UUID): User? {
         return jdbi.withHandle<User?, Exception> { handle ->
             handle.createQuery("SELECT * FROM users WHERE id = ?")

@@ -169,6 +169,7 @@ class LibraryService(
 
                     val book = BookDto(
                         id = bookId.toString(),
+                        libraryId = library.id,
                         title = title,
                         author = null,
                         description = null,

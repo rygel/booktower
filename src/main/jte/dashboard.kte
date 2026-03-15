@@ -5,6 +5,7 @@
 @param username: String?
 @param libraries: List<LibraryDto>
 @param recentBooks: List<BookDto>
+@param recentlyAddedBooks: List<BookDto>
 @param libraryCount: Int
 @param totalBooks: Int
 @param themeCss: String
@@ -13,6 +14,9 @@
 @param themes: List<ThemeDefinition>
 @param i18n: I18nService
 @param isAdmin: Boolean = false
+@param goal: Int = 0
+@param booksFinishedThisYear: Int = 0
+@param year: Int = 2026
 
 @template.components.layout(title="${i18n.translate("page.dashboard.title")} - BookTower", username=username, currentPage="home",
     themeCss=themeCss, currentTheme=currentTheme, lang=lang, themes=themes, i18n=i18n, searchQuery="", isAdmin=isAdmin, content = @`
@@ -46,6 +50,18 @@
                 <p style="font-size:1.75rem; font-weight:700; color:var(--bt-text); line-height:1;">${recentBooks.size}</p>
                 <p style="font-size:0.75rem; color:var(--bt-subtle); margin-top:0.25rem;">${i18n.translate("page.dashboard.stat.in.progress")}</p>
             </div>
+        </div>
+        <!-- Reading Goal card -->
+        <div class="card" style="padding:1rem; text-align:center;">
+            <p style="font-size:2rem; font-weight:700; color:var(--bt-accent);">${booksFinishedThisYear} / ${if (goal > 0) goal.toString() else "—"}</p>
+            <p style="font-size:0.75rem; color:var(--bt-subtle); margin-top:0.25rem;">${i18n.translate("page.dashboard.stat.goal")}</p>
+            @if(goal > 0)
+                <div style="margin-top:0.5rem; height:0.25rem; background:var(--bt-border); border-radius:9999px; overflow:hidden;">
+                    <div style="height:100%; background:var(--bt-accent); border-radius:9999px; width:${if (booksFinishedThisYear >= goal) 100 else (booksFinishedThisYear * 100 / goal)}%;"></div>
+                </div>
+            @endif
+            <button onclick="document.getElementById('goal-modal').style.display='flex'"
+                style="margin-top:0.625rem; font-size:0.7rem; color:var(--bt-accent-dim); background:transparent; border:none; cursor:pointer; text-decoration:underline;">${i18n.translate("action.set.goal")}</button>
         </div>
     </div>
 
@@ -93,6 +109,42 @@
         </section>
     @endif
 
+    <!-- Recently Added -->
+    @if(!recentlyAddedBooks.isEmpty())
+        <section style="margin-bottom:2rem;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
+                <h2 style="font-size:1rem; font-weight:700; color:var(--bt-text); display:flex; align-items:center; gap:0.5rem;">
+                    <i class="ri-time-line" style="color:var(--bt-accent-dim);"></i>
+                    ${i18n.translate("page.dashboard.recently.added")}
+                </h2>
+                <a href="/libraries" style="font-size:0.8rem; color:var(--bt-accent-dim); text-decoration:none;"
+                    onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">
+                    ${i18n.translate("page.dashboard.all.libraries")} <i class="ri-arrow-right-s-line"></i>
+                </a>
+            </div>
+            <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:1rem;">
+                @for(book in recentlyAddedBooks)
+                    <a href="/books/${book.id}" style="text-decoration:none; background:var(--bt-surface); border:1px solid var(--bt-border); border-radius:0.75rem; display:flex; flex-direction:column; transition:border-color 0.15s;"
+                        onmouseover="this.style.borderColor='var(--bt-accent)'" onmouseout="this.style.borderColor='var(--bt-border)'">
+                        <div style="height:10rem; background:var(--bt-bg); border-radius:0.75rem 0.75rem 0 0; overflow:hidden; display:flex; align-items:center; justify-content:center;">
+                            @if(book.coverUrl != null)
+                                <img src="${book.coverUrl}" alt="${book.title}" style="width:100%; height:100%; object-fit:cover;">
+                            @else
+                                <i class="ri-book-2-line" style="font-size:2.5rem; color:var(--bt-border);"></i>
+                            @endif
+                        </div>
+                        <div style="padding:0.625rem 0.75rem 0.75rem;">
+                            <p style="font-size:0.75rem; font-weight:600; color:var(--bt-text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${book.title}</p>
+                            @if(book.author != null)
+                                <p style="font-size:0.65rem; color:var(--bt-subtle); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:0.125rem;">${book.author}</p>
+                            @endif
+                        </div>
+                    </a>
+                @endfor
+            </div>
+        </section>
+    @endif
+
     <!-- Libraries quick access -->
     @if(!libraries.isEmpty())
         <section>
@@ -132,6 +184,27 @@
             </a>
         </div>
     @endif
+
+
+    <!-- Reading Goal Modal -->
+    <div id="goal-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); align-items:center; justify-content:center; z-index:50;"
+         onclick="if(event.target===this)this.style.display='none'">
+        <div class="modal-panel" style="padding:1.5rem; width:100%; max-width:22rem; border-radius:0.75rem; border:1px solid var(--bt-border);" onclick="event.stopPropagation()">
+            <h2 style="font-size:1rem; font-weight:700; color:var(--bt-text); margin-bottom:1rem;">${i18n.translate("page.dashboard.goal.title")}</h2>
+            <form hx-post="/ui/goal" hx-swap="none"
+                  hx-on:htmx:after-request="if(event.detail.successful){document.getElementById('goal-modal').style.display='none';window.location.reload()}"
+                  style="display:flex; flex-direction:column; gap:1rem;">
+                <input type="number" name="goal" min="0" max="999" value="${goal}"
+                    style="width:100%; border-radius:0.5rem; border:1px solid var(--bt-border-input); padding:0.5rem 0.75rem; font-size:0.875rem; background:var(--bt-bg); color:var(--bt-text); box-sizing:border-box;"
+                    placeholder="${i18n.translate("placeholder.goal")}">
+                <div style="display:flex; gap:0.75rem;">
+                    <button type="submit" class="btn-primary" style="flex:1;">${i18n.translate("action.save")}</button>
+                    <button type="button" class="btn-secondary" style="flex:1;"
+                        onclick="document.getElementById('goal-modal').style.display='none'">${i18n.translate("action.cancel")}</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
 </div>
 `)

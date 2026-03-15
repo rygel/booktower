@@ -1,6 +1,10 @@
 @import org.booktower.i18n.I18nService
 @import org.booktower.model.ThemeDefinition
 @param username: String?
+@param userEmail: String
+@param userUsername: String
+@param memberSince: String
+@param analyticsEnabled: Boolean = false
 @param themeCss: String
 @param currentTheme: String
 @param lang: String
@@ -15,6 +19,66 @@
         <i class="ri-user-settings-line" style="color:var(--bt-accent-dim);"></i>
         ${i18n.translate("page.profile.title")}
     </h1>
+
+    <!-- Account Information -->
+    <div class="card" style="padding:1.5rem; margin-bottom:1.25rem;">
+        <h2 style="font-size:0.9rem; font-weight:600; color:var(--bt-text-dim); margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem;">
+            <i class="ri-user-line" style="color:var(--bt-accent-dim);"></i>
+            ${i18n.translate("page.profile.account.info")}
+        </h2>
+        <dl style="display:grid; grid-template-columns:auto 1fr; gap:0.5rem 1.5rem; font-size:0.85rem;">
+            <dt style="color:var(--bt-subtle); font-weight:500;">${i18n.translate("page.profile.label.username")}</dt>
+            <dd style="color:var(--bt-text); margin:0;">${userUsername}</dd>
+            <dt style="color:var(--bt-subtle); font-weight:500;">${i18n.translate("page.profile.label.email")}</dt>
+            <dd style="color:var(--bt-text); margin:0;">${userEmail}</dd>
+            <dt style="color:var(--bt-subtle); font-weight:500;">${i18n.translate("page.profile.label.member.since")}</dt>
+            <dd style="color:var(--bt-text); margin:0;">${memberSince}</dd>
+        </dl>
+    </div>
+
+    <!-- Reading Analytics toggle -->
+    <div class="card" style="padding:1.5rem; margin-bottom:1.25rem;">
+        <h2 style="font-size:0.9rem; font-weight:600; color:var(--bt-text-dim); margin-bottom:0.5rem; display:flex; align-items:center; gap:0.5rem;">
+            <i class="ri-bar-chart-2-line" style="color:var(--bt-accent-dim);"></i>
+            ${i18n.translate("page.profile.analytics")}
+        </h2>
+        <p style="font-size:0.8rem; color:var(--bt-subtle); margin-bottom:0.875rem;">${i18n.translate("page.profile.analytics.hint")}</p>
+        <label style="display:flex; align-items:center; gap:0.625rem; cursor:pointer; user-select:none;">
+            <input type="checkbox" id="analytics-toggle" checked="${analyticsEnabled}"
+                   onchange="toggleAnalytics(this.checked)"
+                   style="width:1rem; height:1rem; cursor:pointer;">
+            <span style="font-size:0.875rem; color:var(--bt-muted);">${i18n.translate("page.profile.analytics.enable")}</span>
+        </label>
+        <div id="analytics-link-row" style="margin-top:0.75rem; display:${if (analyticsEnabled) "block" else "none"};">
+            <a href="/analytics" style="font-size:0.8rem; color:var(--bt-accent-dim); text-decoration:none; display:inline-flex; align-items:center; gap:0.375rem;"
+               onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">
+                <i class="ri-bar-chart-line"></i> ${i18n.translate("page.profile.analytics.view")}
+            </a>
+        </div>
+    </div>
+
+    <!-- Change Email -->
+    <div class="card" style="padding:1.5rem; margin-bottom:1.25rem;">
+        <h2 style="font-size:0.9rem; font-weight:600; color:var(--bt-text-dim); margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem;">
+            <i class="ri-mail-settings-line" style="color:var(--bt-accent-dim);"></i>
+            ${i18n.translate("page.profile.change.email")}
+        </h2>
+        <form id="email-form" onsubmit="changeEmail(event)" style="display:flex; flex-direction:column; gap:0.75rem;">
+            <div>
+                <label style="display:block; font-size:0.8rem; color:var(--bt-text-dim); margin-bottom:0.375rem;">${i18n.translate("field.new.email")}</label>
+                <input type="email" id="new-email" name="newEmail" required
+                    style="width:100%; border-radius:0.5rem; border:1px solid var(--bt-border-input); padding:0.5rem 0.75rem; font-size:0.875rem; background:var(--bt-bg); color:var(--bt-text);">
+            </div>
+            <div>
+                <label style="display:block; font-size:0.8rem; color:var(--bt-text-dim); margin-bottom:0.375rem;">${i18n.translate("field.current.password")}</label>
+                <input type="password" id="email-current-password" name="currentPassword" required
+                    style="width:100%; border-radius:0.5rem; border:1px solid var(--bt-border-input); padding:0.5rem 0.75rem; font-size:0.875rem; background:var(--bt-bg); color:var(--bt-text);">
+            </div>
+            <button type="submit" class="btn-primary" style="align-self:flex-start; display:inline-flex; align-items:center; gap:0.375rem;">
+                <i class="ri-save-line"></i> ${i18n.translate("action.save")}
+            </button>
+        </form>
+    </div>
 
     <!-- Change Password -->
     <div class="card" style="padding:1.5rem;">
@@ -55,8 +119,38 @@
 </div>
 
 <script>
+async function toggleAnalytics(enabled) {
+    await fetch('/ui/preferences/analytics', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: 'enabled=' + enabled
+    });
+    const row = document.getElementById('analytics-link-row');
+    if (row) row.style.display = enabled ? 'block' : 'none';
+}
 function toast(msg, type) {
     document.dispatchEvent(new CustomEvent('showToast', {detail: {message: msg, type: type || 'info'}}));
+}
+async function changeEmail(event) {
+    event.preventDefault();
+    const newEmail = document.getElementById('new-email').value;
+    const currentPw = document.getElementById('email-current-password').value;
+    try {
+        const resp = await fetch('/api/auth/change-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ currentPassword: currentPw, newEmail: newEmail })
+        });
+        if (resp.ok) {
+            toast('${i18n.translate("msg.email.changed")}', 'success');
+            document.getElementById('email-form').reset();
+        } else {
+            const data = await resp.json().catch(() => ({}));
+            toast(data.message || '${i18n.translate("msg.error")}', 'error');
+        }
+    } catch (e) {
+        toast('${i18n.translate("msg.error")}', 'error');
+    }
 }
 async function changePassword(event) {
     event.preventDefault();

@@ -1,6 +1,7 @@
 package org.booktower.services
 
 import org.booktower.models.*
+import org.booktower.models.ReadStatus
 import org.jdbi.v3.core.Jdbi
 import org.jdbi.v3.core.result.RowView
 import org.slf4j.LoggerFactory
@@ -9,7 +10,7 @@ import java.util.UUID
 
 private val logger = LoggerFactory.getLogger("booktower.BookService")
 
-class BookService(private val jdbi: Jdbi) {
+class BookService(private val jdbi: Jdbi, private val analyticsService: AnalyticsService? = null) {
     companion object {
         private const val MAX_PAGE_SIZE = 100
         private const val PERCENTAGE_MULTIPLIER = 100.0
@@ -19,64 +20,105 @@ class BookService(private val jdbi: Jdbi) {
         libraryId: String?,
         page: Int = 1,
         pageSize: Int = 20,
+        sortBy: BookSortOrder = BookSortOrder.TITLE,
+        statusFilter: String? = null,
+        tagFilter: String? = null,
     ): BookListDto {
         val safePage = page.coerceAtLeast(1)
         val safePageSize = pageSize.coerceIn(1, MAX_PAGE_SIZE)
         val offset = (safePage - 1) * safePageSize
+        val orderClause = sortBy.sql // whitelisted from enum, safe to interpolate
+        val statusClause = if (statusFilter != null) " AND bs.status = ?" else ""
+        val tagClause = if (tagFilter != null) " AND EXISTS (SELECT 1 FROM book_tags bt WHERE bt.book_id = b.id AND bt.user_id = ? AND bt.tag = ?)" else ""
 
         val books =
             if (libraryId != null) {
                 jdbi.withHandle<List<BookDto>, Exception> { handle ->
-                    handle.createQuery(
+                    val q = handle.createQuery(
                         """
-                        SELECT b.* FROM books b
+                        SELECT b.*, bs.status AS book_status_value, br.rating AS book_rating_value FROM books b
                         INNER JOIN libraries l ON b.library_id = l.id
-                        WHERE b.library_id = ? AND l.user_id = ?
-                        ORDER BY b.title LIMIT ? OFFSET ?
+                        LEFT JOIN book_status bs ON bs.book_id = b.id AND bs.user_id = ?
+                        LEFT JOIN book_ratings br ON br.book_id = b.id AND br.user_id = ?
+                        WHERE b.library_id = ? AND l.user_id = ?${statusClause}${tagClause}
+                        ORDER BY $orderClause LIMIT ? OFFSET ?
                         """,
                     )
-                        .bind(0, libraryId)
+                        .bind(0, userId.toString())
                         .bind(1, userId.toString())
-                        .bind(2, safePageSize)
-                        .bind(3, offset)
-                        .map { row -> mapBook(row) }.list()
+                        .bind(2, libraryId)
+                        .bind(3, userId.toString())
+                    var idx = 4
+                    if (statusFilter != null) { q.bind(idx++, statusFilter) }
+                    if (tagFilter != null) { q.bind(idx++, userId.toString()); q.bind(idx++, tagFilter) }
+                    q.bind(idx++, safePageSize)
+                    q.bind(idx, offset)
+                    q.map { row -> mapBook(row) }.list()
                 }
             } else {
                 jdbi.withHandle<List<BookDto>, Exception> { handle ->
-                    handle.createQuery(
+                    val q = handle.createQuery(
                         """
-                    SELECT b.* FROM books b
+                    SELECT b.*, bs.status AS book_status_value, br.rating AS book_rating_value FROM books b
                     INNER JOIN libraries l ON b.library_id = l.id
-                    WHERE l.user_id = ?
-                    ORDER BY b.title LIMIT ? OFFSET ?
+                    LEFT JOIN book_status bs ON bs.book_id = b.id AND bs.user_id = ?
+                    LEFT JOIN book_ratings br ON br.book_id = b.id AND br.user_id = ?
+                    WHERE l.user_id = ?${statusClause}${tagClause}
+                    ORDER BY $orderClause LIMIT ? OFFSET ?
                 """,
                     )
                         .bind(0, userId.toString())
-                        .bind(1, safePageSize)
-                        .bind(2, offset)
-                        .map { row -> mapBook(row) }.list()
+                        .bind(1, userId.toString())
+                        .bind(2, userId.toString())
+                    var idx = 3
+                    if (statusFilter != null) { q.bind(idx++, statusFilter) }
+                    if (tagFilter != null) { q.bind(idx++, userId.toString()); q.bind(idx++, tagFilter) }
+                    q.bind(idx++, safePageSize)
+                    q.bind(idx, offset)
+                    q.map { row -> mapBook(row) }.list()
                 }
             }
+
+        val tagMap = fetchTagsForBooks(userId, books.map { it.id })
+        val enriched = books.map { it.copy(tags = tagMap[it.id] ?: emptyList()) }
 
         val total =
             if (libraryId != null) {
                 jdbi.withHandle<Int, Exception> { handle ->
-                    handle.createQuery(
-                        "SELECT COUNT(*) FROM books b INNER JOIN libraries l ON b.library_id = l.id WHERE b.library_id = ? AND l.user_id = ?",
+                    val q = handle.createQuery(
+                        """
+                        SELECT COUNT(*) FROM books b INNER JOIN libraries l ON b.library_id = l.id
+                        LEFT JOIN book_status bs ON bs.book_id = b.id AND bs.user_id = ?
+                        WHERE b.library_id = ? AND l.user_id = ?${statusClause}${tagClause}
+                        """,
                     )
-                        .bind(0, libraryId)
-                        .bind(1, userId.toString())
-                        .mapTo(Int::class.java).first() ?: 0
+                        .bind(0, userId.toString())
+                        .bind(1, libraryId)
+                        .bind(2, userId.toString())
+                    var idx = 3
+                    if (statusFilter != null) { q.bind(idx++, statusFilter) }
+                    if (tagFilter != null) { q.bind(idx++, userId.toString()); q.bind(idx++, tagFilter) }
+                    q.mapTo(Int::class.java).first() ?: 0
                 }
             } else {
                 jdbi.withHandle<Int, Exception> { handle ->
-                    handle.createQuery("SELECT COUNT(*) FROM books b INNER JOIN libraries l ON b.library_id = l.id WHERE l.user_id = ?")
+                    val q = handle.createQuery(
+                        """
+                        SELECT COUNT(*) FROM books b INNER JOIN libraries l ON b.library_id = l.id
+                        LEFT JOIN book_status bs ON bs.book_id = b.id AND bs.user_id = ?
+                        WHERE l.user_id = ?${statusClause}${tagClause}
+                        """,
+                    )
                         .bind(0, userId.toString())
-                        .mapTo(Int::class.java).first() ?: 0
+                        .bind(1, userId.toString())
+                    var idx = 2
+                    if (statusFilter != null) { q.bind(idx++, statusFilter) }
+                    if (tagFilter != null) { q.bind(idx++, userId.toString()); q.bind(idx++, tagFilter) }
+                    q.mapTo(Int::class.java).first() ?: 0
                 }
             }
 
-        return BookListDto(books, total, safePage, safePageSize)
+        return BookListDto(enriched, total, safePage, safePageSize)
     }
 
     fun searchBooks(
@@ -93,53 +135,65 @@ class BookService(private val jdbi: Jdbi) {
         val books = jdbi.withHandle<List<BookDto>, Exception> { handle ->
             handle.createQuery(
                 """
-                SELECT b.* FROM books b
+                SELECT b.*, bs.status AS book_status_value, br.rating AS book_rating_value FROM books b
                 INNER JOIN libraries l ON b.library_id = l.id
+                LEFT JOIN book_status bs ON bs.book_id = b.id AND bs.user_id = ?
+                LEFT JOIN book_ratings br ON br.book_id = b.id AND br.user_id = ?
                 WHERE l.user_id = ?
                   AND (LOWER(b.title) LIKE ? OR LOWER(b.author) LIKE ? OR LOWER(b.description) LIKE ?)
                 ORDER BY b.title LIMIT ? OFFSET ?
                 """,
             )
                 .bind(0, userId.toString())
-                .bind(1, likeQuery)
-                .bind(2, likeQuery)
+                .bind(1, userId.toString())
+                .bind(2, userId.toString())
                 .bind(3, likeQuery)
-                .bind(4, safePageSize)
-                .bind(5, offset)
+                .bind(4, likeQuery)
+                .bind(5, likeQuery)
+                .bind(6, safePageSize)
+                .bind(7, offset)
                 .map { row -> mapBook(row) }.list()
         }
+
+        val tagMap = fetchTagsForBooks(userId, books.map { it.id })
+        val enriched = books.map { it.copy(tags = tagMap[it.id] ?: emptyList()) }
 
         val total = jdbi.withHandle<Int, Exception> { handle ->
             handle.createQuery(
                 """
                 SELECT COUNT(*) FROM books b
                 INNER JOIN libraries l ON b.library_id = l.id
+                LEFT JOIN book_status bs ON bs.book_id = b.id AND bs.user_id = ?
                 WHERE l.user_id = ?
                   AND (LOWER(b.title) LIKE ? OR LOWER(b.author) LIKE ? OR LOWER(b.description) LIKE ?)
                 """,
             )
                 .bind(0, userId.toString())
-                .bind(1, likeQuery)
+                .bind(1, userId.toString())
                 .bind(2, likeQuery)
                 .bind(3, likeQuery)
+                .bind(4, likeQuery)
                 .mapTo(java.lang.Integer::class.java).first()?.toInt() ?: 0
         }
 
-        return BookListDto(books, total, safePage, safePageSize)
+        return BookListDto(enriched, total, safePage, safePageSize)
     }
 
     fun getBook(
         userId: UUID,
         bookId: UUID,
     ): BookDto? {
-        return jdbi.withHandle<BookDto?, Exception> { handle ->
+        val book = jdbi.withHandle<BookDto?, Exception> { handle ->
             handle.createQuery(
                 """
                 SELECT b.*, rp.current_page AS rp_current_page, rp.total_pages AS rp_total_pages,
-                       rp.percentage AS rp_percentage, rp.last_read_at AS rp_last_read_at
+                       rp.percentage AS rp_percentage, rp.last_read_at AS rp_last_read_at,
+                       bs.status AS book_status_value, br.rating AS book_rating_value
                 FROM books b
                 JOIN libraries l ON b.library_id = l.id
                 LEFT JOIN reading_progress rp ON rp.book_id = b.id AND rp.user_id = :userId
+                LEFT JOIN book_status bs ON bs.book_id = b.id AND bs.user_id = :userId
+                LEFT JOIN book_ratings br ON br.book_id = b.id AND br.user_id = :userId
                 WHERE b.id = :bookId AND l.user_id = :userId
                 """,
             )
@@ -166,6 +220,8 @@ class BookService(private val jdbi: Jdbi) {
                     } else book
                 }.firstOrNull()
         }
+        val tags = if (book != null) fetchTagsForBooks(userId, listOf(book.id))[book.id] ?: emptyList() else emptyList()
+        return book?.copy(tags = tags)
     }
 
     fun getRecentBooks(
@@ -227,6 +283,7 @@ class BookService(private val jdbi: Jdbi) {
         return Result.success(
             BookDto(
                 id = bookId.toString(),
+                libraryId = libId.toString(),
                 title = request.title,
                 author = request.author,
                 description = request.description,
@@ -361,6 +418,8 @@ class BookService(private val jdbi: Jdbi) {
                     }.firstOrNull()
             }
 
+        val previousPage = existing?.currentPage ?: 0
+
         if (existing != null) {
             jdbi.useHandle<Exception> { handle ->
                 handle.createUpdate(
@@ -394,8 +453,28 @@ class BookService(private val jdbi: Jdbi) {
             }
         }
 
+        val delta = maxOf(0, request.currentPage - previousPage)
+        analyticsService?.recordProgress(userId, bookId, delta)
+
         logger.info("Progress updated for book ${book.title}: page ${request.currentPage}")
         return ReadingProgressDto(request.currentPage, totalPages.takeIf { it > 0 }, percentage, now.toString())
+    }
+
+    fun getRecentlyAddedBooks(userId: UUID, limit: Int = 6): List<BookDto> {
+        return jdbi.withHandle<List<BookDto>, Exception> { handle ->
+            handle.createQuery(
+                """
+                SELECT b.* FROM books b
+                INNER JOIN libraries l ON b.library_id = l.id
+                WHERE l.user_id = ?
+                ORDER BY b.added_at DESC, b.title
+                LIMIT ?
+                """,
+            )
+                .bind(0, userId.toString())
+                .bind(1, limit)
+                .map { row -> mapBook(row) }.list()
+        }
     }
 
     private fun mapBook(row: RowView): BookDto {
@@ -404,8 +483,15 @@ class BookService(private val jdbi: Jdbi) {
         } catch (e: Exception) {
             null
         }
+        val status: String? = try {
+            row.getColumn("book_status_value", String::class.java)
+        } catch (_: Exception) { null }
+        val rating: Int? = try {
+            row.getColumn("book_rating_value", java.lang.Integer::class.java)?.toInt()
+        } catch (_: Exception) { null }
         return BookDto(
             id = row.getColumn("id", String::class.java),
+            libraryId = row.getColumn("library_id", String::class.java) ?: "",
             title = row.getColumn("title", String::class.java),
             author = row.getColumn("author", String::class.java),
             description = row.getColumn("description", String::class.java),
@@ -414,6 +500,136 @@ class BookService(private val jdbi: Jdbi) {
             fileSize = row.getColumn("file_size", java.lang.Long::class.java)?.toLong() ?: 0L,
             addedAt = row.getColumn("added_at", String::class.java),
             progress = null,
+            status = status,
+            rating = rating,
         )
+    }
+
+    private fun fetchTagsForBooks(userId: UUID, bookIds: List<String>): Map<String, List<String>> {
+        if (bookIds.isEmpty()) return emptyMap()
+        return jdbi.withHandle<Map<String, List<String>>, Exception> { handle ->
+            val placeholders = bookIds.joinToString(",") { "?" }
+            val q = handle.createQuery(
+                "SELECT book_id, tag FROM book_tags WHERE user_id = ? AND book_id IN ($placeholders) ORDER BY tag"
+            )
+            q.bind(0, userId.toString())
+            bookIds.forEachIndexed { i, id -> q.bind(i + 1, id) }
+            q.map { row ->
+                val bookId = row.getColumn("book_id", String::class.java)
+                val tag = row.getColumn("tag", String::class.java)
+                Pair(bookId, tag)
+            }.list().groupBy({ it.first }, { it.second })
+        }
+    }
+
+    fun setTags(userId: UUID, bookId: UUID, tags: List<String>) {
+        val cleanTags = tags.map { it.trim().lowercase() }
+            .filter { it.isNotBlank() && it.length <= 50 }
+            .distinct()
+            .take(10)
+        jdbi.useHandle<Exception> { handle ->
+            handle.createUpdate("DELETE FROM book_tags WHERE user_id = ? AND book_id = ?")
+                .bind(0, userId.toString()).bind(1, bookId.toString()).execute()
+            for (tag in cleanTags) {
+                handle.createUpdate(
+                    "INSERT INTO book_tags (id, user_id, book_id, tag) VALUES (?, ?, ?, ?)"
+                )
+                .bind(0, java.util.UUID.randomUUID().toString())
+                .bind(1, userId.toString())
+                .bind(2, bookId.toString())
+                .bind(3, tag)
+                .execute()
+            }
+        }
+        logger.info("Tags set for book $bookId: $cleanTags")
+    }
+
+    fun getUserTags(userId: UUID): List<String> {
+        return jdbi.withHandle<List<String>, Exception> { handle ->
+            handle.createQuery(
+                "SELECT DISTINCT tag FROM book_tags WHERE user_id = ? ORDER BY tag"
+            )
+            .bind(0, userId.toString())
+            .mapTo(String::class.java).list()
+        }
+    }
+
+    fun setStatus(userId: UUID, bookId: UUID, status: ReadStatus?) {
+        val now = Instant.now().toString()
+        val existing = jdbi.withHandle<String?, Exception> { handle ->
+            handle.createQuery("SELECT id FROM book_status WHERE user_id = ? AND book_id = ?")
+                .bind(0, userId.toString())
+                .bind(1, bookId.toString())
+                .mapTo(String::class.java).firstOrNull()
+        }
+        if (status == null) {
+            if (existing != null) {
+                jdbi.useHandle<Exception> { handle ->
+                    handle.createUpdate("DELETE FROM book_status WHERE user_id = ? AND book_id = ?")
+                        .bind(0, userId.toString()).bind(1, bookId.toString()).execute()
+                }
+            }
+            return
+        }
+        if (existing != null) {
+            jdbi.useHandle<Exception> { handle ->
+                handle.createUpdate("UPDATE book_status SET status = ?, updated_at = ? WHERE user_id = ? AND book_id = ?")
+                    .bind(0, status.name).bind(1, now)
+                    .bind(2, userId.toString()).bind(3, bookId.toString()).execute()
+            }
+        } else {
+            jdbi.useHandle<Exception> { handle ->
+                handle.createUpdate("INSERT INTO book_status (id, user_id, book_id, status, updated_at) VALUES (?, ?, ?, ?, ?)")
+                    .bind(0, UUID.randomUUID().toString()).bind(1, userId.toString())
+                    .bind(2, bookId.toString()).bind(3, status.name).bind(4, now).execute()
+            }
+        }
+        logger.info("Book status set to ${status.name} for book $bookId")
+    }
+
+    fun countFinishedThisYear(userId: UUID, year: Int): Int {
+        return jdbi.withHandle<Int, Exception> { handle ->
+            handle.createQuery(
+                """
+                SELECT COUNT(*) FROM book_status
+                WHERE user_id = ? AND status = 'FINISHED'
+                  AND YEAR(updated_at) = ?
+                """,
+            )
+                .bind(0, userId.toString())
+                .bind(1, year)
+                .mapTo(java.lang.Integer::class.java).first()?.toInt() ?: 0
+        }
+    }
+
+    fun setRating(userId: UUID, bookId: UUID, rating: Int?) {
+        val existing = jdbi.withHandle<String?, Exception> { handle ->
+            handle.createQuery("SELECT id FROM book_ratings WHERE user_id = ? AND book_id = ?")
+                .bind(0, userId.toString()).bind(1, bookId.toString())
+                .mapTo(String::class.java).firstOrNull()
+        }
+        if (rating == null || rating !in 1..5) {
+            if (existing != null) {
+                jdbi.useHandle<Exception> { handle ->
+                    handle.createUpdate("DELETE FROM book_ratings WHERE user_id = ? AND book_id = ?")
+                        .bind(0, userId.toString()).bind(1, bookId.toString()).execute()
+                }
+            }
+            return
+        }
+        val now = Instant.now().toString()
+        if (existing != null) {
+            jdbi.useHandle<Exception> { handle ->
+                handle.createUpdate("UPDATE book_ratings SET rating = ?, updated_at = ? WHERE user_id = ? AND book_id = ?")
+                    .bind(0, rating).bind(1, now).bind(2, userId.toString()).bind(3, bookId.toString()).execute()
+            }
+        } else {
+            jdbi.useHandle<Exception> { handle ->
+                handle.createUpdate("INSERT INTO book_ratings (id, user_id, book_id, rating, updated_at) VALUES (?, ?, ?, ?, ?)")
+                    .bind(0, UUID.randomUUID().toString()).bind(1, userId.toString())
+                    .bind(2, bookId.toString()).bind(3, rating).bind(4, now).execute()
+            }
+        }
+        logger.info("Book rating set to $rating for book $bookId")
     }
 }

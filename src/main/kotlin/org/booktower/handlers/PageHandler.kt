@@ -2,16 +2,23 @@ package org.booktower.handlers
 
 import org.booktower.config.TemplateRenderer
 import org.booktower.model.ThemeCatalog
+import org.booktower.models.BookSortOrder
+import org.booktower.models.ReadStatus
 import org.booktower.models.CreateBookRequest
 import org.booktower.models.CreateBookmarkRequest
 import org.booktower.models.CreateLibraryRequest
 import org.booktower.models.UpdateBookRequest
 import org.booktower.models.UpdateLibraryRequest
 import org.booktower.models.UpdateProgressRequest
+import org.booktower.config.Json
+import org.booktower.services.AnalyticsService
+import org.booktower.services.AnnotationService
+import org.booktower.services.AuthService
 import org.booktower.services.BookmarkService
 import org.booktower.services.BookService
 import org.booktower.services.JwtService
 import org.booktower.services.LibraryService
+import org.booktower.services.UserSettingsService
 import org.booktower.web.WebContext
 import org.http4k.core.Request
 import org.http4k.core.Response
@@ -23,9 +30,13 @@ import java.util.UUID
 
 class PageHandler(
     private val jwtService: JwtService,
+    private val authService: AuthService,
     private val libraryService: LibraryService,
     private val bookService: BookService,
     private val bookmarkService: BookmarkService,
+    private val userSettingsService: UserSettingsService,
+    private val analyticsService: AnalyticsService,
+    private val annotationService: AnnotationService,
     private val templateRenderer: TemplateRenderer,
 ) {
     // ── Page routes ────────────────────────────────────────────────────────────
@@ -51,11 +62,35 @@ class PageHandler(
         val ctx = WebContext(req)
         val libId = req.lastPathSegment().toUuidOrNull() ?: return Response(Status.NOT_FOUND)
         val library = libraryService.getLibrary(userId, libId) ?: return Response(Status.NOT_FOUND)
-        val books = bookService.getBooks(userId, libId.toString(), 1, 200).getBooks()
+        val sortParam = req.query("sort")
+        val sortBy = if (sortParam != null) {
+            val explicit = BookSortOrder.entries.firstOrNull { it.name.equals(sortParam, ignoreCase = true) }
+            if (explicit != null) {
+                userSettingsService.set(userId, "book.sort", explicit.name)
+                explicit
+            } else BookSortOrder.TITLE
+        } else {
+            val saved = userSettingsService.get(userId, "book.sort")
+            BookSortOrder.entries.firstOrNull { it.name == saved } ?: BookSortOrder.TITLE
+        }
+        val statusParam = req.query("status")
+        val statusFilter = statusParam?.let { s ->
+            ReadStatus.entries.firstOrNull { it.name.equals(s, ignoreCase = true) }
+        }
+        val tagParam = req.query("tag")
+        val tagFilter = tagParam?.trim()?.lowercase()?.takeIf { it.isNotBlank() }
+        val userTags = bookService.getUserTags(userId)
+        val books = bookService.getBooks(userId, libId.toString(), 1, 200, sortBy, statusFilter?.name, tagFilter).getBooks()
         return htmlOk(templateRenderer.render("library.kte", mapOf(
             "username" to null,
             "library" to library,
             "books" to books,
+            "currentSort" to sortBy.name,
+            "sortOptions" to BookSortOrder.entries.toList(),
+            "currentStatus" to (statusFilter?.name ?: "ALL"),
+            "statusOptions" to ReadStatus.entries.toList(),
+            "currentTag" to (tagFilter ?: ""),
+            "userTags" to userTags,
             "themeCss" to ctx.themeCss,
             "currentTheme" to ctx.theme,
             "lang" to ctx.lang,
@@ -71,9 +106,13 @@ class PageHandler(
         val bookId = req.lastPathSegment().toUuidOrNull() ?: return Response(Status.NOT_FOUND)
         val book = bookService.getBook(userId, bookId) ?: return Response(Status.NOT_FOUND)
         val bookmarks = bookmarkService.getBookmarks(userId, bookId)
+        val libraryName = book.libraryId.let { lid ->
+            runCatching { libraryService.getLibrary(userId, UUID.fromString(lid))?.name }.getOrNull()
+        }
         return htmlOk(templateRenderer.render("book.kte", mapOf(
             "username" to null,
             "book" to book,
+            "libraryName" to libraryName,
             "bookmarks" to bookmarks,
             "themeCss" to ctx.themeCss,
             "currentTheme" to ctx.theme,
@@ -90,14 +129,56 @@ class PageHandler(
         val bookId = req.secondToLastPathSegment().toUuidOrNull() ?: return Response(Status.NOT_FOUND)
         val book = bookService.getBook(userId, bookId) ?: return Response(Status.NOT_FOUND)
         val bookmarks = bookmarkService.getBookmarks(userId, bookId)
+        val filePath = bookService.getBookFilePath(userId, bookId)
+        val readerType = when {
+            book.fileSize <= 0 || filePath.isNullOrBlank() -> "none"
+            else -> when (filePath.substringAfterLast('.', "").lowercase()) {
+                "epub" -> "epub"
+                else  -> "pdf"
+            }
+        }
         return htmlOk(templateRenderer.render("reader.kte", mapOf(
             "book" to book,
             "bookmarks" to bookmarks,
+            "readerType" to readerType,
             "themeCss" to ctx.themeCss,
             "currentTheme" to ctx.theme,
             "lang" to ctx.lang,
             "i18n" to ctx.i18n,
         )))
+    }
+
+    /** GET /ui/books/{id}/annotations */
+    fun getAnnotations(req: Request): Response {
+        val userId = auth(req) ?: return Response(Status.UNAUTHORIZED)
+        val bookId = req.secondToLastPathSegment().toUuidOrNull() ?: return Response(Status.BAD_REQUEST)
+        val page = req.query("page")?.toIntOrNull()
+        val annotations = annotationService.getAnnotations(userId, bookId, page)
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(Json.mapper.writeValueAsString(annotations))
+    }
+
+    /** POST /ui/books/{id}/annotations */
+    fun createAnnotation(req: Request): Response {
+        val userId = auth(req) ?: return Response(Status.UNAUTHORIZED)
+        val bookId = req.secondToLastPathSegment().toUuidOrNull() ?: return Response(Status.BAD_REQUEST)
+        val page = req.form("page")?.toIntOrNull() ?: return Response(Status.BAD_REQUEST).body("page required")
+        val selectedText = req.form("selectedText")?.takeIf { it.isNotBlank() }
+            ?: return Response(Status.BAD_REQUEST).body("selectedText required")
+        val color = req.form("color")?.takeIf { it.isNotBlank() } ?: "yellow"
+        val annotation = annotationService.createAnnotation(userId, bookId, page, selectedText, color)
+        return Response(Status.CREATED)
+            .header("Content-Type", "application/json")
+            .body(Json.mapper.writeValueAsString(annotation))
+    }
+
+    /** DELETE /ui/annotations/{id} */
+    fun deleteAnnotation(req: Request): Response {
+        val userId = auth(req) ?: return Response(Status.UNAUTHORIZED)
+        val annotationId = req.lastPathSegment().toUuidOrNull() ?: return Response(Status.BAD_REQUEST)
+        val deleted = annotationService.deleteAnnotation(userId, annotationId)
+        return if (deleted) Response(Status.OK) else Response(Status.NOT_FOUND)
     }
 
     fun search(req: Request): Response {
@@ -125,13 +206,21 @@ class PageHandler(
         val ctx = WebContext(req)
         val libraries = libraryService.getLibraries(userId)
         val recentBooks = bookService.getRecentBooks(userId, 6)
+        val recentlyAddedBooks = bookService.getRecentlyAddedBooks(userId, 6)
         val totalBooks = libraries.sumOf { it.bookCount }
+        val year = java.time.LocalDate.now().year
+        val goal = userSettingsService.get(userId, "reading.goal.$year")?.toIntOrNull() ?: 0
+        val booksFinishedThisYear = bookService.countFinishedThisYear(userId, year)
         return htmlOk(templateRenderer.render("dashboard.kte", mapOf(
             "username" to null,
             "libraries" to libraries,
             "recentBooks" to recentBooks,
+            "recentlyAddedBooks" to recentlyAddedBooks,
             "libraryCount" to libraries.size,
             "totalBooks" to totalBooks,
+            "goal" to goal,
+            "booksFinishedThisYear" to booksFinishedThisYear,
+            "year" to year,
             "themeCss" to ctx.themeCss,
             "currentTheme" to ctx.theme,
             "lang" to ctx.lang,
@@ -141,11 +230,26 @@ class PageHandler(
         )))
     }
 
+    /** POST /ui/goal — save yearly reading goal */
+    fun setGoal(req: Request): Response {
+        val userId = auth(req) ?: return Response(Status.UNAUTHORIZED)
+        val year = java.time.LocalDate.now().year
+        val goal = req.form("goal")?.toIntOrNull()?.coerceAtLeast(0) ?: 0
+        userSettingsService.set(userId, "reading.goal.$year", goal.toString())
+        return Response(Status.OK)
+    }
+
     fun profile(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
         val ctx = WebContext(req)
+        val user = authService.getUserById(userId)
+        val analyticsEnabled = userSettingsService.get(userId, "analytics.enabled") == "true"
         return htmlOk(templateRenderer.render("profile.kte", mapOf(
             "username" to null,
+            "userEmail" to (user?.email ?: ""),
+            "userUsername" to (user?.username ?: ""),
+            "memberSince" to (user?.createdAt?.toString()?.take(10) ?: ""),
+            "analyticsEnabled" to analyticsEnabled,
             "themeCss" to ctx.themeCss,
             "currentTheme" to ctx.theme,
             "lang" to ctx.lang,
@@ -153,6 +257,58 @@ class PageHandler(
             "i18n" to ctx.i18n,
             "isAdmin" to authIsAdmin(req),
         )))
+    }
+
+    fun analytics(req: Request): Response {
+        val userId = auth(req) ?: return redirectToLogin()
+        val ctx = WebContext(req)
+        val summary = analyticsService.getSummary(userId)
+        return htmlOk(templateRenderer.render("analytics.kte", mapOf(
+            "username" to null,
+            "summary" to summary,
+            "themeCss" to ctx.themeCss,
+            "currentTheme" to ctx.theme,
+            "lang" to ctx.lang,
+            "themes" to ThemeCatalog.allThemes(),
+            "i18n" to ctx.i18n,
+            "isAdmin" to authIsAdmin(req),
+        )))
+    }
+
+    fun setAnalytics(req: Request): Response {
+        val userId = auth(req) ?: return Response(Status.UNAUTHORIZED)
+        val enabled = req.form("enabled")?.lowercase() == "true"
+        userSettingsService.set(userId, "analytics.enabled", if (enabled) "true" else "false")
+        return Response(Status.OK)
+    }
+
+    /** POST /ui/books/{id}/rating */
+    fun setRating(req: Request): Response {
+        val userId = auth(req) ?: return Response(Status.UNAUTHORIZED)
+        val bookId = req.secondToLastPathSegment().toUuidOrNull() ?: return Response(Status.BAD_REQUEST)
+        val rating = req.form("rating")?.toIntOrNull()
+        bookService.setRating(userId, bookId, rating)
+        return Response(Status.OK)
+    }
+
+    /** POST /ui/books/{id}/tags */
+    fun setTags(req: Request): Response {
+        val userId = auth(req) ?: return Response(Status.UNAUTHORIZED)
+        val bookId = req.secondToLastPathSegment().toUuidOrNull() ?: return Response(Status.BAD_REQUEST)
+        val tagsRaw = req.form("tags") ?: ""
+        val tags = tagsRaw.split(",").map { it.trim() }.filter { it.isNotBlank() }
+        bookService.setTags(userId, bookId, tags)
+        return Response(Status.OK)
+    }
+
+    /** POST /ui/books/{id}/status */
+    fun setStatus(req: Request): Response {
+        val userId = auth(req) ?: return Response(Status.UNAUTHORIZED)
+        val bookId = req.secondToLastPathSegment().toUuidOrNull() ?: return Response(Status.BAD_REQUEST)
+        val statusName = req.form("status")?.takeIf { it.isNotBlank() && it != "NONE" }
+        val status = statusName?.let { n -> ReadStatus.entries.firstOrNull { it.name == n } }
+        bookService.setStatus(userId, bookId, status)
+        return Response(Status.OK)
     }
 
     // ── HTMX mutation endpoints ────────────────────────────────────────────────

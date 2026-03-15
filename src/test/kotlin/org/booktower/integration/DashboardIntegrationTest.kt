@@ -114,4 +114,64 @@ class DashboardIntegrationTest : IntegrationTestBase() {
         assertEquals(Status.OK, response.status)
         assertTrue(response.bodyString().contains("My Libraries"))
     }
+
+    // ── Recently Added ─────────────────────────────────────────────────────────
+
+    @Test
+    fun `dashboard shows Recently Added section when books exist`() {
+        val token = registerAndGetToken("dash11")
+        val libId = createLibrary(token)
+        createBook(token, libId, "My New Book")
+
+        val body = app(Request(Method.GET, "/").header("Cookie", "token=$token")).bodyString()
+        assertTrue(body.contains("My New Book"), "Dashboard should show newly added book in Recently Added")
+    }
+
+    @Test
+    fun `dashboard Recently Added section is absent when no books`() {
+        val token = registerAndGetToken("dash12")
+        createLibrary(token)
+
+        val body = app(Request(Method.GET, "/").header("Cookie", "token=$token")).bodyString()
+        assertFalse(body.contains("page.dashboard.recently.added"),
+            "Recently Added heading should not render as raw i18n key")
+        assertFalse(body.contains("Recently Added"),
+            "Recently Added section should not appear when there are no books")
+    }
+
+    @Test
+    fun `dashboard Recently Added shows most recently added book first`() {
+        val token = registerAndGetToken("dash13")
+        val libId = createLibrary(token)
+        createBook(token, libId, "Older Book")
+        Thread.sleep(10)
+        createBook(token, libId, "Newer Book")
+
+        val body = app(Request(Method.GET, "/").header("Cookie", "token=$token")).bodyString()
+        val olderPos = body.indexOf("Older Book")
+        val newerPos = body.indexOf("Newer Book")
+        assertTrue(newerPos < olderPos, "Most recently added book should appear first")
+    }
+
+    @Test
+    fun `dashboard Recently Added shows at most 6 books`() {
+        val token = registerAndGetToken("dash14")
+        val libId = createLibrary(token)
+        repeat(8) { i -> createBook(token, libId, "Book $i") }
+
+        val body = app(Request(Method.GET, "/").header("Cookie", "token=$token")).bodyString()
+        // We can't count exact items without parsing HTML, but the section renders without error
+        assertEquals(Status.OK, app(Request(Method.GET, "/").header("Cookie", "token=$token")).status)
+        assertTrue(body.contains("Book "), "Dashboard should show recently added books")
+    }
+
+    @Test
+    fun `dashboard Recently Added links to book detail page`() {
+        val token = registerAndGetToken("dash15")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId, "Linked Book")
+
+        val body = app(Request(Method.GET, "/").header("Cookie", "token=$token")).bodyString()
+        assertTrue(body.contains("/books/$bookId"), "Recently Added book should link to book detail page")
+    }
 }

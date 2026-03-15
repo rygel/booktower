@@ -9,6 +9,8 @@ import org.booktower.models.BookDto
 import org.booktower.models.LibraryDto
 import org.booktower.models.LoginResponse
 import org.booktower.services.AdminService
+import org.booktower.services.AnalyticsService
+import org.booktower.services.AnnotationService
 import org.booktower.services.AuthService
 import org.booktower.services.BookmarkService
 import org.booktower.services.BookService
@@ -34,15 +36,19 @@ abstract class IntegrationTestBase {
         val authService = AuthService(jdbi, jwtService)
         val pdfMetadataService = PdfMetadataService(jdbi, config.storage.coversPath)
         val libraryService = LibraryService(jdbi, pdfMetadataService)
-        val bookService = BookService(jdbi)
         val bookmarkService = BookmarkService(jdbi)
         val userSettingsService = UserSettingsService(jdbi)
+        val analyticsService = AnalyticsService(jdbi, userSettingsService)
+        val bookService = BookService(jdbi, analyticsService)
         val adminService = AdminService(jdbi)
+        val annotationService = AnnotationService(jdbi)
         val appHandler = AppHandler(
             authService, libraryService, bookService, bookmarkService,
             userSettingsService, pdfMetadataService, adminService, jwtService, config.storage,
             TestFixture.templateRenderer,
             WeblateHandler(WeblateConfig("", "", "", false)),
+            analyticsService,
+            annotationService,
         )
         app = GlobalErrorFilter().then(appHandler.routes())
     }
