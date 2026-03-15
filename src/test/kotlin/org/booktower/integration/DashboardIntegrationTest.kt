@@ -174,4 +174,53 @@ class DashboardIntegrationTest : IntegrationTestBase() {
         val body = app(Request(Method.GET, "/").header("Cookie", "token=$token")).bodyString()
         assertTrue(body.contains("/books/$bookId"), "Recently Added book should link to book detail page")
     }
+
+    // ── In Progress stat (currently reading) ────────────────────────────────────
+
+    @Test
+    fun `in-progress stat shows 1 after marking a book as READING`() {
+        val token = registerAndGetToken("dash16")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId, "Active Book")
+
+        app(Request(Method.POST, "/ui/books/$bookId/status")
+            .header("Cookie", "token=$token")
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .body("status=READING"))
+
+        val body = app(Request(Method.GET, "/").header("Cookie", "token=$token")).bodyString()
+        assertTrue(body.contains(">1<"), "In-progress stat should show 1 after marking a book READING")
+    }
+
+    @Test
+    fun `in-progress stat does not count books with progress but no READING status`() {
+        val token = registerAndGetToken("dash17")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId, "Progress Only Book")
+
+        // record reading progress but do NOT set status
+        app(Request(Method.POST, "/ui/books/$bookId/progress")
+            .header("Cookie", "token=$token")
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .body("currentPage=10"))
+
+        val body = app(Request(Method.GET, "/").header("Cookie", "token=$token")).bodyString()
+        // In-progress stat should still be 0 — no READING status set
+        assertTrue(body.contains(">0<"), "In-progress stat should be 0 when no book has READING status")
+    }
+
+    @Test
+    fun `in-progress stat excludes FINISHED books`() {
+        val token = registerAndGetToken("dash18")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId, "Done Book")
+
+        app(Request(Method.POST, "/ui/books/$bookId/status")
+            .header("Cookie", "token=$token")
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .body("status=FINISHED"))
+
+        val body = app(Request(Method.GET, "/").header("Cookie", "token=$token")).bodyString()
+        assertTrue(body.contains(">0<"), "In-progress stat should not count FINISHED books")
+    }
 }

@@ -304,6 +304,7 @@ class PageHandler(
         val recentBooks = bookService.getRecentBooks(userId, 6)
         val recentlyAddedBooks = bookService.getRecentlyAddedBooks(userId, 6)
         val totalBooks = libraries.sumOf { it.bookCount }
+        val currentlyReadingCount = bookService.countByStatus(userId, org.booktower.models.ReadStatus.READING)
         val year = java.time.LocalDate.now().year
         val goal = userSettingsService.get(userId, "reading.goal.$year")?.toIntOrNull() ?: 0
         val booksFinishedThisYear = bookService.countFinishedThisYear(userId, year)
@@ -314,6 +315,7 @@ class PageHandler(
             "recentlyAddedBooks" to recentlyAddedBooks,
             "libraryCount" to libraries.size,
             "totalBooks" to totalBooks,
+            "currentlyReadingCount" to currentlyReadingCount,
             "goal" to goal,
             "booksFinishedThisYear" to booksFinishedThisYear,
             "year" to year,

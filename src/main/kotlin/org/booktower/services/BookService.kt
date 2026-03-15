@@ -865,6 +865,17 @@ class BookService(
         logger.info("Book status set to ${status.name} for book $bookId")
     }
 
+    fun countByStatus(userId: UUID, status: ReadStatus): Int {
+        return jdbi.withHandle<Int, Exception> { handle ->
+            handle.createQuery(
+                "SELECT COUNT(*) FROM book_status WHERE user_id = ? AND status = ?",
+            )
+                .bind(0, userId.toString())
+                .bind(1, status.name)
+                .mapTo(java.lang.Integer::class.java).first()?.toInt() ?: 0
+        }
+    }
+
     fun countFinishedThisYear(userId: UUID, year: Int): Int {
         return jdbi.withHandle<Int, Exception> { handle ->
             handle.createQuery(

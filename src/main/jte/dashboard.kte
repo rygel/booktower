@@ -14,6 +14,7 @@
 @param themes: List<ThemeDefinition>
 @param i18n: I18nService
 @param isAdmin: Boolean = false
+@param currentlyReadingCount: Int = 0
 @param goal: Int = 0
 @param booksFinishedThisYear: Int = 0
 @param year: Int = 2026
@@ -47,7 +48,7 @@
                 <i class="ri-bar-chart-line" style="font-size:1.5rem;"></i>
             </div>
             <div>
-                <p style="font-size:1.75rem; font-weight:700; color:var(--bt-text); line-height:1;">${recentBooks.size}</p>
+                <p style="font-size:1.75rem; font-weight:700; color:var(--bt-text); line-height:1;">${currentlyReadingCount}</p>
                 <p style="font-size:0.75rem; color:var(--bt-subtle); margin-top:0.25rem;">${i18n.translate("page.dashboard.stat.in.progress")}</p>
             </div>
         </div>
