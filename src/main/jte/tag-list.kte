@@ -1,0 +1,47 @@
+@import org.booktower.i18n.I18nService
+@import org.booktower.model.ThemeDefinition
+@import org.booktower.models.TagDto
+@param username: String?
+@param tags: List<TagDto>
+@param themeCss: String
+@param currentTheme: String
+@param lang: String
+@param themes: List<ThemeDefinition>
+@param i18n: I18nService
+@param isAdmin: Boolean = false
+
+@template.components.layout(title="${i18n.translate("page.tags.title")} - BookTower", username=username, currentPage="tags",
+    themeCss=themeCss, currentTheme=currentTheme, lang=lang, themes=themes, i18n=i18n, searchQuery="", isAdmin=isAdmin, content = @`
+<div style="padding:2rem; max-width:72rem; margin:0 auto;">
+
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.75rem;">
+        <div>
+            <h1 style="font-size:1.5rem; font-weight:700; color:var(--bt-text); margin-bottom:0.25rem;">
+                <i class="ri-price-tag-3-line" style="color:var(--bt-accent-dim); margin-right:0.5rem;"></i>${i18n.translate("page.tags.list.title")}
+            </h1>
+            <p style="font-size:0.8rem; color:var(--bt-subtle);">${tags.size} ${i18n.translate("label.tag").lowercase()}</p>
+        </div>
+    </div>
+
+    @if(tags.isEmpty())
+        <div style="text-align:center; padding:5rem 0;">
+            <i class="ri-price-tag-3-line" style="font-size:4rem; display:block; margin-bottom:1rem; color:var(--bt-border);"></i>
+            <p style="font-size:1.125rem; font-weight:500; color:var(--bt-subtle);">${i18n.translate("page.tags.empty.title")}</p>
+            <p style="font-size:0.875rem; margin-top:0.375rem; color:var(--bt-faint);">${i18n.translate("page.tags.empty.hint")}</p>
+        </div>
+    @else
+        <div style="display:flex; flex-wrap:wrap; gap:0.75rem;">
+            @for(tag in tags)
+                <a href="/tags/${java.net.URLEncoder.encode(tag.name, "UTF-8").replace("+", "%20")}" style="text-decoration:none;">
+                    <div style="display:inline-flex; align-items:center; gap:0.5rem; background:var(--bt-surface); border:1px solid var(--bt-border); border-radius:9999px; padding:0.5rem 1rem; transition:border-color 0.15s, background 0.15s;"
+                        onmouseover="this.style.borderColor='var(--bt-accent)';this.style.background='var(--bt-surface-raised)'" onmouseout="this.style.borderColor='var(--bt-border)';this.style.background='var(--bt-surface)'">
+                        <i class="ri-price-tag-3-line" style="font-size:0.875rem; color:var(--bt-accent-dim);"></i>
+                        <span style="font-size:0.875rem; font-weight:500; color:var(--bt-text);">${tag.name}</span>
+                        <span style="font-size:0.75rem; color:var(--bt-subtle); background:var(--bt-bg); border-radius:9999px; padding:0.1rem 0.5rem;">${i18n.translate("page.tags.book.count", tag.bookCount)}</span>
+                    </div>
+                </a>
+            @endfor
+        </div>
+    @endif
+</div>
+`)

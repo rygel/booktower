@@ -98,6 +98,8 @@ class AppHandler(
             "/series/{name}" bind Method.GET to authFilter.then(pageHandler::series),
             "/authors" bind Method.GET to authFilter.then(pageHandler::authorList),
             "/authors/{name}" bind Method.GET to authFilter.then(pageHandler::author),
+            "/tags" bind Method.GET to authFilter.then(pageHandler::tagList),
+            "/tags/{name}" bind Method.GET to authFilter.then(pageHandler::tag),
             "/profile" bind Method.GET to pageHandler::profile,
             "/analytics" bind Method.GET to pageHandler::analytics,
             "/ui/preferences/analytics" bind Method.POST to pageHandler::setAnalytics,

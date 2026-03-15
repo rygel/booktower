@@ -624,6 +624,44 @@ class PageHandler(
         )))
     }
 
+    /** GET /tags — list all tags for the user */
+    fun tagList(req: Request): Response {
+        val userId = auth(req) ?: return redirectToLogin()
+        val ctx = WebContext(req)
+        val tags = bookService.getTagsWithCounts(userId)
+        return htmlOk(templateRenderer.render("tag-list.kte", mapOf(
+            "username" to null,
+            "tags" to tags,
+            "themeCss" to ctx.themeCss,
+            "currentTheme" to ctx.theme,
+            "lang" to ctx.lang,
+            "themes" to ThemeCatalog.allThemes(),
+            "i18n" to ctx.i18n,
+            "isAdmin" to authIsAdmin(req),
+        )))
+    }
+
+    /** GET /tags/{name} — books with a specific tag */
+    fun tag(req: Request): Response {
+        val userId = auth(req) ?: return redirectToLogin()
+        val ctx = WebContext(req)
+        val name = req.lastPathSegment()
+            ?.let { java.net.URLDecoder.decode(it, "UTF-8") }
+            ?: return Response(Status.NOT_FOUND)
+        val books = bookService.getBooksByTag(userId, name)
+        return htmlOk(templateRenderer.render("tag.kte", mapOf(
+            "username" to null,
+            "tagName" to name,
+            "books" to books,
+            "themeCss" to ctx.themeCss,
+            "currentTheme" to ctx.theme,
+            "lang" to ctx.lang,
+            "themes" to ThemeCatalog.allThemes(),
+            "i18n" to ctx.i18n,
+            "isAdmin" to authIsAdmin(req),
+        )))
+    }
+
     // ── Helpers ────────────────────────────────────────────────────────────────
 
     private fun auth(req: Request): UUID? {

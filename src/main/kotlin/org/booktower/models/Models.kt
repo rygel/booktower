@@ -191,6 +191,11 @@ data class AuthorDto(
     val coverUrl: String?,
 )
 
+data class TagDto(
+    val name: String,
+    val bookCount: Int,
+)
+
 data class UpdateProgressRequest(
     val currentPage: Int,
 )

@@ -782,6 +782,56 @@ class BookService(
         }
     }
 
+    /** Returns all distinct tags for the user with their book counts, sorted alphabetically. */
+    fun getTagsWithCounts(userId: UUID): List<TagDto> =
+        jdbi.withHandle<List<TagDto>, Exception> { handle ->
+            handle.createQuery(
+                """
+                SELECT bt.tag, COUNT(*) AS book_count
+                FROM book_tags bt
+                JOIN books b ON bt.book_id = b.id
+                JOIN libraries l ON b.library_id = l.id
+                WHERE bt.user_id = ? AND l.user_id = ?
+                GROUP BY bt.tag
+                ORDER BY bt.tag ASC
+                """,
+            )
+                .bind(0, userId.toString())
+                .bind(1, userId.toString())
+                .map { row ->
+                    TagDto(
+                        name = row.getColumn("tag", String::class.java),
+                        bookCount = row.getColumn("book_count", java.lang.Integer::class.java)?.toInt() ?: 0,
+                    )
+                }.list()
+        }
+
+    /** Returns all books tagged with the given tag for the user, sorted by title. */
+    fun getBooksByTag(userId: UUID, tag: String): List<BookDto> {
+        val books = jdbi.withHandle<List<BookDto>, Exception> { handle ->
+            handle.createQuery(
+                """
+                SELECT b.*, bs.status AS book_status_value, br.rating AS book_rating_value
+                FROM books b
+                JOIN libraries l ON b.library_id = l.id
+                JOIN book_tags bt ON bt.book_id = b.id AND bt.user_id = ?
+                LEFT JOIN book_status bs ON bs.book_id = b.id AND bs.user_id = ?
+                LEFT JOIN book_ratings br ON br.book_id = b.id AND br.user_id = ?
+                WHERE l.user_id = ? AND bt.tag = ?
+                ORDER BY b.title ASC
+                """,
+            )
+                .bind(0, userId.toString())
+                .bind(1, userId.toString())
+                .bind(2, userId.toString())
+                .bind(3, userId.toString())
+                .bind(4, tag)
+                .map { row -> mapBook(row) }.list()
+        }
+        val tagMap = fetchTagsForBooks(userId, books.map { it.id })
+        return books.map { it.copy(tags = tagMap[it.id] ?: emptyList()) }
+    }
+
     fun setStatus(userId: UUID, bookId: UUID, status: ReadStatus?) {
         val now = Instant.now().toString()
         val existing = jdbi.withHandle<String?, Exception> { handle ->
