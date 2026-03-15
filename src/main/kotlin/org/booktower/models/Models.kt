@@ -107,6 +107,12 @@ data class CreateBookRequest(
     val libraryId: String,
 )
 
+data class UpdateBookRequest(
+    val title: String,
+    val author: String?,
+    val description: String?,
+)
+
 data class ReadingProgress(
     val id: UUID,
     val userId: UUID,

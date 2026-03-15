@@ -5,6 +5,7 @@ import org.booktower.filters.AuthenticatedUser
 import org.booktower.models.CreateBookRequest
 import org.booktower.models.ErrorResponse
 import org.booktower.models.SuccessResponse
+import org.booktower.models.UpdateBookRequest
 import org.booktower.models.UpdateProgressRequest
 import org.booktower.services.BookService
 import org.http4k.core.Request
@@ -136,6 +137,45 @@ class BookHandler2(private val bookService: BookService) {
         }
     }
 
+    fun update(req: Request): Response {
+        val userId = AuthenticatedUser.from(req)
+        val bookId = req.uri.path.split("/").lastOrNull()?.let { id ->
+            try { UUID.fromString(id) } catch (e: IllegalArgumentException) { null }
+        }
+
+        if (bookId == null) {
+            return Response(Status.BAD_REQUEST)
+                .header("Content-Type", "application/json")
+                .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Invalid book ID")))
+        }
+
+        val requestBody = req.bodyString()
+        if (requestBody.isBlank()) {
+            return Response(Status.BAD_REQUEST)
+                .header("Content-Type", "application/json")
+                .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Request body is required")))
+        }
+
+        val updateRequest = Json.mapper.readValue(requestBody, UpdateBookRequest::class.java)
+        val validationError = validateUpdateBookRequest(updateRequest)
+        if (validationError != null) {
+            return Response(Status.BAD_REQUEST)
+                .header("Content-Type", "application/json")
+                .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", validationError)))
+        }
+
+        val book = bookService.updateBook(userId, bookId, updateRequest)
+        return if (book != null) {
+            Response(Status.OK)
+                .header("Content-Type", "application/json")
+                .body(Json.mapper.writeValueAsString(book))
+        } else {
+            Response(Status.NOT_FOUND)
+                .header("Content-Type", "application/json")
+                .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "Book not found")))
+        }
+    }
+
     fun updateProgress(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
         val pathParts = req.uri.path.split("/")
@@ -194,6 +234,13 @@ class BookHandler2(private val bookService: BookService) {
         } catch (e: IllegalArgumentException) {
             return "Invalid library ID format"
         }
+        return null
+    }
+
+    private fun validateUpdateBookRequest(request: UpdateBookRequest): String? {
+        if (request.title.isBlank()) return "Book title is required"
+        if (request.title.length > 255) return "Book title must be 255 characters or fewer"
+        if ((request.author?.length ?: 0) > 255) return "Author must be 255 characters or fewer"
         return null
     }
 }

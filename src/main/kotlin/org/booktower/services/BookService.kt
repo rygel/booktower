@@ -224,6 +224,29 @@ class BookService(private val jdbi: Jdbi, private val storageConfig: StorageConf
         )
     }
 
+    fun updateBook(
+        userId: UUID,
+        bookId: UUID,
+        request: UpdateBookRequest,
+    ): BookDto? {
+        val book = getBook(userId, bookId) ?: return null
+
+        jdbi.useHandle<Exception> { handle ->
+            handle.createUpdate(
+                "UPDATE books SET title = ?, author = ?, description = ?, updated_at = ? WHERE id = ?",
+            )
+                .bind(0, request.title)
+                .bind(1, request.author)
+                .bind(2, request.description)
+                .bind(3, Instant.now().toString())
+                .bind(4, bookId.toString())
+                .execute()
+        }
+
+        logger.info("Book updated: ${request.title}")
+        return book.copy(title = request.title, author = request.author, description = request.description)
+    }
+
     fun deleteBook(
         userId: UUID,
         bookId: UUID,

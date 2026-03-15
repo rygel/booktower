@@ -87,6 +87,7 @@ class AppHandler(
             "/api/books" bind Method.GET to authFilter.then(bookHandler::list),
             "/api/books" bind Method.POST to authFilter.then(bookHandler::create),
             "/api/books/{id}" bind Method.GET to authFilter.then(bookHandler::get),
+            "/api/books/{id}" bind Method.PUT to authFilter.then(bookHandler::update),
             "/api/books/{id}" bind Method.DELETE to authFilter.then(bookHandler::delete),
             "/api/books/{id}/progress" bind Method.PUT to authFilter.then(bookHandler::updateProgress),
             "/api/recent" bind Method.GET to authFilter.then(bookHandler::recent),
