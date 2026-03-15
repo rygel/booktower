@@ -120,6 +120,27 @@ class PageHandler(
         )))
     }
 
+    fun dashboard(req: Request): Response {
+        val userId = auth(req) ?: return redirectToLogin()
+        val ctx = WebContext(req)
+        val libraries = libraryService.getLibraries(userId)
+        val recentBooks = bookService.getRecentBooks(userId, 6)
+        val totalBooks = libraries.sumOf { it.bookCount }
+        return htmlOk(templateRenderer.render("dashboard.kte", mapOf(
+            "username" to null,
+            "libraries" to libraries,
+            "recentBooks" to recentBooks,
+            "libraryCount" to libraries.size,
+            "totalBooks" to totalBooks,
+            "themeCss" to ctx.themeCss,
+            "currentTheme" to ctx.theme,
+            "lang" to ctx.lang,
+            "themes" to ThemeCatalog.allThemes(),
+            "i18n" to ctx.i18n,
+            "isAdmin" to authIsAdmin(req),
+        )))
+    }
+
     fun profile(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
         val ctx = WebContext(req)

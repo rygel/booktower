@@ -125,7 +125,7 @@ class AppHandler(
         val token = req.cookie("token")?.value
         val isAuth = token != null && jwtService.extractUserId(token) != null
         if (isAuth) {
-            return Response(Status.SEE_OTHER).header("Location", "/libraries")
+            return pageHandler.dashboard(req)
         }
         val ctx = WebContext(req)
         val content = templateRenderer.render(
