@@ -88,6 +88,22 @@ class LibraryService(
         return LibraryDto(libId.toString(), request.name, request.path, 0, now.toString())
     }
 
+    fun renameLibrary(userId: UUID, libraryId: UUID, request: UpdateLibraryRequest): LibraryDto? {
+        val library = getLibrary(userId, libraryId) ?: return null
+
+        jdbi.useHandle<Exception> { handle ->
+            handle.createUpdate("UPDATE libraries SET name = ?, updated_at = ? WHERE id = ? AND user_id = ?")
+                .bind(0, request.name)
+                .bind(1, Instant.now().toString())
+                .bind(2, libraryId.toString())
+                .bind(3, userId.toString())
+                .execute()
+        }
+
+        logger.info("Library renamed to: ${request.name}")
+        return library.copy(name = request.name)
+    }
+
     fun scanLibrary(userId: UUID, libraryId: UUID): ScanResult {
         val library = getLibrary(userId, libraryId)
             ?: return ScanResult(0, 0, 0, emptyList())

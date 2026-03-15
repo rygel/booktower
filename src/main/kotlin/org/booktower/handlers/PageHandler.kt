@@ -5,6 +5,8 @@ import org.booktower.model.ThemeCatalog
 import org.booktower.models.CreateBookRequest
 import org.booktower.models.CreateBookmarkRequest
 import org.booktower.models.CreateLibraryRequest
+import org.booktower.models.UpdateBookRequest
+import org.booktower.models.UpdateLibraryRequest
 import org.booktower.models.UpdateProgressRequest
 import org.booktower.services.BookmarkService
 import org.booktower.services.BookService
@@ -136,6 +138,18 @@ class PageHandler(
         return Response(Status.OK)
     }
 
+    /** POST /ui/libraries/{id}/rename */
+    fun renameLibrary(req: Request): Response {
+        val userId = auth(req) ?: return Response(Status.UNAUTHORIZED)
+        val libId = req.secondToLastPathSegment().toUuidOrNull() ?: return Response(Status.BAD_REQUEST)
+        val name = req.form("name")?.trim()?.takeIf { it.isNotBlank() }
+            ?: return Response(Status.BAD_REQUEST).body("Name is required")
+        libraryService.renameLibrary(userId, libId, UpdateLibraryRequest(name))
+            ?: return Response(Status.NOT_FOUND)
+        return Response(Status.OK)
+            .header("HX-Redirect", "/libraries/${libId}")
+    }
+
     /** POST /ui/libraries/{libId}/books — path is .../SOME-UUID/books */
     fun createBook(req: Request): Response {
         val userId = auth(req) ?: return Response(Status.UNAUTHORIZED)
@@ -162,6 +176,21 @@ class PageHandler(
         val bookId = req.lastPathSegment().toUuidOrNull() ?: return Response(Status.BAD_REQUEST)
         bookService.deleteBook(userId, bookId)
         return Response(Status.OK)
+    }
+
+    /** POST /ui/books/{id}/meta */
+    fun editBook(req: Request): Response {
+        val userId = auth(req) ?: return Response(Status.UNAUTHORIZED)
+        val bookId = req.secondToLastPathSegment().toUuidOrNull() ?: return Response(Status.BAD_REQUEST)
+        val title = req.form("title")?.trim()?.takeIf { it.isNotBlank() }
+            ?: return Response(Status.BAD_REQUEST).body("Title is required")
+        if (title.length > 255) return Response(Status.BAD_REQUEST).body("Title must be 255 characters or fewer")
+        val author = req.form("author")?.trim()?.takeIf { it.isNotBlank() }
+        val description = req.form("description")?.trim()?.takeIf { it.isNotBlank() }
+        bookService.updateBook(userId, bookId, UpdateBookRequest(title, author, description))
+            ?: return Response(Status.NOT_FOUND)
+        return Response(Status.OK)
+            .header("HX-Redirect", "/books/${bookId}")
     }
 
     /** POST /ui/books/{id}/progress — path ends in .../UUID/progress */

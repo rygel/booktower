@@ -58,6 +58,41 @@
                     <a href="/api/books/${book.id}/file" class="btn-primary" style="display:inline-flex; align-items:center; gap:0.5rem; text-decoration:none; background:var(--bt-surface-raised); color:var(--bt-text-dim); border:1px solid var(--bt-border-input);">
                         <i class="ri-download-line"></i> ${i18n.translate("action.download")}
                     </a>
+                    <button class="btn-secondary" style="display:inline-flex; align-items:center; gap:0.5rem;"
+                        onclick="document.getElementById('edit-panel').style.display=document.getElementById('edit-panel').style.display==='none'?'block':'none'">
+                        <i class="ri-edit-line"></i> ${i18n.translate("action.edit")}
+                    </button>
+                </div>
+
+                <!-- Inline edit form -->
+                <div id="edit-panel" style="display:none; margin-top:1rem; border-top:1px solid var(--bt-border); padding-top:1rem;">
+                    <p style="font-size:0.8rem; font-weight:600; color:var(--bt-text-dim); margin-bottom:0.75rem;">${i18n.translate("page.book.edit.title")}</p>
+                    <form
+                        hx-post="/ui/books/${book.id}/meta"
+                        hx-swap="none"
+                        hx-on:htmx:after-request="if(event.detail.successful && event.detail.xhr.getResponseHeader('HX-Redirect')){window.location.href=event.detail.xhr.getResponseHeader('HX-Redirect')} else if(!event.detail.successful){document.getElementById('edit-error').style.display='block'}"
+                        style="display:flex; flex-direction:column; gap:0.625rem;"
+                    >
+                        <input type="text" name="title" value="${book.title}" required maxlength="255"
+                            placeholder="${i18n.translate("placeholder.book.title")}"
+                            style="border-radius:0.5rem; border:1px solid; padding:0.5rem 0.75rem; font-size:0.875rem; width:100%;">
+                        <input type="text" name="author" value="${book.author ?: ""}" maxlength="255"
+                            placeholder="${i18n.translate("placeholder.author.name")}"
+                            style="border-radius:0.5rem; border:1px solid; padding:0.5rem 0.75rem; font-size:0.875rem; width:100%;">
+                        <textarea name="description" rows="3" maxlength="2000"
+                            placeholder="${i18n.translate("field.description")}"
+                            style="border-radius:0.5rem; border:1px solid; padding:0.5rem 0.75rem; font-size:0.875rem; width:100%; resize:vertical;">${book.description ?: ""}</textarea>
+                        <div style="display:flex; gap:0.5rem;">
+                            <button type="submit" class="btn-primary" style="display:inline-flex; align-items:center; gap:0.375rem;">
+                                <i class="ri-save-line"></i> ${i18n.translate("action.save")}
+                            </button>
+                            <button type="button" class="btn-secondary"
+                                onclick="document.getElementById('edit-panel').style.display='none'">
+                                ${i18n.translate("action.cancel")}
+                            </button>
+                        </div>
+                        <p id="edit-error" style="display:none; font-size:0.75rem; color:#f87171;">${i18n.translate("msg.error")}</p>
+                    </form>
                 </div>
             </div>
         </div>

@@ -59,6 +59,10 @@ data class CreateLibraryRequest(
     val path: String,
 )
 
+data class UpdateLibraryRequest(
+    val name: String,
+)
+
 data class Book(
     val id: UUID,
     val libraryId: UUID,

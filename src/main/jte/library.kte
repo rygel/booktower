@@ -41,6 +41,10 @@
                 onclick="scanLibrary('${library.id}')">
                 <i class="ri-folder-search-line"></i> ${i18n.translate("page.library.scan")}
             </button>
+            <button class="btn-secondary" style="display:flex; align-items:center; gap:0.5rem;"
+                onclick="document.getElementById('rename-modal').style.display='flex'">
+                <i class="ri-edit-line"></i> ${i18n.translate("action.rename")}
+            </button>
             <button class="btn-primary" style="display:flex; align-items:center; gap:0.5rem;"
                 onclick="document.getElementById('add-book-modal').style.display='flex'">
                 <i class="ri-add-line"></i> ${i18n.translate("page.library.add.book")}
@@ -74,6 +78,29 @@
                         <button type="submit" class="btn-primary" style="flex:1;">${i18n.translate("action.add")}</button>
                         <button type="button" class="btn-secondary" style="flex:1;"
                             onclick="document.getElementById('add-book-modal').style.display='none'">${i18n.translate("action.cancel")}</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Rename Library Modal -->
+    <div id="rename-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); align-items:center; justify-content:center; z-index:50;"
+         onclick="if(event.target===this)this.style.display='none'">
+        <div class="modal-panel" style="padding:1.5rem; width:100%; max-width:24rem; border-radius:0.75rem; border:1px solid var(--bt-border);" onclick="event.stopPropagation()">
+            <h2 style="font-size:1.125rem; font-weight:700; color:var(--bt-text); margin-bottom:1.25rem;">${i18n.translate("page.library.rename.title")}</h2>
+            <form
+                hx-post="/ui/libraries/${library.id}/rename"
+                hx-swap="none"
+                hx-on:htmx:after-request="if(event.detail.successful && event.detail.xhr.getResponseHeader('HX-Redirect')){window.location.href=event.detail.xhr.getResponseHeader('HX-Redirect')}"
+            >
+                <div style="display:flex; flex-direction:column; gap:1rem;">
+                    <input type="text" name="name" value="${library.name}" required maxlength="100"
+                        style="width:100%; border-radius:0.5rem; border:1px solid; padding:0.5rem 0.75rem; font-size:0.875rem; box-sizing:border-box;">
+                    <div style="display:flex; gap:0.75rem;">
+                        <button type="submit" class="btn-primary" style="flex:1;">${i18n.translate("action.rename")}</button>
+                        <button type="button" class="btn-secondary" style="flex:1;"
+                            onclick="document.getElementById('rename-modal').style.display='none'">${i18n.translate("action.cancel")}</button>
                     </div>
                 </div>
             </form>

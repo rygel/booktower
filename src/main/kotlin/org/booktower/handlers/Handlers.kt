@@ -69,8 +69,10 @@ class AppHandler(
             // HTMX UI mutations
             "/ui/libraries" bind Method.POST to pageHandler::createLibrary,
             "/ui/libraries/{id}" bind Method.DELETE to pageHandler::deleteLibrary,
+            "/ui/libraries/{id}/rename" bind Method.POST to pageHandler::renameLibrary,
             "/ui/libraries/{libId}/books" bind Method.POST to pageHandler::createBook,
             "/ui/books/{id}" bind Method.DELETE to pageHandler::deleteBook,
+            "/ui/books/{id}/meta" bind Method.POST to pageHandler::editBook,
             "/ui/books/{id}/progress" bind Method.POST to pageHandler::updateProgress,
             "/ui/books/{id}/bookmarks" bind Method.POST to pageHandler::createBookmark,
             "/ui/bookmarks/{id}" bind Method.DELETE to pageHandler::deleteBookmark,
