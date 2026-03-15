@@ -145,8 +145,9 @@ class PageHandler(
         }
         val tagParam = req.query("tag")
         val tagFilter = tagParam?.trim()?.lowercase()?.takeIf { it.isNotBlank() }
+        val ratingFilter = req.query("rating")?.toIntOrNull()?.coerceIn(1, 5)
         val userTags = bookService.getUserTags(userId)
-        val books = bookService.getBooks(userId, libId.toString(), 1, 200, sortBy, statusFilter?.name, tagFilter).getBooks()
+        val books = bookService.getBooks(userId, libId.toString(), 1, 200, sortBy, statusFilter?.name, tagFilter, ratingFilter).getBooks()
         return htmlOk(templateRenderer.render("library.kte", mapOf(
             "username" to null,
             "library" to library,
@@ -157,6 +158,7 @@ class PageHandler(
             "statusOptions" to ReadStatus.entries.toList(),
             "currentTag" to (tagFilter ?: ""),
             "userTags" to userTags,
+            "currentRating" to (ratingFilter ?: 0),
             "themeCss" to ctx.themeCss,
             "currentTheme" to ctx.theme,
             "lang" to ctx.lang,

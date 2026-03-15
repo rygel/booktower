@@ -24,6 +24,7 @@ class BookService(private val jdbi: Jdbi, private val analyticsService: Analytic
         sortBy: BookSortOrder = BookSortOrder.TITLE,
         statusFilter: String? = null,
         tagFilter: String? = null,
+        ratingGte: Int? = null,
     ): BookListDto {
         val safePage = page.coerceAtLeast(1)
         val safePageSize = pageSize.coerceIn(1, MAX_PAGE_SIZE)
@@ -31,6 +32,7 @@ class BookService(private val jdbi: Jdbi, private val analyticsService: Analytic
         val orderClause = sortBy.sql // whitelisted from enum, safe to interpolate
         val statusClause = if (statusFilter != null) " AND bs.status = ?" else ""
         val tagClause = if (tagFilter != null) " AND EXISTS (SELECT 1 FROM book_tags bt WHERE bt.book_id = b.id AND bt.user_id = ? AND bt.tag = ?)" else ""
+        val ratingGteClause = if (ratingGte != null) " AND br.rating >= ?" else ""
 
         val books =
             if (libraryId != null) {
@@ -41,7 +43,7 @@ class BookService(private val jdbi: Jdbi, private val analyticsService: Analytic
                         INNER JOIN libraries l ON b.library_id = l.id
                         LEFT JOIN book_status bs ON bs.book_id = b.id AND bs.user_id = ?
                         LEFT JOIN book_ratings br ON br.book_id = b.id AND br.user_id = ?
-                        WHERE b.library_id = ? AND l.user_id = ?${statusClause}${tagClause}
+                        WHERE b.library_id = ? AND l.user_id = ?${statusClause}${tagClause}${ratingGteClause}
                         ORDER BY $orderClause LIMIT ? OFFSET ?
                         """,
                     )
@@ -52,6 +54,7 @@ class BookService(private val jdbi: Jdbi, private val analyticsService: Analytic
                     var idx = 4
                     if (statusFilter != null) { q.bind(idx++, statusFilter) }
                     if (tagFilter != null) { q.bind(idx++, userId.toString()); q.bind(idx++, tagFilter) }
+                    if (ratingGte != null) { q.bind(idx++, ratingGte) }
                     q.bind(idx++, safePageSize)
                     q.bind(idx, offset)
                     q.map { row -> mapBook(row) }.list()
@@ -64,7 +67,7 @@ class BookService(private val jdbi: Jdbi, private val analyticsService: Analytic
                     INNER JOIN libraries l ON b.library_id = l.id
                     LEFT JOIN book_status bs ON bs.book_id = b.id AND bs.user_id = ?
                     LEFT JOIN book_ratings br ON br.book_id = b.id AND br.user_id = ?
-                    WHERE l.user_id = ?${statusClause}${tagClause}
+                    WHERE l.user_id = ?${statusClause}${tagClause}${ratingGteClause}
                     ORDER BY $orderClause LIMIT ? OFFSET ?
                 """,
                     )
@@ -74,6 +77,7 @@ class BookService(private val jdbi: Jdbi, private val analyticsService: Analytic
                     var idx = 3
                     if (statusFilter != null) { q.bind(idx++, statusFilter) }
                     if (tagFilter != null) { q.bind(idx++, userId.toString()); q.bind(idx++, tagFilter) }
+                    if (ratingGte != null) { q.bind(idx++, ratingGte) }
                     q.bind(idx++, safePageSize)
                     q.bind(idx, offset)
                     q.map { row -> mapBook(row) }.list()
@@ -90,15 +94,18 @@ class BookService(private val jdbi: Jdbi, private val analyticsService: Analytic
                         """
                         SELECT COUNT(*) FROM books b INNER JOIN libraries l ON b.library_id = l.id
                         LEFT JOIN book_status bs ON bs.book_id = b.id AND bs.user_id = ?
-                        WHERE b.library_id = ? AND l.user_id = ?${statusClause}${tagClause}
+                        LEFT JOIN book_ratings br ON br.book_id = b.id AND br.user_id = ?
+                        WHERE b.library_id = ? AND l.user_id = ?${statusClause}${tagClause}${ratingGteClause}
                         """,
                     )
                         .bind(0, userId.toString())
-                        .bind(1, libraryId)
-                        .bind(2, userId.toString())
-                    var idx = 3
+                        .bind(1, userId.toString())
+                        .bind(2, libraryId)
+                        .bind(3, userId.toString())
+                    var idx = 4
                     if (statusFilter != null) { q.bind(idx++, statusFilter) }
                     if (tagFilter != null) { q.bind(idx++, userId.toString()); q.bind(idx++, tagFilter) }
+                    if (ratingGte != null) { q.bind(idx++, ratingGte) }
                     q.mapTo(Int::class.java).first() ?: 0
                 }
             } else {
@@ -107,14 +114,17 @@ class BookService(private val jdbi: Jdbi, private val analyticsService: Analytic
                         """
                         SELECT COUNT(*) FROM books b INNER JOIN libraries l ON b.library_id = l.id
                         LEFT JOIN book_status bs ON bs.book_id = b.id AND bs.user_id = ?
-                        WHERE l.user_id = ?${statusClause}${tagClause}
+                        LEFT JOIN book_ratings br ON br.book_id = b.id AND br.user_id = ?
+                        WHERE l.user_id = ?${statusClause}${tagClause}${ratingGteClause}
                         """,
                     )
                         .bind(0, userId.toString())
                         .bind(1, userId.toString())
-                    var idx = 2
+                        .bind(2, userId.toString())
+                    var idx = 3
                     if (statusFilter != null) { q.bind(idx++, statusFilter) }
                     if (tagFilter != null) { q.bind(idx++, userId.toString()); q.bind(idx++, tagFilter) }
+                    if (ratingGte != null) { q.bind(idx++, ratingGte) }
                     q.mapTo(Int::class.java).first() ?: 0
                 }
             }

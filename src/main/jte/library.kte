@@ -13,6 +13,7 @@
 @param statusOptions: List<ReadStatus> = emptyList()
 @param currentTag: String = ""
 @param userTags: List<String> = emptyList()
+@param currentRating: Int = 0
 @param themeCss: String
 @param currentTheme: String
 @param lang: String
@@ -46,25 +47,34 @@
                     <i class="ri-search-line"></i>
                 </button>
             </form>
-            <select onchange="window.location.href='/libraries/${library.id}?sort='+this.value+'&status=${currentStatus}&tag=${currentTag}'"
+            <select onchange="window.location.href='/libraries/${library.id}?sort='+this.value+'&status=${currentStatus}&tag=${currentTag}&rating=${currentRating}'"
                 style="border-radius:0.5rem; border:1px solid var(--bt-border-input); padding:0.4rem 0.75rem; font-size:0.8rem; background:var(--bt-input-bg); color:var(--bt-muted); cursor:pointer;">
                 @for(opt in sortOptions)
                     <option value="${opt.name}" selected="${opt.name == currentSort}">${i18n.translate(opt.label)}</option>
                 @endfor
             </select>
-            <select onchange="window.location.href='/libraries/${library.id}?sort=${currentSort}&status='+this.value+'&tag=${currentTag}'"
+            <select onchange="window.location.href='/libraries/${library.id}?sort=${currentSort}&status='+this.value+'&tag=${currentTag}&rating=${currentRating}'"
                 style="border-radius:0.5rem; border:1px solid var(--bt-border-input); padding:0.4rem 0.75rem; font-size:0.8rem; background:var(--bt-input-bg); color:var(--bt-muted); cursor:pointer;">
                 <option value="ALL" selected="${currentStatus == "ALL"}">${i18n.translate("filter.all")}</option>
                 @for(opt in statusOptions)
                     <option value="${opt.name}" selected="${opt.name == currentStatus}">${i18n.translate(opt.label)}</option>
                 @endfor
             </select>
-            <select onchange="window.location.href='/libraries/${library.id}?sort=${currentSort}&status=${currentStatus}&tag='+this.value"
+            <select onchange="window.location.href='/libraries/${library.id}?sort=${currentSort}&status=${currentStatus}&tag='+this.value+'&rating=${currentRating}'"
                 style="border-radius:0.5rem; border:1px solid var(--bt-border-input); padding:0.4rem 0.75rem; font-size:0.8rem; background:var(--bt-input-bg); color:var(--bt-muted); cursor:pointer;">
                 <option value="">${i18n.translate("filter.all.tags")}</option>
                 @for(tag in userTags)
                     <option value="${tag}" selected="${tag == currentTag}">${tag}</option>
                 @endfor
+            </select>
+            <select onchange="window.location.href='/libraries/${library.id}?sort=${currentSort}&status=${currentStatus}&tag=${currentTag}&rating='+this.value"
+                style="border-radius:0.5rem; border:1px solid var(--bt-border-input); padding:0.4rem 0.75rem; font-size:0.8rem; background:var(--bt-input-bg); color:var(--bt-muted); cursor:pointer;">
+                <option value="0" selected="${currentRating == 0}">${i18n.translate("filter.all.ratings")}</option>
+                <option value="1" selected="${currentRating == 1}">\u2605 ${i18n.translate("filter.rating.andabove")}</option>
+                <option value="2" selected="${currentRating == 2}">\u2605\u2605 ${i18n.translate("filter.rating.andabove")}</option>
+                <option value="3" selected="${currentRating == 3}">\u2605\u2605\u2605 ${i18n.translate("filter.rating.andabove")}</option>
+                <option value="4" selected="${currentRating == 4}">\u2605\u2605\u2605\u2605 ${i18n.translate("filter.rating.andabove")}</option>
+                <option value="5" selected="${currentRating == 5}">\u2605\u2605\u2605\u2605\u2605</option>
             </select>
             <button id="scan-btn" class="btn-secondary" style="display:flex; align-items:center; gap:0.5rem;"
                 onclick="scanLibrary('${library.id}')">
