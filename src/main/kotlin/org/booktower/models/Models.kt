@@ -107,6 +107,9 @@ data class BookDto(
     val status: String? = null,
     val rating: Int? = null,
     val tags: List<String> = emptyList(),
+    val isbn: String? = null,
+    val publisher: String? = null,
+    val publishedDate: String? = null,
 )
 
 class BookListDto(
@@ -229,6 +232,16 @@ data class UserAdminDto(
 
 data class SetAdminRequest(
     val isAdmin: Boolean,
+)
+
+data class FetchedMetadata(
+    val title: String?,
+    val author: String?,
+    val description: String?,
+    val isbn: String?,
+    val publisher: String?,
+    val publishedDate: String?,
+    val openLibraryCoverId: Long?,
 )
 
 data class AnnotationDto(

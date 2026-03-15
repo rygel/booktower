@@ -10,6 +10,7 @@ import org.booktower.filters.RateLimitFilter
 import org.booktower.model.ThemeCatalog
 import org.booktower.services.AdminService
 import org.booktower.services.AnnotationService
+import org.booktower.services.MetadataFetchService
 import org.booktower.services.AuthService
 import org.booktower.services.BookmarkService
 import org.booktower.services.BookService
@@ -43,6 +44,7 @@ class AppHandler(
     private val weblateHandler: WeblateHandler,
     private val analyticsService: AnalyticsService,
     private val annotationService: AnnotationService,
+    private val metadataFetchService: MetadataFetchService,
 ) {
     private val authHandler = AuthHandler2(authService, userSettingsService)
     private val libraryHandler = LibraryHandler2(libraryService)
@@ -51,7 +53,7 @@ class AppHandler(
     private val fileHandler = FileHandler(bookService, pdfMetadataService, storageConfig)
     private val settingsHandler = UserSettingsHandler(userSettingsService)
     private val adminHandler = AdminHandler(adminService, templateRenderer)
-    private val pageHandler = PageHandler(jwtService, authService, libraryService, bookService, bookmarkService, userSettingsService, analyticsService, annotationService, templateRenderer)
+    private val pageHandler = PageHandler(jwtService, authService, libraryService, bookService, bookmarkService, userSettingsService, analyticsService, annotationService, metadataFetchService, templateRenderer)
     private val authFilter = JwtAuthFilter(jwtService)
     private val adminFilter = authFilter.then(AdminFilter())
     private val authRateLimit = RateLimitFilter(maxRequests = 10, windowSeconds = 60)
@@ -91,6 +93,7 @@ class AppHandler(
             "/ui/books/{id}/bookmarks" bind Method.POST to pageHandler::createBookmark,
             "/ui/bookmarks/{id}" bind Method.DELETE to pageHandler::deleteBookmark,
             "/ui/goal" bind Method.POST to pageHandler::setGoal,
+            "/ui/books/{id}/fetch-metadata" bind Method.POST to pageHandler::fetchMetadata,
             "/ui/books/{id}/annotations" bind Method.GET to pageHandler::getAnnotations,
             "/ui/books/{id}/annotations" bind Method.POST to pageHandler::createAnnotation,
             "/ui/annotations/{id}" bind Method.DELETE to pageHandler::deleteAnnotation,

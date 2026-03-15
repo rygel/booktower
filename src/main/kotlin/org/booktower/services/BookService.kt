@@ -1,6 +1,7 @@
 package org.booktower.services
 
 import org.booktower.models.*
+import org.booktower.models.FetchedMetadata
 import org.booktower.models.ReadStatus
 import org.jdbi.v3.core.Jdbi
 import org.jdbi.v3.core.result.RowView
@@ -319,6 +320,42 @@ class BookService(private val jdbi: Jdbi, private val analyticsService: Analytic
         return book.copy(title = request.title, author = request.author, description = request.description)
     }
 
+    fun applyFetchedMetadata(
+        userId: UUID,
+        bookId: UUID,
+        meta: FetchedMetadata,
+    ): BookDto? {
+        val book = getBook(userId, bookId) ?: return null
+        val newTitle = meta.title?.takeIf { it.isNotBlank() } ?: book.title
+        val newAuthor = meta.author?.takeIf { it.isNotBlank() } ?: book.author
+        val newDesc = meta.description?.takeIf { it.isNotBlank() } ?: book.description
+        jdbi.useHandle<Exception> { handle ->
+            handle.createUpdate(
+                """UPDATE books SET title = ?, author = ?, description = ?,
+                   isbn = ?, publisher = ?, published_date = ?, updated_at = ?
+                   WHERE id = ?"""
+            )
+                .bind(0, newTitle)
+                .bind(1, newAuthor)
+                .bind(2, newDesc)
+                .bind(3, meta.isbn ?: book.isbn)
+                .bind(4, meta.publisher ?: book.publisher)
+                .bind(5, meta.publishedDate ?: book.publishedDate)
+                .bind(6, Instant.now().toString())
+                .bind(7, bookId.toString())
+                .execute()
+        }
+        logger.info("Metadata applied for book $bookId from Open Library")
+        return book.copy(
+            title = newTitle,
+            author = newAuthor,
+            description = newDesc,
+            isbn = meta.isbn ?: book.isbn,
+            publisher = meta.publisher ?: book.publisher,
+            publishedDate = meta.publishedDate ?: book.publishedDate,
+        )
+    }
+
     fun deleteBook(
         userId: UUID,
         bookId: UUID,
@@ -502,6 +539,9 @@ class BookService(private val jdbi: Jdbi, private val analyticsService: Analytic
             progress = null,
             status = status,
             rating = rating,
+            isbn = try { row.getColumn("isbn", String::class.java) } catch (_: Exception) { null },
+            publisher = try { row.getColumn("publisher", String::class.java) } catch (_: Exception) { null },
+            publishedDate = try { row.getColumn("published_date", String::class.java) } catch (_: Exception) { null },
         )
     }
 

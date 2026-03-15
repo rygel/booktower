@@ -14,6 +14,7 @@ import org.booktower.services.AdminService
 import org.booktower.services.AnalyticsService
 import org.booktower.services.AnnotationService
 import org.booktower.services.AuthService
+import org.booktower.services.MetadataFetchService
 import org.booktower.services.BookmarkService
 import org.booktower.services.PdfMetadataService
 import org.booktower.services.UserSettingsService
@@ -60,11 +61,12 @@ class RoundTripIntegrationTest {
         val bookmarkService = BookmarkService(jdbi)
         val adminService = AdminService(jdbi)
         val annotationService = AnnotationService(jdbi)
+        val metadataFetchService = MetadataFetchService()
         val appHandler = AppHandler(
             authService, libraryService, bookService, bookmarkService,
             userSettingsService, pdfMetadataService, adminService, jwtService,
             config.storage, TestFixture.templateRenderer, WeblateHandler(WeblateConfig("", "", "", false)),
-            analyticsService, annotationService,
+            analyticsService, annotationService, metadataFetchService,
         )
 
         val app = routes(

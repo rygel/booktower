@@ -69,6 +69,15 @@
                         onclick="document.getElementById('edit-panel').style.display=document.getElementById('edit-panel').style.display==='none'?'block':'none'">
                         <i class="ri-edit-line"></i> ${i18n.translate("action.edit")}
                     </button>
+                    <button id="fetch-meta-btn" class="btn-secondary" style="display:inline-flex; align-items:center; gap:0.5rem;"
+                        hx-post="/ui/books/${book.id}/fetch-metadata"
+                        hx-swap="none"
+                        hx-indicator="#fetch-meta-btn"
+                        hx-on:htmx:before-request="this.disabled=true; this.querySelector('i').className='ri-loader-4-line'; this.querySelector('span').textContent='${i18n.translate("page.reader.loading")}'"
+                        hx-on:htmx:after-request="this.disabled=false; this.querySelector('i').className='ri-database-2-line'; this.querySelector('span').textContent='${i18n.translate("action.fetch.metadata")}'"
+                    >
+                        <i class="ri-database-2-line"></i> <span>${i18n.translate("action.fetch.metadata")}</span>
+                    </button>
                     <button id="delete-book-btn"
                         style="display:inline-flex; align-items:center; gap:0.5rem; background:transparent; border:1px solid var(--bt-danger); color:var(--bt-danger); border-radius:0.5rem; padding:0.5rem 0.875rem; font-size:0.875rem; cursor:pointer;"
                         onmouseover="this.style.background='var(--bt-danger-bg)'" onmouseout="this.style.background='transparent'"

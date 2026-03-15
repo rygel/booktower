@@ -6,6 +6,7 @@ import org.booktower.services.AdminService
 import org.booktower.services.AnalyticsService
 import org.booktower.services.AnnotationService
 import org.booktower.services.AuthService
+import org.booktower.services.MetadataFetchService
 import org.booktower.services.BookmarkService
 import org.booktower.services.PdfMetadataService
 import org.booktower.services.UserSettingsService
@@ -40,11 +41,12 @@ class HtmxHandlerTest {
         val bookmarkService = BookmarkService(jdbi)
         val adminService = AdminService(jdbi)
         val annotationService = AnnotationService(jdbi)
+        val metadataFetchService = MetadataFetchService()
         val weblateHandler = WeblateHandler(WeblateConfig("", "", "", false))
         appHandler = AppHandler(
             authService, libraryService, bookService, bookmarkService,
             userSettingsService, pdfMetadataService, adminService, jwtService,
-            config.storage, TestFixture.templateRenderer, weblateHandler, analyticsService, annotationService,
+            config.storage, TestFixture.templateRenderer, weblateHandler, analyticsService, annotationService, metadataFetchService,
         )
     }
 

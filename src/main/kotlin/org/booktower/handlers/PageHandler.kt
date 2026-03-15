@@ -13,6 +13,7 @@ import org.booktower.models.UpdateProgressRequest
 import org.booktower.config.Json
 import org.booktower.services.AnalyticsService
 import org.booktower.services.AnnotationService
+import org.booktower.services.MetadataFetchService
 import org.booktower.services.AuthService
 import org.booktower.services.BookmarkService
 import org.booktower.services.BookService
@@ -37,6 +38,7 @@ class PageHandler(
     private val userSettingsService: UserSettingsService,
     private val analyticsService: AnalyticsService,
     private val annotationService: AnnotationService,
+    private val metadataFetchService: MetadataFetchService,
     private val templateRenderer: TemplateRenderer,
 ) {
     // ── Page routes ────────────────────────────────────────────────────────────
@@ -179,6 +181,25 @@ class PageHandler(
         val annotationId = req.lastPathSegment().toUuidOrNull() ?: return Response(Status.BAD_REQUEST)
         val deleted = annotationService.deleteAnnotation(userId, annotationId)
         return if (deleted) Response(Status.OK) else Response(Status.NOT_FOUND)
+    }
+
+    /** POST /ui/books/{id}/fetch-metadata */
+    fun fetchMetadata(req: Request): Response {
+        val userId = auth(req) ?: return Response(Status.UNAUTHORIZED)
+        val ctx = WebContext(req)
+        val bookId = req.secondToLastPathSegment().toUuidOrNull() ?: return Response(Status.BAD_REQUEST)
+        val book = bookService.getBook(userId, bookId) ?: return Response(Status.NOT_FOUND)
+
+        val meta = metadataFetchService.fetchMetadata(book.title, book.author)
+            ?: return Response(Status.OK)
+                .header("HX-Trigger", toast(ctx.i18n.translate("msg.metadata.not.found"), "info"))
+
+        bookService.applyFetchedMetadata(userId, bookId, meta)
+
+        return Response(Status.OK)
+            .header("HX-Redirect", "/books/$bookId")
+            .cookie(Cookie("flash_msg", ctx.i18n.translate("msg.metadata.fetched"), path = "/"))
+            .cookie(Cookie("flash_type", "success", path = "/"))
     }
 
     fun search(req: Request): Response {

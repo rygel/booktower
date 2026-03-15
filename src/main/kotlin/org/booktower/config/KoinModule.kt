@@ -3,6 +3,7 @@ package org.booktower.config
 import org.booktower.handlers.AppHandler
 import org.booktower.services.AdminService
 import org.booktower.services.AnnotationService
+import org.booktower.services.MetadataFetchService
 import org.booktower.services.AuthService
 import org.booktower.services.BookmarkService
 import org.booktower.services.BookService
@@ -45,7 +46,9 @@ val appModule = module {
 
     single { AnnotationService(get<Database>().getJdbi()) }
 
+    single { MetadataFetchService() }
+
     single { WeblateHandler(get<AppConfig>().weblate) }
 
-    single { AppHandler(get(), get(), get(), get(), get(), get(), get(), get(), get<AppConfig>().storage, get(), get(), get(), get()) }
+    single { AppHandler(get(), get(), get(), get(), get(), get(), get(), get(), get<AppConfig>().storage, get(), get(), get(), get(), get()) }
 }

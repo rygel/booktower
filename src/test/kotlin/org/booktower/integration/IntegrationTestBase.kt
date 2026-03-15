@@ -12,6 +12,7 @@ import org.booktower.services.AdminService
 import org.booktower.services.AnalyticsService
 import org.booktower.services.AnnotationService
 import org.booktower.services.AuthService
+import org.booktower.services.MetadataFetchService
 import org.booktower.services.BookmarkService
 import org.booktower.services.BookService
 import org.booktower.services.JwtService
@@ -42,6 +43,7 @@ abstract class IntegrationTestBase {
         val bookService = BookService(jdbi, analyticsService)
         val adminService = AdminService(jdbi)
         val annotationService = AnnotationService(jdbi)
+        val metadataFetchService = MetadataFetchService()
         val appHandler = AppHandler(
             authService, libraryService, bookService, bookmarkService,
             userSettingsService, pdfMetadataService, adminService, jwtService, config.storage,
@@ -49,6 +51,7 @@ abstract class IntegrationTestBase {
             WeblateHandler(WeblateConfig("", "", "", false)),
             analyticsService,
             annotationService,
+            metadataFetchService,
         )
         app = GlobalErrorFilter().then(appHandler.routes())
     }
