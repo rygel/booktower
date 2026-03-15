@@ -10,6 +10,14 @@ set -e
 
 cd "$(dirname "$0")"
 
+# Install git hooks if not already in place
+HOOK=".git/hooks/pre-push"
+if [ ! -f "$HOOK" ] || ! diff -q hooks/pre-push "$HOOK" > /dev/null 2>&1; then
+    cp hooks/pre-push "$HOOK"
+    chmod +x "$HOOK"
+    echo "Installed git pre-push hook."
+fi
+
 echo "Building BookTower..."
 mvn compile -q
 
