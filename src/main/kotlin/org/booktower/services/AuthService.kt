@@ -116,6 +116,27 @@ class AuthService(
         return result.getOrNull()
     }
 
+    fun changePassword(userId: UUID, currentPassword: String, newPassword: String): Result<Unit> {
+        val user = getUserById(userId)
+            ?: return Result.failure(IllegalArgumentException("User not found"))
+
+        if (!BCrypt.checkpw(currentPassword, user.passwordHash)) {
+            return Result.failure(IllegalArgumentException("Current password is incorrect"))
+        }
+
+        val newHash = BCrypt.hashpw(newPassword, BCrypt.gensalt())
+        jdbi.useHandle<Exception> { handle ->
+            handle.createUpdate("UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?")
+                .bind(0, newHash)
+                .bind(1, Instant.now().toString())
+                .bind(2, userId.toString())
+                .execute()
+        }
+
+        logger.info("Password changed for user: ${user.username}")
+        return Result.success(Unit)
+    }
+
     fun getUserById(userId: UUID): User? {
         return jdbi.withHandle<User?, Exception> { handle ->
             handle.createQuery("SELECT * FROM users WHERE id = ?")

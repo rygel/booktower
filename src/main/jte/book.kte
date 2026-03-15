@@ -109,7 +109,13 @@
             <div id="upload-status" style="display:none; margin-bottom:0.75rem; font-size:0.8rem; border-radius:0.5rem; padding:0.5rem 0.75rem;"></div>
             <input type="file" id="file-input" accept=".pdf,.epub"
                 style="display:block; width:100%; font-size:0.8rem; margin-bottom:0.75rem; background:transparent; border:none; cursor:pointer; color:var(--bt-muted);">
-            <button onclick="uploadFile('${book.id}')" class="btn-primary" style="width:100%;">${i18n.translate("action.upload")}</button>
+            <button onclick="uploadFile('${book.id}')" class="btn-primary" style="width:100%; margin-bottom:1rem;">${i18n.translate("action.upload")}</button>
+            <hr style="border:none; border-top:1px solid var(--bt-border); margin-bottom:1rem;">
+            <p style="font-size:0.8rem; font-weight:600; color:var(--bt-text-dim); margin-bottom:0.5rem;">${i18n.translate("page.book.cover.title")}</p>
+            <div id="cover-status" style="display:none; margin-bottom:0.75rem; font-size:0.8rem; border-radius:0.5rem; padding:0.5rem 0.75rem;"></div>
+            <input type="file" id="cover-input" accept=".jpg,.jpeg,.png,.webp"
+                style="display:block; width:100%; font-size:0.8rem; margin-bottom:0.75rem; background:transparent; border:none; cursor:pointer; color:var(--bt-muted);">
+            <button onclick="uploadCover('${book.id}')" class="btn-secondary" style="width:100%;">${i18n.translate("action.upload.cover")}</button>
         </div>
 
         <!-- Reading Progress -->
@@ -177,6 +183,41 @@
 </div>
 
 <script>
+async function uploadCover(bookId) {
+    const input = document.getElementById('cover-input');
+    const status = document.getElementById('cover-status');
+    const file = input.files[0];
+    if (!file) { alert('Select an image file first'); return; }
+    status.style.display = 'block';
+    status.style.background = 'var(--bt-badge-bg)';
+    status.style.color = 'var(--bt-badge-text)';
+    status.textContent = 'Uploading\u2026';
+    try {
+        const resp = await fetch('/api/books/' + bookId + '/cover', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/octet-stream', 'X-Filename': file.name },
+            body: file
+        });
+        if (resp.ok) {
+            const data = await resp.json();
+            status.style.background = '#14532d';
+            status.style.color = '#86efac';
+            status.textContent = 'Cover uploaded!';
+            const imgs = document.querySelectorAll('img[alt]');
+            imgs.forEach(img => { if (img.getAttribute('alt')) img.src = data.coverUrl + '?t=' + Date.now(); });
+            setTimeout(() => location.reload(), 800);
+        } else {
+            const text = await resp.text();
+            status.style.background = '#4c0519';
+            status.style.color = '#fca5a5';
+            status.textContent = 'Upload failed: ' + text;
+        }
+    } catch (e) {
+        status.style.background = '#4c0519';
+        status.style.color = '#fca5a5';
+        status.textContent = 'Upload error: ' + e.message;
+    }
+}
 async function uploadFile(bookId) {
     const input = document.getElementById('file-input');
     const status = document.getElementById('upload-status');

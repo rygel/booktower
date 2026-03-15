@@ -62,6 +62,7 @@ class AppHandler(
             "/books/{id}" bind Method.GET to pageHandler::book,
             "/books/{id}/read" bind Method.GET to pageHandler::reader,
             "/search" bind Method.GET to pageHandler::search,
+            "/profile" bind Method.GET to pageHandler::profile,
             // Auth (rate-limited: 10 requests per 60 s per IP)
             "/auth/register" bind Method.POST to authRateLimit.then(authHandler::register),
             "/auth/login" bind Method.POST to authRateLimit.then(authHandler::login),
@@ -98,7 +99,9 @@ class AppHandler(
             "/api/bookmarks" bind Method.POST to authFilter.then(bookmarkHandler::create),
             "/api/bookmarks/{id}" bind Method.DELETE to authFilter.then(bookmarkHandler::delete),
             "/api/books/{id}/upload" bind Method.POST to authFilter.then(fileHandler::upload),
+            "/api/books/{id}/cover" bind Method.POST to authFilter.then(fileHandler::uploadCover),
             "/api/books/{id}/file" bind Method.GET to authFilter.then(fileHandler::download),
+            "/api/auth/change-password" bind Method.POST to authRateLimit.then(authFilter.then(authHandler::changePassword)),
             "/api/settings" bind Method.GET to authFilter.then(settingsHandler::getAll),
             "/api/settings/{key}" bind Method.PUT to authFilter.then(settingsHandler::set),
             "/api/settings/{key}" bind Method.DELETE to authFilter.then(settingsHandler::delete),

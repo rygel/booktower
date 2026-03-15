@@ -115,6 +115,21 @@ class PageHandler(
         )))
     }
 
+    fun profile(req: Request): Response {
+        val userId = auth(req) ?: return redirectToLogin()
+        val ctx = WebContext(req)
+        val token = req.cookie("token")?.value
+        val username = token?.let { jwtService.extractUserId(it) }?.let { userId.toString() }
+        return htmlOk(templateRenderer.render("profile.kte", mapOf(
+            "username" to null,
+            "themeCss" to ctx.themeCss,
+            "currentTheme" to ctx.theme,
+            "lang" to ctx.lang,
+            "themes" to ThemeCatalog.allThemes(),
+            "i18n" to ctx.i18n,
+        )))
+    }
+
     // ── HTMX mutation endpoints ────────────────────────────────────────────────
 
     fun createLibrary(req: Request): Response {

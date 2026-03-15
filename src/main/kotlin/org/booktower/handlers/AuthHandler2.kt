@@ -1,10 +1,13 @@
 package org.booktower.handlers
 
 import org.booktower.config.Json
+import org.booktower.filters.AuthenticatedUser
 import org.booktower.model.ThemeCatalog
+import org.booktower.models.ChangePasswordRequest
 import org.booktower.models.CreateUserRequest
 import org.booktower.models.ErrorResponse
 import org.booktower.models.LoginRequest
+import org.booktower.models.SuccessResponse
 import org.booktower.services.AuthService
 import org.booktower.services.UserSettingsService
 import org.booktower.web.WebContext
@@ -16,6 +19,7 @@ import org.http4k.core.cookie.Cookie
 import org.http4k.core.cookie.cookie
 import org.slf4j.LoggerFactory
 import java.util.UUID
+
 
 private val logger = LoggerFactory.getLogger("booktower.AuthHandler")
 // Secure cookies in production; derived from the same env var used by SecurityConfig
@@ -145,6 +149,68 @@ class AuthHandler2(
             base.header("HX-Redirect", "/login")
         } else {
             Response(Status.SEE_OTHER).cookie(createLogoutCookie()).header("Location", "/login")
+        }
+    }
+
+    fun changePassword(req: Request): Response {
+        val userId: UUID = AuthenticatedUser.from(req)
+        return try {
+            val body = req.bodyString()
+            if (body.isBlank()) {
+                return Response(Status.BAD_REQUEST)
+                    .header("Content-Type", "application/json")
+                    .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Request body is required")))
+            }
+            val changeRequest = Json.mapper.readValue(body, ChangePasswordRequest::class.java)
+
+            if (changeRequest.currentPassword.isBlank()) {
+                return Response(Status.BAD_REQUEST)
+                    .header("Content-Type", "application/json")
+                    .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Current password is required")))
+            }
+            if (changeRequest.newPassword.isBlank()) {
+                return Response(Status.BAD_REQUEST)
+                    .header("Content-Type", "application/json")
+                    .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "New password is required")))
+            }
+            if (changeRequest.newPassword.length < 8) {
+                return Response(Status.BAD_REQUEST)
+                    .header("Content-Type", "application/json")
+                    .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "New password must be at least 8 characters")))
+            }
+
+            val result = authService.changePassword(
+                userId,
+                changeRequest.currentPassword,
+                changeRequest.newPassword,
+            )
+
+            result.fold(
+                onSuccess = {
+                    logger.info("Password changed for user $userId")
+                    Response(Status.OK)
+                        .header("Content-Type", "application/json")
+                        .body(Json.mapper.writeValueAsString(SuccessResponse("Password changed successfully")))
+                },
+                onFailure = { error ->
+                    logger.warn("Password change failed for user $userId: ${error.message}")
+                    when (error) {
+                        is IllegalArgumentException ->
+                            Response(Status.BAD_REQUEST)
+                                .header("Content-Type", "application/json")
+                                .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", error.message ?: "Invalid request")))
+                        else ->
+                            Response(Status.INTERNAL_SERVER_ERROR)
+                                .header("Content-Type", "application/json")
+                                .body(Json.mapper.writeValueAsString(ErrorResponse("INTERNAL_ERROR", "An unexpected error occurred")))
+                    }
+                },
+            )
+        } catch (e: Exception) {
+            logger.error("Error during password change", e)
+            Response(Status.INTERNAL_SERVER_ERROR)
+                .header("Content-Type", "application/json")
+                .body(Json.mapper.writeValueAsString(ErrorResponse("INTERNAL_ERROR", "An unexpected error occurred")))
         }
     }
 

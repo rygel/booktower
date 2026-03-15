@@ -16,6 +16,8 @@ import java.util.UUID
 private val logger = LoggerFactory.getLogger("booktower.FileHandler")
 
 private val ALLOWED_EXTENSIONS = setOf("pdf", "epub", "mobi", "cbz", "cbr", "fb2")
+private val ALLOWED_COVER_EXTENSIONS = setOf("jpg", "jpeg", "png", "webp")
+private const val MAX_COVER_SIZE = 10L * 1024 * 1024 // 10 MB
 private val CONTENT_TYPES = mapOf(
     "pdf" to "application/pdf",
     "epub" to "application/epub+zip",
@@ -122,6 +124,46 @@ class FileHandler(
             .header("Content-Disposition", "attachment; filename=\"${file.name}\"")
             .header("Content-Length", file.length().toString())
             .body(file.inputStream())
+    }
+
+    fun uploadCover(req: Request): Response {
+        val userId = AuthenticatedUser.from(req)
+        val bookId = req.uri.path.split("/").dropLast(1).lastOrNull()?.let { id ->
+            try { UUID.fromString(id) } catch (e: IllegalArgumentException) { null }
+        } ?: return badRequest("Invalid book ID")
+
+        val filename = req.header("X-Filename")?.trim()
+        if (filename.isNullOrBlank()) return badRequest("X-Filename header is required")
+
+        val ext = filename.substringAfterLast('.', "").lowercase()
+        if (ext !in ALLOWED_COVER_EXTENSIONS) {
+            return badRequest("Unsupported image type '$ext'. Allowed: ${ALLOWED_COVER_EXTENSIONS.joinToString()}")
+        }
+
+        val bytes = req.body.stream.readBytes()
+        if (bytes.isEmpty()) return badRequest("File body is empty")
+        if (bytes.size > MAX_COVER_SIZE) return badRequest("Cover image exceeds maximum size of 10 MB")
+
+        val coversDir = File(storageConfig.coversPath)
+        if (!coversDir.exists()) coversDir.mkdirs()
+
+        // Normalise to a canonical filename; keep ext for correct Content-Type serving
+        val coverFilename = "$bookId.$ext"
+        val destFile = File(coversDir, coverFilename)
+        destFile.writeBytes(bytes)
+
+        val updated = bookService.updateCoverPath(userId, bookId, coverFilename)
+        if (!updated) {
+            destFile.delete()
+            return Response(Status.NOT_FOUND)
+                .header("Content-Type", "application/json")
+                .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "Book not found")))
+        }
+
+        logger.info("Cover uploaded for book $bookId: ${bytes.size} bytes")
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(Json.mapper.writeValueAsString(mapOf("coverUrl" to "/covers/$coverFilename")))
     }
 
     fun cover(req: Request): Response {

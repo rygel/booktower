@@ -303,6 +303,24 @@ class BookService(private val jdbi: Jdbi, private val storageConfig: StorageConf
         return updated > 0
     }
 
+    fun updateCoverPath(userId: UUID, bookId: UUID, coverFilename: String): Boolean {
+        val updated = jdbi.withHandle<Int, Exception> { handle ->
+            handle.createUpdate(
+                """
+                UPDATE books SET cover_path = ?, updated_at = ?
+                WHERE id = ?
+                AND library_id IN (SELECT id FROM libraries WHERE user_id = ?)
+                """,
+            )
+                .bind(0, coverFilename)
+                .bind(1, Instant.now().toString())
+                .bind(2, bookId.toString())
+                .bind(3, userId.toString())
+                .execute()
+        }
+        return updated > 0
+    }
+
     fun updateProgress(
         userId: UUID,
         bookId: UUID,

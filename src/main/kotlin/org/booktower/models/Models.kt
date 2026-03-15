@@ -117,6 +117,11 @@ data class UpdateBookRequest(
     val description: String?,
 )
 
+data class ChangePasswordRequest(
+    val currentPassword: String,
+    val newPassword: String,
+)
+
 data class ReadingProgress(
     val id: UUID,
     val userId: UUID,

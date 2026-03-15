@@ -73,6 +73,10 @@
                     <i class="ri-search-line" style="font-size:1rem; width:1rem; text-align:center;"></i>
                     ${i18n.translate("nav.search")}
                 </a>
+                <a href="/profile" class="sidebar-link ${if (currentPage == "profile") "active" else ""}">
+                    <i class="ri-user-settings-line" style="font-size:1rem; width:1rem; text-align:center;"></i>
+                    ${i18n.translate("nav.profile")}
+                </a>
             </div>
 
             <!-- Theme selector -->
