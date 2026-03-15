@@ -1,66 +1,140 @@
 # BookTower
 
-A personal digital library management system built with Kotlin, http4k, and HTMX.
+A self-hosted personal digital library manager built with Kotlin, http4k, and HTMX.
+
+## Features
+
+- **Library management** — organize books into named libraries with folder-backed storage
+- **Book reader** — in-browser PDF, EPUB, and comic (CBZ/CBR) reader with bookmarks, annotations, and reading progress
+- **Metadata** — automatic PDF metadata extraction and cover generation; manual metadata editing with online fetch
+- **Reading analytics** — daily page tracking, streaks, finished-book counts, and reading goals
+- **Bulk operations** — select multiple books to move, delete, tag, or change status at once
+- **Smart shelves** — auto-populated virtual shelves driven by status, tag, or minimum rating rules
+- **Multi-user** — user registration, admin panel, per-user settings and data isolation
+- **Themes** — multiple color themes, persisted per user
+- **Internationalization** — English, French, and German; locale switching via sidebar; Weblate integration for translation management
+- **API tokens** — Bearer token support for OPDS and programmatic access
+- **Data export** — download all reading data as JSON
+- **Auto-scan** — background folder scanning on a configurable interval
+- **Password reset** — self-hosted token-based password reset flow
 
 ## Quick Start
 
-```powershell
-# Start the application
-.\start-server.ps1
+```bash
+# Run with defaults (H2 in-memory database, ./data for storage)
+mvn exec:java -Dexec.mainClass="org.booktower.BookTowerAppKt"
 
-# Run tests
-.\run-tests.ps1
-
-# Manual testing
-.\MANUAL_TEST.ps1
+# Or use the dev script
+bash dev.sh
 ```
 
-## Documentation
+Open `http://localhost:8080` and register an account.
 
-All project documentation is located in the [docs](./docs/) directory:
+### Docker
 
-- [README](./docs/README.md) - Main project documentation
-- [QUICKSTART](./docs/QUICKSTART.md) - Quick start guide
-- [BACKEND_ARCHITECTURE](./docs/BACKEND_ARCHITECTURE.md) - Backend architecture
-- [FRONTEND_ARCHITECTURE](./docs/FRONTEND_ARCHITECTURE.md) - Frontend architecture
-- [HTMX_TEST_COVERAGE](./docs/HTMX_TEST_COVERAGE.md) - HTMX testing documentation
+```yaml
+services:
+  booktower:
+    image: booktower:latest
+    ports:
+      - "8080:8080"
+    environment:
+      BOOKTOWER_DB_URL: jdbc:h2:file:/data/booktower;AUTO_SERVER=TRUE
+      BOOKTOWER_JWT_SECRET: change-me-in-production
+      BOOKTOWER_BOOKS_PATH: /data/books
+      BOOKTOWER_COVERS_PATH: /data/covers
+      BOOKTOWER_ENV: production
+    volumes:
+      - booktower_data:/data
+
+volumes:
+  booktower_data:
+```
+
+## Technology Stack
+
+| Layer | Technology |
+|---|---|
+| Language | Kotlin 1.9 |
+| HTTP framework | http4k |
+| Templates | JTE (`.kte`) |
+| Frontend interactivity | HTMX |
+| Database | H2 (file or in-memory) |
+| Migrations | Flyway |
+| SQL access | JDBI 3 |
+| DI | Koin |
+| Auth | JWT (cookie) + SHA-256 hashed API tokens |
+| Build | Maven |
+| Testing | JUnit 5 — 833 tests |
+
+## Configuration
+
+All settings can be overridden with environment variables. See [docs/CONFIGURATION.md](docs/CONFIGURATION.md) for the full reference.
+
+| Variable | Default | Description |
+|---|---|---|
+| `BOOKTOWER_HOST` | `0.0.0.0` | Bind address |
+| `BOOKTOWER_PORT` | `8080` | HTTP port |
+| `BOOKTOWER_JWT_SECRET` | *(dev default)* | **Change in production** |
+| `BOOKTOWER_DB_URL` | H2 in-memory | JDBC URL |
+| `BOOKTOWER_BOOKS_PATH` | `./data/books` | Book file storage |
+| `BOOKTOWER_COVERS_PATH` | `./data/covers` | Cover image storage |
+| `BOOKTOWER_AUTO_SCAN_MINUTES` | `60` | Folder scan interval (0 = off) |
+| `BOOKTOWER_ENV` | — | Set to `production` to enforce JWT secret |
+
+## Development
+
+```bash
+# Compile
+mvn compile
+
+# Run all tests
+mvn test
+
+# Run a specific test class
+mvn test -Dtest=BookServiceTest
+
+# Start the server
+mvn exec:java -Dexec.mainClass="org.booktower.BookTowerAppKt"
+```
 
 ## Project Structure
 
 ```
 booktower/
-├── src/                    # Source code
-│   ├── main/              # Application code
-│   └── test/               # Test code
-├── docs/                   # Documentation
-├── data/                   # Data directory
-├── pom.xml                # Maven configuration
-├── start-server.ps1        # Start application
-├── run-tests.ps1          # Run tests
-└── MANUAL_TEST.ps1         # Manual testing
+├── src/
+│   ├── main/
+│   │   ├── kotlin/org/booktower/
+│   │   │   ├── config/         # AppConfig, Database, Koin module
+│   │   │   ├── filters/        # Auth filter, CSRF filter
+│   │   │   ├── handlers/       # HTTP request handlers
+│   │   │   ├── model/          # Theme catalog, theme definitions
+│   │   │   ├── models/         # DTOs and request/response models
+│   │   │   ├── services/       # Business logic
+│   │   │   └── web/            # WebContext (i18n, theme helpers)
+│   │   ├── jte/                # JTE templates (.kte)
+│   │   │   └── components/     # Reusable template fragments
+│   │   └── resources/
+│   │       ├── db/migration/   # Flyway SQL migrations (V1–V9)
+│   │       ├── messages*.properties  # i18n strings
+│   │       ├── static/         # CSS and JS assets
+│   │       └── themes.json     # Theme definitions
+│   └── test/
+│       └── kotlin/org/booktower/
+│           ├── handlers/       # Handler + template rendering tests
+│           ├── integration/    # Full-stack integration tests
+│           └── services/       # Service unit tests
+├── docs/                       # Documentation
+├── data/                       # Runtime data (books, covers, DB)
+└── pom.xml
 ```
 
-## Technology Stack
+## Documentation
 
-- **Backend**: Kotlin, http4k, JDBI3
-- **Frontend**: HTMX, JTE templates, Tailwind CSS
-- **Database**: H2 (in-memory)
-- **Testing**: JUnit 5, MockK
-- **Build**: Maven
-
-## Development
-
-```powershell
-# Clean and compile
-mvn clean compile
-
-# Run tests
-mvn test
-
-# Run application
-mvn exec:java -Dexec.mainClass="org.booktower.BookTowerAppKt"
-```
+- [Configuration reference](docs/CONFIGURATION.md)
+- [API reference](docs/API.md)
+- [Deployment guide](docs/DEPLOYMENT.md)
 
 ## License
 
-[Add your license information here]
+MIT
