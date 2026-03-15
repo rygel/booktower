@@ -48,6 +48,10 @@ class HtmxHandlerTest {
             userSettingsService, pdfMetadataService, adminService, jwtService,
             config.storage, TestFixture.templateRenderer, weblateHandler, analyticsService, annotationService, metadataFetchService,
             org.booktower.services.MagicShelfService(jdbi, bookService),
+            org.booktower.services.PasswordResetService(jdbi),
+            org.booktower.services.ApiTokenService(jdbi),
+            org.booktower.services.ExportService(jdbi),
+            org.booktower.services.ComicService(),
         )
     }
 

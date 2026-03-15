@@ -98,5 +98,52 @@
         </table>
     </div>
 
+
+    <!-- Password Reset Tokens -->
+    <div style="margin-top:2.5rem;">
+        <h2 style="font-size:1rem; font-weight:600; color:var(--bt-text); margin-bottom:0.75rem; display:flex; align-items:center; gap:0.5rem;">
+            <i class="ri-key-2-line" style="color:var(--bt-accent-dim);"></i>
+            ${i18n.translate("admin.reset.tokens.title")}
+        </h2>
+        <p style="font-size:0.8rem; color:var(--bt-subtle); margin-bottom:1rem;">${i18n.translate("admin.reset.tokens.hint")}</p>
+        <div id="reset-tokens-table" style="overflow-x:auto;">
+            <p id="reset-tokens-loading" style="font-size:0.875rem; color:var(--bt-faint);">…</p>
+        </div>
+    </div>
+
 </div>
+
+<script>
+(function() {
+    function escHtml(s) { return s ? s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : ''; }
+    async function loadResetTokens() {
+        try {
+            var resp = await fetch('/api/admin/password-reset-tokens');
+            if (!resp.ok) return;
+            var tokens = await resp.json();
+            var container = document.getElementById('reset-tokens-table');
+            if (!tokens || tokens.length === 0) {
+                container.innerHTML = '<p style="font-size:0.875rem; color:var(--bt-faint);">${i18n.translate("admin.reset.tokens.empty")}</p>';
+                return;
+            }
+            var html = '<table style="width:100%; border-collapse:collapse; font-size:0.875rem;">' +
+                '<thead><tr style="border-bottom:2px solid var(--bt-border);">' +
+                '<th style="text-align:left; padding:0.5rem 1rem; color:var(--bt-muted); font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em;">${i18n.translate("admin.reset.tokens.user")}</th>' +
+                '<th style="text-align:left; padding:0.5rem 1rem; color:var(--bt-muted); font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em;">Token ID</th>' +
+                '<th style="text-align:left; padding:0.5rem 1rem; color:var(--bt-muted); font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em;">${i18n.translate("admin.reset.tokens.expires")}</th>' +
+                '</tr></thead><tbody>';
+            tokens.forEach(function(t) {
+                html += '<tr style="border-bottom:1px solid var(--bt-border);">' +
+                    '<td style="padding:0.75rem 1rem; color:var(--bt-text); font-weight:500;">' + escHtml(t.username) + '</td>' +
+                    '<td style="padding:0.75rem 1rem; color:var(--bt-muted); font-family:monospace; font-size:0.8rem;">' + escHtml(t.id) + '</td>' +
+                    '<td style="padding:0.75rem 1rem; color:var(--bt-subtle); font-size:0.8rem;">' + escHtml(t.expiresAt ? t.expiresAt.slice(0,16).replace('T',' ') : '—') + '</td>' +
+                    '</tr>';
+            });
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        } catch(e) {}
+    }
+    loadResetTokens();
+}());
+</script>
 `)

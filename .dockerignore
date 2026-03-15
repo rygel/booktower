@@ -1,10 +1,9 @@
-target/
-.m2/
-data/
-.git/
+.git
 .gitignore
-.env
+target/
 *.md
-dev.ps1
-dev.sh
+data/
+.m2/
+*.ps1
+*.sh
 nul

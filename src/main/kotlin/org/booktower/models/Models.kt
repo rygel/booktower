@@ -110,6 +110,9 @@ data class BookDto(
     val isbn: String? = null,
     val publisher: String? = null,
     val publishedDate: String? = null,
+    val series: String? = null,
+    val seriesIndex: Double? = null,
+    val filePath: String? = null,
 )
 
 class BookListDto(
@@ -134,6 +137,8 @@ data class UpdateBookRequest(
     val title: String,
     val author: String?,
     val description: String?,
+    val series: String? = null,
+    val seriesIndex: Double? = null,
 )
 
 data class ChangePasswordRequest(
@@ -268,4 +273,82 @@ data class CreateMagicShelfRequest(
     val name: String,
     val ruleType: ShelfRuleType,
     val ruleValue: String?,
+)
+
+// ── API Tokens ─────────────────────────────────────────────────────────────────
+
+data class ApiTokenDto(
+    val id: String,
+    val name: String,
+    val createdAt: String,
+    val lastUsedAt: String?,
+)
+
+data class CreateApiTokenRequest(
+    val name: String,
+)
+
+data class CreatedApiTokenResponse(
+    val id: String,
+    val name: String,
+    val token: String,  // shown only once
+    val createdAt: String,
+)
+
+// ── Export ────────────────────────────────────────────────────────────────────
+
+data class BookmarkExportDto(
+    val page: Int,
+    val title: String?,
+    val note: String?,
+    val createdAt: String,
+)
+
+data class ProgressExportDto(
+    val currentPage: Int,
+    val totalPages: Int?,
+    val percentage: Double?,
+    val lastReadAt: String,
+)
+
+data class BookExportDto(
+    val title: String,
+    val author: String?,
+    val description: String?,
+    val series: String?,
+    val seriesIndex: Double?,
+    val status: String?,
+    val rating: Int?,
+    val tags: List<String>,
+    val progress: ProgressExportDto?,
+    val bookmarks: List<BookmarkExportDto>,
+    val addedAt: String,
+)
+
+data class LibraryExportDto(
+    val name: String,
+    val path: String,
+    val books: List<BookExportDto>,
+    val createdAt: String,
+)
+
+data class UserExportDto(
+    val username: String,
+    val email: String,
+    val memberSince: String,
+    val libraries: List<LibraryExportDto>,
+)
+
+// ── Scan jobs (in-memory) ─────────────────────────────────────────────────────
+
+enum class ScanJobState { RUNNING, DONE, FAILED }
+
+data class ScanJobStatus(
+    val jobId: String,
+    val libraryId: String,
+    val state: ScanJobState,
+    val added: Int = 0,
+    val skipped: Int = 0,
+    val errors: Int = 0,
+    val message: String? = null,
 )

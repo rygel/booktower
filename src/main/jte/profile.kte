@@ -80,6 +80,41 @@
         </form>
     </div>
 
+    <!-- API Tokens -->
+    <div class="card" style="padding:1.5rem; margin-bottom:1.25rem;">
+        <h2 style="font-size:0.9rem; font-weight:600; color:var(--bt-text-dim); margin-bottom:0.5rem; display:flex; align-items:center; gap:0.5rem;">
+            <i class="ri-key-2-line" style="color:var(--bt-accent-dim);"></i>
+            ${i18n.translate("page.profile.api.tokens")}
+        </h2>
+        <p style="font-size:0.8rem; color:var(--bt-subtle); margin-bottom:0.875rem;">${i18n.translate("page.profile.api.tokens.hint")}</p>
+        <div id="new-token-banner" style="display:none; margin-bottom:0.75rem; padding:0.75rem; background:rgba(52,211,153,0.08); border:1px solid rgba(52,211,153,0.3); border-radius:0.5rem;">
+            <p style="font-size:0.75rem; color:#34d399; margin:0 0 0.375rem; font-weight:600;">${i18n.translate("msg.token-created")}</p>
+            <code id="new-token-value" style="font-size:0.8rem; word-break:break-all; color:var(--bt-text); background:var(--bt-surface-raised); padding:0.25rem 0.5rem; border-radius:0.25rem; display:block;"></code>
+        </div>
+        <form id="create-token-form" onsubmit="createToken(event)" style="display:flex; gap:0.5rem; margin-bottom:0.875rem; flex-wrap:wrap;">
+            <input type="text" id="token-name-input" placeholder="${i18n.translate("label.token.name")}" required maxlength="100"
+                style="flex:1; min-width:10rem; border-radius:0.5rem; border:1px solid var(--bt-border-input); padding:0.5rem 0.75rem; font-size:0.875rem; background:var(--bt-bg); color:var(--bt-text);">
+            <button type="submit" class="btn-primary" style="display:inline-flex; align-items:center; gap:0.375rem;">
+                <i class="ri-add-line"></i> ${i18n.translate("page.profile.api.tokens.create")}
+            </button>
+        </form>
+        <div id="token-list" style="display:flex; flex-direction:column; gap:0.375rem;">
+            <p id="token-empty" style="font-size:0.8rem; color:var(--bt-faint);">${i18n.translate("page.profile.api.tokens.empty")}</p>
+        </div>
+    </div>
+
+    <!-- Data Export -->
+    <div class="card" style="padding:1.5rem; margin-bottom:1.25rem;">
+        <h2 style="font-size:0.9rem; font-weight:600; color:var(--bt-text-dim); margin-bottom:0.5rem; display:flex; align-items:center; gap:0.5rem;">
+            <i class="ri-database-2-line" style="color:var(--bt-accent-dim);"></i>
+            ${i18n.translate("page.profile.export")}
+        </h2>
+        <p style="font-size:0.8rem; color:var(--bt-subtle); margin-bottom:0.875rem;">${i18n.translate("page.profile.export.hint")}</p>
+        <a href="/api/export" download class="btn-primary" style="display:inline-flex; align-items:center; gap:0.375rem; text-decoration:none;">
+            <i class="ri-download-2-line"></i> ${i18n.translate("action.export")}
+        </a>
+    </div>
+
     <!-- Change Password -->
     <div class="card" style="padding:1.5rem;">
         <h2 style="font-size:0.9rem; font-weight:600; color:var(--bt-text-dim); margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem;">
@@ -119,6 +154,82 @@
 </div>
 
 <script>
+// ── API Token management ──────────────────────────────────────────────────────
+(function() {
+    function fmtDate(iso) {
+        return iso ? iso.slice(0, 10) : '—';
+    }
+    function renderToken(t) {
+        var div = document.createElement('div');
+        div.id = 'tok-' + t.id;
+        div.style.cssText = 'display:flex; align-items:center; gap:0.5rem; padding:0.5rem 0.625rem; border:1px solid var(--bt-border); border-radius:0.375rem; font-size:0.8rem;';
+        div.innerHTML =
+            '<span style="flex:1; color:var(--bt-text); font-weight:500;">' + escHtml(t.name) + '</span>' +
+            '<span style="color:var(--bt-subtle); font-size:0.75rem;">${i18n.translate("label.token.created")} ' + fmtDate(t.createdAt) + '</span>' +
+            '<span style="color:var(--bt-faint); font-size:0.75rem; margin-left:0.5rem;">${i18n.translate("label.token.last.used")} ' + (t.lastUsedAt ? fmtDate(t.lastUsedAt) : '${i18n.translate("label.token.never")}') + '</span>' +
+            '<button onclick="revokeToken(\'' + t.id + '\')" style="font-size:0.75rem; padding:0.2rem 0.5rem; border-radius:0.375rem; border:1px solid var(--bt-border-input); background:transparent; color:var(--bt-muted); cursor:pointer;" ' +
+            'onmouseover="this.style.borderColor=\'var(--bt-danger)\';this.style.color=\'var(--bt-danger)\'" ' +
+            'onmouseout="this.style.borderColor=\'var(--bt-border-input)\';this.style.color=\'var(--bt-muted)\'">' +
+            '${i18n.translate("action.revoke")}</button>';
+        return div;
+    }
+    function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    function setEmpty(visible) {
+        var el = document.getElementById('token-empty');
+        if (el) el.style.display = visible ? 'block' : 'none';
+    }
+    async function loadTokens() {
+        try {
+            var resp = await fetch('/api/tokens');
+            if (!resp.ok) return;
+            var list = await resp.json();
+            var container = document.getElementById('token-list');
+            container.innerHTML = '';
+            if (list.length === 0) {
+                container.innerHTML = '<p id="token-empty" style="font-size:0.8rem; color:var(--bt-faint);">${i18n.translate("page.profile.api.tokens.empty")}</p>';
+            } else {
+                list.forEach(function(t) { container.appendChild(renderToken(t)); });
+            }
+        } catch(e) {}
+    }
+    window.revokeToken = async function(id) {
+        try {
+            var resp = await fetch('/api/tokens/' + id, { method: 'DELETE' });
+            if (resp.ok) {
+                var el = document.getElementById('tok-' + id);
+                if (el) el.remove();
+                var container = document.getElementById('token-list');
+                if (!container.querySelector('[id^="tok-"]')) {
+                    container.innerHTML = '<p id="token-empty" style="font-size:0.8rem; color:var(--bt-faint);">${i18n.translate("page.profile.api.tokens.empty")}</p>';
+                }
+                toast('${i18n.translate("msg.token-revoked")}', 'success');
+            }
+        } catch(e) {}
+    };
+    window.createToken = async function(event) {
+        event.preventDefault();
+        var name = document.getElementById('token-name-input').value.trim();
+        if (!name) return;
+        try {
+            var resp = await fetch('/api/tokens', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: name })
+            });
+            if (resp.ok) {
+                var data = await resp.json();
+                document.getElementById('new-token-value').textContent = data.token || '';
+                document.getElementById('new-token-banner').style.display = 'block';
+                document.getElementById('token-name-input').value = '';
+                loadTokens();
+            } else {
+                toast('${i18n.translate("msg.error")}', 'error');
+            }
+        } catch(e) { toast('${i18n.translate("msg.error")}', 'error'); }
+    };
+    loadTokens();
+}());
+
 async function toggleAnalytics(enabled) {
     await fetch('/ui/preferences/analytics', {
         method: 'POST',

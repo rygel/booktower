@@ -200,7 +200,8 @@ class PageHandler(
             book.fileSize <= 0 || filePath.isNullOrBlank() -> "none"
             else -> when (filePath.substringAfterLast('.', "").lowercase()) {
                 "epub" -> "epub"
-                else  -> "pdf"
+                "cbz", "cbr" -> "comic"
+                else -> "pdf"
             }
         }
         return htmlOk(templateRenderer.render("reader.kte", mapOf(

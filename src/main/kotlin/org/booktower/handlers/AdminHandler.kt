@@ -7,6 +7,7 @@ import org.booktower.model.ThemeCatalog
 import org.booktower.models.ErrorResponse
 import org.booktower.models.SuccessResponse
 import org.booktower.services.AdminService
+import org.booktower.services.PasswordResetService
 import org.booktower.web.WebContext
 import org.http4k.core.Request
 import org.http4k.core.Response
@@ -18,6 +19,7 @@ import java.util.UUID
 class AdminHandler(
     private val adminService: AdminService,
     private val templateRenderer: TemplateRenderer,
+    private val passwordResetService: PasswordResetService,
 ) {
     fun adminPage(req: Request): Response {
         val ctx = WebContext(req)
@@ -37,6 +39,17 @@ class AdminHandler(
             ),
         )
         return Response(Status.OK).header("Content-Type", "text/html; charset=utf-8").body(content)
+    }
+
+    /** GET /api/admin/password-reset-tokens — lists active (unused, unexpired) tokens for admin display */
+    fun listResetTokens(req: Request): Response {
+        val tokens = passwordResetService.listActiveTokens()
+        val result = tokens.map { (id, username, expiresAt) ->
+            mapOf("id" to id, "username" to username, "expiresAt" to expiresAt)
+        }
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(Json.mapper.writeValueAsString(result))
     }
 
     fun listUsers(req: Request): Response {

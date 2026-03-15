@@ -306,18 +306,26 @@ class BookService(private val jdbi: Jdbi, private val analyticsService: Analytic
 
         jdbi.useHandle<Exception> { handle ->
             handle.createUpdate(
-                "UPDATE books SET title = ?, author = ?, description = ?, updated_at = ? WHERE id = ?",
+                "UPDATE books SET title = ?, author = ?, description = ?, series = ?, series_index = ?, updated_at = ? WHERE id = ?",
             )
                 .bind(0, request.title)
                 .bind(1, request.author)
                 .bind(2, request.description)
-                .bind(3, Instant.now().toString())
-                .bind(4, bookId.toString())
+                .bind(3, request.series)
+                .bind(4, request.seriesIndex)
+                .bind(5, Instant.now().toString())
+                .bind(6, bookId.toString())
                 .execute()
         }
 
         logger.info("Book updated: ${request.title}")
-        return book.copy(title = request.title, author = request.author, description = request.description)
+        return book.copy(
+            title = request.title,
+            author = request.author,
+            description = request.description,
+            series = request.series,
+            seriesIndex = request.seriesIndex,
+        )
     }
 
     fun applyFetchedMetadata(
@@ -572,6 +580,8 @@ class BookService(private val jdbi: Jdbi, private val analyticsService: Analytic
             isbn = try { row.getColumn("isbn", String::class.java) } catch (_: Exception) { null },
             publisher = try { row.getColumn("publisher", String::class.java) } catch (_: Exception) { null },
             publishedDate = try { row.getColumn("published_date", String::class.java) } catch (_: Exception) { null },
+            series = try { row.getColumn("series", String::class.java) } catch (_: Exception) { null },
+            seriesIndex = try { row.getColumn("series_index", java.lang.Double::class.java)?.toDouble() } catch (_: Exception) { null },
         )
     }
 

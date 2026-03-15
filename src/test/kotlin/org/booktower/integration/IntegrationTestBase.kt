@@ -11,13 +11,17 @@ import org.booktower.models.LoginResponse
 import org.booktower.services.AdminService
 import org.booktower.services.AnalyticsService
 import org.booktower.services.AnnotationService
+import org.booktower.services.ApiTokenService
 import org.booktower.services.AuthService
+import org.booktower.services.ComicService
+import org.booktower.services.ExportService
 import org.booktower.services.MagicShelfService
 import org.booktower.services.MetadataFetchService
 import org.booktower.services.BookmarkService
 import org.booktower.services.BookService
 import org.booktower.services.JwtService
 import org.booktower.services.LibraryService
+import org.booktower.services.PasswordResetService
 import org.booktower.services.PdfMetadataService
 import org.booktower.services.UserSettingsService
 import org.booktower.weblate.WeblateHandler
@@ -46,6 +50,10 @@ abstract class IntegrationTestBase {
         val annotationService = AnnotationService(jdbi)
         val metadataFetchService = createMetadataFetchService()
         val magicShelfService = MagicShelfService(jdbi, bookService)
+        val passwordResetService = PasswordResetService(jdbi)
+        val apiTokenService = ApiTokenService(jdbi)
+        val exportService = ExportService(jdbi)
+        val comicService = ComicService()
         val appHandler = AppHandler(
             authService, libraryService, bookService, bookmarkService,
             userSettingsService, pdfMetadataService, adminService, jwtService, config.storage,
@@ -55,6 +63,10 @@ abstract class IntegrationTestBase {
             annotationService,
             metadataFetchService,
             magicShelfService,
+            passwordResetService,
+            apiTokenService,
+            exportService,
+            comicService,
         )
         app = GlobalErrorFilter().then(appHandler.routes())
     }

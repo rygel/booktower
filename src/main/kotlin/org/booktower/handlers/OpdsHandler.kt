@@ -2,6 +2,7 @@ package org.booktower.handlers
 
 import org.booktower.config.StorageConfig
 import org.booktower.models.BookDto
+import org.booktower.services.ApiTokenService
 import org.booktower.services.AuthService
 import org.booktower.services.BookService
 import org.booktower.services.LibraryService
@@ -40,12 +41,18 @@ class OpdsHandler(
     private val libraryService: LibraryService,
     private val bookService: BookService,
     private val storageConfig: StorageConfig,
+    private val apiTokenService: ApiTokenService,
 ) {
 
     // ── Authentication ────────────────────────────────────────────────────────
 
+    /** Accepts HTTP Basic Auth (username:password) or Bearer API token. */
     private fun authenticate(req: Request): UUID? {
         val auth = req.header("Authorization") ?: return null
+        if (auth.startsWith("Bearer ")) {
+            val rawToken = auth.removePrefix("Bearer ").trim()
+            return apiTokenService.validateToken(rawToken)
+        }
         if (!auth.startsWith("Basic ")) return null
         return try {
             val decoded = String(Base64.getDecoder().decode(auth.removePrefix("Basic ")))

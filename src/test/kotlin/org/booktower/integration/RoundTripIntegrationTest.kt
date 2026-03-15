@@ -68,6 +68,10 @@ class RoundTripIntegrationTest {
             config.storage, TestFixture.templateRenderer, WeblateHandler(WeblateConfig("", "", "", false)),
             analyticsService, annotationService, metadataFetchService,
             org.booktower.services.MagicShelfService(jdbi, bookService),
+            org.booktower.services.PasswordResetService(jdbi),
+            org.booktower.services.ApiTokenService(jdbi),
+            org.booktower.services.ExportService(jdbi),
+            org.booktower.services.ComicService(),
         )
 
         val app = routes(

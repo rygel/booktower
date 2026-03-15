@@ -10,6 +10,9 @@ import org.booktower.filters.RateLimitFilter
 import org.booktower.model.ThemeCatalog
 import org.booktower.services.AdminService
 import org.booktower.services.AnnotationService
+import org.booktower.services.ApiTokenService
+import org.booktower.services.ComicService
+import org.booktower.services.ExportService
 import org.booktower.services.MagicShelfService
 import org.booktower.services.MetadataFetchService
 import org.booktower.services.AuthService
@@ -17,6 +20,7 @@ import org.booktower.services.BookmarkService
 import org.booktower.services.BookService
 import org.booktower.services.JwtService
 import org.booktower.services.LibraryService
+import org.booktower.services.PasswordResetService
 import org.booktower.services.PdfMetadataService
 import org.booktower.services.AnalyticsService
 import org.booktower.services.UserSettingsService
@@ -47,16 +51,22 @@ class AppHandler(
     private val annotationService: AnnotationService,
     private val metadataFetchService: MetadataFetchService,
     private val magicShelfService: MagicShelfService,
+    private val passwordResetService: PasswordResetService,
+    private val apiTokenService: ApiTokenService,
+    private val exportService: ExportService,
+    private val comicService: ComicService,
 ) {
-    private val authHandler = AuthHandler2(authService, userSettingsService)
+    private val authHandler = AuthHandler2(authService, userSettingsService, passwordResetService)
     private val libraryHandler = LibraryHandler2(libraryService)
     private val bookHandler = BookHandler2(bookService)
     private val bookmarkHandler = BookmarkHandler(bookmarkService)
     private val fileHandler = FileHandler(bookService, pdfMetadataService, storageConfig)
     private val settingsHandler = UserSettingsHandler(userSettingsService)
-    private val adminHandler = AdminHandler(adminService, templateRenderer)
+    private val adminHandler = AdminHandler(adminService, templateRenderer, passwordResetService)
     private val pageHandler = PageHandler(jwtService, authService, libraryService, bookService, bookmarkService, userSettingsService, analyticsService, annotationService, metadataFetchService, magicShelfService, templateRenderer)
-    private val opdsHandler = OpdsHandler(authService, libraryService, bookService, storageConfig)
+    private val opdsHandler = OpdsHandler(authService, libraryService, bookService, storageConfig, apiTokenService)
+    private val apiTokenHandler = ApiTokenHandler(apiTokenService, jwtService)
+    private val exportHandler = ExportHandler(exportService, jwtService)
     private val authFilter = JwtAuthFilter(jwtService)
     private val adminFilter = authFilter.then(AdminFilter())
     private val authRateLimit = RateLimitFilter(maxRequests = 10, windowSeconds = 60)
@@ -69,6 +79,8 @@ class AppHandler(
             "/" bind Method.GET to ::index,
             "/login" bind Method.GET to ::loginPage,
             "/register" bind Method.GET to ::registerPage,
+            "/forgot-password" bind Method.GET to ::forgotPasswordPage,
+            "/reset-password" bind Method.GET to ::resetPasswordPage,
             "/libraries" bind Method.GET to pageHandler::libraries,
             "/libraries/{id}" bind Method.GET to pageHandler::library,
             "/books/{id}" bind Method.GET to pageHandler::book,
@@ -82,6 +94,8 @@ class AppHandler(
             "/auth/register" bind Method.POST to authRateLimit.then(authHandler::register),
             "/auth/login" bind Method.POST to authRateLimit.then(authHandler::login),
             "/auth/logout" bind Method.POST to authHandler::logout,
+            "/auth/forgot-password" bind Method.POST to authRateLimit.then(authHandler::forgotPassword),
+            "/auth/reset-password" bind Method.POST to authRateLimit.then(authHandler::resetPassword),
             // HTMX UI mutations
             "/ui/libraries" bind Method.POST to pageHandler::createLibrary,
             "/ui/libraries/{id}" bind Method.DELETE to pageHandler::deleteLibrary,
@@ -110,6 +124,8 @@ class AppHandler(
             "/api/libraries" bind Method.GET to authFilter.then(libraryHandler::list),
             "/api/libraries" bind Method.POST to authFilter.then(libraryHandler::create),
             "/api/libraries/{id}" bind Method.DELETE to authFilter.then(libraryHandler::delete),
+            "/api/libraries/{id}/scan/async" bind Method.POST to authFilter.then(libraryHandler::scanAsync),
+            "/api/libraries/{id}/scan/{jobId}" bind Method.GET to authFilter.then(libraryHandler::scanStatus),
             "/api/libraries/{id}/scan" bind Method.POST to authFilter.then(libraryHandler::scan),
             "/api/books" bind Method.GET to authFilter.then(bookHandler::list),
             "/api/books" bind Method.POST to authFilter.then(bookHandler::create),
@@ -125,12 +141,15 @@ class AppHandler(
             "/api/books/{id}/upload" bind Method.POST to authFilter.then(fileHandler::upload),
             "/api/books/{id}/cover" bind Method.POST to authFilter.then(fileHandler::uploadCover),
             "/api/books/{id}/file" bind Method.GET to authFilter.then(fileHandler::download),
+            "/api/books/{id}/comic/pages" bind Method.GET to authFilter.then(::comicPages),
+            "/api/books/{id}/comic/{page}" bind Method.GET to authFilter.then(::comicPage),
             "/api/auth/change-password" bind Method.POST to authRateLimit.then(authFilter.then(authHandler::changePassword)),
             "/api/auth/change-email" bind Method.POST to authRateLimit.then(authFilter.then(authHandler::changeEmail)),
             "/api/settings" bind Method.GET to authFilter.then(settingsHandler::getAll),
             "/api/settings/{key}" bind Method.PUT to authFilter.then(settingsHandler::set),
             "/api/settings/{key}" bind Method.DELETE to authFilter.then(settingsHandler::delete),
             // Admin API
+            "/api/admin/password-reset-tokens" bind Method.GET to adminFilter.then(adminHandler::listResetTokens),
             "/api/admin/users" bind Method.GET to adminFilter.then(adminHandler::listUsers),
             "/api/admin/users/{userId}/promote" bind Method.POST to adminFilter.then(adminHandler::promote),
             "/api/admin/users/{userId}/demote" bind Method.POST to adminFilter.then(adminHandler::demote),
@@ -139,6 +158,12 @@ class AppHandler(
             "/api/weblate/pull" bind Method.POST to weblateHandler::pull,
             "/api/weblate/push" bind Method.POST to weblateHandler::push,
             "/api/weblate/status" bind Method.GET to weblateHandler::status,
+            // API tokens
+            "/api/tokens" bind Method.GET to authFilter.then(apiTokenHandler::list),
+            "/api/tokens" bind Method.POST to authFilter.then(apiTokenHandler::create),
+            "/api/tokens/{id}" bind Method.DELETE to authFilter.then(apiTokenHandler::revoke),
+            // Export
+            "/api/export" bind Method.GET to authFilter.then(exportHandler::export),
             // Smart shelves
             "/shelves/{id}" bind Method.GET to pageHandler::magicShelf,
             "/ui/shelves" bind Method.POST to pageHandler::createMagicShelf,
@@ -215,6 +240,36 @@ class AppHandler(
         return Response(Status.OK).header("Content-Type", "text/html; charset=utf-8").body(content)
     }
 
+    private fun forgotPasswordPage(req: Request): Response {
+        val ctx = WebContext(req)
+        val content = templateRenderer.render(
+            "forgot-password.kte",
+            mapOf<String, Any?>(
+                "themeCss" to ctx.themeCss,
+                "currentTheme" to ctx.theme,
+                "lang" to ctx.lang,
+                "i18n" to ctx.i18n,
+            ),
+        )
+        return Response(Status.OK).header("Content-Type", "text/html; charset=utf-8").body(content)
+    }
+
+    private fun resetPasswordPage(req: Request): Response {
+        val token = req.query("token") ?: ""
+        val ctx = WebContext(req)
+        val content = templateRenderer.render(
+            "reset-password.kte",
+            mapOf<String, Any?>(
+                "token" to token,
+                "themeCss" to ctx.themeCss,
+                "currentTheme" to ctx.theme,
+                "lang" to ctx.lang,
+                "i18n" to ctx.i18n,
+            ),
+        )
+        return Response(Status.OK).header("Content-Type", "text/html; charset=utf-8").body(content)
+    }
+
     private fun setTheme(req: Request): Response {
         val themeId = req.form("theme")?.trim()?.takeIf { ThemeCatalog.isValid(it) } ?: "catppuccin-mocha"
         val css = ThemeCatalog.toCssVariables(themeId)
@@ -232,5 +287,36 @@ class AppHandler(
             .cookie(langCookie)
             .header("HX-Refresh", "true")
             .body("")
+    }
+
+    /** GET /api/books/{id}/comic/pages — returns page count for a CBZ/CBR book */
+    private fun comicPages(req: Request): Response {
+        val userId = jwtService.extractUserId(req.cookie("token")?.value ?: "") ?: return Response(Status.UNAUTHORIZED)
+        val bookId = req.uri.path.split("/").dropLast(2).lastOrNull()
+            ?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() }
+            ?: return Response(Status.BAD_REQUEST)
+        val filePath = bookService.getBookFilePath(userId, bookId) ?: return Response(Status.NOT_FOUND)
+        val count = comicService.getPageCount(filePath)
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body("""{"pageCount":$count}""")
+    }
+
+    /** GET /api/books/{id}/comic/{page} — returns a single comic page image */
+    private fun comicPage(req: Request): Response {
+        val userId = jwtService.extractUserId(req.cookie("token")?.value ?: "") ?: return Response(Status.UNAUTHORIZED)
+        val parts = req.uri.path.split("/").filter { it.isNotBlank() }
+        val pageIndex = parts.lastOrNull()?.toIntOrNull() ?: return Response(Status.BAD_REQUEST)
+        val bookId = parts.dropLast(2).lastOrNull()
+            ?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() }
+            ?: return Response(Status.BAD_REQUEST)
+        val filePath = bookService.getBookFilePath(userId, bookId) ?: return Response(Status.NOT_FOUND)
+        val bytes = comicService.getPage(filePath, pageIndex) ?: return Response(Status.NOT_FOUND)
+        val pages = comicService.listPages(filePath)
+        val mime = pages.getOrNull(pageIndex)?.contentType ?: "image/jpeg"
+        return Response(Status.OK)
+            .header("Content-Type", mime)
+            .header("Cache-Control", "private, max-age=3600")
+            .body(bytes.inputStream())
     }
 }

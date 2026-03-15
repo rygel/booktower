@@ -1,39 +1,36 @@
-# ---- Build stage ----
-FROM maven:3.9-eclipse-temurin-21-jammy AS build
+# ── Build stage ───────────────────────────────────────────────────────────────
+FROM maven:3.9-eclipse-temurin-21 AS build
 
 WORKDIR /build
 
-# Cache dependency downloads as a separate layer
+# Cache dependencies first
 COPY pom.xml .
-RUN mvn dependency:go-offline -Denforcer.skip=true -q
+RUN mvn dependency:go-offline -q
 
-COPY src/ src/
-RUN mvn package -DskipTests -Denforcer.skip=true -q
+# Copy source and build fat jar
+COPY src ./src
+RUN mvn package -DskipTests -q
 
-# ---- Runtime stage ----
+# ── Runtime stage ─────────────────────────────────────────────────────────────
 FROM eclipse-temurin:21-jre-jammy
 
 WORKDIR /app
 
-# Non-root user for security
-RUN groupadd -r booktower && useradd -r -g booktower -s /sbin/nologin booktower
+# Create non-root user
+RUN groupadd -r booktower && useradd -r -g booktower booktower
 
-# Data directories (override paths via BOOKTOWER_*_PATH env vars or mount volumes here)
-RUN mkdir -p /data/books /data/covers /data/temp \
-    && chown -R booktower:booktower /app /data
+# Copy fat jar
+COPY --from=build /build/target/booktower-*.jar app.jar
 
-COPY --from=build --chown=booktower:booktower /build/target/*-fat.jar app.jar
+# Data directories (override with volumes in docker-compose)
+RUN mkdir -p /data/books /data/covers /data/db && \
+    chown -R booktower:booktower /data /app
 
 USER booktower
 
-EXPOSE 9999
+EXPOSE 8080
 
-# Default storage paths — override by mounting volumes at these paths
-ENV BOOKTOWER_BOOKS_PATH=/data/books \
-    BOOKTOWER_COVERS_PATH=/data/covers \
-    BOOKTOWER_TEMP_PATH=/data/temp
+ENV BOOKTOWER_ENV=production \
+    BOOKTOWER_PORT=8080
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
-    CMD curl -f http://localhost:9999/health || exit 1
-
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-Xms128m", "-Xmx512m", "-jar", "app.jar"]

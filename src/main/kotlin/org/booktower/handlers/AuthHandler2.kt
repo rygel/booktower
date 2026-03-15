@@ -10,6 +10,7 @@ import org.booktower.models.ErrorResponse
 import org.booktower.models.LoginRequest
 import org.booktower.models.SuccessResponse
 import org.booktower.services.AuthService
+import org.booktower.services.PasswordResetService
 import org.booktower.services.UserSettingsService
 import org.booktower.web.WebContext
 import org.http4k.core.Request
@@ -29,6 +30,7 @@ private val secureCookies = System.getenv("BOOKTOWER_ENV")?.lowercase() == "prod
 class AuthHandler2(
     private val authService: AuthService,
     private val userSettingsService: UserSettingsService,
+    private val passwordResetService: PasswordResetService,
 ) {
     fun register(req: Request): Response {
         return try {
@@ -269,6 +271,63 @@ class AuthHandler2(
             Response(Status.INTERNAL_SERVER_ERROR)
                 .header("Content-Type", "application/json")
                 .body(Json.mapper.writeValueAsString(ErrorResponse("INTERNAL_ERROR", "An unexpected error occurred")))
+        }
+    }
+
+    /**
+     * POST /auth/forgot-password
+     * Body (form or JSON): email=...
+     * Always returns 200 (to not reveal whether the email exists).
+     * The raw token is logged at INFO level for the self-hosted admin.
+     */
+    fun forgotPassword(req: Request): Response {
+        val email = if (isFormRequest(req)) req.form("email") else {
+            try { Json.mapper.readTree(req.bodyString()).get("email")?.asText() } catch (_: Exception) { null }
+        }
+        if (!email.isNullOrBlank()) {
+            val token = passwordResetService.createToken(email)
+            if (token != null) {
+                logger.info("Password reset token (show to user): $token")
+            }
+        }
+        // Always 200 — do not reveal whether email exists
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(Json.mapper.writeValueAsString(SuccessResponse("If that email is registered, a reset token has been generated. Check server logs.")))
+    }
+
+    /**
+     * POST /auth/reset-password
+     * Body (form or JSON): token=..., newPassword=...
+     */
+    fun resetPassword(req: Request): Response {
+        val (token, newPassword) = if (isFormRequest(req)) {
+            Pair(req.form("token"), req.form("newPassword"))
+        } else {
+            val tree = try { Json.mapper.readTree(req.bodyString()) } catch (_: Exception) { null }
+            Pair(tree?.get("token")?.asText(), tree?.get("newPassword")?.asText())
+        }
+
+        if (token.isNullOrBlank()) {
+            return Response(Status.BAD_REQUEST)
+                .header("Content-Type", "application/json")
+                .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "token is required")))
+        }
+        if (newPassword.isNullOrBlank() || newPassword.length < 8) {
+            return Response(Status.BAD_REQUEST)
+                .header("Content-Type", "application/json")
+                .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "newPassword must be at least 8 characters")))
+        }
+
+        val ok = passwordResetService.resetPassword(token, newPassword)
+        return if (ok) {
+            Response(Status.OK)
+                .header("Content-Type", "application/json")
+                .body(Json.mapper.writeValueAsString(SuccessResponse("Password reset successfully")))
+        } else {
+            Response(Status.BAD_REQUEST)
+                .header("Content-Type", "application/json")
+                .body(Json.mapper.writeValueAsString(ErrorResponse("INVALID_TOKEN", "Token is invalid, expired, or already used")))
         }
     }
 

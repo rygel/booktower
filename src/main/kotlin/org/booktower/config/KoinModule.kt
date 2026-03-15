@@ -3,6 +3,9 @@ package org.booktower.config
 import org.booktower.handlers.AppHandler
 import org.booktower.services.AdminService
 import org.booktower.services.AnnotationService
+import org.booktower.services.ApiTokenService
+import org.booktower.services.ComicService
+import org.booktower.services.ExportService
 import org.booktower.services.MagicShelfService
 import org.booktower.services.MetadataFetchService
 import org.booktower.services.AuthService
@@ -10,6 +13,7 @@ import org.booktower.services.BookmarkService
 import org.booktower.services.BookService
 import org.booktower.services.JwtService
 import org.booktower.services.LibraryService
+import org.booktower.services.PasswordResetService
 import org.booktower.services.PdfMetadataService
 import org.booktower.services.AnalyticsService
 import org.booktower.services.UserSettingsService
@@ -51,7 +55,15 @@ val appModule = module {
 
     single { MagicShelfService(get<Database>().getJdbi(), get()) }
 
+    single { PasswordResetService(get<Database>().getJdbi()) }
+
+    single { ApiTokenService(get<Database>().getJdbi()) }
+
+    single { ExportService(get<Database>().getJdbi()) }
+
+    single { ComicService() }
+
     single { WeblateHandler(get<AppConfig>().weblate) }
 
-    single { AppHandler(get(), get(), get(), get(), get(), get(), get(), get(), get<AppConfig>().storage, get(), get(), get(), get(), get(), get()) }
+    single { AppHandler(get(), get(), get(), get(), get(), get(), get(), get(), get<AppConfig>().storage, get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
 }

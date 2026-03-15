@@ -32,6 +32,9 @@
         #text-layer ::selection { background: rgba(251,191,36,0.45); }
         /* EPUB mode */
         #epub-viewer { flex: 1; background: var(--bt-bg); overflow: hidden; }
+        /* Comic mode */
+        #comic-wrap { flex: 1; overflow: auto; display: flex; justify-content: center; align-items: flex-start; padding: 1.5rem; background: #1a1a1a; }
+        #comic-img { max-width: 100%; max-height: calc(100vh - 3rem - 3rem); object-fit: contain; box-shadow: 0 4px 32px rgba(0,0,0,0.6); display: block; }
         /* No-file mode */
         #no-file { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; color: var(--bt-muted); }
         #loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.5); color: #fff; font-size: 1rem; z-index: 10; }
@@ -93,10 +96,12 @@
             style="width:3.25rem; text-align:center; border-radius:0.375rem; border:1px solid var(--bt-border-input); background:var(--bt-bg); color:var(--bt-text); font-size:0.75rem; padding:0.2rem 0.375rem;"
             onkeydown="if(event.key==='Enter'){var p=parseInt(this.value);if(p>=1){window.jumpToPage(p);this.value='';this.blur();}return false;}">
     @endif
-    <div class="sep"></div>
-    <button id="btn-zoom-out" class="tool-btn" title="${i18n.translate("page.reader.zoom.out")} (−)"><i class="ri-zoom-out-line"></i></button>
-    <span id="zoom-pct">100%</span>
-    <button id="btn-zoom-in" class="tool-btn" title="${i18n.translate("page.reader.zoom.in")} (+)"><i class="ri-zoom-in-line"></i></button>
+    @if(readerType != "comic")
+        <div class="sep"></div>
+        <button id="btn-zoom-out" class="tool-btn" title="${i18n.translate("page.reader.zoom.out")} (−)"><i class="ri-zoom-out-line"></i></button>
+        <span id="zoom-pct">100%</span>
+        <button id="btn-zoom-in" class="tool-btn" title="${i18n.translate("page.reader.zoom.in")} (+)"><i class="ri-zoom-in-line"></i></button>
+    @endif
     <div class="sep"></div>
     <button id="btn-bookmarks" class="tool-btn" title="${i18n.translate("page.reader.bookmarks")}">
         <i class="ri-bookmark-line"></i> ${i18n.translate("page.reader.bookmarks")}
@@ -121,6 +126,10 @@
         </div>
     @elseif(readerType == "epub")
         <div id="epub-viewer"></div>
+    @elseif(readerType == "comic")
+        <div id="comic-wrap">
+            <img id="comic-img" src="" alt="${i18n.translate("page.reader.comic.loading")}">
+        </div>
     @else
         <div id="no-file">
             <i class="ri-file-warning-line" style="font-size:3rem; color:var(--bt-border-input);"></i>
@@ -548,6 +557,81 @@
     window.jumpToPage = function (pct) {
         rendition.display(Math.min(100, Math.max(0, pct)) / 100.0);
     };
+}());
+</script>
+@elseif(readerType == "comic")
+<script>
+(function () {
+    'use strict';
+
+    const BOOK_ID  = '${book.id}';
+    const PROG_URL = '/ui/books/' + BOOK_ID + '/progress';
+    const INIT_PAGE = ${if (book.progress != null && book.progress!!.currentPage > 0) book.progress!!.currentPage else 1};
+
+    const pageInfo  = document.getElementById('page-info');
+    const btnPrev   = document.getElementById('btn-prev');
+    const btnNext   = document.getElementById('btn-next');
+    const saveInd   = document.getElementById('save-indicator');
+    const comicImg  = document.getElementById('comic-img');
+
+    let currentPage = 1;
+    let totalPages  = 0;
+    let saveTimer   = null;
+
+    async function init() {
+        try {
+            var resp = await fetch('/api/books/' + BOOK_ID + '/comic/pages');
+            if (!resp.ok) { comicImg.alt = '${i18n.translate("page.reader.comic.no_file")}'; return; }
+            var data = await resp.json();
+            totalPages = data.pageCount || 0;
+            if (totalPages === 0) { comicImg.alt = '${i18n.translate("page.reader.comic.no_file")}'; return; }
+            goToPage(Math.min(Math.max(1, INIT_PAGE), totalPages));
+        } catch(e) {
+            comicImg.alt = '${i18n.translate("msg.error")}';
+        }
+    }
+
+    function goToPage(n) {
+        currentPage = Math.min(Math.max(1, n), totalPages);
+        comicImg.src = '/api/books/' + BOOK_ID + '/comic/' + (currentPage - 1);
+        comicImg.alt = '${i18n.translate("label.page")} ' + currentPage;
+        pageInfo.textContent = currentPage + ' / ' + totalPages;
+        btnPrev.disabled = currentPage <= 1;
+        btnNext.disabled = currentPage >= totalPages;
+        scheduleSave(currentPage);
+    }
+
+    btnPrev.addEventListener('click', function() { if (currentPage > 1) goToPage(currentPage - 1); });
+    btnNext.addEventListener('click', function() { if (currentPage < totalPages) goToPage(currentPage + 1); });
+
+    document.addEventListener('keydown', function(e) {
+        if (e.target.tagName === 'INPUT') return;
+        if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   goToPage(currentPage - 1);
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown')  goToPage(currentPage + 1);
+        if (e.key === 'Escape') window.location.href = '/books/' + BOOK_ID;
+    });
+
+    // Click left/right half of image to page
+    comicImg.addEventListener('click', function(e) {
+        var rect = comicImg.getBoundingClientRect();
+        if (e.clientX < rect.left + rect.width / 2) { goToPage(currentPage - 1); }
+        else { goToPage(currentPage + 1); }
+    });
+
+    window.jumpToPage = function(n) { goToPage(n); };
+
+    function scheduleSave(page) {
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(function() {
+            var body = new FormData();
+            body.append('currentPage', page);
+            fetch(PROG_URL, { method: 'POST', body: body }).then(function(r) {
+                if (r.ok && saveInd) { saveInd.style.display = 'inline'; setTimeout(function() { saveInd.style.display = 'none'; }, 2000); }
+            }).catch(function() {});
+        }, 1200);
+    }
+
+    init();
 }());
 </script>
 @endif

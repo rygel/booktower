@@ -197,6 +197,15 @@
                             placeholder="${i18n.translate("field.description")}"
                             style="border-radius:0.5rem; border:1px solid; padding:0.5rem 0.75rem; font-size:0.875rem; width:100%; resize:vertical;">${book.description ?: ""}</textarea>
                         <div style="display:flex; gap:0.5rem;">
+                            <input type="text" name="series" value="${book.series ?: ""}" maxlength="255"
+                                placeholder="${i18n.translate("field.series")}"
+                                style="flex:2; border-radius:0.5rem; border:1px solid; padding:0.5rem 0.75rem; font-size:0.875rem;">
+                            <input type="number" name="seriesIndex" step="0.1" min="0"
+                                value="${if (book.seriesIndex != null) book.seriesIndex.toString() else ""}"
+                                placeholder="${i18n.translate("field.series.index")}"
+                                style="flex:1; border-radius:0.5rem; border:1px solid; padding:0.5rem 0.75rem; font-size:0.875rem;">
+                        </div>
+                        <div style="display:flex; gap:0.5rem;">
                             <button type="submit" class="btn-primary" style="display:inline-flex; align-items:center; gap:0.375rem;">
                                 <i class="ri-save-line"></i> ${i18n.translate("action.save")}
                             </button>
