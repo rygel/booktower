@@ -148,12 +148,15 @@ class PageHandler(
         val tagParam = req.query("tag")
         val tagFilter = tagParam?.trim()?.lowercase()?.takeIf { it.isNotBlank() }
         val ratingFilter = req.query("rating")?.toIntOrNull()?.coerceIn(1, 5)
+        val currentPage = req.query("page")?.toIntOrNull()?.coerceAtLeast(1) ?: 1
+        val pageSize = 50
         val userTags = bookService.getUserTags(userId)
-        val books = bookService.getBooks(userId, libId.toString(), 1, 200, sortBy, statusFilter?.name, tagFilter, ratingFilter).getBooks()
+        val result = bookService.getBooks(userId, libId.toString(), currentPage, pageSize, sortBy, statusFilter?.name, tagFilter, ratingFilter)
+        val totalPages = if (result.total == 0) 1 else (result.total + pageSize - 1) / pageSize
         return htmlOk(templateRenderer.render("library.kte", mapOf(
             "username" to null,
             "library" to library,
-            "books" to books,
+            "books" to result.getBooks(),
             "currentSort" to sortBy.name,
             "sortOptions" to BookSortOrder.entries.toList(),
             "currentStatus" to (statusFilter?.name ?: "ALL"),
@@ -161,6 +164,9 @@ class PageHandler(
             "currentTag" to (tagFilter ?: ""),
             "userTags" to userTags,
             "currentRating" to (ratingFilter ?: 0),
+            "currentPage" to currentPage,
+            "totalPages" to totalPages,
+            "totalBooks" to result.total,
             "themeCss" to ctx.themeCss,
             "currentTheme" to ctx.theme,
             "lang" to ctx.lang,

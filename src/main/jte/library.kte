@@ -14,6 +14,9 @@
 @param currentTag: String = ""
 @param userTags: List<String> = emptyList()
 @param currentRating: Int = 0
+@param currentPage: Int = 1
+@param totalPages: Int = 1
+@param totalBooks: Int = 0
 @param themeCss: String
 @param currentTheme: String
 @param lang: String
@@ -190,6 +193,41 @@
         </div>
     @else
         <div id="no-books-hint" style="display:none;"></div>
+    @endif
+
+    <!-- Pagination -->
+    @if(totalPages > 1)
+        <div style="display:flex; align-items:center; justify-content:center; gap:0.5rem; margin-top:2rem; flex-wrap:wrap;">
+            @if(currentPage > 1)
+                <a href="/libraries/${library.id}?page=${currentPage - 1}&sort=${currentSort}&status=${currentStatus}&tag=${currentTag}&rating=${currentRating}"
+                   style="display:inline-flex; align-items:center; gap:0.25rem; padding:0.4rem 0.75rem; border-radius:0.5rem; border:1px solid var(--bt-border-input); background:var(--bt-surface); color:var(--bt-muted); text-decoration:none; font-size:0.8rem; transition:border-color 0.15s;"
+                   onmouseover="this.style.borderColor='var(--bt-accent)'" onmouseout="this.style.borderColor='var(--bt-border-input)'">
+                    <i class="ri-arrow-left-s-line"></i> ${i18n.translate("pagination.prev")}
+                </a>
+            @endif
+
+            @for(p in 1..totalPages)
+                @if(p == currentPage)
+                    <span style="display:inline-flex; align-items:center; justify-content:center; width:2rem; height:2rem; border-radius:0.5rem; background:var(--bt-accent); color:#fff; font-size:0.8rem; font-weight:600;">${p}</span>
+                @elseif(p == 1 || p == totalPages || (p >= currentPage - 2 && p <= currentPage + 2))
+                    <a href="/libraries/${library.id}?page=${p}&sort=${currentSort}&status=${currentStatus}&tag=${currentTag}&rating=${currentRating}"
+                       style="display:inline-flex; align-items:center; justify-content:center; width:2rem; height:2rem; border-radius:0.5rem; border:1px solid var(--bt-border-input); background:var(--bt-surface); color:var(--bt-muted); text-decoration:none; font-size:0.8rem; transition:border-color 0.15s;"
+                       onmouseover="this.style.borderColor='var(--bt-accent)'" onmouseout="this.style.borderColor='var(--bt-border-input)'">${p}</a>
+                @elseif(p == currentPage - 3 || p == currentPage + 3)
+                    <span style="color:var(--bt-subtle); font-size:0.8rem;">…</span>
+                @endif
+            @endfor
+
+            @if(currentPage < totalPages)
+                <a href="/libraries/${library.id}?page=${currentPage + 1}&sort=${currentSort}&status=${currentStatus}&tag=${currentTag}&rating=${currentRating}"
+                   style="display:inline-flex; align-items:center; gap:0.25rem; padding:0.4rem 0.75rem; border-radius:0.5rem; border:1px solid var(--bt-border-input); background:var(--bt-surface); color:var(--bt-muted); text-decoration:none; font-size:0.8rem; transition:border-color 0.15s;"
+                   onmouseover="this.style.borderColor='var(--bt-accent)'" onmouseout="this.style.borderColor='var(--bt-border-input)'">
+                    ${i18n.translate("pagination.next")} <i class="ri-arrow-right-s-line"></i>
+                </a>
+            @endif
+
+            <span style="font-size:0.75rem; color:var(--bt-subtle); margin-left:0.5rem;">${i18n.translate("pagination.summary", currentPage, totalPages, totalBooks)}</span>
+        </div>
     @endif
 
 </div>
