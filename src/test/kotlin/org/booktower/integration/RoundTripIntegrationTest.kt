@@ -16,6 +16,7 @@ import org.booktower.services.AnnotationService
 import org.booktower.services.AuthService
 import org.booktower.services.MetadataFetchService
 import org.booktower.services.BookmarkService
+import org.booktower.services.EpubMetadataService
 import org.booktower.services.PdfMetadataService
 import org.booktower.services.UserSettingsService
 import org.booktower.services.BookService
@@ -62,9 +63,10 @@ class RoundTripIntegrationTest {
         val adminService = AdminService(jdbi)
         val annotationService = AnnotationService(jdbi)
         val metadataFetchService = MetadataFetchService()
+        val epubMetadataService = EpubMetadataService(jdbi, config.storage.coversPath)
         val appHandler = AppHandler(
             authService, libraryService, bookService, bookmarkService,
-            userSettingsService, pdfMetadataService, adminService, jwtService,
+            userSettingsService, pdfMetadataService, epubMetadataService, adminService, jwtService,
             config.storage, TestFixture.templateRenderer, WeblateHandler(WeblateConfig("", "", "", false)),
             analyticsService, annotationService, metadataFetchService,
             org.booktower.services.MagicShelfService(jdbi, bookService),

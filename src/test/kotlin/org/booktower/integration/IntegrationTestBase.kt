@@ -14,6 +14,7 @@ import org.booktower.services.AnnotationService
 import org.booktower.services.ApiTokenService
 import org.booktower.services.AuthService
 import org.booktower.services.ComicService
+import org.booktower.services.EpubMetadataService
 import org.booktower.services.ExportService
 import org.booktower.services.MagicShelfService
 import org.booktower.services.MetadataFetchService
@@ -53,10 +54,11 @@ abstract class IntegrationTestBase {
         val passwordResetService = PasswordResetService(jdbi)
         val apiTokenService = ApiTokenService(jdbi)
         val exportService = ExportService(jdbi)
+        val epubMetadataService = EpubMetadataService(jdbi, config.storage.coversPath)
         val comicService = ComicService()
         val appHandler = AppHandler(
             authService, libraryService, bookService, bookmarkService,
-            userSettingsService, pdfMetadataService, adminService, jwtService, config.storage,
+            userSettingsService, pdfMetadataService, epubMetadataService, adminService, jwtService, config.storage,
             TestFixture.templateRenderer,
             WeblateHandler(WeblateConfig("", "", "", false)),
             analyticsService,

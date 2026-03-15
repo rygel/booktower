@@ -7,6 +7,7 @@ import org.booktower.services.ScanScheduleService
 import org.booktower.services.AnnotationService
 import org.booktower.services.ApiTokenService
 import org.booktower.services.ComicService
+import org.booktower.services.EpubMetadataService
 import org.booktower.services.ExportService
 import org.booktower.services.MagicShelfService
 import org.booktower.services.MetadataFetchService
@@ -49,6 +50,8 @@ val appModule = module {
 
     single { PdfMetadataService(get<Database>().getJdbi(), get<AppConfig>().storage.coversPath) }
 
+    single { EpubMetadataService(get<Database>().getJdbi(), get<AppConfig>().storage.coversPath) }
+
     single { AdminService(get<Database>().getJdbi()) }
 
     single { AnnotationService(get<Database>().getJdbi()) }
@@ -71,5 +74,5 @@ val appModule = module {
 
     single { WeblateHandler(get<AppConfig>().weblate) }
 
-    single { AppHandler(get(), get(), get(), get(), get(), get(), get(), get(), get<AppConfig>().storage, get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    single { AppHandler(get(), get(), get(), get(), get(), get(), get(), get(), get(), get<AppConfig>().storage, get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
 }

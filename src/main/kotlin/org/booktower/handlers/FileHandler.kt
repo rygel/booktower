@@ -5,6 +5,7 @@ import org.booktower.config.StorageConfig
 import org.booktower.filters.AuthenticatedUser
 import org.booktower.models.ErrorResponse
 import org.booktower.services.BookService
+import org.booktower.services.EpubMetadataService
 import org.booktower.services.PdfMetadataService
 import org.http4k.core.Request
 import org.http4k.core.Response
@@ -31,6 +32,7 @@ private const val MAX_FILE_SIZE = 500L * 1024 * 1024 // 500 MB
 class FileHandler(
     private val bookService: BookService,
     private val pdfMetadataService: PdfMetadataService,
+    private val epubMetadataService: EpubMetadataService,
     private val storageConfig: StorageConfig,
 ) {
 
@@ -78,9 +80,10 @@ class FileHandler(
 
         logger.info("File uploaded for book $bookId: ${bytes.size} bytes, ext=$ext")
 
-        // Extract PDF metadata and cover asynchronously via managed executor
-        if (ext == "pdf") {
-            pdfMetadataService.submitAsync(bookId.toString(), destFile)
+        // Extract metadata and cover asynchronously via managed executors
+        when (ext) {
+            "pdf" -> pdfMetadataService.submitAsync(bookId.toString(), destFile)
+            "epub" -> epubMetadataService.submitAsync(bookId.toString(), destFile)
         }
 
         return Response(Status.OK)

@@ -12,6 +12,7 @@ import org.booktower.services.AdminService
 import org.booktower.services.AnnotationService
 import org.booktower.services.ApiTokenService
 import org.booktower.services.ComicService
+import org.booktower.services.EpubMetadataService
 import org.booktower.services.ExportService
 import org.booktower.services.MagicShelfService
 import org.booktower.services.MetadataFetchService
@@ -42,6 +43,7 @@ class AppHandler(
     private val bookmarkService: BookmarkService,
     private val userSettingsService: UserSettingsService,
     private val pdfMetadataService: PdfMetadataService,
+    private val epubMetadataService: EpubMetadataService,
     private val adminService: AdminService,
     private val jwtService: JwtService,
     private val storageConfig: StorageConfig,
@@ -60,7 +62,7 @@ class AppHandler(
     private val libraryHandler = LibraryHandler2(libraryService)
     private val bookHandler = BookHandler2(bookService)
     private val bookmarkHandler = BookmarkHandler(bookmarkService)
-    private val fileHandler = FileHandler(bookService, pdfMetadataService, storageConfig)
+    private val fileHandler = FileHandler(bookService, pdfMetadataService, epubMetadataService, storageConfig)
     private val settingsHandler = UserSettingsHandler(userSettingsService)
     private val adminHandler = AdminHandler(adminService, templateRenderer, passwordResetService)
     private val pageHandler = PageHandler(jwtService, authService, libraryService, bookService, bookmarkService, userSettingsService, analyticsService, annotationService, metadataFetchService, magicShelfService, templateRenderer)

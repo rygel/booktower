@@ -13,6 +13,7 @@ import org.booktower.models.CreateUserRequest
 import org.booktower.services.AuthService
 import org.booktower.services.JwtService
 import org.booktower.services.LibraryService
+import org.booktower.services.EpubMetadataService
 import org.booktower.services.PdfMetadataService
 import org.booktower.services.ScanScheduleService
 import org.http4k.core.Method
@@ -39,6 +40,7 @@ fun main() {
     val database = koin.get<Database>()
     val appHandler = koin.get<AppHandler>()
     val pdfMetadataService = koin.get<PdfMetadataService>()
+    val epubMetadataService = koin.get<EpubMetadataService>()
     val scanScheduleService = koin.get<ScanScheduleService>()
 
     scanScheduleService.start()
@@ -46,6 +48,7 @@ fun main() {
     Runtime.getRuntime().addShutdownHook(Thread {
         logger.info("Shutting down BookTower...")
         pdfMetadataService.shutdown()
+        epubMetadataService.shutdown()
         database.close()
     })
 

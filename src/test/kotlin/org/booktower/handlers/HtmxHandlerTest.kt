@@ -8,6 +8,7 @@ import org.booktower.services.AnnotationService
 import org.booktower.services.AuthService
 import org.booktower.services.MetadataFetchService
 import org.booktower.services.BookmarkService
+import org.booktower.services.EpubMetadataService
 import org.booktower.services.PdfMetadataService
 import org.booktower.services.UserSettingsService
 import org.booktower.services.BookService
@@ -43,9 +44,10 @@ class HtmxHandlerTest {
         val annotationService = AnnotationService(jdbi)
         val metadataFetchService = MetadataFetchService()
         val weblateHandler = WeblateHandler(WeblateConfig("", "", "", false))
+        val epubMetadataService = EpubMetadataService(jdbi, config.storage.coversPath)
         appHandler = AppHandler(
             authService, libraryService, bookService, bookmarkService,
-            userSettingsService, pdfMetadataService, adminService, jwtService,
+            userSettingsService, pdfMetadataService, epubMetadataService, adminService, jwtService,
             config.storage, TestFixture.templateRenderer, weblateHandler, analyticsService, annotationService, metadataFetchService,
             org.booktower.services.MagicShelfService(jdbi, bookService),
             org.booktower.services.PasswordResetService(jdbi),
