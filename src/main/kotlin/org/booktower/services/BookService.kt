@@ -320,15 +320,22 @@ class BookService(
 
         jdbi.useHandle<Exception> { handle ->
             handle.createUpdate(
-                "UPDATE books SET title = ?, author = ?, description = ?, series = ?, series_index = ?, updated_at = ? WHERE id = ?",
+                """UPDATE books SET title = ?, author = ?, description = ?,
+                   series = ?, series_index = ?,
+                   isbn = ?, publisher = ?, published_date = ?, page_count = ?,
+                   updated_at = ? WHERE id = ?""",
             )
                 .bind(0, request.title)
                 .bind(1, request.author)
                 .bind(2, request.description)
                 .bind(3, request.series)
                 .bind(4, request.seriesIndex)
-                .bind(5, Instant.now().toString())
-                .bind(6, bookId.toString())
+                .bind(5, request.isbn)
+                .bind(6, request.publisher)
+                .bind(7, request.publishedDate)
+                .bind(8, request.pageCount)
+                .bind(9, Instant.now().toString())
+                .bind(10, bookId.toString())
                 .execute()
         }
 
@@ -339,6 +346,10 @@ class BookService(
             description = request.description,
             series = request.series,
             seriesIndex = request.seriesIndex,
+            isbn = request.isbn,
+            publisher = request.publisher,
+            publishedDate = request.publishedDate,
+            pageCount = request.pageCount,
         )
     }
 

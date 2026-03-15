@@ -139,6 +139,10 @@ data class UpdateBookRequest(
     val description: String?,
     val series: String? = null,
     val seriesIndex: Double? = null,
+    val isbn: String? = null,
+    val publisher: String? = null,
+    val publishedDate: String? = null,
+    val pageCount: Int? = null,
 )
 
 data class ChangePasswordRequest(

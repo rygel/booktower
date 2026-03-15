@@ -509,7 +509,13 @@ class PageHandler(
         if (title.length > 255) return Response(Status.BAD_REQUEST).body("Title must be 255 characters or fewer")
         val author = req.form("author")?.trim()?.takeIf { it.isNotBlank() }
         val description = req.form("description")?.trim()?.takeIf { it.isNotBlank() }
-        bookService.updateBook(userId, bookId, UpdateBookRequest(title, author, description))
+        val series = req.form("series")?.trim()?.takeIf { it.isNotBlank() }
+        val seriesIndex = req.form("seriesIndex")?.toDoubleOrNull()
+        val isbn = req.form("isbn")?.trim()?.takeIf { it.isNotBlank() }
+        val publisher = req.form("publisher")?.trim()?.takeIf { it.isNotBlank() }
+        val publishedDate = req.form("publishedDate")?.trim()?.takeIf { it.isNotBlank() }
+        val pageCount = req.form("pageCount")?.toIntOrNull()?.coerceAtLeast(0)
+        bookService.updateBook(userId, bookId, UpdateBookRequest(title, author, description, series, seriesIndex, isbn, publisher, publishedDate, pageCount))
             ?: return Response(Status.NOT_FOUND)
         return Response(Status.OK)
             .header("HX-Redirect", "/books/${bookId}")
