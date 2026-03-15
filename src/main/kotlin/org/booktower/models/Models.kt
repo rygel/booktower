@@ -185,6 +185,12 @@ data class SeriesDto(
     val coverUrl: String?,
 )
 
+data class AuthorDto(
+    val name: String,
+    val bookCount: Int,
+    val coverUrl: String?,
+)
+
 data class UpdateProgressRequest(
     val currentPage: Int,
 )

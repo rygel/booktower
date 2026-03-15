@@ -569,6 +569,53 @@ class BookService(
         }
     }
 
+    /** Returns all distinct authors for the user, with book count and a cover. */
+    fun getAuthors(userId: UUID): List<AuthorDto> =
+        jdbi.withHandle<List<AuthorDto>, Exception> { handle ->
+            handle.createQuery(
+                """
+                SELECT b.author, COUNT(*) AS book_count, MIN(b.cover_path) AS cover_path
+                FROM books b
+                JOIN libraries l ON b.library_id = l.id
+                WHERE l.user_id = ? AND b.author IS NOT NULL AND b.author <> ''
+                GROUP BY b.author
+                ORDER BY b.author ASC
+                """,
+            )
+                .bind(0, userId.toString())
+                .map { row ->
+                    AuthorDto(
+                        name = row.getColumn("author", String::class.java),
+                        bookCount = row.getColumn("book_count", java.lang.Integer::class.java)?.toInt() ?: 0,
+                        coverUrl = row.getColumn("cover_path", String::class.java)?.let { "/covers/$it" },
+                    )
+                }.list()
+        }
+
+    /** Returns all books by a named author for the user, sorted by series then title. */
+    fun getBooksByAuthor(userId: UUID, author: String): List<BookDto> {
+        val books = jdbi.withHandle<List<BookDto>, Exception> { handle ->
+            handle.createQuery(
+                """
+                SELECT b.*, bs.status AS book_status_value, br.rating AS book_rating_value
+                FROM books b
+                JOIN libraries l ON b.library_id = l.id
+                LEFT JOIN book_status bs ON bs.book_id = b.id AND bs.user_id = ?
+                LEFT JOIN book_ratings br ON br.book_id = b.id AND br.user_id = ?
+                WHERE l.user_id = ? AND b.author = ?
+                ORDER BY b.series ASC NULLS LAST, b.series_index ASC NULLS LAST, b.title ASC
+                """,
+            )
+                .bind(0, userId.toString())
+                .bind(1, userId.toString())
+                .bind(2, userId.toString())
+                .bind(3, author)
+                .map { row -> mapBook(row) }.list()
+        }
+        val tagMap = fetchTagsForBooks(userId, books.map { it.id })
+        return books.map { it.copy(tags = tagMap[it.id] ?: emptyList()) }
+    }
+
     /** Returns all distinct series that belong to the user, with book count and a cover. */
     fun getSeries(userId: UUID): List<SeriesDto> =
         jdbi.withHandle<List<SeriesDto>, Exception> { handle ->

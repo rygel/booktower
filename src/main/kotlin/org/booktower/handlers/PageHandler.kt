@@ -548,6 +548,44 @@ class PageHandler(
             .header("HX-Trigger", toast(ctx.i18n.translate("msg.bookmark-deleted")))
     }
 
+    /** GET /authors — list all authors for the user */
+    fun authorList(req: Request): Response {
+        val userId = auth(req) ?: return redirectToLogin()
+        val ctx = WebContext(req)
+        val authors = bookService.getAuthors(userId)
+        return htmlOk(templateRenderer.render("author-list.kte", mapOf(
+            "username" to null,
+            "authors" to authors,
+            "themeCss" to ctx.themeCss,
+            "currentTheme" to ctx.theme,
+            "lang" to ctx.lang,
+            "themes" to ThemeCatalog.allThemes(),
+            "i18n" to ctx.i18n,
+            "isAdmin" to authIsAdmin(req),
+        )))
+    }
+
+    /** GET /authors/{name} — books by a specific author */
+    fun author(req: Request): Response {
+        val userId = auth(req) ?: return redirectToLogin()
+        val ctx = WebContext(req)
+        val name = req.lastPathSegment()
+            ?.let { java.net.URLDecoder.decode(it, "UTF-8") }
+            ?: return Response(Status.NOT_FOUND)
+        val books = bookService.getBooksByAuthor(userId, name)
+        return htmlOk(templateRenderer.render("author.kte", mapOf(
+            "username" to null,
+            "authorName" to name,
+            "books" to books,
+            "themeCss" to ctx.themeCss,
+            "currentTheme" to ctx.theme,
+            "lang" to ctx.lang,
+            "themes" to ThemeCatalog.allThemes(),
+            "i18n" to ctx.i18n,
+            "isAdmin" to authIsAdmin(req),
+        )))
+    }
+
     /** GET /series — list all series for the user */
     fun seriesList(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
