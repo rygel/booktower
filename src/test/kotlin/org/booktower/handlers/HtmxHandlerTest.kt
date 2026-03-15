@@ -10,6 +10,7 @@ import org.booktower.services.MetadataFetchService
 import org.booktower.services.BookmarkService
 import org.booktower.services.EpubMetadataService
 import org.booktower.services.GoodreadsImportService
+import org.booktower.services.ReadingSessionService
 import org.booktower.services.PdfMetadataService
 import org.booktower.services.UserSettingsService
 import org.booktower.services.BookService
@@ -39,7 +40,8 @@ class HtmxHandlerTest {
         val libraryService = LibraryService(jdbi, pdfMetadataService)
         val userSettingsService = UserSettingsService(jdbi)
         val analyticsService = AnalyticsService(jdbi, userSettingsService)
-        val bookService = BookService(jdbi, analyticsService)
+        val readingSessionService = ReadingSessionService(jdbi)
+        val bookService = BookService(jdbi, analyticsService, readingSessionService)
         val bookmarkService = BookmarkService(jdbi)
         val adminService = AdminService(jdbi)
         val annotationService = AnnotationService(jdbi)
@@ -56,6 +58,7 @@ class HtmxHandlerTest {
             org.booktower.services.ExportService(jdbi),
             org.booktower.services.ComicService(),
             GoodreadsImportService(bookService),
+            readingSessionService,
         )
     }
 

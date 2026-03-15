@@ -10,6 +10,7 @@ import org.booktower.services.ComicService
 import org.booktower.services.EpubMetadataService
 import org.booktower.services.ExportService
 import org.booktower.services.GoodreadsImportService
+import org.booktower.services.ReadingSessionService
 import org.booktower.services.MagicShelfService
 import org.booktower.services.MetadataFetchService
 import org.booktower.services.AuthService
@@ -41,13 +42,15 @@ val appModule = module {
 
     single { LibraryService(get<Database>().getJdbi(), get()) }
 
-    single { BookService(get<Database>().getJdbi(), get()) }
+    single { BookService(get<Database>().getJdbi(), get(), get()) }
 
     single { BookmarkService(get<Database>().getJdbi()) }
 
     single { UserSettingsService(get<Database>().getJdbi()) }
 
     single { AnalyticsService(get<Database>().getJdbi(), get()) }
+
+    single { ReadingSessionService(get<Database>().getJdbi()) }
 
     single { PdfMetadataService(get<Database>().getJdbi(), get<AppConfig>().storage.coversPath) }
 
@@ -77,5 +80,5 @@ val appModule = module {
 
     single { WeblateHandler(get<AppConfig>().weblate) }
 
-    single { AppHandler(get(), get(), get(), get(), get(), get(), get(), get(), get(), get<AppConfig>().storage, get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    single { AppHandler(get(), get(), get(), get(), get(), get(), get(), get(), get(), get<AppConfig>().storage, get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
 }

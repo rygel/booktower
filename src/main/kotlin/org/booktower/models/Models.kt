@@ -169,6 +169,16 @@ data class ReadingProgressDto(
     val lastReadAt: String,
 )
 
+data class ReadingSessionDto(
+    val id: String,
+    val bookId: String,
+    val bookTitle: String,
+    val startPage: Int,
+    val endPage: Int,
+    val pagesRead: Int,
+    val sessionAt: String,
+)
+
 data class UpdateProgressRequest(
     val currentPage: Int,
 )

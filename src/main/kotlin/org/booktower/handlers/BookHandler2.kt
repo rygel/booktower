@@ -8,6 +8,7 @@ import org.booktower.models.SuccessResponse
 import org.booktower.models.UpdateBookRequest
 import org.booktower.models.UpdateProgressRequest
 import org.booktower.services.BookService
+import org.booktower.services.ReadingSessionService
 import org.http4k.core.Request
 import org.http4k.core.Response
 import org.http4k.core.Status
@@ -16,7 +17,10 @@ import java.util.UUID
 
 private val logger = LoggerFactory.getLogger("booktower.BookHandler")
 
-class BookHandler2(private val bookService: BookService) {
+class BookHandler2(
+    private val bookService: BookService,
+    private val readingSessionService: ReadingSessionService? = null,
+) {
     fun list(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
         val libraryId = req.query("libraryId")
@@ -214,6 +218,18 @@ class BookHandler2(private val bookService: BookService) {
                 .header("Content-Type", "application/json")
                 .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "Book not found")))
         }
+    }
+
+    fun sessions(req: Request): Response {
+        val userId = AuthenticatedUser.from(req)
+        val bookId = req.uri.path.split("/").dropLast(1).lastOrNull()
+            ?.let { try { UUID.fromString(it) } catch (e: IllegalArgumentException) { null } }
+            ?: return Response(Status.BAD_REQUEST)
+        val limit = req.query("limit")?.toIntOrNull()?.coerceIn(1, 100) ?: 20
+        val sessions = readingSessionService?.getSessionsForBook(userId, bookId, limit) ?: emptyList()
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(Json.mapper.writeValueAsString(sessions))
     }
 
     private fun validateCreateBookRequest(request: CreateBookRequest): String? {

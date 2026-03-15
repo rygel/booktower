@@ -22,6 +22,7 @@ import org.booktower.services.BookmarkService
 import org.booktower.services.BookService
 import org.booktower.services.JwtService
 import org.booktower.services.LibraryService
+import org.booktower.services.ReadingSessionService
 import org.booktower.services.UserSettingsService
 import org.booktower.web.WebContext
 import org.http4k.core.Request
@@ -44,6 +45,7 @@ class PageHandler(
     private val metadataFetchService: MetadataFetchService,
     private val magicShelfService: MagicShelfService,
     private val templateRenderer: TemplateRenderer,
+    private val readingSessionService: ReadingSessionService? = null,
 ) {
     // ── Page routes ────────────────────────────────────────────────────────────
 
@@ -353,9 +355,11 @@ class PageHandler(
         val userId = auth(req) ?: return redirectToLogin()
         val ctx = WebContext(req)
         val summary = analyticsService.getSummary(userId)
+        val recentSessions = readingSessionService?.getRecentSessions(userId, 20) ?: emptyList()
         return htmlOk(templateRenderer.render("analytics.kte", mapOf(
             "username" to null,
             "summary" to summary,
+            "recentSessions" to recentSessions,
             "themeCss" to ctx.themeCss,
             "currentTheme" to ctx.theme,
             "lang" to ctx.lang,

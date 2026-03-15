@@ -16,6 +16,7 @@ import org.booktower.services.EpubMetadataService
 import org.booktower.services.ExportService
 import org.booktower.services.GoodreadsImportService
 import org.booktower.services.MagicShelfService
+import org.booktower.services.ReadingSessionService
 import org.booktower.services.MetadataFetchService
 import org.booktower.services.AuthService
 import org.booktower.services.BookmarkService
@@ -59,15 +60,16 @@ class AppHandler(
     private val exportService: ExportService,
     private val comicService: ComicService,
     private val goodreadsImportService: GoodreadsImportService,
+    private val readingSessionService: ReadingSessionService,
 ) {
     private val authHandler = AuthHandler2(authService, userSettingsService, passwordResetService)
     private val libraryHandler = LibraryHandler2(libraryService)
-    private val bookHandler = BookHandler2(bookService)
+    private val bookHandler = BookHandler2(bookService, readingSessionService)
     private val bookmarkHandler = BookmarkHandler(bookmarkService)
     private val fileHandler = FileHandler(bookService, pdfMetadataService, epubMetadataService, storageConfig)
     private val settingsHandler = UserSettingsHandler(userSettingsService)
     private val adminHandler = AdminHandler(adminService, templateRenderer, passwordResetService)
-    private val pageHandler = PageHandler(jwtService, authService, libraryService, bookService, bookmarkService, userSettingsService, analyticsService, annotationService, metadataFetchService, magicShelfService, templateRenderer)
+    private val pageHandler = PageHandler(jwtService, authService, libraryService, bookService, bookmarkService, userSettingsService, analyticsService, annotationService, metadataFetchService, magicShelfService, templateRenderer, readingSessionService)
     private val opdsHandler = OpdsHandler(authService, libraryService, bookService, storageConfig, apiTokenService)
     private val apiTokenHandler = ApiTokenHandler(apiTokenService, jwtService)
     private val exportHandler = ExportHandler(exportService, jwtService)
@@ -139,6 +141,7 @@ class AppHandler(
             "/api/books/{id}" bind Method.PUT to authFilter.then(bookHandler::update),
             "/api/books/{id}" bind Method.DELETE to authFilter.then(bookHandler::delete),
             "/api/books/{id}/progress" bind Method.PUT to authFilter.then(bookHandler::updateProgress),
+            "/api/books/{id}/sessions" bind Method.GET to authFilter.then(bookHandler::sessions),
             "/api/recent" bind Method.GET to authFilter.then(bookHandler::recent),
             "/api/search" bind Method.GET to authFilter.then(bookHandler::search),
             "/api/bookmarks" bind Method.GET to authFilter.then(bookmarkHandler::list),

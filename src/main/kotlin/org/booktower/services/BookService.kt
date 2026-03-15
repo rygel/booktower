@@ -11,7 +11,11 @@ import java.util.UUID
 
 private val logger = LoggerFactory.getLogger("booktower.BookService")
 
-class BookService(private val jdbi: Jdbi, private val analyticsService: AnalyticsService? = null) {
+class BookService(
+    private val jdbi: Jdbi,
+    private val analyticsService: AnalyticsService? = null,
+    private val readingSessionService: ReadingSessionService? = null,
+) {
     companion object {
         private const val MAX_PAGE_SIZE = 100
         private const val PERCENTAGE_MULTIPLIER = 100.0
@@ -540,6 +544,9 @@ class BookService(private val jdbi: Jdbi, private val analyticsService: Analytic
 
         val delta = maxOf(0, request.currentPage - previousPage)
         analyticsService?.recordProgress(userId, bookId, delta)
+        if (delta > 0) {
+            readingSessionService?.recordSession(userId, bookId, previousPage, request.currentPage, delta)
+        }
 
         logger.info("Progress updated for book ${book.title}: page ${request.currentPage}")
         return ReadingProgressDto(request.currentPage, totalPages.takeIf { it > 0 }, percentage, now.toString())
