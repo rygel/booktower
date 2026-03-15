@@ -85,6 +85,7 @@ class AppHandler(
             "/ui/libraries/{id}/rename" bind Method.POST to pageHandler::renameLibrary,
             "/ui/libraries/{libId}/books" bind Method.POST to pageHandler::createBook,
             "/ui/books/{id}" bind Method.DELETE to pageHandler::deleteBook,
+            "/ui/books/{id}/move" bind Method.POST to pageHandler::moveBook,
             "/ui/books/{id}/meta" bind Method.POST to pageHandler::editBook,
             "/ui/books/{id}/progress" bind Method.POST to pageHandler::updateProgress,
             "/ui/books/{id}/status" bind Method.POST to pageHandler::setStatus,

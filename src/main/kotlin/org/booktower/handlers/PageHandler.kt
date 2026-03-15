@@ -108,13 +108,13 @@ class PageHandler(
         val bookId = req.lastPathSegment().toUuidOrNull() ?: return Response(Status.NOT_FOUND)
         val book = bookService.getBook(userId, bookId) ?: return Response(Status.NOT_FOUND)
         val bookmarks = bookmarkService.getBookmarks(userId, bookId)
-        val libraryName = book.libraryId.let { lid ->
-            runCatching { libraryService.getLibrary(userId, UUID.fromString(lid))?.name }.getOrNull()
-        }
+        val libraries = libraryService.getLibraries(userId)
+        val libraryName = libraries.firstOrNull { it.id == book.libraryId }?.name
         return htmlOk(templateRenderer.render("book.kte", mapOf(
             "username" to null,
             "book" to book,
             "libraryName" to libraryName,
+            "libraries" to libraries,
             "bookmarks" to bookmarks,
             "themeCss" to ctx.themeCss,
             "currentTheme" to ctx.theme,
@@ -391,6 +391,22 @@ class PageHandler(
             },
             onFailure = { Response(Status.BAD_REQUEST).body(it.message ?: "Error creating book") },
         )
+    }
+
+    /** POST /ui/books/{id}/move */
+    fun moveBook(req: Request): Response {
+        val userId = auth(req) ?: return Response(Status.UNAUTHORIZED)
+        val ctx = WebContext(req)
+        val bookId = req.secondToLastPathSegment().toUuidOrNull() ?: return Response(Status.BAD_REQUEST)
+        val targetLibraryId = req.form("targetLibraryId")?.let { id ->
+            try { UUID.fromString(id) } catch (_: IllegalArgumentException) { null }
+        } ?: return Response(Status.BAD_REQUEST).body("targetLibraryId required")
+        val moved = bookService.moveBook(userId, bookId, targetLibraryId)
+            ?: return Response(Status.NOT_FOUND)
+        return Response(Status.OK)
+            .header("HX-Redirect", "/libraries/${moved.libraryId}")
+            .cookie(Cookie("flash_msg", ctx.i18n.translate("msg.book-moved"), path = "/"))
+            .cookie(Cookie("flash_type", "success", path = "/"))
     }
 
     fun deleteBook(req: Request): Response {

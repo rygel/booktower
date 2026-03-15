@@ -360,6 +360,32 @@ class BookService(private val jdbi: Jdbi, private val analyticsService: Analytic
     private fun normalizeDate(date: String?): String? =
         if (date != null && date.matches(Regex("\\d{4}"))) "$date-01-01" else date
 
+    /**
+     * Moves a book to a different library, both of which must belong to [userId].
+     * Returns the updated book, or null if the book or target library is not found.
+     */
+    fun moveBook(userId: UUID, bookId: UUID, targetLibraryId: UUID): BookDto? {
+        val book = getBook(userId, bookId) ?: return null
+        // Verify the target library belongs to this user
+        val targetExists = jdbi.withHandle<Boolean, Exception> { handle ->
+            handle.createQuery("SELECT COUNT(*) FROM libraries WHERE id = ? AND user_id = ?")
+                .bind(0, targetLibraryId.toString())
+                .bind(1, userId.toString())
+                .mapTo(Int::class.java)
+                .first() > 0
+        }
+        if (!targetExists) return null
+        jdbi.useHandle<Exception> { handle ->
+            handle.createUpdate("UPDATE books SET library_id = ?, updated_at = ? WHERE id = ?")
+                .bind(0, targetLibraryId.toString())
+                .bind(1, Instant.now().toString())
+                .bind(2, bookId.toString())
+                .execute()
+        }
+        logger.info("Book moved: ${book.title} → library $targetLibraryId")
+        return book.copy(libraryId = targetLibraryId.toString())
+    }
+
     fun deleteBook(
         userId: UUID,
         bookId: UUID,
