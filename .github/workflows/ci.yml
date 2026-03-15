@@ -138,6 +138,21 @@ jobs:
           name: booktower-jar-${{ matrix.os }}
           path: target/booktower-*.jar
 
+  # ── Docker build: verify the image assembles correctly ───────────────────
+  docker-build:
+    name: Docker Build
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build --tag booktower:ci .
+
+      - name: Verify image exists
+        run: docker image inspect booktower:ci --format '{{.RepoTags}} {{.Config.ExposedPorts}}'
+
   # ── E2E tests: Linux only (bash-based test script) ────────────────────────
   e2e-tests:
     name: E2E Tests (Linux)

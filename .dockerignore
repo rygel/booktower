@@ -1,0 +1,10 @@
+target/
+.m2/
+data/
+.git/
+.gitignore
+.env
+*.md
+dev.ps1
+dev.sh
+nul

@@ -22,8 +22,8 @@ data class AppConfig(
 
             return AppConfig(
                 name = app.getString("name"),
-                host = app.getString("host"),
-                port = app.getInt("port"),
+                host = System.getenv("BOOKTOWER_HOST") ?: app.getString("host"),
+                port = System.getenv("BOOKTOWER_PORT")?.toIntOrNull() ?: app.getInt("port"),
                 database = DatabaseConfig.load(app.getConfig("database")),
                 security = SecurityConfig.load(app.getConfig("security")),
                 storage = StorageConfig.load(app.getConfig("storage")),
@@ -45,10 +45,10 @@ data class DatabaseConfig(
     companion object {
         fun load(config: com.typesafe.config.Config): DatabaseConfig {
             return DatabaseConfig(
-                url = config.getString("url"),
-                username = config.getString("username"),
-                password = config.getString("password"),
-                driver = config.getString("driver"),
+                url = System.getenv("BOOKTOWER_DB_URL") ?: config.getString("url"),
+                username = System.getenv("BOOKTOWER_DB_USERNAME") ?: config.getString("username"),
+                password = System.getenv("BOOKTOWER_DB_PASSWORD") ?: config.getString("password"),
+                driver = System.getenv("BOOKTOWER_DB_DRIVER") ?: config.getString("driver"),
             )
         }
     }
@@ -94,9 +94,9 @@ data class StorageConfig(
     companion object {
         fun load(config: com.typesafe.config.Config): StorageConfig {
             return StorageConfig(
-                booksPath = config.getString("books-path"),
-                coversPath = config.getString("covers-path"),
-                tempPath = config.getString("temp-path"),
+                booksPath = System.getenv("BOOKTOWER_BOOKS_PATH") ?: config.getString("books-path"),
+                coversPath = System.getenv("BOOKTOWER_COVERS_PATH") ?: config.getString("covers-path"),
+                tempPath = System.getenv("BOOKTOWER_TEMP_PATH") ?: config.getString("temp-path"),
             )
         }
     }
@@ -116,8 +116,13 @@ data class CsrfConfig(
 ) {
     companion object {
         fun load(config: com.typesafe.config.Config): CsrfConfig {
+            val envHosts = System.getenv("BOOKTOWER_CSRF_ALLOWED_HOSTS")
             return CsrfConfig(
-                allowedHosts = config.getStringList("allowed-hosts").toSet(),
+                allowedHosts = if (envHosts != null) {
+                    envHosts.split(",").map { it.trim() }.filter { it.isNotEmpty() }.toSet()
+                } else {
+                    config.getStringList("allowed-hosts").toSet()
+                },
             )
         }
     }
