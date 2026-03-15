@@ -171,6 +171,19 @@ class AuthService(
         return Result.success(Unit)
     }
 
+    /** Validates username/email + password without issuing a JWT. Used by OPDS Basic Auth. */
+    fun getUserByCredentials(usernameOrEmail: String, password: String): User? {
+        val credential = usernameOrEmail.trim()
+        val user = jdbi.withHandle<User?, Exception> { handle ->
+            handle.createQuery("SELECT * FROM users WHERE username = ? OR email = ?")
+                .bind(0, credential)
+                .bind(1, credential)
+                .map { row -> mapUser(row) }
+                .firstOrNull()
+        } ?: return null
+        return if (BCrypt.checkpw(password, user.passwordHash)) user else null
+    }
+
     fun getUserById(userId: UUID): User? {
         return jdbi.withHandle<User?, Exception> { handle ->
             handle.createQuery("SELECT * FROM users WHERE id = ?")

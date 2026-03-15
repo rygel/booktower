@@ -54,6 +54,7 @@ class AppHandler(
     private val settingsHandler = UserSettingsHandler(userSettingsService)
     private val adminHandler = AdminHandler(adminService, templateRenderer)
     private val pageHandler = PageHandler(jwtService, authService, libraryService, bookService, bookmarkService, userSettingsService, analyticsService, annotationService, metadataFetchService, templateRenderer)
+    private val opdsHandler = OpdsHandler(authService, libraryService, bookService, storageConfig)
     private val authFilter = JwtAuthFilter(jwtService)
     private val adminFilter = authFilter.then(AdminFilter())
     private val authRateLimit = RateLimitFilter(maxRequests = 10, windowSeconds = 60)
@@ -136,6 +137,10 @@ class AppHandler(
             "/api/weblate/pull" bind Method.POST to weblateHandler::pull,
             "/api/weblate/push" bind Method.POST to weblateHandler::push,
             "/api/weblate/status" bind Method.GET to weblateHandler::status,
+            // OPDS Catalog 1.2 (HTTP Basic Auth — no JWT required)
+            "/opds/catalog" bind Method.GET to opdsHandler::catalog,
+            "/opds/catalog/{libraryId}" bind Method.GET to opdsHandler::library,
+            "/opds/books/{id}/file" bind Method.GET to opdsHandler::download,
         )
     }
 
