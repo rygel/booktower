@@ -89,3 +89,44 @@ input:focus, select:focus, textarea:focus {
   transition: background 0.15s;
 }
 .btn-secondary:hover { background-color: var(--bt-border-input); }
+
+/* ========================================
+   TOASTS
+   ======================================== */
+
+#toast-container {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+.bt-toast {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.625rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.825rem;
+  font-weight: 500;
+  background: var(--bt-surface);
+  border: 1px solid var(--bt-border);
+  color: var(--bt-text);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  pointer-events: auto;
+  animation: bt-toast-in 0.2s ease;
+  max-width: 22rem;
+}
+
+.bt-toast.success { border-left: 3px solid var(--bt-accent); }
+.bt-toast.error   { border-left: 3px solid var(--bt-danger); }
+.bt-toast.info    { border-left: 3px solid var(--bt-muted); }
+
+@keyframes bt-toast-in {
+  from { opacity: 0; transform: translateY(0.5rem); }
+  to   { opacity: 1; transform: translateY(0); }
+}

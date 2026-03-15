@@ -180,6 +180,7 @@ class UiIntegrationTest : IntegrationTestBase() {
         val body = response.bodyString()
         assertTrue(body.contains("My UI Library"))
         assertTrue(body.contains("hx-delete="))
+        assertTrue(response.header("HX-Trigger")?.contains("showToast") == true)
     }
 
     @Test
@@ -202,6 +203,7 @@ class UiIntegrationTest : IntegrationTestBase() {
                 .header("Cookie", "token=$token"),
         )
         assertEquals(Status.OK, response.status)
+        assertTrue(response.header("HX-Trigger")?.contains("showToast") == true)
 
         val list = app(Request(Method.GET, "/api/libraries").header("Cookie", "token=$token"))
         assertFalse(list.bodyString().contains(libId))
@@ -222,6 +224,7 @@ class UiIntegrationTest : IntegrationTestBase() {
         val body = response.bodyString()
         assertTrue(body.contains("UI Test Book"))
         assertTrue(body.contains("hx-delete="))
+        assertTrue(response.header("HX-Trigger")?.contains("showToast") == true)
     }
 
     @Test
@@ -235,6 +238,7 @@ class UiIntegrationTest : IntegrationTestBase() {
                 .header("Cookie", "token=$token"),
         )
         assertEquals(Status.OK, response.status)
+        assertTrue(response.header("HX-Trigger")?.contains("showToast") == true)
     }
 
     @Test
@@ -274,6 +278,7 @@ class UiIntegrationTest : IntegrationTestBase() {
         assertTrue(body.contains("7"))
         assertTrue(body.contains("Chapter One"))
         assertTrue(body.contains("hx-delete="))
+        assertTrue(response.header("HX-Trigger")?.contains("showToast") == true)
     }
 
     @Test
@@ -295,6 +300,7 @@ class UiIntegrationTest : IntegrationTestBase() {
                 .header("Cookie", "token=$token"),
         )
         assertEquals(Status.OK, response.status)
+        assertTrue(response.header("HX-Trigger")?.contains("showToast") == true)
     }
 
     @Test
@@ -439,7 +445,10 @@ class UiIntegrationTest : IntegrationTestBase() {
         val body = app(
             Request(Method.GET, "/search?q=%3Cscript%3E").header("Cookie", "token=$token"),
         ).bodyString()
-        assertFalse(body.contains("<script>"), "Raw <script> tag must not appear unescaped in value attribute")
+        // The value attribute must not contain the raw unescaped tag
+        assertFalse(body.contains("""value="<script>""""), "Raw <script> tag must not appear unescaped in value attribute")
+        // JTE should have emitted the escaped form
+        assertTrue(body.contains("&lt;script&gt;"), "Query should appear HTML-escaped in the search input value")
     }
 
     @Test

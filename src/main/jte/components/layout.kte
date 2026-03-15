@@ -10,6 +10,7 @@
 @param themes: List<ThemeDefinition>
 @param i18n: I18nService
 @param searchQuery: String = ""
+@param isAdmin: Boolean = false
 @param content: Content
 
 <!DOCTYPE html>
@@ -77,6 +78,12 @@
                     <i class="ri-user-settings-line" style="font-size:1rem; width:1rem; text-align:center;"></i>
                     ${i18n.translate("nav.profile")}
                 </a>
+                @if(isAdmin)
+                <a href="/admin" class="sidebar-link ${if (currentPage == "admin") "active" else ""}">
+                    <i class="ri-shield-user-line" style="font-size:1rem; width:1rem; text-align:center;"></i>
+                    ${i18n.translate("nav.admin")}
+                </a>
+                @endif
             </div>
 
             <!-- Theme selector -->
@@ -138,6 +145,54 @@
             <span>${i18n.translate("footer.made.with")} <i class="ri-heart-fill" style="color:var(--bt-danger);"></i> Kotlin &amp; http4k</span>
         </div>
     </footer>
+
+    <!-- Toast notifications -->
+    <div id="toast-container"></div>
+    <script>
+    (function () {
+        function showToast(message, type) {
+            var container = document.getElementById('toast-container');
+            if (!container) return;
+            var toast = document.createElement('div');
+            toast.className = 'bt-toast ' + (type || 'info');
+            var icon = type === 'success' ? 'ri-checkbox-circle-line'
+                     : type === 'error'   ? 'ri-error-warning-line'
+                     :                      'ri-information-line';
+            var safe = message.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+            toast.innerHTML = '<i class="' + icon + '" style="font-size:1rem;"></i><span>' + safe + '</span>';
+            container.appendChild(toast);
+            setTimeout(function () { toast.remove(); }, 3500);
+        }
+
+        // HTMX: HX-Trigger fires a custom DOM event named by the key
+        document.addEventListener('showToast', function (e) {
+            var d = e.detail;
+            if (typeof d === 'string') showToast(d, 'info');
+            else showToast(d.message || '', d.type || 'info');
+        });
+
+        // Flash cookie: read toast message set before a server-side redirect
+        function getCookie(name) {
+            var prefix = name + '=';
+            var parts = document.cookie.split('; ');
+            for (var i = 0; i < parts.length; i++) {
+                if (parts[i].indexOf(prefix) === 0)
+                    return decodeURIComponent(parts[i].slice(prefix.length));
+            }
+            return null;
+        }
+        function clearCookie(name) {
+            document.cookie = name + '=; path=/; max-age=0';
+        }
+        var flashMsg  = getCookie('flash_msg');
+        var flashType = getCookie('flash_type');
+        if (flashMsg) {
+            showToast(flashMsg, flashType || 'info');
+            clearCookie('flash_msg');
+            clearCookie('flash_type');
+        }
+    })();
+    </script>
 
 </body>
 </html>
