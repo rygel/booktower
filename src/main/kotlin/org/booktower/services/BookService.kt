@@ -141,14 +141,21 @@ class BookService(
         query: String,
         page: Int = 1,
         pageSize: Int = 20,
+        libId: String? = null,
+        statusFilter: String? = null,
+        minRating: Int? = null,
     ): BookListDto {
         val safePage = page.coerceAtLeast(1)
         val safePageSize = pageSize.coerceIn(1, MAX_PAGE_SIZE)
         val offset = (safePage - 1) * safePageSize
         val likeQuery = "%${query.trim().lowercase()}%"
 
+        val libClause = if (libId != null) " AND l.id = ?" else ""
+        val statusClause = if (statusFilter != null) " AND bs.status = ?" else ""
+        val ratingClause = if (minRating != null) " AND br.rating >= ?" else ""
+
         val books = jdbi.withHandle<List<BookDto>, Exception> { handle ->
-            handle.createQuery(
+            val q = handle.createQuery(
                 """
                 SELECT b.*, bs.status AS book_status_value, br.rating AS book_rating_value FROM books b
                 INNER JOIN libraries l ON b.library_id = l.id
@@ -156,6 +163,7 @@ class BookService(
                 LEFT JOIN book_ratings br ON br.book_id = b.id AND br.user_id = ?
                 WHERE l.user_id = ?
                   AND (LOWER(b.title) LIKE ? OR LOWER(b.author) LIKE ? OR LOWER(b.description) LIKE ?)
+                  $libClause$statusClause$ratingClause
                 ORDER BY b.title LIMIT ? OFFSET ?
                 """,
             )
@@ -165,30 +173,41 @@ class BookService(
                 .bind(3, likeQuery)
                 .bind(4, likeQuery)
                 .bind(5, likeQuery)
-                .bind(6, safePageSize)
-                .bind(7, offset)
-                .map { row -> mapBook(row) }.list()
+            var idx = 6
+            if (libId != null) q.bind(idx++, libId)
+            if (statusFilter != null) q.bind(idx++, statusFilter)
+            if (minRating != null) q.bind(idx++, minRating)
+            q.bind(idx++, safePageSize)
+            q.bind(idx, offset)
+            q.map { row -> mapBook(row) }.list()
         }
 
         val tagMap = fetchTagsForBooks(userId, books.map { it.id })
         val enriched = books.map { it.copy(tags = tagMap[it.id] ?: emptyList()) }
 
         val total = jdbi.withHandle<Int, Exception> { handle ->
-            handle.createQuery(
+            val q = handle.createQuery(
                 """
                 SELECT COUNT(*) FROM books b
                 INNER JOIN libraries l ON b.library_id = l.id
                 LEFT JOIN book_status bs ON bs.book_id = b.id AND bs.user_id = ?
+                LEFT JOIN book_ratings br ON br.book_id = b.id AND br.user_id = ?
                 WHERE l.user_id = ?
                   AND (LOWER(b.title) LIKE ? OR LOWER(b.author) LIKE ? OR LOWER(b.description) LIKE ?)
+                  $libClause$statusClause$ratingClause
                 """,
             )
                 .bind(0, userId.toString())
                 .bind(1, userId.toString())
-                .bind(2, likeQuery)
+                .bind(2, userId.toString())
                 .bind(3, likeQuery)
                 .bind(4, likeQuery)
-                .mapTo(java.lang.Integer::class.java).first()?.toInt() ?: 0
+                .bind(5, likeQuery)
+            var idx = 6
+            if (libId != null) q.bind(idx++, libId)
+            if (statusFilter != null) q.bind(idx++, statusFilter)
+            if (minRating != null) q.bind(idx++, minRating)
+            q.mapTo(java.lang.Integer::class.java).first()?.toInt() ?: 0
         }
 
         return BookListDto(enriched, total, safePage, safePageSize)

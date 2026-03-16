@@ -282,12 +282,20 @@ class PageHandler(
         val ctx = WebContext(req)
         val query = req.query("q") ?: ""
         val page = req.query("page")?.toIntOrNull() ?: 1
-        val result = if (query.isNotBlank()) bookService.searchBooks(userId, query, page, 40) else null
+        val libId = req.query("libId")?.takeIf { it.isNotBlank() }
+        val statusFilter = req.query("status")?.takeIf { it.isNotBlank() && it != "ALL" }
+        val minRating = req.query("rating")?.toIntOrNull()?.coerceIn(1, 5)
+        val result = if (query.isNotBlank()) {
+            bookService.searchBooks(userId, query, page, 40, libId, statusFilter, minRating)
+        } else null
         return htmlOk(templateRenderer.render("search.kte", mapOf(
             "username" to null,
             "query" to query,
             "books" to (result?.getBooks() ?: emptyList<Any>()),
             "total" to (result?.total ?: 0),
+            "currentStatus" to (statusFilter ?: "ALL"),
+            "currentRating" to (minRating ?: 0),
+            "statusOptions" to org.booktower.models.ReadStatus.entries.toList(),
             "themeCss" to ctx.themeCss,
             "currentTheme" to ctx.theme,
             "lang" to ctx.lang,

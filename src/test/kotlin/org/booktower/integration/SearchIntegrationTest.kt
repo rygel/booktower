@@ -195,4 +195,85 @@ class SearchIntegrationTest : IntegrationTestBase() {
         assertEquals(5, results.total)
         assertEquals(2, results.getBooks().size)
     }
+
+    // ── Search page filters ────────────────────────────────────────────────────
+
+    private fun setStatus(token: String, bookId: String, status: String) {
+        app(
+            Request(Method.POST, "/ui/books/$bookId/status")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .body("status=$status"),
+        )
+    }
+
+    private fun setRating(token: String, bookId: String, rating: Int) {
+        app(
+            Request(Method.POST, "/ui/books/$bookId/rating")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .body("rating=$rating"),
+        )
+    }
+
+    @Test
+    fun `search page renders status and rating filter dropdowns`() {
+        val token = registerAndGetToken("sf1")
+        val html = app(Request(Method.GET, "/search?q=test").header("Cookie", "token=$token")).bodyString()
+        assertTrue(html.contains("filter.all.ratings") || html.contains("All ratings"),
+            "Rating filter dropdown must appear on search page")
+    }
+
+    @Test
+    fun `search page with status filter shows only READING books`() {
+        val token = registerAndGetToken("sf2")
+        val libId = createLibrary(token)
+        val bookReading = createBook(token, libId, "Currently Reading SF")
+        val bookFinished = createBook(token, libId, "Already Finished SF")
+        setStatus(token, bookReading, "READING")
+        setStatus(token, bookFinished, "FINISHED")
+
+        val html = app(
+            Request(Method.GET, "/search?q=SF&status=READING")
+                .header("Cookie", "token=$token"),
+        ).bodyString()
+
+        assertTrue(html.contains("Currently Reading SF"), "READING book must appear in filtered results")
+        assertTrue(!html.contains("Already Finished SF"),
+            "FINISHED book must not appear when filter is READING")
+    }
+
+    @Test
+    fun `search page with minRating filter excludes lower-rated books`() {
+        val token = registerAndGetToken("sf3")
+        val libId = createLibrary(token)
+        val highRated = createBook(token, libId, "Excellent Book SF")
+        val lowRated = createBook(token, libId, "Mediocre Book SF")
+        setRating(token, highRated, 5)
+        setRating(token, lowRated, 2)
+
+        val html = app(
+            Request(Method.GET, "/search?q=SF&rating=4")
+                .header("Cookie", "token=$token"),
+        ).bodyString()
+
+        assertTrue(html.contains("Excellent Book SF"), "5-star book must appear when filtering rating >= 4")
+        assertTrue(!html.contains("Mediocre Book SF"),
+            "2-star book must not appear when filtering rating >= 4")
+    }
+
+    @Test
+    fun `search page filters persist as selected values in dropdowns after submit`() {
+        val token = registerAndGetToken("sf4")
+        val libId = createLibrary(token)
+        createBook(token, libId, "Any Book SF")
+
+        val html = app(
+            Request(Method.GET, "/search?q=SF&status=FINISHED&rating=3")
+                .header("Cookie", "token=$token"),
+        ).bodyString()
+
+        assertTrue(html.contains("FINISHED"), "FINISHED must be selected in status dropdown")
+        assertTrue(html.contains("rating"), "Rating filter must be present in the form")
+    }
 }
