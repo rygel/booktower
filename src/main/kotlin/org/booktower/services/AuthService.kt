@@ -22,15 +22,17 @@ class AuthService(
         val userId = UUID.randomUUID()
         val passwordHash = BCrypt.hashpw(request.password, BCrypt.gensalt())
 
+        val existing = jdbi.withHandle<String?, Exception> { handle ->
+            handle.createQuery("SELECT id FROM users WHERE username = ?")
+                .bind(0, request.username)
+                .mapTo(String::class.java)
+                .firstOrNull()
+        }
+        if (existing != null) {
+            return Result.failure(IllegalArgumentException("Username already exists"))
+        }
+
         jdbi.useHandle<Exception> { handle ->
-            val existing =
-                handle.createQuery("SELECT id FROM users WHERE username = ?")
-                    .bind(0, request.username)
-                    .mapTo(String::class.java)
-                    .firstOrNull()
-
-            require(existing == null) { "Username already exists" }
-
             handle.createUpdate(
                 """
                 INSERT INTO users (id, username, email, password_hash, created_at, updated_at, is_admin)

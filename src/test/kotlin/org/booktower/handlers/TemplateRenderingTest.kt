@@ -1,6 +1,6 @@
 package org.booktower.handlers
 
-import org.booktower.config.TemplateEngine
+import org.booktower.TestFixture
 import org.booktower.i18n.I18nService
 import org.booktower.model.ThemeCatalog
 import org.junit.jupiter.api.Test
@@ -18,7 +18,7 @@ class TemplateRenderingTest {
         showLogin: Boolean = false,
         showRegister: Boolean = false,
     ): String {
-        return TemplateEngine.render("index.kte", mapOf(
+        return TestFixture.templateRenderer.render("index.kte", mapOf(
             "title" to "BookTower",
             "isAuthenticated" to isAuthenticated,
             "username" to username,

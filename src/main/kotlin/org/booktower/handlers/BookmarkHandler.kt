@@ -47,7 +47,13 @@ class BookmarkHandler(private val bookmarkService: BookmarkService) {
                 .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Request body is required")))
         }
 
-        val createRequest = Json.mapper.readValue(requestBody, CreateBookmarkRequest::class.java)
+        val createRequest = try {
+            Json.mapper.readValue(requestBody, CreateBookmarkRequest::class.java)
+        } catch (_: Exception) {
+            return Response(Status.BAD_REQUEST)
+                .header("Content-Type", "application/json")
+                .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Invalid JSON body")))
+        }
 
         val validationError = validate(createRequest)
         if (validationError != null) {

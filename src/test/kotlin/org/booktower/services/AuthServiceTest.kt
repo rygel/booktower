@@ -5,7 +5,6 @@ import org.booktower.models.CreateUserRequest
 import org.booktower.models.LoginRequest
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
@@ -39,9 +38,9 @@ class AuthServiceTest {
     fun `register fails for duplicate username`() {
         val username = "duplicate_${System.nanoTime()}"
         authService.register(CreateUserRequest(username, "a_${System.nanoTime()}@test.com", "password123"))
-        assertThrows<IllegalArgumentException> {
-            authService.register(CreateUserRequest(username, "b_${System.nanoTime()}@test.com", "password123"))
-        }
+        val result = authService.register(CreateUserRequest(username, "b_${System.nanoTime()}@test.com", "password123"))
+        assertTrue(result.isFailure)
+        assertTrue(result.exceptionOrNull() is IllegalArgumentException)
     }
 
     @Test
