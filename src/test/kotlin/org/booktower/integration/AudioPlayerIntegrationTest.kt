@@ -59,6 +59,42 @@ class AudioPlayerIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `reader page renders audio player for m4a book`() {
+        val token = registerAndGetToken("ap_m4a")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId, "Audiobook M4A")
+        uploadFakeAudio(token, bookId, "m4a")
+
+        val body = app(Request(Method.GET, "/books/$bookId/read").header("Cookie", "token=$token")).bodyString()
+        assertTrue(body.contains("id=\"audio-el\""),
+            "Audio player element must be present for m4a book")
+    }
+
+    @Test
+    fun `reader page renders audio player for flac book`() {
+        val token = registerAndGetToken("ap_flac")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId, "Audiobook FLAC")
+        uploadFakeAudio(token, bookId, "flac")
+
+        val body = app(Request(Method.GET, "/books/$bookId/read").header("Cookie", "token=$token")).bodyString()
+        assertTrue(body.contains("id=\"audio-el\""),
+            "Audio player element must be present for flac book")
+    }
+
+    @Test
+    fun `reader page renders audio player for aac book`() {
+        val token = registerAndGetToken("ap_aac")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId, "Audiobook AAC")
+        uploadFakeAudio(token, bookId, "aac")
+
+        val body = app(Request(Method.GET, "/books/$bookId/read").header("Cookie", "token=$token")).bodyString()
+        assertTrue(body.contains("id=\"audio-el\""),
+            "Audio player element must be present for aac book")
+    }
+
+    @Test
     fun `reader page shows speed controls for audio book`() {
         val token = registerAndGetToken("ap4")
         val libId = createLibrary(token)
