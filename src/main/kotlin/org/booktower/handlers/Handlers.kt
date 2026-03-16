@@ -203,6 +203,7 @@ class AppHandler(
             "/opds/catalog" bind Method.GET to opdsHandler::catalog,
             "/opds/catalog/{libraryId}" bind Method.GET to opdsHandler::library,
             "/opds/books/{id}/file" bind Method.GET to opdsHandler::download,
+            "/opds/books/{id}/chapters/{trackIndex}" bind Method.GET to opdsHandler::streamChapter,
         )
     }
 
