@@ -185,6 +185,64 @@ class AdminIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `admin can list active password-reset tokens`() {
+        val adminToken = registerAdminAndGetToken("prtoken1")
+
+        // Create a reset token for a user
+        val username = "prtarget_${System.nanoTime()}"
+        app(
+            Request(Method.POST, "/auth/register")
+                .header("Content-Type", "application/json")
+                .body("""{"username":"$username","email":"$username@test.com","password":"password123"}"""),
+        )
+        app(
+            Request(Method.POST, "/auth/forgot-password")
+                .header("Content-Type", "application/json")
+                .body("""{"email":"$username@test.com"}"""),
+        )
+
+        val response = app(
+            Request(Method.GET, "/api/admin/password-reset-tokens")
+                .header("Cookie", "token=$adminToken"),
+        )
+        assertEquals(Status.OK, response.status)
+        val tokens = Json.mapper.readTree(response.bodyString())
+        assertTrue(tokens.isArray, "Response should be a JSON array")
+        // At least one token should be present for the user we just created
+        assertTrue(tokens.any { it.get("username")?.asText() == username }, "Active token for $username should be listed")
+    }
+
+    @Test
+    fun `non-admin cannot list password-reset tokens`() {
+        val token = registerAndGetToken("nonprtokenuser")
+        val response = app(
+            Request(Method.GET, "/api/admin/password-reset-tokens")
+                .header("Cookie", "token=$token"),
+        )
+        assertEquals(Status.FORBIDDEN, response.status)
+    }
+
+    @Test
+    fun `unauthenticated request to password-reset tokens returns 401`() {
+        val response = app(Request(Method.GET, "/api/admin/password-reset-tokens"))
+        assertEquals(Status.UNAUTHORIZED, response.status)
+    }
+
+    @Test
+    fun `password-reset tokens list is empty when no active tokens exist`() {
+        val adminToken = registerAdminAndGetToken("prtoken2")
+        val response = app(
+            Request(Method.GET, "/api/admin/password-reset-tokens")
+                .header("Cookie", "token=$adminToken"),
+        )
+        assertEquals(Status.OK, response.status)
+        val tokens = Json.mapper.readTree(response.bodyString())
+        assertTrue(tokens.isArray, "Response should be a JSON array")
+        // Fresh admin with no resets issued — list should be empty
+        assertEquals(0, tokens.size(), "No active tokens for a fresh test user")
+    }
+
+    @Test
     fun `admin cannot delete themselves`() {
         val adminToken = registerAdminAndGetToken()
         val loginResp = app(
