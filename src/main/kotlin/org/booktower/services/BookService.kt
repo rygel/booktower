@@ -740,6 +740,7 @@ class BookService(
             coverUrl = row.getColumn("cover_path", String::class.java)?.let { "/covers/$it" },
             pageCount = pageCount,
             fileSize = row.getColumn("file_size", java.lang.Long::class.java)?.toLong() ?: 0L,
+            filePath = try { row.getColumn("file_path", String::class.java)?.takeIf { it.isNotBlank() } } catch (_: Exception) { null },
             addedAt = row.getColumn("added_at", String::class.java),
             progress = null,
             status = status,

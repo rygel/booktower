@@ -2,6 +2,7 @@ package org.booktower.handlers
 
 import org.booktower.config.StorageConfig
 import org.booktower.models.BookDto
+import org.booktower.models.BookFileDto
 import org.booktower.services.ApiTokenService
 import org.booktower.services.AuthService
 import org.booktower.services.BookService
@@ -120,7 +121,10 @@ class OpdsHandler(
         val books = bookService.getBooks(userId, libId.toString(), 1, 100).getBooks()
         val updated = Instant.now().toString()
 
-        val entries = books.joinToString("\n") { book -> bookEntry(book, updated) }
+        val entries = books.joinToString("\n") { book ->
+            val chapters = bookService.getBookFiles(userId, UUID.fromString(book.id))
+            bookEntry(book, updated, chapters)
+        }
 
         val upLink = """  <link rel="up"
         href="/opds/catalog"
@@ -138,6 +142,38 @@ class OpdsHandler(
                 entries = entries,
             ),
         )
+    }
+
+    // ── Chapter streaming (Basic Auth) ───────────────────────────────────────
+
+    /** GET /opds/books/{id}/chapters/{trackIndex} */
+    fun streamChapter(req: Request): Response {
+        val userId = authenticate(req) ?: return unauthorized()
+        val pathParts = req.uri.path.split("/")
+        val trackIndex = pathParts.lastOrNull()?.toIntOrNull()
+            ?: return Response(Status.NOT_FOUND)
+        val bookId = try {
+            UUID.fromString(pathParts.dropLast(2).lastOrNull() ?: return Response(Status.NOT_FOUND))
+        } catch (_: Exception) {
+            return Response(Status.NOT_FOUND)
+        }
+
+        val filePath = bookService.getBookFilePath(userId, bookId, trackIndex)
+            ?: return Response(Status.NOT_FOUND)
+        val file = File(filePath)
+        if (!file.exists() || !file.isFile) return Response(Status.NOT_FOUND)
+
+        val contentType = when (file.extension.lowercase()) {
+            "m4a", "m4b", "aac" -> "audio/mp4"
+            "ogg" -> "audio/ogg"
+            "flac" -> "audio/flac"
+            else -> "audio/mpeg"
+        }
+        return Response(Status.OK)
+            .header("Content-Type", contentType)
+            .header("Content-Length", file.length().toString())
+            .header("Accept-Ranges", "bytes")
+            .body(file.inputStream())
     }
 
     // ── File download (Basic Auth) ────────────────────────────────────────────
@@ -169,7 +205,7 @@ class OpdsHandler(
 
     // ── XML helpers ───────────────────────────────────────────────────────────
 
-    private fun bookEntry(book: BookDto, updated: String): String {
+    private fun bookEntry(book: BookDto, updated: String, chapters: List<BookFileDto> = emptyList()): String {
         val sb = StringBuilder()
         sb.append("  <entry>\n")
         sb.append("    <id>urn:uuid:${book.id}</id>\n")
@@ -195,10 +231,17 @@ class OpdsHandler(
             sb.append("          href=\"${x(book.coverUrl)}\"\n")
             sb.append("          type=\"image/jpeg\"/>\n")
         }
-        if (book.fileSize > 0) {
+        if (!book.filePath.isNullOrBlank()) {
             sb.append("    <link rel=\"http://opds-spec.org/acquisition\"\n")
             sb.append("          href=\"/opds/books/${book.id}/file\"\n")
             sb.append("          type=\"application/octet-stream\"/>\n")
+        }
+        for (ch in chapters.sortedBy { it.trackIndex }) {
+            val chTitle = x(ch.title ?: "Chapter ${ch.trackIndex + 1}")
+            sb.append("    <link rel=\"http://opds-spec.org/acquisition\"\n")
+            sb.append("          href=\"/opds/books/${book.id}/chapters/${ch.trackIndex}\"\n")
+            sb.append("          type=\"audio/mpeg\"\n")
+            sb.append("          title=\"$chTitle\"/>\n")
         }
         sb.append("  </entry>")
         return sb.toString()

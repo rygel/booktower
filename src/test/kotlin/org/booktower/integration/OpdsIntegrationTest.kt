@@ -377,4 +377,140 @@ class OpdsIntegrationTest : IntegrationTestBase() {
         val body = resp.bodyString()
         assertTrue(body.contains("&amp;") || body.contains("&lt;"), "Special chars should be escaped")
     }
+
+    // ── Audiobook (chapter-only) books ────────────────────────────────────────
+
+    private fun minimalMp3() =
+        byteArrayOf(0xFF.toByte(), 0xFB.toByte(), 0x90.toByte(), 0x00.toByte()) + ByteArray(416)
+
+    private fun uploadChapter(token: String, bookId: String, trackIndex: Int) {
+        val mp3 = minimalMp3()
+        app(
+            Request(Method.POST, "/api/books/$bookId/chapters")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/octet-stream")
+                .header("X-Filename", "ch-$trackIndex.mp3")
+                .header("X-Track-Index", trackIndex.toString())
+                .body(mp3.inputStream(), mp3.size.toLong()),
+        )
+    }
+
+    @Test
+    fun `chapter-only audiobook has no single-file acquisition link`() {
+        val (token, username, password) = registerUser("opds_audio1")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId, "Spoken Word Book")
+
+        // Upload a chapter — no single file path set
+        val mp3 = byteArrayOf(0xFF.toByte(), 0xFB.toByte(), 0x90.toByte(), 0x00.toByte()) + ByteArray(416)
+        app(
+            Request(Method.POST, "/api/books/$bookId/chapters")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/octet-stream")
+                .header("X-Filename", "chapter-0.mp3")
+                .header("X-Track-Index", "0")
+                .body(mp3.inputStream(), mp3.size.toLong()),
+        )
+
+        val resp = app(
+            Request(Method.GET, "/opds/catalog/$libId")
+                .header("Authorization", basicAuth(username, password)),
+        )
+        val body = resp.bodyString()
+        assertFalse(
+            body.contains("/opds/books/$bookId/file"),
+            "Chapter-only book must not emit single-file acquisition link",
+        )
+    }
+
+    @Test
+    fun `audiobook chapters appear as per-chapter acquisition links in library feed`() {
+        val (token, username, password) = registerUser("opds_chs1")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId, "Audiobook with Chapters")
+        uploadChapter(token, bookId, 0)
+        uploadChapter(token, bookId, 1)
+
+        val resp = app(
+            Request(Method.GET, "/opds/catalog/$libId")
+                .header("Authorization", basicAuth(username, password)),
+        )
+        val body = resp.bodyString()
+        assertTrue(body.contains("/opds/books/$bookId/chapters/0"), "Should have chapter 0 acquisition link")
+        assertTrue(body.contains("/opds/books/$bookId/chapters/1"), "Should have chapter 1 acquisition link")
+        assertTrue(body.contains("audio/mpeg"), "Chapter links should use audio/mpeg type")
+    }
+
+    @Test
+    fun `opds chapter stream returns 200 with audio content type`() {
+        val (token, username, password) = registerUser("opds_stream1")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId)
+        uploadChapter(token, bookId, 0)
+
+        val resp = app(
+            Request(Method.GET, "/opds/books/$bookId/chapters/0")
+                .header("Authorization", basicAuth(username, password)),
+        )
+        assertEquals(Status.OK, resp.status)
+        assertTrue(resp.header("Content-Type")?.contains("audio/") == true)
+        assertTrue(resp.header("Accept-Ranges") == "bytes")
+    }
+
+    @Test
+    fun `opds chapter stream returns 404 for nonexistent chapter`() {
+        val (token, username, password) = registerUser("opds_stream404")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId)
+
+        val resp = app(
+            Request(Method.GET, "/opds/books/$bookId/chapters/99")
+                .header("Authorization", basicAuth(username, password)),
+        )
+        assertEquals(Status.NOT_FOUND, resp.status)
+    }
+
+    @Test
+    fun `opds chapter stream without auth returns 401`() {
+        val resp = app(Request(Method.GET, "/opds/books/00000000-0000-0000-0000-000000000000/chapters/0"))
+        assertEquals(Status.UNAUTHORIZED, resp.status)
+    }
+
+    @Test
+    fun `user B cannot stream user A chapter via opds`() {
+        val (tokenA, uA, pA) = registerUser("opds_xch1")
+        val (_, uB, pB) = registerUser("opds_xch2")
+        val libId = createLibrary(tokenA)
+        val bookId = createBook(tokenA, libId)
+        uploadChapter(tokenA, bookId, 0)
+
+        val resp = app(
+            Request(Method.GET, "/opds/books/$bookId/chapters/0")
+                .header("Authorization", basicAuth(uB, pB)),
+        )
+        assertEquals(Status.NOT_FOUND, resp.status)
+    }
+
+    @Test
+    fun `book with single file still emits acquisition link after chapter-only fix`() {
+        val (token, username, password) = registerUser("opds_singlefile")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId, "PDF Book")
+        app(
+            Request(Method.POST, "/api/books/$bookId/upload")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/octet-stream")
+                .header("X-Filename", "book.pdf")
+                .body(ByteArrayInputStream(minimalPdf())),
+        )
+
+        val resp = app(
+            Request(Method.GET, "/opds/catalog/$libId")
+                .header("Authorization", basicAuth(username, password)),
+        )
+        assertTrue(
+            resp.bodyString().contains("/opds/books/$bookId/file"),
+            "Single-file book must still have acquisition link",
+        )
+    }
 }
