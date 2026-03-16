@@ -374,7 +374,7 @@
                     <div style="display:flex; flex-direction:column; gap:0.25rem;">
                         <label style="font-size:0.75rem; color:var(--bt-subtle);">${i18n.translate("field.title")} (${i18n.translate("label.optional")})</label>
                         <input type="text" id="chapter-title-input" maxlength="255"
-                            placeholder="${i18n.translate("page.reader.audio.chapter")} ${chapters.size + 1}"
+                            placeholder="${i18n.translate("page.reader.audio.chapter")} ${if (chapters.isEmpty()) 1 else chapters.maxOf { it.trackIndex } + 2}"
                             style="border-radius:0.5rem; border:1px solid var(--bt-border-input); padding:0.4rem 0.625rem; font-size:0.8rem; background:var(--bt-input-bg); color:var(--bt-text); width:14rem;">
                     </div>
                     <div style="display:flex; flex-direction:column; gap:0.25rem;">
@@ -382,7 +382,7 @@
                         <input type="file" id="chapter-file-input" accept=".mp3,.m4a,.m4b,.ogg,.flac,.aac"
                             style="font-size:0.8rem; color:var(--bt-muted);">
                     </div>
-                    <button onclick="uploadChapterFile('${book.id}', ${chapters.size})" class="btn-primary" style="padding:0.4rem 1rem; font-size:0.8rem;">
+                    <button onclick="uploadChapterFile('${book.id}', ${if (chapters.isEmpty()) 0 else chapters.maxOf { it.trackIndex } + 1})" class="btn-primary" style="padding:0.4rem 1rem; font-size:0.8rem;">
                         <i class="ri-upload-cloud-line"></i> ${i18n.translate("action.upload")}
                     </button>
                 </div>

@@ -361,6 +361,24 @@ class AudiobookChapterIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `upload after deleting middle chapter uses next available index`() {
+        val token = registerAndGetToken("ch")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId)
+        uploadChapter(token, bookId, 0, "Ch 0")
+        uploadChapter(token, bookId, 1, "Ch 1")
+        uploadChapter(token, bookId, 2, "Ch 2")
+
+        // Delete the middle chapter
+        app(Request(Method.DELETE, "/api/books/$bookId/chapters/1").header("Cookie", "token=$token"))
+
+        // Chapters remaining: 0, 2 — size = 2, but max index = 2
+        // Uploading with index 2 would conflict; must use index 3
+        val response = uploadChapter(token, bookId, 3, "Ch 3 (new)")
+        assertEquals(Status.CREATED, response.status, "Should succeed using index 3 not the size-based index 2")
+    }
+
+    @Test
     fun `chapter list API does not expose internal file path`() {
         val token = registerAndGetToken("ch")
         val libId = createLibrary(token)
