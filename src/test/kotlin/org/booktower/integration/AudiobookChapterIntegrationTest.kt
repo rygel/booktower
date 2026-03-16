@@ -6,6 +6,7 @@ import org.http4k.core.Request
 import org.http4k.core.Status
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
@@ -296,5 +297,26 @@ class AudiobookChapterIntegrationTest : IntegrationTestBase() {
         assertEquals(Status.OK, bookResp.status)
         val bookTree = Json.mapper.readTree(bookResp.bodyString())
         assertTrue(bookTree.get("fileSize").asLong() > 0, "fileSize should be > 0 after chapter uploads")
+    }
+
+    @Test
+    fun `chapter list API does not expose internal file path`() {
+        val token = registerAndGetToken("ch")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId)
+        uploadChapter(token, bookId, 0, "Ch 1")
+
+        val listResp = app(
+            Request(Method.GET, "/api/books/$bookId/chapters")
+                .header("Cookie", "token=$token"),
+        )
+        assertEquals(Status.OK, listResp.status)
+        val arr = Json.mapper.readTree(listResp.bodyString())
+        assertTrue(arr.isArray && arr.size() == 1, "Should return one chapter")
+        // filePath must not be present in the JSON
+        assertFalse(
+            arr.get(0).has("filePath"),
+            "Internal filePath must not be exposed in the chapter list API response",
+        )
     }
 }

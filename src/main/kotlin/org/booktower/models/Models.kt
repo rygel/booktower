@@ -1,5 +1,6 @@
 package org.booktower.models
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import java.time.Instant
 import java.util.UUID
 
@@ -133,7 +134,7 @@ data class BookFileDto(
     val title: String?,
     val durationSec: Int?,
     val fileSize: Long,
-    val filePath: String? = null,
+    @JsonIgnore val filePath: String? = null,
 )
 
 data class CreateBookRequest(
