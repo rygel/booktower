@@ -94,6 +94,7 @@ class AppHandler(
             "/books/{id}" bind Method.GET to pageHandler::book,
             "/books/{id}/read" bind Method.GET to pageHandler::reader,
             "/search" bind Method.GET to pageHandler::search,
+            "/queue" bind Method.GET to authFilter.then(pageHandler::queue),
             "/series" bind Method.GET to authFilter.then(pageHandler::seriesList),
             "/series/{name}" bind Method.GET to authFilter.then(pageHandler::series),
             "/authors" bind Method.GET to authFilter.then(pageHandler::authorList),

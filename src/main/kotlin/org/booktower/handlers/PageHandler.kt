@@ -572,6 +572,32 @@ class PageHandler(
             .header("HX-Trigger", toast(ctx.i18n.translate("msg.bookmark-deleted")))
     }
 
+    /** GET /queue — Want to Read books across all libraries, sorted by date added */
+    fun queue(req: Request): Response {
+        val userId = auth(req) ?: return redirectToLogin()
+        val ctx = WebContext(req)
+        val page = req.query("page")?.toIntOrNull() ?: 1
+        val result = bookService.getBooks(
+            userId, null, page, 40,
+            org.booktower.models.BookSortOrder.ADDED,
+            statusFilter = "WANT_TO_READ",
+        )
+        val totalPages = if (result.total == 0) 1 else (result.total + 39) / 40
+        return htmlOk(templateRenderer.render("queue.kte", mapOf(
+            "username" to null,
+            "books" to result.getBooks(),
+            "total" to result.total,
+            "currentPage" to result.page,
+            "totalPages" to totalPages,
+            "themeCss" to ctx.themeCss,
+            "currentTheme" to ctx.theme,
+            "lang" to ctx.lang,
+            "themes" to ThemeCatalog.allThemes(),
+            "i18n" to ctx.i18n,
+            "isAdmin" to authIsAdmin(req),
+        )))
+    }
+
     /** GET /authors — list all authors for the user */
     fun authorList(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
