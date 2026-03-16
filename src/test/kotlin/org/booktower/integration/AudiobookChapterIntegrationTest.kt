@@ -59,6 +59,17 @@ class AudiobookChapterIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `duplicate track index returns 409 conflict`() {
+        val token = registerAndGetToken("ch")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId)
+        uploadChapter(token, bookId, 0, "Original")
+
+        val response = uploadChapter(token, bookId, 0, "Duplicate")
+        assertEquals(Status.CONFLICT, response.status)
+    }
+
+    @Test
     fun `uploaded chapter appears in chapter list`() {
         val token = registerAndGetToken("ch")
         val libId = createLibrary(token)

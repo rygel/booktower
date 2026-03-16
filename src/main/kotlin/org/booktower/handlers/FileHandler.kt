@@ -308,6 +308,11 @@ class FileHandler(
             ?: return badRequest("X-Track-Index header is required")
         val chapterTitle = req.header("X-Chapter-Title")?.trim()
 
+        val existing = bookService.getBookFilePath(userId, bookId, trackIndex)
+        if (existing != null) return Response(Status.CONFLICT)
+            .header("Content-Type", "application/json")
+            .body(Json.mapper.writeValueAsString(ErrorResponse("CONFLICT", "Chapter $trackIndex already exists — delete it before re-uploading")))
+
         val bytes = req.body.stream.readBytes()
         if (bytes.isEmpty()) return badRequest("File body is empty")
         if (bytes.size > MAX_FILE_SIZE) return badRequest("File exceeds maximum size of 500 MB")
