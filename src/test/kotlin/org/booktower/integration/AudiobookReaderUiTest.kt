@@ -300,4 +300,49 @@ class AudiobookBookPageTest : IntegrationTestBase() {
             "Page number input should still be present for regular books",
         )
     }
+
+    @Test
+    fun `book page download button absent for chapter-only audiobook`() {
+        val token = registerAndGetToken("bbp")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId, "Audio Only Book")
+        // Upload a chapter — makes this a chapter-only audiobook with null filePath
+        val mp3 = byteArrayOf(0xFF.toByte(), 0xFB.toByte(), 0x90.toByte(), 0x00.toByte()) + ByteArray(416)
+        app(
+            Request(Method.POST, "/api/books/$bookId/chapters")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/octet-stream")
+                .header("X-Filename", "ch-0.mp3")
+                .header("X-Track-Index", "0")
+                .body(mp3.inputStream(), mp3.size.toLong()),
+        )
+
+        val body = app(Request(Method.GET, "/books/$bookId").header("Cookie", "token=$token")).bodyString()
+        assertFalse(
+            body.contains("/api/books/$bookId/file"),
+            "Download link to /file must not appear for chapter-only audiobooks",
+        )
+    }
+
+    @Test
+    fun `book page download button present for book with uploaded file`() {
+        val token = registerAndGetToken("bbp")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId, "PDF Book")
+        // Minimal PDF bytes
+        val pdfBytes = byteArrayOf(0x25, 0x50, 0x44, 0x46, 0x2D, 0x31, 0x2E, 0x34) + ByteArray(100)
+        app(
+            Request(Method.POST, "/api/books/$bookId/upload")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/octet-stream")
+                .header("X-Filename", "book.pdf")
+                .body(pdfBytes.inputStream(), pdfBytes.size.toLong()),
+        )
+
+        val body = app(Request(Method.GET, "/books/$bookId").header("Cookie", "token=$token")).bodyString()
+        assertTrue(
+            body.contains("/api/books/$bookId/file"),
+            "Download link should be present for books with an uploaded file",
+        )
+    }
 }
