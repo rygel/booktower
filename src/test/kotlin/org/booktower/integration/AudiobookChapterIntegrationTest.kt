@@ -339,6 +339,28 @@ class AudiobookChapterIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `book file size decreases after chapter deletion`() {
+        val token = registerAndGetToken("ch")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId)
+        uploadChapter(token, bookId, 0, "Ch 1")
+        uploadChapter(token, bookId, 1, "Ch 2")
+
+        val sizeBefore = Json.mapper.readTree(
+            app(Request(Method.GET, "/api/books/$bookId").header("Cookie", "token=$token")).bodyString()
+        ).get("fileSize").asLong()
+        assertTrue(sizeBefore > 0, "fileSize should be > 0 before deletion")
+
+        app(Request(Method.DELETE, "/api/books/$bookId/chapters/0").header("Cookie", "token=$token"))
+
+        val sizeAfter = Json.mapper.readTree(
+            app(Request(Method.GET, "/api/books/$bookId").header("Cookie", "token=$token")).bodyString()
+        ).get("fileSize").asLong()
+        assertTrue(sizeAfter < sizeBefore, "fileSize should decrease after deleting a chapter")
+        assertTrue(sizeAfter > 0, "fileSize should still be > 0 with one chapter remaining")
+    }
+
+    @Test
     fun `chapter list API does not expose internal file path`() {
         val token = registerAndGetToken("ch")
         val libId = createLibrary(token)
