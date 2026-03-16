@@ -45,6 +45,20 @@
                         <div style="padding:0.625rem 0.75rem;">
                             <p style="font-size:0.8rem; font-weight:600; color:var(--bt-text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${a.name}</p>
                             <p style="font-size:0.7rem; color:var(--bt-subtle); margin-top:0.125rem;">${i18n.translate("page.authors.book.count", a.bookCount)}</p>
+                            @if(a.readingCount > 0 || a.finishedCount > 0)
+                                <div class="author-status-counts" style="display:flex; gap:0.5rem; margin-top:0.25rem; flex-wrap:wrap;">
+                                    @if(a.readingCount > 0)
+                                        <span style="font-size:0.6rem; color:var(--bt-accent-dim); display:flex; align-items:center; gap:0.2rem;">
+                                            <i class="ri-book-open-line"></i>${a.readingCount}
+                                        </span>
+                                    @endif
+                                    @if(a.finishedCount > 0)
+                                        <span style="font-size:0.6rem; color:var(--bt-subtle); display:flex; align-items:center; gap:0.2rem;">
+                                            <i class="ri-checkbox-circle-line"></i>${a.finishedCount}
+                                        </span>
+                                    @endif
+                                </div>
+                            @endif
                         </div>
                     </div>
                 </a>

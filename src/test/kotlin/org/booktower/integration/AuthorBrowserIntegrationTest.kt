@@ -135,4 +135,56 @@ class AuthorBrowserIntegrationTest : IntegrationTestBase() {
         assertEquals(Status.OK, response.status)
         assertTrue(response.bodyString().contains("J.R.R. Tolkien"))
     }
+
+    private fun setStatus(token: String, bookId: String, status: String) {
+        app(
+            Request(Method.POST, "/ui/books/$bookId/status")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .body("status=$status"),
+        )
+    }
+
+    @Test
+    fun `author card shows reading icon when a book by that author is READING`() {
+        val token = registerAndGetToken("authstat1")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId, "In Progress Book")
+        setAuthor(token, bookId, "Active Author")
+        setStatus(token, bookId, "READING")
+
+        val body = app(Request(Method.GET, "/authors").header("Cookie", "token=$token")).bodyString()
+        assertTrue(body.contains("Active Author"), "Author must appear in list")
+        assertTrue(body.contains("author-status-counts"),
+            "Status counts container must appear on author card when a book is READING")
+        assertTrue(body.contains("ri-book-open-line"),
+            "Reading icon must appear on author card when a book is READING")
+    }
+
+    @Test
+    fun `author card shows finished icon when a book by that author is FINISHED`() {
+        val token = registerAndGetToken("authstat2")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId, "Done Book")
+        setAuthor(token, bookId, "Done Author")
+        setStatus(token, bookId, "FINISHED")
+
+        val body = app(Request(Method.GET, "/authors").header("Cookie", "token=$token")).bodyString()
+        assertTrue(body.contains("Done Author"), "Author must appear in list")
+        assertTrue(body.contains("author-status-counts"),
+            "Status counts container must appear on author card when a book is FINISHED")
+    }
+
+    @Test
+    fun `author card shows no status counts when no books have a status`() {
+        val token = registerAndGetToken("authstat3")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId, "Statusless Book")
+        setAuthor(token, bookId, "Plain Author")
+
+        val body = app(Request(Method.GET, "/authors").header("Cookie", "token=$token")).bodyString()
+        assertTrue(body.contains("Plain Author"), "Author must appear in list")
+        assertFalse(body.contains("author-status-counts"),
+            "Status counts container must not appear when no books have a status")
+    }
 }

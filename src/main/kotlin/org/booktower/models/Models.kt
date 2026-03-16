@@ -194,6 +194,8 @@ data class AuthorDto(
     val name: String,
     val bookCount: Int,
     val coverUrl: String?,
+    val readingCount: Int = 0,
+    val finishedCount: Int = 0,
 )
 
 data class TagDto(

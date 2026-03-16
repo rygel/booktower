@@ -598,25 +598,33 @@ class BookService(
         }
     }
 
-    /** Returns all distinct authors for the user, with book count and a cover. */
+    /** Returns all distinct authors for the user, with book count, status counts, and a cover. */
     fun getAuthors(userId: UUID): List<AuthorDto> =
         jdbi.withHandle<List<AuthorDto>, Exception> { handle ->
             handle.createQuery(
                 """
-                SELECT b.author, COUNT(*) AS book_count, MIN(b.cover_path) AS cover_path
+                SELECT b.author,
+                       COUNT(*) AS book_count,
+                       MIN(b.cover_path) AS cover_path,
+                       COUNT(CASE WHEN bs.status = 'READING'  THEN 1 END) AS reading_count,
+                       COUNT(CASE WHEN bs.status = 'FINISHED' THEN 1 END) AS finished_count
                 FROM books b
                 JOIN libraries l ON b.library_id = l.id
+                LEFT JOIN book_status bs ON bs.book_id = b.id AND bs.user_id = ?
                 WHERE l.user_id = ? AND b.author IS NOT NULL AND b.author <> ''
                 GROUP BY b.author
                 ORDER BY b.author ASC
                 """,
             )
                 .bind(0, userId.toString())
+                .bind(1, userId.toString())
                 .map { row ->
                     AuthorDto(
                         name = row.getColumn("author", String::class.java),
                         bookCount = row.getColumn("book_count", java.lang.Integer::class.java)?.toInt() ?: 0,
                         coverUrl = row.getColumn("cover_path", String::class.java)?.let { "/covers/$it" },
+                        readingCount = row.getColumn("reading_count", java.lang.Integer::class.java)?.toInt() ?: 0,
+                        finishedCount = row.getColumn("finished_count", java.lang.Integer::class.java)?.toInt() ?: 0,
                     )
                 }.list()
         }
