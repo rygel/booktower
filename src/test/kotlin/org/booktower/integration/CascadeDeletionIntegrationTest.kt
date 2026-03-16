@@ -6,6 +6,7 @@ import org.http4k.core.Request
 import org.http4k.core.Status
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 /**
  * Verifies that the ON DELETE CASCADE constraints in the schema actually fire
@@ -219,5 +220,70 @@ class CascadeDeletionIntegrationTest : IntegrationTestBase() {
 
         assertEquals(Status.OK, deleteBook(token, bookId))
         assertEquals(Status.NOT_FOUND, deleteBook(token, bookId), "Second delete should return 404")
+    }
+
+    // ── Delete book cascades to chapters ─────────────────────────────────────
+
+    private fun uploadMinimalChapter(token: String, bookId: String, trackIndex: Int) {
+        val mp3 = byteArrayOf(0xFF.toByte(), 0xFB.toByte(), 0x90.toByte(), 0x00.toByte()) + ByteArray(416)
+        app(
+            Request(Method.POST, "/api/books/$bookId/chapters")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/octet-stream")
+                .header("X-Filename", "chapter-$trackIndex.mp3")
+                .header("X-Track-Index", trackIndex.toString())
+                .body(mp3.inputStream(), mp3.size.toLong()),
+        )
+    }
+
+    private fun listChapters(token: String, bookId: String): Int {
+        val resp = app(
+            Request(Method.GET, "/api/books/$bookId/chapters")
+                .header("Cookie", "token=$token"),
+        )
+        return if (resp.status == Status.OK) Json.mapper.readTree(resp.bodyString()).size() else 0
+    }
+
+    @Test
+    fun `deleting book removes its chapters`() {
+        val token = registerAndGetToken("casc_ch1")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId)
+        uploadMinimalChapter(token, bookId, 0)
+        uploadMinimalChapter(token, bookId, 1)
+        uploadMinimalChapter(token, bookId, 2)
+
+        assertEquals(3, listChapters(token, bookId), "Should have 3 chapters before deletion")
+        assertEquals(Status.OK, deleteBook(token, bookId))
+        assertEquals(0, listChapters(token, bookId), "Chapters should cascade away when book is deleted")
+    }
+
+    @Test
+    fun `deleting library removes audiobook chapters`() {
+        val token = registerAndGetToken("casc_ch2")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId)
+        uploadMinimalChapter(token, bookId, 0)
+
+        assertEquals(Status.OK, deleteLibrary(token, libId))
+        // Book is gone; chapters must also be gone (via library→books→book_files cascade)
+        assertEquals(Status.NOT_FOUND, getBook(token, bookId))
+        assertEquals(0, listChapters(token, bookId))
+    }
+
+    @Test
+    fun `deleting book with chapters does not affect chapters of another book`() {
+        val token = registerAndGetToken("casc_ch3")
+        val libId = createLibrary(token)
+        val bookA = createBook(token, libId, "Audiobook A")
+        val bookB = createBook(token, libId, "Audiobook B")
+        uploadMinimalChapter(token, bookA, 0)
+        uploadMinimalChapter(token, bookB, 0)
+        uploadMinimalChapter(token, bookB, 1)
+
+        assertEquals(Status.OK, deleteBook(token, bookA))
+
+        assertEquals(0, listChapters(token, bookA), "Book A chapters should be gone")
+        assertEquals(2, listChapters(token, bookB), "Book B chapters should be unaffected")
     }
 }
