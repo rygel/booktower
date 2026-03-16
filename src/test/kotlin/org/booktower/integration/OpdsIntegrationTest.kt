@@ -492,6 +492,54 @@ class OpdsIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `m4b chapter acquisition link uses audio-mp4 mime type`() {
+        val (token, username, password) = registerUser("opds_m4b")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId, "M4B Audiobook")
+        // Upload a chapter as m4b format
+        val fakeBytes = ByteArray(64) { it.toByte() }
+        app(
+            Request(Method.POST, "/api/books/$bookId/chapters")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/octet-stream")
+                .header("X-Filename", "ch-0.m4b")
+                .header("X-Track-Index", "0")
+                .body(fakeBytes.inputStream(), fakeBytes.size.toLong()),
+        )
+
+        val resp = app(
+            Request(Method.GET, "/opds/catalog/$libId")
+                .header("Authorization", basicAuth(username, password)),
+        )
+        val body = resp.bodyString()
+        assertTrue(body.contains("audio/mp4"), "M4B chapter link should use audio/mp4 MIME type")
+        assertFalse(body.contains("audio/mpeg"), "M4B chapter must not use audio/mpeg MIME type")
+    }
+
+    @Test
+    fun `ogg chapter acquisition link uses audio-ogg mime type`() {
+        val (token, username, password) = registerUser("opds_ogg")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId, "OGG Audiobook")
+        val fakeBytes = ByteArray(64) { it.toByte() }
+        app(
+            Request(Method.POST, "/api/books/$bookId/chapters")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/octet-stream")
+                .header("X-Filename", "ch-0.ogg")
+                .header("X-Track-Index", "0")
+                .body(fakeBytes.inputStream(), fakeBytes.size.toLong()),
+        )
+
+        val resp = app(
+            Request(Method.GET, "/opds/catalog/$libId")
+                .header("Authorization", basicAuth(username, password)),
+        )
+        val body = resp.bodyString()
+        assertTrue(body.contains("audio/ogg"), "OGG chapter link should use audio/ogg MIME type")
+    }
+
+    @Test
     fun `book with single file still emits acquisition link after chapter-only fix`() {
         val (token, username, password) = registerUser("opds_singlefile")
         val libId = createLibrary(token)

@@ -238,9 +238,16 @@ class OpdsHandler(
         }
         for (ch in chapters.sortedBy { it.trackIndex }) {
             val chTitle = x(ch.title ?: "Chapter ${ch.trackIndex + 1}")
+            val ext = ch.filePath?.substringAfterLast('.', "")?.lowercase() ?: ""
+            val mimeType = when (ext) {
+                "m4a", "m4b", "aac" -> "audio/mp4"
+                "ogg" -> "audio/ogg"
+                "flac" -> "audio/flac"
+                else -> "audio/mpeg"
+            }
             sb.append("    <link rel=\"http://opds-spec.org/acquisition\"\n")
             sb.append("          href=\"/opds/books/${book.id}/chapters/${ch.trackIndex}\"\n")
-            sb.append("          type=\"audio/mpeg\"\n")
+            sb.append("          type=\"$mimeType\"\n")
             sb.append("          title=\"$chTitle\"/>\n")
         }
         sb.append("  </entry>")

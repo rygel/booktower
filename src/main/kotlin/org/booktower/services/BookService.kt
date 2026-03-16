@@ -1098,7 +1098,7 @@ class BookService(
     fun getBookFiles(userId: UUID, bookId: UUID): List<BookFileDto> =
         jdbi.withHandle<List<BookFileDto>, Exception> { handle ->
             handle.createQuery(
-                """SELECT bf.id, bf.track_index, bf.title, bf.duration_sec, bf.file_size
+                """SELECT bf.id, bf.track_index, bf.title, bf.duration_sec, bf.file_size, bf.file_path
                FROM book_files bf
                INNER JOIN books b ON b.id = bf.book_id
                INNER JOIN libraries l ON l.id = b.library_id
@@ -1114,6 +1114,7 @@ class BookService(
                         title = row.getColumn("title", String::class.java),
                         durationSec = row.getColumn("duration_sec", java.lang.Integer::class.java)?.toInt(),
                         fileSize = row.getColumn("file_size", java.lang.Long::class.java)?.toLong() ?: 0L,
+                        filePath = row.getColumn("file_path", String::class.java),
                     )
                 }
                 .list()

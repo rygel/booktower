@@ -133,6 +133,7 @@ data class BookFileDto(
     val title: String?,
     val durationSec: Int?,
     val fileSize: Long,
+    val filePath: String? = null,
 )
 
 data class CreateBookRequest(
