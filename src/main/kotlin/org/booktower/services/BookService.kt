@@ -944,11 +944,11 @@ class BookService(
                 """
                 SELECT COUNT(*) FROM book_status
                 WHERE user_id = ? AND status = 'FINISHED'
-                  AND YEAR(updated_at) = ?
+                  AND SUBSTRING(updated_at, 1, 4) = ?
                 """,
             )
                 .bind(0, userId.toString())
-                .bind(1, year)
+                .bind(1, year.toString())
                 .mapTo(java.lang.Integer::class.java).first()?.toInt() ?: 0
         }
     }
