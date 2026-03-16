@@ -85,6 +85,7 @@ enum class BookSortOrder(val sql: String, val label: String) {
     TITLE("b.title", "sort.title"),
     ADDED("b.added_at DESC, b.title", "sort.added"),
     AUTHOR("COALESCE(b.author, ''), b.title", "sort.author"),
+    PUBLISHED_DATE("COALESCE(b.published_date, '') DESC, b.title", "sort.published.date"),
 }
 
 enum class ReadStatus(val label: String) {
