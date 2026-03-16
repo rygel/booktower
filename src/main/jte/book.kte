@@ -90,9 +90,11 @@
                             <i class="ri-book-open-line"></i> ${i18n.translate("action.read")}
                         </a>
                     @endif
-                    <a href="/api/books/${book.id}/file" class="btn-primary" style="display:inline-flex; align-items:center; gap:0.5rem; text-decoration:none; background:var(--bt-surface-raised); color:var(--bt-text-dim); border:1px solid var(--bt-border-input);">
-                        <i class="ri-download-line"></i> ${i18n.translate("action.download")}
-                    </a>
+                    @if(!book.filePath.isNullOrBlank())
+                        <a href="/api/books/${book.id}/file" class="btn-primary" style="display:inline-flex; align-items:center; gap:0.5rem; text-decoration:none; background:var(--bt-surface-raised); color:var(--bt-text-dim); border:1px solid var(--bt-border-input);">
+                            <i class="ri-download-line"></i> ${i18n.translate("action.download")}
+                        </a>
+                    @endif
                     <button class="btn-secondary" style="display:inline-flex; align-items:center; gap:0.5rem;"
                         onclick="document.getElementById('edit-panel').style.display=document.getElementById('edit-panel').style.display==='none'?'block':'none'">
                         <i class="ri-edit-line"></i> ${i18n.translate("action.edit")}
