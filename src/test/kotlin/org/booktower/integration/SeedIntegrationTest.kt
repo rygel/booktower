@@ -205,6 +205,72 @@ class SeedIntegrationTest : IntegrationTestBase() {
         assertEquals(3, libraries.size)
     }
 
+    // ── /admin/seed/files ────────────────────────────────────────────────────
+
+    @Test
+    fun `unauthenticated seedFiles request returns 401`() {
+        val response = app(Request(Method.POST, "/admin/seed/files"))
+        assertEquals(Status.UNAUTHORIZED, response.status)
+    }
+
+    @Test
+    fun `non-admin cannot trigger seedFiles`() {
+        val token = registerAndGetToken("nonseedfiles")
+        val response = app(
+            Request(Method.POST, "/admin/seed/files")
+                .header("Cookie", "token=$token"),
+        )
+        assertEquals(Status.FORBIDDEN, response.status)
+    }
+
+    @Test
+    fun `seedFiles without prior seed returns 409`() {
+        val token = registerAdminAndGetToken("seedfiles1")
+        val response = app(
+            Request(Method.POST, "/admin/seed/files")
+                .header("Cookie", "token=$token"),
+        )
+        assertEquals(Status.CONFLICT, response.status)
+        val trigger = response.header("HX-Trigger")
+        assertNotNull(trigger, "HX-Trigger header should be present on conflict")
+        assertTrue(trigger.contains("showToast"), "Conflict should carry a toast trigger")
+    }
+
+    @Test
+    fun `seedFiles after seed returns 200 with HX-Trigger toast`() {
+        val token = registerAdminAndGetToken("seedfiles2")
+        app(
+            Request(Method.POST, "/admin/seed")
+                .header("Cookie", "token=$token"),
+        )
+        val response = app(
+            Request(Method.POST, "/admin/seed/files")
+                .header("Cookie", "token=$token"),
+        )
+        assertEquals(Status.OK, response.status)
+        val trigger = response.header("HX-Trigger")
+        assertNotNull(trigger, "HX-Trigger should be present on success")
+        assertTrue(trigger.contains("showToast"), "Success response should contain showToast")
+    }
+
+    @Test
+    fun `seedFiles queues downloads for books with gutenberg IDs`() {
+        val token = registerAdminAndGetToken("seedfiles3")
+        app(
+            Request(Method.POST, "/admin/seed")
+                .header("Cookie", "token=$token"),
+        )
+        val response = app(
+            Request(Method.POST, "/admin/seed/files")
+                .header("Cookie", "token=$token"),
+        )
+        assertEquals(Status.OK, response.status)
+        // All seeded books have gutenbergId so queued count should be > 0
+        val trigger = response.header("HX-Trigger") ?: ""
+        // The toast message contains the queued count — check it's not "0 queued"
+        assertTrue(trigger.contains("showToast"), "Response should include a toast with queued count")
+    }
+
     // ── /admin/seed/librivox ──────────────────────────────────────────────────
 
     @Test
