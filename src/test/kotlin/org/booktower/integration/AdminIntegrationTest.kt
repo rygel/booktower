@@ -72,6 +72,34 @@ class AdminIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `admin page renders seed actions`() {
+        val token = registerAdminAndGetToken()
+        val body = app(
+            Request(Method.GET, "/admin")
+                .header("Cookie", "token=$token"),
+        ).bodyString()
+        assertTrue(body.contains("/admin/seed"), "Admin page should contain seed action")
+        assertTrue(body.contains("/admin/seed/files"), "Admin page should contain seed-files action")
+        assertTrue(body.contains("/admin/seed/librivox"), "Admin page should contain librivox seed action")
+    }
+
+    @Test
+    fun `admin page lists registered users`() {
+        val adminToken = registerAdminAndGetToken("pagelist")
+        val otherUsername = "pagelisted_${System.nanoTime()}"
+        app(
+            Request(Method.POST, "/auth/register")
+                .header("Content-Type", "application/json")
+                .body("""{"username":"$otherUsername","email":"$otherUsername@test.com","password":"password123"}"""),
+        )
+        val body = app(
+            Request(Method.GET, "/admin")
+                .header("Cookie", "token=$adminToken"),
+        ).bodyString()
+        assertTrue(body.contains(otherUsername), "Admin page should list registered users")
+    }
+
+    @Test
     fun `admin can list users via API`() {
         val token = registerAdminAndGetToken()
         val response = app(
