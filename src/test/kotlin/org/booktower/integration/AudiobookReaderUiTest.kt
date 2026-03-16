@@ -302,6 +302,41 @@ class AudiobookBookPageTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `book page shows Read button for chapter-only audiobook`() {
+        val token = registerAndGetToken("bbp")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId, "Chapters Book")
+        val mp3 = byteArrayOf(0xFF.toByte(), 0xFB.toByte(), 0x90.toByte(), 0x00.toByte()) + ByteArray(416)
+        app(
+            Request(Method.POST, "/api/books/$bookId/chapters")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/octet-stream")
+                .header("X-Filename", "ch-0.mp3")
+                .header("X-Track-Index", "0")
+                .body(mp3.inputStream(), mp3.size.toLong()),
+        )
+
+        val body = app(Request(Method.GET, "/books/$bookId").header("Cookie", "token=$token")).bodyString()
+        assertTrue(
+            body.contains("/books/$bookId/read"),
+            "Read button link should be present when book has chapters",
+        )
+    }
+
+    @Test
+    fun `book page does not show Read button for empty book`() {
+        val token = registerAndGetToken("bbp")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId, "Empty Book")
+
+        val body = app(Request(Method.GET, "/books/$bookId").header("Cookie", "token=$token")).bodyString()
+        assertFalse(
+            body.contains("/books/$bookId/read"),
+            "Read button should not appear when book has no file and no chapters",
+        )
+    }
+
+    @Test
     fun `book page download button absent for chapter-only audiobook`() {
         val token = registerAndGetToken("bbp")
         val libId = createLibrary(token)
