@@ -230,3 +230,74 @@ class AudiobookReaderUiTest : IntegrationTestBase() {
         assertTrue(body.contains("Author"), "Chapter title content should appear in the page")
     }
 }
+
+// ── book.kte progress card tests ──────────────────────────────────────────────
+
+class AudiobookBookPageTest : IntegrationTestBase() {
+
+    private fun uploadChapter(token: String, bookId: String, trackIndex: Int) {
+        val mp3 = byteArrayOf(0xFF.toByte(), 0xFB.toByte(), 0x90.toByte(), 0x00.toByte()) + ByteArray(416)
+        app(
+            Request(Method.POST, "/api/books/$bookId/chapters")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/octet-stream")
+                .header("X-Filename", "ch-$trackIndex.mp3")
+                .header("X-Track-Index", trackIndex.toString())
+                .body(mp3.inputStream(), mp3.size.toLong()),
+        )
+    }
+
+    @Test
+    fun `book page for chapter-only audiobook has no page number input`() {
+        val token = registerAndGetToken("bbp")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId, "Audio Book")
+        uploadChapter(token, bookId, 0)
+
+        val body = app(Request(Method.GET, "/books/$bookId").header("Cookie", "token=$token")).bodyString()
+        assertFalse(
+            body.contains("name=\"currentPage\""),
+            "Page number input must not appear for chapter-only audiobooks",
+        )
+    }
+
+    @Test
+    fun `book page for chapter-only audiobook with progress shows decoded position`() {
+        val token = registerAndGetToken("bbp")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId, "Audio Book")
+        uploadChapter(token, bookId, 0)
+        uploadChapter(token, bookId, 1)
+
+        // packed: track 1 at 300s
+        val packed = 1 * 1_000_000 + 300
+        app(
+            Request(Method.POST, "/ui/books/$bookId/progress")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .body("currentPage=$packed"),
+        )
+
+        val body = app(Request(Method.GET, "/books/$bookId").header("Cookie", "token=$token")).bodyString()
+        // Chapter 2 (1-indexed) should appear somewhere in the progress area
+        assertTrue(body.contains("2"), "Chapter 2 position should be shown in book page progress")
+        // Should not show the raw packed value
+        assertFalse(
+            body.contains("1000300"),
+            "Raw packed value must not be shown to users",
+        )
+    }
+
+    @Test
+    fun `book page for regular book still has page number input`() {
+        val token = registerAndGetToken("bbp")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId, "Regular Book")
+
+        val body = app(Request(Method.GET, "/books/$bookId").header("Cookie", "token=$token")).bodyString()
+        assertTrue(
+            body.contains("name=\"currentPage\""),
+            "Page number input should still be present for regular books",
+        )
+    }
+}

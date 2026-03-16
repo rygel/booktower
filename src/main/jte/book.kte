@@ -293,30 +293,45 @@
             <h2 style="font-size:0.9rem; font-weight:600; color:var(--bt-text-dim); margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem;">
                 <i class="ri-bar-chart-line" style="color:var(--bt-accent-dim);"></i> ${i18n.translate("page.book.progress.title")}
             </h2>
-            @if(book.progress != null && book.progress!!.percentage != null)
-                <div style="margin-bottom:1rem;">
-                    <div style="display:flex; justify-content:space-between; font-size:0.8rem; color:var(--bt-muted); margin-bottom:0.375rem;">
-                        <span>${i18n.translate("label.page")} ${book.progress!!.currentPage}</span>
-                        <span>${book.progress!!.percentage!!.toInt()}%</span>
+            @if(chapters.isNotEmpty())
+                <!-- Audiobook: decode packed progress (trackIndex * 1_000_000 + offsetSeconds) -->
+                @if(book.progress != null && book.progress!!.currentPage > 0)
+                    !{val packed = book.progress!!.currentPage; val chNum = packed / 1_000_000 + 1; val offsetSec = packed % 1_000_000; val hh = offsetSec / 3600; val mm = (offsetSec % 3600) / 60; val ss = offsetSec % 60}
+                    <p style="font-size:0.85rem; color:var(--bt-muted);">
+                        <i class="ri-headphone-line" style="margin-right:0.25rem;"></i>
+                        ${i18n.translate("page.reader.audio.chapter")} ${chNum}
+                        &nbsp;·&nbsp;
+                        @if(hh > 0)${hh}:${mm.toString().padStart(2,'0')}:${ss.toString().padStart(2,'0')}@else${mm}:${ss.toString().padStart(2,'0')}@endif
+                    </p>
+                @else
+                    <p style="font-size:0.85rem; color:var(--bt-faint);">${i18n.translate("page.book.audio.not.started")}</p>
+                @endif
+            @else
+                @if(book.progress != null && book.progress!!.percentage != null)
+                    <div style="margin-bottom:1rem;">
+                        <div style="display:flex; justify-content:space-between; font-size:0.8rem; color:var(--bt-muted); margin-bottom:0.375rem;">
+                            <span>${i18n.translate("label.page")} ${book.progress!!.currentPage}</span>
+                            <span>${book.progress!!.percentage!!.toInt()}%</span>
+                        </div>
+                        <div style="height:0.375rem; background:var(--bt-border); border-radius:9999px; overflow:hidden;">
+                            <div style="height:100%; background:var(--bt-accent); border-radius:9999px; width:${book.progress!!.percentage!!.toInt()}%;"></div>
+                        </div>
                     </div>
-                    <div style="height:0.375rem; background:var(--bt-border); border-radius:9999px; overflow:hidden;">
-                        <div style="height:100%; background:var(--bt-accent); border-radius:9999px; width:${book.progress!!.percentage!!.toInt()}%;"></div>
+                @endif
+                <form
+                    hx-post="/ui/books/${book.id}/progress"
+                    hx-swap="none"
+                    hx-on:htmx:after-request="if(event.detail.successful){document.dispatchEvent(new CustomEvent('showToast',{detail:{message:'${i18n.translate("msg.progress.saved")}',type:'success'}}))}"
+                >
+                    <div style="display:flex; gap:0.5rem;">
+                        <input type="number" name="currentPage" min="0"
+                            value="${if (book.progress != null) book.progress!!.currentPage else 0}"
+                            style="flex:1; border-radius:0.5rem; border:1px solid; padding:0.5rem 0.75rem; font-size:0.875rem;"
+                            placeholder="${i18n.translate("placeholder.page")}">
+                        <button type="submit" class="btn-primary">${i18n.translate("action.save")}</button>
                     </div>
-                </div>
+                </form>
             @endif
-            <form
-                hx-post="/ui/books/${book.id}/progress"
-                hx-swap="none"
-                hx-on:htmx:after-request="if(event.detail.successful){document.dispatchEvent(new CustomEvent('showToast',{detail:{message:'${i18n.translate("msg.progress.saved")}',type:'success'}}))}"
-            >
-                <div style="display:flex; gap:0.5rem;">
-                    <input type="number" name="currentPage" min="0"
-                        value="${if (book.progress != null) book.progress!!.currentPage else 0}"
-                        style="flex:1; border-radius:0.5rem; border:1px solid; padding:0.5rem 0.75rem; font-size:0.875rem;"
-                        placeholder="${i18n.translate("placeholder.page")}">
-                    <button type="submit" class="btn-primary">${i18n.translate("action.save")}</button>
-                </div>
-            </form>
         </div>
     </div>
 
