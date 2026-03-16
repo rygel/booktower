@@ -1,6 +1,0 @@
-<footer style="background:#1f2937; border-top:1px solid #374151; flex-shrink:0;">
-    <div style="display:flex; align-items:center; justify-content:space-between; padding:0.625rem 1.5rem; font-size:0.75rem; color:#6b7280;">
-        <span>&copy; 2026 BookTower. All rights reserved.</span>
-        <span>Made with <i class="ri-heart-fill" style="color:#ef4444;"></i> Kotlin &amp; http4k</span>
-    </div>
-</footer>
