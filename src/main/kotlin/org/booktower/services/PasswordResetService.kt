@@ -90,11 +90,13 @@ class PasswordResetService(private val jdbi: Jdbi) {
      */
     fun resetPassword(rawToken: String, newPassword: String): Boolean {
         val tokenHash = hashToken(rawToken)
+        val now = Instant.now()
         val row = jdbi.withHandle<Pair<String, String>?, Exception> { handle ->
             handle.createQuery(
-                "SELECT id, user_id FROM password_reset_tokens WHERE token_hash = ? AND used_at IS NULL",
+                "SELECT id, user_id FROM password_reset_tokens WHERE token_hash = ? AND used_at IS NULL AND expires_at > ?",
             )
                 .bind(0, tokenHash)
+                .bind(1, now.toString())
                 .map { r ->
                     Pair(
                         r.getColumn("id", String::class.java),
@@ -106,7 +108,6 @@ class PasswordResetService(private val jdbi: Jdbi) {
 
         val (tokenId, userId) = row
         val newHash = BCrypt.hashpw(newPassword, BCrypt.gensalt())
-        val now = Instant.now()
 
         jdbi.useHandle<Exception> { handle ->
             handle.createUpdate("UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?")
