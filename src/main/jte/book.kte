@@ -535,7 +535,7 @@ async function uploadChapterFile(bookId, nextTrackIndex) {
     }
 }
 async function deleteChapter(bookId, trackIndex) {
-    if (!confirm('${i18n.translate("confirm.remove.book")}')) return;
+    if (!confirm('${i18n.translate("confirm.remove.chapter")}')) return;
     const resp = await fetch('/api/books/' + bookId + '/chapters/' + trackIndex, { method: 'DELETE' });
     if (resp.ok || resp.status === 204) {
         toast('${i18n.translate("msg.deleted")}', 'success');

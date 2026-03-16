@@ -27,6 +27,7 @@ import org.booktower.services.PasswordResetService
 import org.booktower.services.PdfMetadataService
 import org.booktower.services.AnalyticsService
 import org.booktower.services.UserSettingsService
+import org.booktower.filters.AuthenticatedUser
 import org.booktower.web.WebContext
 import org.booktower.weblate.WeblateHandler
 import org.http4k.core.*
@@ -323,7 +324,7 @@ class AppHandler(
 
     /** GET /api/books/{id}/comic/pages — returns page count for a CBZ/CBR book */
     private fun comicPages(req: Request): Response {
-        val userId = jwtService.extractUserId(req.cookie("token")?.value ?: "") ?: return Response(Status.UNAUTHORIZED)
+        val userId = AuthenticatedUser.from(req)
         val bookId = req.uri.path.split("/").dropLast(2).lastOrNull()
             ?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() }
             ?: return Response(Status.BAD_REQUEST)
@@ -336,7 +337,7 @@ class AppHandler(
 
     /** GET /api/books/{id}/comic/{page} — returns a single comic page image */
     private fun comicPage(req: Request): Response {
-        val userId = jwtService.extractUserId(req.cookie("token")?.value ?: "") ?: return Response(Status.UNAUTHORIZED)
+        val userId = AuthenticatedUser.from(req)
         val parts = req.uri.path.split("/").filter { it.isNotBlank() }
         val pageIndex = parts.lastOrNull()?.toIntOrNull() ?: return Response(Status.BAD_REQUEST)
         val bookId = parts.dropLast(2).lastOrNull()
