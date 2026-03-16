@@ -283,6 +283,34 @@ class AudiobookChapterIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `user B cannot upload chapter to user A book`() {
+        val tokenA = registerAndGetToken("chA2")
+        val tokenB = registerAndGetToken("chB2")
+        val libId = createLibrary(tokenA)
+        val bookId = createBook(tokenA, libId)
+
+        val mp3 = byteArrayOf(0xFF.toByte(), 0xFB.toByte(), 0x90.toByte(), 0x00.toByte()) + ByteArray(416)
+        val response = app(
+            Request(Method.POST, "/api/books/$bookId/chapters")
+                .header("Cookie", "token=$tokenB")
+                .header("Content-Type", "application/octet-stream")
+                .header("X-Filename", "attack.mp3")
+                .header("X-Track-Index", "0")
+                .body(mp3.inputStream(), mp3.size.toLong()),
+        )
+        // Book belongs to A; B's request should get 404 (book not found for B)
+        assertEquals(Status.NOT_FOUND, response.status, "User B must not upload chapters to User A's book")
+
+        // Verify A's book has no chapters
+        val listResp = app(
+            Request(Method.GET, "/api/books/$bookId/chapters")
+                .header("Cookie", "token=$tokenA"),
+        )
+        val arr = Json.mapper.readTree(listResp.bodyString())
+        assertEquals(0, arr.size(), "No chapters should exist after cross-user upload attempt")
+    }
+
+    @Test
     fun `book file size aggregated after chapter upload`() {
         val token = registerAndGetToken("ch")
         val libId = createLibrary(token)

@@ -295,6 +295,8 @@ class FileHandler(
             try { UUID.fromString(id) } catch (e: IllegalArgumentException) { null }
         } ?: return badRequest("Invalid book ID")
 
+        bookService.getBook(userId, bookId) ?: return Response(Status.NOT_FOUND)
+
         val filename = req.header("X-Filename")?.trim()
         if (filename.isNullOrBlank()) return badRequest("X-Filename header is required")
 
