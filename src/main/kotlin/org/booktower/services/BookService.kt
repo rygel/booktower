@@ -572,10 +572,15 @@ class BookService(
             }
         }
 
-        val delta = maxOf(0, request.currentPage - previousPage)
-        analyticsService?.recordProgress(userId, bookId, delta)
-        if (delta > 0) {
-            readingSessionService?.recordSession(userId, bookId, previousPage, request.currentPage, delta)
+        // Skip page-based analytics and session recording for multi-file audiobooks.
+        // Their progress is packed as (trackIndex * 1_000_000 + offsetSeconds), not page numbers.
+        val isAudiobook = hasBookFiles(userId, bookId)
+        if (!isAudiobook) {
+            val delta = maxOf(0, request.currentPage - previousPage)
+            analyticsService?.recordProgress(userId, bookId, delta)
+            if (delta > 0) {
+                readingSessionService?.recordSession(userId, bookId, previousPage, request.currentPage, delta)
+            }
         }
 
         logger.info("Progress updated for book ${book.title}: page ${request.currentPage}")

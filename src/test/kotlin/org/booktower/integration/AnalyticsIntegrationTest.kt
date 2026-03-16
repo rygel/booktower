@@ -155,4 +155,54 @@ class AnalyticsIntegrationTest : IntegrationTestBase() {
         // The chart container renders — check for presence of page date range labels
         assertTrue(body.contains("-"), "Bar chart date labels should contain dashes (YYYY-MM-DD format)")
     }
+
+    @Test
+    fun `saving packed audiobook progress does not inflate analytics page count`() {
+        val token = registerAndGetToken("ana12")
+        enableAnalytics(token)
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId, "My Audiobook")
+
+        // Upload two chapters so this is recognised as a multi-file audiobook
+        val mp3 = byteArrayOf(0xFF.toByte(), 0xFB.toByte(), 0x90.toByte(), 0x00.toByte()) + ByteArray(416)
+        for (idx in 0..1) {
+            app(
+                Request(Method.POST, "/api/books/$bookId/chapters")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/octet-stream")
+                    .header("X-Filename", "ch-$idx.mp3")
+                    .header("X-Track-Index", idx.toString())
+                    .body(mp3.inputStream(), mp3.size.toLong()),
+            )
+        }
+
+        // Packed progress: track 1 at offset 300 s  → 1_000_300
+        val packed = 1 * 1_000_000 + 300
+        recordProgress(token, bookId, packed)
+
+        val body = app(Request(Method.GET, "/analytics").header("Cookie", "token=$token")).bodyString()
+        // 1_000_300 pages must NOT appear as the total pages read
+        assertFalse(
+            body.contains("1000300") || body.contains("1,000,300"),
+            "Packed audiobook progress must not inflate analytics page count",
+        )
+        // Streak and total should still be 0 (no real pages recorded)
+        assertTrue(
+            body.contains(">0<") || body.contains(">0 ") || body.contains("0 pages") || body.contains(">0\n"),
+            "Total pages read should remain 0 after only audiobook progress saves",
+        )
+    }
+
+    @Test
+    fun `saving regular page progress still records analytics normally`() {
+        val token = registerAndGetToken("ana13")
+        enableAnalytics(token)
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId, "Page Turner")
+
+        recordProgress(token, bookId, 75)
+
+        val body = app(Request(Method.GET, "/analytics").header("Cookie", "token=$token")).bodyString()
+        assertTrue(body.contains("75"), "Regular page-book progress should still appear in analytics")
+    }
 }
