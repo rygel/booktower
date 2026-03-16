@@ -204,4 +204,71 @@ class SeedIntegrationTest : IntegrationTestBase() {
         val libraries = Json.mapper.readValue(librariesResponse.bodyString(), Array<LibraryDto>::class.java)
         assertEquals(3, libraries.size)
     }
+
+    // ── /admin/seed/librivox ──────────────────────────────────────────────────
+
+    @Test
+    fun `unauthenticated librivox seed request returns 401`() {
+        val response = app(Request(Method.POST, "/admin/seed/librivox"))
+        assertEquals(Status.UNAUTHORIZED, response.status)
+    }
+
+    @Test
+    fun `non-admin cannot trigger librivox seed`() {
+        val username = "nonseeduser_${System.nanoTime()}"
+        app(
+            Request(Method.POST, "/auth/register")
+                .header("Content-Type", "application/json")
+                .body("""{"username":"$username","email":"$username@test.com","password":"password123"}"""),
+        )
+        val loginResp = app(
+            Request(Method.POST, "/auth/login")
+                .header("Content-Type", "application/json")
+                .body("""{"username":"$username","password":"password123"}"""),
+        )
+        val token = Json.mapper.readValue(loginResp.bodyString(), LoginResponse::class.java).token
+
+        val response = app(Request(Method.POST, "/admin/seed/librivox").header("Cookie", "token=$token"))
+        assertTrue(response.status == Status.UNAUTHORIZED || response.status == Status.FORBIDDEN)
+    }
+
+    @Test
+    fun `librivox seed creates audiobooks library for admin user`() {
+        val token = registerAdminAndGetToken("lvseed1")
+
+        val response = app(Request(Method.POST, "/admin/seed/librivox").header("Cookie", "token=$token"))
+        // 200 OK means the library was created and downloads queued
+        assertEquals(Status.OK, response.status)
+
+        val librariesResponse = app(Request(Method.GET, "/api/libraries").header("Cookie", "token=$token"))
+        val libraries = Json.mapper.readValue(librariesResponse.bodyString(), Array<LibraryDto>::class.java)
+        assertTrue(libraries.any { it.name.contains("LibriVox", ignoreCase = true) }, "LibriVox library should be created")
+    }
+
+    @Test
+    fun `librivox seed is idempotent - second call returns 409`() {
+        val token = registerAdminAndGetToken("lvseed2")
+
+        app(Request(Method.POST, "/admin/seed/librivox").header("Cookie", "token=$token"))
+
+        val response = app(Request(Method.POST, "/admin/seed/librivox").header("Cookie", "token=$token"))
+        assertEquals(Status.CONFLICT, response.status)
+        assertTrue(
+            response.header("HX-Trigger")?.contains("showToast") == true,
+            "Conflict response should still carry a toast trigger",
+        )
+    }
+
+    @Test
+    fun `librivox seed creates audiobook entries`() {
+        val token = registerAdminAndGetToken("lvseed3")
+
+        app(Request(Method.POST, "/admin/seed/librivox").header("Cookie", "token=$token"))
+
+        val booksResponse = app(Request(Method.GET, "/api/books?pageSize=50").header("Cookie", "token=$token"))
+        val books = Json.mapper.readValue(booksResponse.bodyString(), BookListDto::class.java).getBooks()
+        assertTrue(books.isNotEmpty(), "LibriVox seed should create at least one audiobook")
+        assertTrue(books.any { it.title.contains("Alice", ignoreCase = true) || it.title.contains("Wonderland", ignoreCase = true) },
+            "Alice's Adventures in Wonderland should be among the seeded audiobooks")
+    }
 }
