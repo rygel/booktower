@@ -381,3 +381,47 @@ class AudiobookBookPageTest : IntegrationTestBase() {
         )
     }
 }
+
+// ── book card headphone badge (library grid) ──────────────────────────────────
+
+class AudiobookLibraryCardTest : IntegrationTestBase() {
+
+    private fun uploadChapter(token: String, bookId: String, trackIndex: Int) {
+        val mp3 = byteArrayOf(0xFF.toByte(), 0xFB.toByte(), 0x90.toByte(), 0x00.toByte()) + ByteArray(416)
+        app(
+            Request(Method.POST, "/api/books/$bookId/chapters")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/octet-stream")
+                .header("X-Filename", "ch-$trackIndex.mp3")
+                .header("X-Track-Index", trackIndex.toString())
+                .body(mp3.inputStream(), mp3.size.toLong()),
+        )
+    }
+
+    @Test
+    fun `library page shows headphone badge for chapter-only audiobook`() {
+        val token = registerAndGetToken("lcb")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId, "Audio Library Book")
+        uploadChapter(token, bookId, 0)
+
+        val body = app(Request(Method.GET, "/libraries/$libId").header("Cookie", "token=$token")).bodyString()
+        assertTrue(
+            body.contains("ri-headphone-line"),
+            "Headphone badge icon should appear in library grid for chapter-only audiobook",
+        )
+    }
+
+    @Test
+    fun `library page does not show headphone badge for regular book`() {
+        val token = registerAndGetToken("lcb")
+        val libId = createLibrary(token)
+        createBook(token, libId, "Plain Book")
+
+        val body = app(Request(Method.GET, "/libraries/$libId").header("Cookie", "token=$token")).bodyString()
+        assertFalse(
+            body.contains("ri-headphone-line"),
+            "Headphone badge must not appear for books without chapters",
+        )
+    }
+}
