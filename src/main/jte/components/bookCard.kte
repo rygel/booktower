@@ -7,11 +7,16 @@
 <div id="book-${book.id}" style="background:var(--bt-surface); border:1px solid var(--bt-border); border-radius:0.75rem; display:flex; flex-direction:column; transition:border-color 0.15s;"
     onmouseover="this.style.borderColor='var(--bt-accent)'" onmouseout="this.style.borderColor='var(--bt-border)'">
     <a href="/books/${book.id}" style="flex:1; display:block; text-decoration:none;">
-        <div style="height:11rem; background:var(--bt-bg); border-radius:0.75rem 0.75rem 0 0; overflow:hidden; display:flex; align-items:center; justify-content:center;">
+        <div style="position:relative; height:11rem; background:var(--bt-bg); border-radius:0.75rem 0.75rem 0 0; overflow:hidden; display:flex; align-items:center; justify-content:center;">
             @if(book.coverUrl != null)
                 <img src="${book.coverUrl}" alt="${book.title}" style="width:100%; height:100%; object-fit:cover;">
             @else
                 @template.components.coverPlaceholder(title=book.title, author=book.author)
+            @endif
+            @if(book.fileSize > 0 && book.filePath.isNullOrBlank())
+                <span style="position:absolute; top:0.375rem; right:0.375rem; background:rgba(0,0,0,0.55); color:#fff; font-size:0.65rem; padding:0.15rem 0.4rem; border-radius:0.25rem; display:inline-flex; align-items:center; gap:0.2rem; backdrop-filter:blur(2px);">
+                    <i class="ri-headphone-line"></i>
+                </span>
             @endif
         </div>
         <div style="padding:0.75rem;">
