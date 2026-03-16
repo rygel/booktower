@@ -563,6 +563,24 @@ class BookService(
         return ReadingProgressDto(request.currentPage, totalPages.takeIf { it > 0 }, percentage, now.toString())
     }
 
+    fun getRecentlyFinishedBooks(userId: UUID, limit: Int = 6): List<BookDto> {
+        return jdbi.withHandle<List<BookDto>, Exception> { handle ->
+            handle.createQuery(
+                """
+                SELECT b.* FROM book_status bs
+                INNER JOIN books b ON bs.book_id = b.id
+                INNER JOIN libraries l ON b.library_id = l.id
+                WHERE bs.user_id = ? AND bs.status = 'FINISHED'
+                ORDER BY bs.updated_at DESC
+                LIMIT ?
+                """,
+            )
+                .bind(0, userId.toString())
+                .bind(1, limit)
+                .map { row -> mapBook(row) }.list()
+        }
+    }
+
     fun getRecentlyAddedBooks(userId: UUID, limit: Int = 6): List<BookDto> {
         return jdbi.withHandle<List<BookDto>, Exception> { handle ->
             handle.createQuery(

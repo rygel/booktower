@@ -223,4 +223,80 @@ class DashboardIntegrationTest : IntegrationTestBase() {
         val body = app(Request(Method.GET, "/").header("Cookie", "token=$token")).bodyString()
         assertTrue(body.contains(">0<"), "In-progress stat should not count FINISHED books")
     }
+
+    // ── Recently Finished ────────────────────────────────────────────────────────
+
+    @Test
+    fun `dashboard shows Recently Finished section after marking a book as FINISHED`() {
+        val token = registerAndGetToken("dash19")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId, "Finished Book")
+
+        app(Request(Method.POST, "/ui/books/$bookId/status")
+            .header("Cookie", "token=$token")
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .body("status=FINISHED"))
+
+        val body = app(Request(Method.GET, "/").header("Cookie", "token=$token")).bodyString()
+        assertTrue(body.contains("Finished Book"), "Dashboard must show the finished book in Recently Finished")
+        assertTrue(body.contains("ri-checkbox-circle-line"),
+            "Recently Finished section must use the checkbox-circle icon")
+    }
+
+    @Test
+    fun `dashboard Recently Finished section is absent when no books are finished`() {
+        val token = registerAndGetToken("dash20")
+        val libId = createLibrary(token)
+        createBook(token, libId, "Unfinished Book")
+
+        val body = app(Request(Method.GET, "/").header("Cookie", "token=$token")).bodyString()
+        assertFalse(body.contains("page.dashboard.recently.finished"),
+            "Recently Finished heading must not render as raw i18n key")
+        assertFalse(body.contains("Recently Finished"),
+            "Recently Finished section must not appear when no books are finished")
+    }
+
+    @Test
+    fun `dashboard Recently Finished shows most recently finished book first`() {
+        val token = registerAndGetToken("dash21")
+        val libId = createLibrary(token)
+        val book1 = createBook(token, libId, "First Finished")
+        val book2 = createBook(token, libId, "Second Finished")
+
+        app(Request(Method.POST, "/ui/books/$book1/status")
+            .header("Cookie", "token=$token")
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .body("status=FINISHED"))
+        Thread.sleep(10)
+        app(Request(Method.POST, "/ui/books/$book2/status")
+            .header("Cookie", "token=$token")
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .body("status=FINISHED"))
+
+        val body = app(Request(Method.GET, "/").header("Cookie", "token=$token")).bodyString()
+        val pos1 = body.indexOf("First Finished")
+        val pos2 = body.indexOf("Second Finished")
+        assertTrue(pos2 < pos1, "Most recently finished book must appear first")
+    }
+
+    @Test
+    fun `dashboard Recently Finished does not show READING or WANT_TO_READ books`() {
+        val token = registerAndGetToken("dash22")
+        val libId = createLibrary(token)
+        val book1 = createBook(token, libId, "Reading Book")
+        val book2 = createBook(token, libId, "Want Book")
+
+        app(Request(Method.POST, "/ui/books/$book1/status")
+            .header("Cookie", "token=$token")
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .body("status=READING"))
+        app(Request(Method.POST, "/ui/books/$book2/status")
+            .header("Cookie", "token=$token")
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .body("status=WANT_TO_READ"))
+
+        val body = app(Request(Method.GET, "/").header("Cookie", "token=$token")).bodyString()
+        assertFalse(body.contains("Recently Finished"),
+            "Recently Finished section must not appear when no books have FINISHED status")
+    }
 }

@@ -6,6 +6,7 @@
 @param libraries: List<LibraryDto>
 @param recentBooks: List<BookDto>
 @param recentlyAddedBooks: List<BookDto>
+@param recentlyFinishedBooks: List<BookDto> = emptyList()
 @param libraryCount: Int
 @param totalBooks: Int
 @param themeCss: String
@@ -102,6 +103,42 @@
                                     </div>
                                     <p style="font-size:0.6rem; color:var(--bt-subtle); margin-top:0.25rem;">${book.progress!!.percentage!!.toInt()}%</p>
                                 </div>
+                            @endif
+                        </div>
+                    </a>
+                @endfor
+            </div>
+        </section>
+    @endif
+
+    <!-- Recently Finished -->
+    @if(!recentlyFinishedBooks.isEmpty())
+        <section style="margin-bottom:2rem;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
+                <h2 style="font-size:1rem; font-weight:700; color:var(--bt-text); display:flex; align-items:center; gap:0.5rem;">
+                    <i class="ri-checkbox-circle-line" style="color:var(--bt-accent-dim);"></i>
+                    ${i18n.translate("page.dashboard.recently.finished")}
+                </h2>
+                <a href="/libraries?status=FINISHED" style="font-size:0.8rem; color:var(--bt-accent-dim); text-decoration:none;"
+                    onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">
+                    ${i18n.translate("page.dashboard.all.libraries")} <i class="ri-arrow-right-s-line"></i>
+                </a>
+            </div>
+            <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:1rem;">
+                @for(book in recentlyFinishedBooks)
+                    <a href="/books/${book.id}" style="text-decoration:none; background:var(--bt-surface); border:1px solid var(--bt-border); border-radius:0.75rem; display:flex; flex-direction:column; transition:border-color 0.15s;"
+                        onmouseover="this.style.borderColor='var(--bt-accent)'" onmouseout="this.style.borderColor='var(--bt-border)'">
+                        <div style="height:10rem; background:var(--bt-bg); border-radius:0.75rem 0.75rem 0 0; overflow:hidden; display:flex; align-items:center; justify-content:center;">
+                            @if(book.coverUrl != null)
+                                <img src="${book.coverUrl}" alt="${book.title}" style="width:100%; height:100%; object-fit:cover;">
+                            @else
+                                @template.components.coverPlaceholder(title=book.title, author=book.author)
+                            @endif
+                        </div>
+                        <div style="padding:0.625rem 0.75rem 0.75rem;">
+                            <p style="font-size:0.75rem; font-weight:600; color:var(--bt-text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${book.title}</p>
+                            @if(book.author != null)
+                                <p style="font-size:0.65rem; color:var(--bt-subtle); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:0.125rem;">${book.author}</p>
                             @endif
                         </div>
                     </a>
