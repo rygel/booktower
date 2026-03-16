@@ -1074,4 +1074,133 @@ class BookService(
             }
         }
     }
+
+    fun hasBookFiles(userId: UUID, bookId: UUID): Boolean =
+        jdbi.withHandle<Boolean, Exception> { handle ->
+            handle.createQuery(
+                """SELECT COUNT(*) FROM book_files bf
+               INNER JOIN books b ON b.id = bf.book_id
+               INNER JOIN libraries l ON l.id = b.library_id
+               WHERE bf.book_id = ? AND l.user_id = ?""",
+            )
+                .bind(0, bookId.toString())
+                .bind(1, userId.toString())
+                .mapTo(Int::class.java)
+                .one() > 0
+        }
+
+    fun getBookFiles(userId: UUID, bookId: UUID): List<BookFileDto> =
+        jdbi.withHandle<List<BookFileDto>, Exception> { handle ->
+            handle.createQuery(
+                """SELECT bf.id, bf.track_index, bf.title, bf.duration_sec, bf.file_size
+               FROM book_files bf
+               INNER JOIN books b ON b.id = bf.book_id
+               INNER JOIN libraries l ON l.id = b.library_id
+               WHERE bf.book_id = ? AND l.user_id = ?
+               ORDER BY bf.track_index""",
+            )
+                .bind(0, bookId.toString())
+                .bind(1, userId.toString())
+                .map { row ->
+                    BookFileDto(
+                        id = row.getColumn("id", String::class.java),
+                        trackIndex = row.getColumn("track_index", java.lang.Integer::class.java)?.toInt() ?: 0,
+                        title = row.getColumn("title", String::class.java),
+                        durationSec = row.getColumn("duration_sec", java.lang.Integer::class.java)?.toInt(),
+                        fileSize = row.getColumn("file_size", java.lang.Long::class.java)?.toLong() ?: 0L,
+                    )
+                }
+                .list()
+        }
+
+    fun getBookFilePath(userId: UUID, bookId: UUID, trackIndex: Int): String? =
+        jdbi.withHandle<String?, Exception> { handle ->
+            handle.createQuery(
+                """SELECT bf.file_path FROM book_files bf
+               INNER JOIN books b ON b.id = bf.book_id
+               INNER JOIN libraries l ON l.id = b.library_id
+               WHERE bf.book_id = ? AND bf.track_index = ? AND l.user_id = ?""",
+            )
+                .bind(0, bookId.toString())
+                .bind(1, trackIndex)
+                .bind(2, userId.toString())
+                .mapTo(String::class.java)
+                .firstOrNull()
+        }
+
+    fun addBookFile(
+        userId: UUID,
+        bookId: UUID,
+        trackIndex: Int,
+        title: String?,
+        filePath: String,
+        fileSize: Long,
+        durationSec: Int? = null,
+    ): Boolean {
+        val fileId = UUID.randomUUID()
+        val now = Instant.now().toString()
+        jdbi.useHandle<Exception> { handle ->
+            handle.createUpdate(
+                """INSERT INTO book_files (id, book_id, track_index, title, file_path, file_size, duration_sec, added_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+            )
+                .bind(0, fileId.toString())
+                .bind(1, bookId.toString())
+                .bind(2, trackIndex)
+                .bind(3, title)
+                .bind(4, filePath)
+                .bind(5, fileSize)
+                .bind(6, durationSec)
+                .bind(7, now)
+                .execute()
+        }
+        updateBookFileAggregateSize(bookId)
+        return true
+    }
+
+    fun deleteBookFile(userId: UUID, bookId: UUID, trackIndex: Int): Boolean {
+        val deleted = jdbi.withHandle<Int, Exception> { handle ->
+            handle.createUpdate(
+                """DELETE FROM book_files WHERE book_id = ? AND track_index = ?
+               AND book_id IN (SELECT b.id FROM books b
+                               INNER JOIN libraries l ON l.id = b.library_id
+                               WHERE l.user_id = ?)""",
+            )
+                .bind(0, bookId.toString())
+                .bind(1, trackIndex)
+                .bind(2, userId.toString())
+                .execute()
+        }
+        if (deleted > 0) updateBookFileAggregateSize(bookId)
+        return deleted > 0
+    }
+
+    fun updateBookFileTitle(userId: UUID, bookId: UUID, trackIndex: Int, title: String?) {
+        jdbi.useHandle<Exception> { handle ->
+            handle.createUpdate(
+                """UPDATE book_files SET title = ? WHERE book_id = ? AND track_index = ?
+               AND book_id IN (SELECT b.id FROM books b
+                               INNER JOIN libraries l ON l.id = b.library_id
+                               WHERE l.user_id = ?)""",
+            )
+                .bind(0, title)
+                .bind(1, bookId.toString())
+                .bind(2, trackIndex)
+                .bind(3, userId.toString())
+                .execute()
+        }
+    }
+
+    fun updateBookFileAggregateSize(bookId: UUID) {
+        jdbi.useHandle<Exception> { handle ->
+            handle.createUpdate(
+                """UPDATE books SET file_size = (
+               SELECT COALESCE(SUM(file_size), 0) FROM book_files WHERE book_id = ?
+               ) WHERE id = ?""",
+            )
+                .bind(0, bookId.toString())
+                .bind(1, bookId.toString())
+                .execute()
+        }
+    }
 }

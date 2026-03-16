@@ -109,7 +109,7 @@ class SecurityIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `token for non-existent user still decodes but data is empty`() {
+    fun `token for non-existent user is rejected with 401`() {
         val fakeUserToken = JWT.create()
             .withIssuer("booktower")
             .withSubject(UUID.randomUUID().toString())
@@ -122,9 +122,8 @@ class SecurityIntegrationTest : IntegrationTestBase() {
             Request(Method.GET, "/api/libraries")
                 .header("Cookie", "token=$fakeUserToken"),
         )
-        // Token is valid JWT but user doesn't exist in DB - should still get 200
-        // with empty results since the auth filter only validates the JWT, not the user
-        assertEquals(Status.OK, response.status)
+        // Token is cryptographically valid but the user doesn't exist in DB — must be rejected
+        assertEquals(Status.UNAUTHORIZED, response.status)
     }
 
     @Test

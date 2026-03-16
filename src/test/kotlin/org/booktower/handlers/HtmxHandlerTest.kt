@@ -11,6 +11,7 @@ import org.booktower.services.BookmarkService
 import org.booktower.services.EpubMetadataService
 import org.booktower.services.GoodreadsImportService
 import org.booktower.services.ReadingSessionService
+import org.booktower.services.SeedService
 import org.booktower.services.PdfMetadataService
 import org.booktower.services.UserSettingsService
 import org.booktower.services.BookService
@@ -59,6 +60,7 @@ class HtmxHandlerTest {
             org.booktower.services.ComicService(),
             GoodreadsImportService(bookService),
             readingSessionService,
+            SeedService(bookService, libraryService, config.storage.coversPath, config.storage.booksPath),
         )
     }
 

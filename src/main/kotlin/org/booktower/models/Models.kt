@@ -127,6 +127,14 @@ class BookListDto(
     fun getBooks(): List<BookDto> = _books.toList()
 }
 
+data class BookFileDto(
+    val id: String,
+    val trackIndex: Int,
+    val title: String?,
+    val durationSec: Int?,
+    val fileSize: Long,
+)
+
 data class CreateBookRequest(
     val title: String,
     val author: String?,

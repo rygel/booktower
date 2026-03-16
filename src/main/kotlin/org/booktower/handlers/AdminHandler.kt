@@ -8,6 +8,7 @@ import org.booktower.models.ErrorResponse
 import org.booktower.models.SuccessResponse
 import org.booktower.services.AdminService
 import org.booktower.services.PasswordResetService
+import org.booktower.services.SeedService
 import org.booktower.web.WebContext
 import org.http4k.core.Request
 import org.http4k.core.Response
@@ -20,6 +21,7 @@ class AdminHandler(
     private val adminService: AdminService,
     private val templateRenderer: TemplateRenderer,
     private val passwordResetService: PasswordResetService,
+    private val seedService: SeedService,
 ) {
     fun adminPage(req: Request): Response {
         val ctx = WebContext(req)
@@ -39,6 +41,52 @@ class AdminHandler(
             ),
         )
         return Response(Status.OK).header("Content-Type", "text/html; charset=utf-8").body(content)
+    }
+
+    /** POST /admin/seed — seeds demo public-domain book data for the current admin user */
+    fun seed(req: Request): Response {
+        val userId = AuthenticatedUser.from(req)
+        val ctx = WebContext(req)
+        val result = seedService.seed(userId)
+            ?: return Response(Status.CONFLICT)
+                .header("HX-Trigger", toast(ctx.i18n.translate("msg.seed.already"), "info"))
+                .body("")
+        val msg = ctx.i18n.translate("msg.seed.done")
+            .replace("{0}", result.libraries.toString())
+            .replace("{1}", result.books.toString())
+        return Response(Status.OK)
+            .header("HX-Trigger", toast(msg))
+            .body("")
+    }
+
+    /** POST /admin/seed/files — downloads EPUB files from Project Gutenberg for seeded books */
+    fun seedFiles(req: Request): Response {
+        val userId = AuthenticatedUser.from(req)
+        val ctx = WebContext(req)
+        val result = seedService.seedFiles(userId)
+            ?: return Response(Status.CONFLICT)
+                .header("HX-Trigger", toast(ctx.i18n.translate("msg.seed.files.no.seed"), "info"))
+                .body("")
+        val msg = ctx.i18n.translate("msg.seed.files.queued")
+            .replace("{0}", result.queued.toString())
+        return Response(Status.OK)
+            .header("HX-Trigger", toast(msg))
+            .body("")
+    }
+
+    /** POST /admin/seed/librivox — creates LibriVox audiobooks library and queues chapter downloads */
+    fun seedLibrivox(req: Request): Response {
+        val userId = AuthenticatedUser.from(req)
+        val ctx = WebContext(req)
+        val result = seedService.seedLibrivox(userId)
+            ?: return Response(Status.CONFLICT)
+                .header("HX-Trigger", toast(ctx.i18n.translate("msg.seed.librivox.already"), "info"))
+                .body("")
+        val msg = ctx.i18n.translate("msg.seed.librivox.queued")
+            .replace("{0}", result.queued.toString())
+        return Response(Status.OK)
+            .header("HX-Trigger", toast(msg))
+            .body("")
     }
 
     /** GET /api/admin/password-reset-tokens — lists active (unused, unexpired) tokens for admin display */

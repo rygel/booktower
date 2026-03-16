@@ -1,6 +1,7 @@
 @import org.booktower.i18n.I18nService
 @import org.booktower.model.ThemeDefinition
 @import org.booktower.models.BookDto
+@import org.booktower.models.BookFileDto
 @import org.booktower.models.BookmarkDto
 @import org.booktower.models.LibraryDto
 @import org.booktower.models.ReadStatus
@@ -15,6 +16,7 @@
 @param themes: List<ThemeDefinition>
 @param i18n: I18nService
 @param isAdmin: Boolean = false
+@param chapters: List<BookFileDto> = emptyList()
 
 @template.components.layout(title="${book.title} - BookTower", username=username, currentPage="library",
     themeCss=themeCss, currentTheme=currentTheme, lang=lang, themes=themes, i18n=i18n, searchQuery="", isAdmin=isAdmin, content = @`
@@ -83,7 +85,7 @@
                     <span><i class="ri-calendar-line" style="margin-right:0.25rem;"></i>${i18n.translate("label.added")} ${book.addedAt.take(10)}</span>
                 </div>
                 <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
-                    @if(book.fileSize > 0)
+                    @if(book.fileSize > 0 || chapters.isNotEmpty())
                         <a href="/books/${book.id}/read" class="btn-primary" style="display:inline-flex; align-items:center; gap:0.5rem; text-decoration:none;">
                             <i class="ri-book-open-line"></i> ${i18n.translate("action.read")}
                         </a>
@@ -316,6 +318,61 @@
         </div>
     </div>
 
+    <!-- Audio Chapters (shown for multi-file audiobooks) -->
+    @if(chapters.isNotEmpty() || book.fileSize <= 0)
+        <div class="card" style="padding:1.25rem; margin-bottom:1.5rem;" id="chapters-card">
+            <h2 style="font-size:0.9rem; font-weight:600; color:var(--bt-text-dim); margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem;">
+                <i class="ri-headphone-line" style="color:var(--bt-accent-dim);"></i> ${i18n.translate("page.book.chapters.title")}
+            </h2>
+            @if(chapters.isEmpty())
+                <p style="font-size:0.875rem; color:var(--bt-faint); margin-bottom:1rem;">${i18n.translate("page.book.chapters.empty")}</p>
+            @else
+                <ul style="list-style:none; padding:0; margin:0 0 1rem;">
+                    @for(ch in chapters)
+                        <li style="display:flex; align-items:center; gap:0.5rem; padding:0.5rem 0.625rem; border-radius:0.375rem; border:1px solid var(--bt-border); margin-bottom:0.375rem; font-size:0.8rem; color:var(--bt-text);">
+                            <i class="ri-music-2-line" style="color:var(--bt-accent-dim); flex-shrink:0;"></i>
+                            <span style="flex:1;">
+                                <span style="font-size:0.7rem; color:var(--bt-accent-dim); font-weight:600;">${i18n.translate("page.reader.audio.chapter")} ${ch.trackIndex + 1}</span>
+                                <span style="margin-left:0.5rem;">${ch.title ?: (i18n.translate("page.reader.audio.chapter") + " " + (ch.trackIndex + 1))}</span>
+                                @if(ch.durationSec != null)
+                                    <span style="color:var(--bt-faint); margin-left:0.5rem;">${ch.durationSec!! / 60}:${(ch.durationSec!! % 60).toString().padStart(2, '0')}</span>
+                                @endif
+                            </span>
+                            <span style="font-size:0.7rem; color:var(--bt-faint);">${(ch.fileSize / 1048576.0 * 10).toInt() / 10.0} MB</span>
+                            <button onclick="deleteChapter('${book.id}', ${ch.trackIndex})"
+                                style="background:transparent; border:none; cursor:pointer; color:var(--bt-danger); font-size:0.9rem; padding:0.1rem 0.25rem; border-radius:0.25rem; transition:background 0.1s;"
+                                onmouseover="this.style.background='var(--bt-danger-bg)'" onmouseout="this.style.background='transparent'"
+                                title="${i18n.translate("action.delete")}">
+                                <i class="ri-delete-bin-line"></i>
+                            </button>
+                        </li>
+                    @endfor
+                </ul>
+            @endif
+            <!-- Upload chapter form -->
+            <div style="border-top:1px solid var(--bt-border); padding-top:1rem;">
+                <p style="font-size:0.8rem; font-weight:600; color:var(--bt-text-dim); margin-bottom:0.5rem;">${i18n.translate("page.book.chapter.upload.label")}</p>
+                <div id="chapter-upload-status" style="display:none; font-size:0.8rem; color:var(--bt-muted); margin-bottom:0.5rem;"></div>
+                <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:flex-end;">
+                    <div style="display:flex; flex-direction:column; gap:0.25rem;">
+                        <label style="font-size:0.75rem; color:var(--bt-subtle);">${i18n.translate("field.title")} (${i18n.translate("label.optional")})</label>
+                        <input type="text" id="chapter-title-input" maxlength="255"
+                            placeholder="${i18n.translate("page.reader.audio.chapter")} ${chapters.size + 1}"
+                            style="border-radius:0.5rem; border:1px solid var(--bt-border-input); padding:0.4rem 0.625rem; font-size:0.8rem; background:var(--bt-input-bg); color:var(--bt-text); width:14rem;">
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:0.25rem;">
+                        <label style="font-size:0.75rem; color:var(--bt-subtle);">${i18n.translate("page.book.chapter.upload.label")}</label>
+                        <input type="file" id="chapter-file-input" accept=".mp3,.m4a,.m4b,.ogg,.flac,.aac"
+                            style="font-size:0.8rem; color:var(--bt-muted);">
+                    </div>
+                    <button onclick="uploadChapterFile('${book.id}', ${chapters.size})" class="btn-primary" style="padding:0.4rem 1rem; font-size:0.8rem;">
+                        <i class="ri-upload-cloud-line"></i> ${i18n.translate("action.upload")}
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
+
     <!-- Bookmarks -->
     <div class="card" style="padding:1.25rem;">
         <h2 style="font-size:0.9rem; font-weight:600; color:var(--bt-text-dim); margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem;">
@@ -425,6 +482,49 @@ async function uploadCover(bookId) {
     } catch (e) {
         status.style.display = 'none';
         toast('${i18n.translate("msg.cover-failed")}', 'error');
+    }
+}
+async function uploadChapterFile(bookId, nextTrackIndex) {
+    const fileInput = document.getElementById('chapter-file-input');
+    const titleInput = document.getElementById('chapter-title-input');
+    const status = document.getElementById('chapter-upload-status');
+    const file = fileInput.files[0];
+    if (!file) { toast('${i18n.translate("msg.select-file")}', 'info'); return; }
+    status.style.display = 'block';
+    status.textContent = '${i18n.translate("msg.uploading")}';
+    try {
+        const headers = {
+            'Content-Type': 'application/octet-stream',
+            'X-Filename': file.name,
+            'X-Track-Index': String(nextTrackIndex),
+        };
+        const title = titleInput ? titleInput.value.trim() : '';
+        if (title) headers['X-Chapter-Title'] = title;
+        const resp = await fetch('/api/books/' + bookId + '/chapters', {
+            method: 'POST',
+            headers: headers,
+            body: file,
+        });
+        status.style.display = 'none';
+        if (resp.ok) {
+            toast('${i18n.translate("msg.chapter.uploaded")}', 'success');
+            setTimeout(() => location.reload(), 800);
+        } else {
+            toast('${i18n.translate("msg.upload-failed")}', 'error');
+        }
+    } catch (e) {
+        status.style.display = 'none';
+        toast('${i18n.translate("msg.upload-failed")}', 'error');
+    }
+}
+async function deleteChapter(bookId, trackIndex) {
+    if (!confirm('${i18n.translate("confirm.remove.book")}')) return;
+    const resp = await fetch('/api/books/' + bookId + '/chapters/' + trackIndex, { method: 'DELETE' });
+    if (resp.ok || resp.status === 204) {
+        toast('${i18n.translate("msg.deleted")}', 'success');
+        setTimeout(() => location.reload(), 600);
+    } else {
+        toast('${i18n.translate("msg.error")}', 'error');
     }
 }
 async function uploadFile(bookId) {

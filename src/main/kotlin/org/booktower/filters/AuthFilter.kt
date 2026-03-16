@@ -23,13 +23,15 @@ object AuthenticatedUser {
         request.header(IS_ADMIN_HEADER)?.toBoolean() ?: false
 }
 
-fun JwtAuthFilter(jwtService: JwtService): Filter = Filter { next ->
+fun JwtAuthFilter(jwtService: JwtService, userExists: ((java.util.UUID) -> Boolean)? = null): Filter = Filter { next ->
     { req ->
         val token = req.cookie("token")?.value
         val userId = token?.let { jwtService.extractUserId(it) }
         val isAdmin = token?.let { jwtService.extractIsAdmin(it) } ?: false
 
-        if (userId != null) {
+        val authenticated = userId != null && (userExists == null || userExists(userId))
+
+        if (authenticated) {
             next(
                 req.header(AuthenticatedUser.USER_ID_HEADER, userId.toString())
                     .header(AuthenticatedUser.IS_ADMIN_HEADER, isAdmin.toString()),

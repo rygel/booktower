@@ -61,6 +61,7 @@ class AppHandler(
     private val comicService: ComicService,
     private val goodreadsImportService: GoodreadsImportService,
     private val readingSessionService: ReadingSessionService,
+    private val seedService: org.booktower.services.SeedService,
 ) {
     private val authHandler = AuthHandler2(authService, userSettingsService, passwordResetService)
     private val libraryHandler = LibraryHandler2(libraryService)
@@ -68,14 +69,14 @@ class AppHandler(
     private val bookmarkHandler = BookmarkHandler(bookmarkService)
     private val fileHandler = FileHandler(bookService, pdfMetadataService, epubMetadataService, storageConfig)
     private val settingsHandler = UserSettingsHandler(userSettingsService)
-    private val adminHandler = AdminHandler(adminService, templateRenderer, passwordResetService)
+    private val adminHandler = AdminHandler(adminService, templateRenderer, passwordResetService, seedService)
     private val pageHandler = PageHandler(jwtService, authService, libraryService, bookService, bookmarkService, userSettingsService, analyticsService, annotationService, metadataFetchService, magicShelfService, templateRenderer, readingSessionService)
     private val opdsHandler = OpdsHandler(authService, libraryService, bookService, storageConfig, apiTokenService)
     private val apiTokenHandler = ApiTokenHandler(apiTokenService, jwtService)
     private val exportHandler = ExportHandler(exportService, jwtService)
     private val goodreadsImportHandler = GoodreadsImportHandler(goodreadsImportService, jwtService)
     private val bulkBookHandler = BulkBookHandler(bookService)
-    private val authFilter = JwtAuthFilter(jwtService)
+    private val authFilter = JwtAuthFilter(jwtService) { userId -> authService.getUserById(userId) != null }
     private val adminFilter = authFilter.then(AdminFilter())
     private val authRateLimit = RateLimitFilter(maxRequests = 10, windowSeconds = 60)
 
@@ -157,6 +158,12 @@ class AppHandler(
             "/api/books/{id}/upload" bind Method.POST to authFilter.then(fileHandler::upload),
             "/api/books/{id}/cover" bind Method.POST to authFilter.then(fileHandler::uploadCover),
             "/api/books/{id}/file" bind Method.GET to authFilter.then(fileHandler::download),
+            "/api/books/{id}/audio" bind Method.GET to authFilter.then(fileHandler::audioStream),
+            "/api/books/{id}/chapters" bind Method.GET to authFilter.then(fileHandler::listChapters),
+            "/api/books/{id}/chapters" bind Method.POST to authFilter.then(fileHandler::uploadChapter),
+            "/api/books/{id}/chapters/{trackIndex}" bind Method.GET to authFilter.then(fileHandler::audioStreamChapter),
+            "/api/books/{id}/chapters/{trackIndex}" bind Method.DELETE to authFilter.then(fileHandler::deleteChapter),
+            "/api/books/{id}/chapters/{trackIndex}" bind Method.PUT to authFilter.then(fileHandler::updateChapterMeta),
             "/api/books/{id}/comic/pages" bind Method.GET to authFilter.then(::comicPages),
             "/api/books/{id}/comic/{page}" bind Method.GET to authFilter.then(::comicPage),
             "/api/books/bulk/move" bind Method.POST to authFilter.then(bulkBookHandler::move),
@@ -169,6 +176,9 @@ class AppHandler(
             "/api/settings/{key}" bind Method.PUT to authFilter.then(settingsHandler::set),
             "/api/settings/{key}" bind Method.DELETE to authFilter.then(settingsHandler::delete),
             // Admin API
+            "/admin/seed" bind Method.POST to adminFilter.then(adminHandler::seed),
+            "/admin/seed/files" bind Method.POST to adminFilter.then(adminHandler::seedFiles),
+            "/admin/seed/librivox" bind Method.POST to adminFilter.then(adminHandler::seedLibrivox),
             "/api/admin/password-reset-tokens" bind Method.GET to adminFilter.then(adminHandler::listResetTokens),
             "/api/admin/users" bind Method.GET to adminFilter.then(adminHandler::listUsers),
             "/api/admin/users/{userId}/promote" bind Method.POST to adminFilter.then(adminHandler::promote),

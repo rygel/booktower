@@ -111,7 +111,14 @@ class AuthService(
         }
 
         val result = register(CreateUserRequest(devUsername, devEmail, devPassword))
-        return result.getOrNull()
+        result.getOrNull()?.user?.id?.let { userId ->
+            jdbi.useHandle<Exception> { handle ->
+                handle.createUpdate("UPDATE users SET is_admin = true WHERE id = ?")
+                    .bind(0, userId)
+                    .execute()
+            }
+        }
+        return login(LoginRequest(devUsername, devPassword)).getOrNull()
     }
 
     fun changePassword(userId: UUID, currentPassword: String, newPassword: String): Result<Unit> {

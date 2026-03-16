@@ -184,12 +184,14 @@ class PageHandler(
         val bookmarks = bookmarkService.getBookmarks(userId, bookId)
         val libraries = libraryService.getLibraries(userId)
         val libraryName = libraries.firstOrNull { it.id == book.libraryId }?.name
+        val chapters = bookService.getBookFiles(userId, bookId)
         return htmlOk(templateRenderer.render("book.kte", mapOf(
             "username" to null,
             "book" to book,
             "libraryName" to libraryName,
             "libraries" to libraries,
             "bookmarks" to bookmarks,
+            "chapters" to chapters,
             "themeCss" to ctx.themeCss,
             "currentTheme" to ctx.theme,
             "lang" to ctx.lang,
@@ -206,18 +208,23 @@ class PageHandler(
         val book = bookService.getBook(userId, bookId) ?: return Response(Status.NOT_FOUND)
         val bookmarks = bookmarkService.getBookmarks(userId, bookId)
         val filePath = bookService.getBookFilePath(userId, bookId)
+        val hasChapters = bookService.hasBookFiles(userId, bookId)
         val readerType = when {
+            hasChapters -> "audio-multi"
             book.fileSize <= 0 || filePath.isNullOrBlank() -> "none"
             else -> when (filePath.substringAfterLast('.', "").lowercase()) {
                 "epub" -> "epub"
                 "cbz", "cbr" -> "comic"
+                "mp3", "m4b", "m4a", "ogg", "flac", "aac" -> "audio"
                 else -> "pdf"
             }
         }
+        val chapters = bookService.getBookFiles(userId, bookId)
         return htmlOk(templateRenderer.render("reader.kte", mapOf(
             "book" to book,
             "bookmarks" to bookmarks,
             "readerType" to readerType,
+            "chapters" to chapters,
             "themeCss" to ctx.themeCss,
             "currentTheme" to ctx.theme,
             "lang" to ctx.lang,
@@ -716,7 +723,8 @@ class PageHandler(
 
     private fun auth(req: Request): UUID? {
         val token = req.cookie("token")?.value ?: return null
-        return jwtService.extractUserId(token)
+        val userId = jwtService.extractUserId(token) ?: return null
+        return if (authService.getUserById(userId) != null) userId else null
     }
 
     private fun authIsAdmin(req: Request): Boolean {
@@ -724,7 +732,9 @@ class PageHandler(
         return jwtService.extractIsAdmin(token)
     }
 
-    private fun redirectToLogin() = Response(Status.SEE_OTHER).header("Location", "/login")
+    private fun redirectToLogin() = Response(Status.SEE_OTHER)
+        .header("Location", "/login")
+        .cookie(Cookie(name = "token", value = "", path = "/", maxAge = 0))
 
     private fun htmlOk(html: String) =
         Response(Status.OK).header("Content-Type", "text/html; charset=utf-8").body(html)

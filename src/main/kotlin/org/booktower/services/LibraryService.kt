@@ -10,7 +10,7 @@ import java.util.UUID
 
 private val logger = LoggerFactory.getLogger("booktower.LibraryService")
 
-private val SCANNABLE_EXTENSIONS = setOf("pdf", "epub", "mobi", "cbz", "cbr", "fb2")
+private val SCANNABLE_EXTENSIONS = setOf("pdf", "epub", "mobi", "cbz", "cbr", "fb2", "mp3", "m4b", "m4a", "ogg", "flac", "aac")
 
 class LibraryService(
     private val jdbi: Jdbi,

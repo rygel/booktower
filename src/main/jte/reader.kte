@@ -1,9 +1,11 @@
 @import org.booktower.i18n.I18nService
 @import org.booktower.models.BookDto
 @import org.booktower.models.BookmarkDto
+@import org.booktower.models.BookFileDto
 @param book: BookDto
 @param bookmarks: List<BookmarkDto>
 @param readerType: String
+@param chapters: List<BookFileDto> = emptyList()
 @param themeCss: String
 @param currentTheme: String
 @param lang: String
@@ -35,6 +37,35 @@
         /* Comic mode */
         #comic-wrap { flex: 1; overflow: auto; display: flex; justify-content: center; align-items: flex-start; padding: 1.5rem; background: #1a1a1a; }
         #comic-img { max-width: 100%; max-height: calc(100vh - 3rem - 3rem); object-fit: contain; box-shadow: 0 4px 32px rgba(0,0,0,0.6); display: block; }
+        /* Audio mode */
+        #audio-wrap { flex: 1; display: flex; align-items: center; justify-content: center; padding: 2rem; background: var(--bt-bg); overflow: auto; }
+        #audio-card { background: var(--bt-surface); border: 1px solid var(--bt-border); border-radius: 1rem; padding: 2rem; max-width: 28rem; width: 100%; text-align: center; box-shadow: 0 4px 24px rgba(0,0,0,0.18); }
+        #audio-cover { width: 12rem; height: 12rem; object-fit: cover; border-radius: 0.5rem; box-shadow: 0 4px 16px rgba(0,0,0,0.3); margin-bottom: 1.25rem; }
+        #audio-cover-placeholder { width: 12rem; height: 12rem; background: var(--bt-surface-raised); border-radius: 0.5rem; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 1.25rem; }
+        #audio-cover-placeholder i { font-size: 4rem; color: var(--bt-border-input); }
+        #audio-title { font-size: 1.1rem; font-weight: 700; color: var(--bt-text); margin-bottom: 0.25rem; }
+        #audio-author { font-size: 0.875rem; color: var(--bt-muted); margin-bottom: 0.5rem; }
+        #audio-speed-row { display: flex; align-items: center; gap: 0.375rem; margin-top: 1rem; justify-content: center; flex-wrap: wrap; }
+        .speed-btn { background: transparent; border: 1px solid var(--bt-border-input); border-radius: 0.375rem; color: var(--bt-muted); cursor: pointer; padding: 0.2rem 0.5rem; font-size: 0.75rem; transition: color 0.15s, border-color 0.15s; }
+        .speed-btn:hover { color: var(--bt-text); border-color: var(--bt-accent-dim); }
+        .speed-btn.active { color: var(--bt-accent-dim); border-color: var(--bt-accent-dim); }
+        /* Audio-multi mode */
+        #ch-panel { width: 16rem; background: var(--bt-surface); border-right: 1px solid var(--bt-border); flex-shrink: 0; display: flex; flex-direction: column; overflow: hidden; }
+        #ch-panel-inner { width: 100%; height: 100%; overflow-y: auto; padding: 0.75rem; }
+        .ch-item { padding: 0.5rem 0.625rem; border-radius: 0.375rem; cursor: pointer; border: 1px solid transparent; margin-bottom: 0.25rem; transition: background 0.1s, border-color 0.1s; display: flex; flex-direction: column; gap: 0.1rem; }
+        .ch-item:hover { background: var(--bt-surface-raised); }
+        .ch-item.ch-active { border-color: var(--bt-accent-dim); background: var(--bt-icon-bg); }
+        .ch-item .ch-num { font-size: 0.7rem; color: var(--bt-accent-dim); font-weight: 600; }
+        .ch-item .ch-title { font-size: 0.8rem; color: var(--bt-text); }
+        .ch-item .ch-dur { font-size: 0.68rem; color: var(--bt-faint); }
+        #audio-multi-wrap { flex: 1; display: flex; align-items: center; justify-content: center; padding: 2rem; background: var(--bt-bg); overflow: auto; }
+        #audio-multi-card { background: var(--bt-surface); border: 1px solid var(--bt-border); border-radius: 1rem; padding: 2rem; max-width: 28rem; width: 100%; text-align: center; box-shadow: 0 4px 24px rgba(0,0,0,0.18); }
+        #audio-multi-cover { width: 10rem; height: 10rem; object-fit: cover; border-radius: 0.5rem; box-shadow: 0 4px 16px rgba(0,0,0,0.3); margin-bottom: 1rem; }
+        #audio-multi-cover-ph { width: 10rem; height: 10rem; background: var(--bt-surface-raised); border-radius: 0.5rem; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 1rem; }
+        #audio-multi-cover-ph i { font-size: 3.5rem; color: var(--bt-border-input); }
+        #audio-multi-title { font-size: 1rem; font-weight: 700; color: var(--bt-text); margin-bottom: 0.2rem; }
+        #audio-multi-ch-name { font-size: 0.8rem; color: var(--bt-accent-dim); margin-bottom: 0.2rem; min-height: 1.2em; }
+        #audio-multi-author { font-size: 0.85rem; color: var(--bt-muted); margin-bottom: 0.5rem; }
         /* No-file mode */
         #no-file { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; color: var(--bt-muted); }
         #loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.5); color: #fff; font-size: 1rem; z-index: 10; }
@@ -82,21 +113,35 @@
     <div class="sep"></div>
     <span class="title">${book.title}</span>
     <div class="sep"></div>
-    <button id="btn-prev" class="tool-btn" title="${i18n.translate("page.reader.prev")} (←)" disabled>
-        <i class="ri-arrow-left-s-line"></i>
-    </button>
-    <span id="page-info">—</span>
-    <button id="btn-next" class="tool-btn" title="${i18n.translate("page.reader.next")} (→)" disabled>
-        <i class="ri-arrow-right-s-line"></i>
-    </button>
-    @if(readerType == "pdf")
-        <input id="page-jump" type="number" min="1"
-            title="${i18n.translate("page.reader.jump.to.page")}"
-            placeholder="#"
-            style="width:3.25rem; text-align:center; border-radius:0.375rem; border:1px solid var(--bt-border-input); background:var(--bt-bg); color:var(--bt-text); font-size:0.75rem; padding:0.2rem 0.375rem;"
-            onkeydown="if(event.key==='Enter'){var p=parseInt(this.value);if(p>=1){window.jumpToPage(p);this.value='';this.blur();}return false;}">
+    @if(readerType == "audio-multi")
+        <button id="btn-prev-ch" class="tool-btn" title="${i18n.translate("page.reader.audio.prev.chapter")}" disabled>
+            <i class="ri-skip-back-line"></i>
+        </button>
+        <span id="ch-info" style="font-size:0.8rem; color:var(--bt-muted); white-space:nowrap;">—</span>
+        <button id="btn-next-ch" class="tool-btn" title="${i18n.translate("page.reader.audio.next.chapter")}" disabled>
+            <i class="ri-skip-forward-line"></i>
+        </button>
+        <div class="sep"></div>
+        <span id="audio-multi-time" style="font-size:0.8rem; color:var(--bt-muted); white-space:nowrap;">0:00 / —</span>
+    @elseif(readerType != "audio")
+        <button id="btn-prev" class="tool-btn" title="${i18n.translate("page.reader.prev")} (←)" disabled>
+            <i class="ri-arrow-left-s-line"></i>
+        </button>
+        <span id="page-info">—</span>
+        <button id="btn-next" class="tool-btn" title="${i18n.translate("page.reader.next")} (→)" disabled>
+            <i class="ri-arrow-right-s-line"></i>
+        </button>
+        @if(readerType == "pdf")
+            <input id="page-jump" type="number" min="1"
+                title="${i18n.translate("page.reader.jump.to.page")}"
+                placeholder="#"
+                style="width:3.25rem; text-align:center; border-radius:0.375rem; border:1px solid var(--bt-border-input); background:var(--bt-bg); color:var(--bt-text); font-size:0.75rem; padding:0.2rem 0.375rem;"
+                onkeydown="if(event.key==='Enter'){var p=parseInt(this.value);if(p>=1){window.jumpToPage(p);this.value='';this.blur();}return false;}">
+        @endif
+    @else
+        <span id="audio-time" style="font-size:0.8rem; color:var(--bt-muted); white-space:nowrap;">0:00 / —</span>
     @endif
-    @if(readerType != "comic")
+    @if(readerType != "comic" && readerType != "audio" && readerType != "audio-multi")
         <div class="sep"></div>
         <button id="btn-zoom-out" class="tool-btn" title="${i18n.translate("page.reader.zoom.out")} (−)"><i class="ri-zoom-out-line"></i></button>
         <span id="zoom-pct">100%</span>
@@ -116,7 +161,52 @@
 
 <!-- Reader body -->
 <div id="reader-body">
-    @if(readerType == "pdf")
+    @if(readerType == "audio-multi")
+        <!-- Chapter list panel (left) -->
+        <div id="ch-panel">
+            <div id="ch-panel-inner">
+                <p style="font-size:0.7rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--bt-subtle); font-weight:600; margin:0 0 0.625rem;">
+                    ${i18n.translate("page.book.chapters.title")}
+                </p>
+                @for(ch in chapters)
+                    <div class="ch-item" id="ch-item-${ch.trackIndex}" onclick="playChapter(${ch.trackIndex})">
+                        <div class="ch-num">${i18n.translate("page.reader.audio.chapter")} ${ch.trackIndex + 1}</div>
+                        <div class="ch-title">${ch.title ?: (i18n.translate("page.reader.audio.chapter") + " " + (ch.trackIndex + 1))}</div>
+                        @if(ch.durationSec != null)
+                            <div class="ch-dur">${ch.durationSec!! / 60}:${(ch.durationSec!! % 60).toString().padStart(2, '0')}</div>
+                        @endif
+                    </div>
+                @endfor
+                @if(chapters.isEmpty())
+                    <p style="font-size:0.8rem; color:var(--bt-faint);">${i18n.translate("page.book.chapters.empty")}</p>
+                @endif
+            </div>
+        </div>
+        <!-- Audio player (center) -->
+        <div id="audio-multi-wrap">
+            <div id="audio-multi-card">
+                @if(book.coverUrl != null)
+                    <img src="${book.coverUrl}" id="audio-multi-cover" alt="cover">
+                @else
+                    <div id="audio-multi-cover-ph"><i class="ri-headphone-line"></i></div>
+                @endif
+                <div id="audio-multi-title">${book.title}</div>
+                <div id="audio-multi-ch-name"></div>
+                @if(book.author != null)
+                    <div id="audio-multi-author">${book.author}</div>
+                @endif
+                <audio id="audio-multi-el" controls preload="metadata" style="width:100%; margin-top:1.25rem;"></audio>
+                <div id="audio-speed-row" style="display:flex; align-items:center; gap:0.375rem; margin-top:0.875rem; justify-content:center; flex-wrap:wrap;">
+                    <span style="font-size:0.8rem; color:var(--bt-muted);">${i18n.translate("page.reader.audio.speed")}</span>
+                    <button class="speed-btn" data-rate="0.75">0.75×</button>
+                    <button class="speed-btn active" data-rate="1.0">1×</button>
+                    <button class="speed-btn" data-rate="1.25">1.25×</button>
+                    <button class="speed-btn" data-rate="1.5">1.5×</button>
+                    <button class="speed-btn" data-rate="2.0">2×</button>
+                </div>
+            </div>
+        </div>
+    @elseif(readerType == "pdf")
         <div id="canvas-wrap">
             <div id="loading">${i18n.translate("page.reader.loading")}</div>
             <div id="page-container">
@@ -126,6 +216,29 @@
         </div>
     @elseif(readerType == "epub")
         <div id="epub-viewer"></div>
+    @elseif(readerType == "audio")
+        <div id="audio-wrap">
+            <div id="audio-card">
+                @if(book.coverUrl != null)
+                    <img src="${book.coverUrl}" id="audio-cover" alt="cover">
+                @else
+                    <div id="audio-cover-placeholder"><i class="ri-music-2-line"></i></div>
+                @endif
+                <div id="audio-title">${book.title}</div>
+                @if(book.author != null)
+                    <div id="audio-author">${book.author}</div>
+                @endif
+                <audio id="audio-el" controls src="/api/books/${book.id}/audio" preload="metadata" style="width:100%; margin-top:1.5rem;"></audio>
+                <div id="audio-speed-row">
+                    <span style="font-size:0.8rem; color:var(--bt-muted);">${i18n.translate("page.reader.audio.speed")}</span>
+                    <button class="speed-btn" data-rate="0.75">0.75×</button>
+                    <button class="speed-btn active" data-rate="1.0">1×</button>
+                    <button class="speed-btn" data-rate="1.25">1.25×</button>
+                    <button class="speed-btn" data-rate="1.5">1.5×</button>
+                    <button class="speed-btn" data-rate="2.0">2×</button>
+                </div>
+            </div>
+        </div>
     @elseif(readerType == "comic")
         <div id="comic-wrap">
             <img id="comic-img" src="" alt="${i18n.translate("page.reader.comic.loading")}">
@@ -557,6 +670,222 @@
     window.jumpToPage = function (pct) {
         rendition.display(Math.min(100, Math.max(0, pct)) / 100.0);
     };
+}());
+</script>
+@elseif(readerType == "audio")
+<script>
+(function () {
+    'use strict';
+
+    const BOOK_ID  = '${book.id}';
+    const PROG_URL = '/ui/books/' + BOOK_ID + '/progress';
+    const INIT_SEC = ${if (book.progress != null && book.progress!!.currentPage > 0) book.progress!!.currentPage else 0};
+
+    const audioEl   = document.getElementById('audio-el');
+    const audioTime = document.getElementById('audio-time');
+    let saveTimer   = null;
+    let lastSaved   = -1;
+
+    audioEl.addEventListener('loadedmetadata', function () {
+        if (INIT_SEC > 0 && INIT_SEC < audioEl.duration) {
+            audioEl.currentTime = INIT_SEC;
+        }
+        updateTime();
+    });
+
+    audioEl.addEventListener('timeupdate', function () {
+        updateTime();
+        scheduleSave();
+    });
+
+    audioEl.addEventListener('pause', function () { saveProgress(); });
+
+    window.addEventListener('beforeunload', function () { saveProgress(); });
+
+    function updateTime() {
+        var cur = formatTime(audioEl.currentTime);
+        var tot = isNaN(audioEl.duration) ? '\u2014' : formatTime(audioEl.duration);
+        if (audioTime) audioTime.textContent = cur + ' / ' + tot;
+    }
+
+    function formatTime(s) {
+        var m  = Math.floor(s / 60);
+        var ss = Math.floor(s % 60);
+        return m + ':' + (ss < 10 ? '0' : '') + ss;
+    }
+
+    function scheduleSave() {
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(saveProgress, 5000);
+    }
+
+    function saveProgress() {
+        clearTimeout(saveTimer);
+        var sec = Math.floor(audioEl.currentTime);
+        if (sec <= 0 || sec === lastSaved) return;
+        lastSaved = sec;
+        var body = new FormData();
+        body.append('currentPage', sec);
+        fetch(PROG_URL, { method: 'POST', body: body }).catch(function () {});
+    }
+
+    document.querySelectorAll('.speed-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            document.querySelectorAll('.speed-btn').forEach(function (b) { b.classList.remove('active'); });
+            btn.classList.add('active');
+            audioEl.playbackRate = parseFloat(btn.dataset.rate);
+        });
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        if (e.key === 'Escape') { window.location.href = '/books/' + BOOK_ID; return; }
+        if (e.key === ' ') { e.preventDefault(); if (audioEl.paused) audioEl.play(); else audioEl.pause(); return; }
+        if (e.key === 'ArrowLeft')  { audioEl.currentTime = Math.max(0, audioEl.currentTime - 10); }
+        if (e.key === 'ArrowRight') { audioEl.currentTime = Math.min(audioEl.duration || 0, audioEl.currentTime + 30); }
+    });
+}());
+</script>
+@elseif(readerType == "audio-multi")
+<script>
+(function () {
+    'use strict';
+
+    const BOOK_ID   = '${book.id}';
+    const PROG_URL  = '/ui/books/' + BOOK_ID + '/progress';
+    // progress encoded as trackIndex * 1_000_000 + offsetSeconds
+    const INIT_PACKED = ${if (book.progress != null && book.progress!!.currentPage > 0) book.progress!!.currentPage else 0};
+
+    // Build chapters array from server-rendered data
+    const CHAPTERS = [
+        @for(ch in chapters)
+        {
+            trackIndex: ${ch.trackIndex},
+            title: '${(ch.title ?: (i18n.translate("page.reader.audio.chapter") + " " + (ch.trackIndex + 1))).replace("'", "\\'")}'
+        },
+        @endfor
+    ];
+
+    const audioEl   = document.getElementById('audio-multi-el');
+    const chInfo    = document.getElementById('ch-info');
+    const timeEl    = document.getElementById('audio-multi-time');
+    const chNameEl  = document.getElementById('audio-multi-ch-name');
+    const btnPrev   = document.getElementById('btn-prev-ch');
+    const btnNext   = document.getElementById('btn-next-ch');
+    const saveInd   = document.getElementById('save-indicator');
+
+    let currentTrack = 0;
+    let saveTimer    = null;
+    let lastSaved    = -1;
+
+    function playChapter(trackIndex, seekTo, autoplay) {
+        currentTrack = trackIndex;
+        audioEl.src  = '/api/books/' + BOOK_ID + '/chapters/' + trackIndex;
+        updateChapterUI();
+        if (seekTo > 0 || autoplay) {
+            audioEl.addEventListener('loadedmetadata', function onMeta() {
+                audioEl.removeEventListener('loadedmetadata', onMeta);
+                if (seekTo > 0) audioEl.currentTime = seekTo;
+                if (autoplay) audioEl.play().catch(function() {});
+            });
+        }
+        audioEl.load();
+    }
+
+    window.playChapter = function(trackIndex) { playChapter(trackIndex, 0, true); };
+
+    function updateChapterUI() {
+        var idx = CHAPTERS.findIndex(function(c) { return c.trackIndex === currentTrack; });
+        var ch  = CHAPTERS[idx] || { trackIndex: currentTrack, title: '' };
+        if (chInfo)   chInfo.textContent   = (idx + 1) + ' / ' + CHAPTERS.length;
+        if (chNameEl) chNameEl.textContent = ch.title || '';
+        if (btnPrev)  btnPrev.disabled     = idx <= 0;
+        if (btnNext)  btnNext.disabled     = idx >= CHAPTERS.length - 1;
+        // Highlight active chapter in panel
+        document.querySelectorAll('.ch-item').forEach(function(el) {
+            el.classList.toggle('ch-active', el.id === 'ch-item-' + currentTrack);
+        });
+    }
+
+    // Auto-advance to next chapter when current one ends
+    audioEl.addEventListener('ended', function() {
+        var idx = CHAPTERS.findIndex(function(c) { return c.trackIndex === currentTrack; });
+        if (idx >= 0 && idx < CHAPTERS.length - 1) {
+            playChapter(CHAPTERS[idx + 1].trackIndex, 0, true);
+        }
+    });
+
+    // Toolbar prev / next chapter
+    if (btnPrev) btnPrev.addEventListener('click', function() {
+        var idx = CHAPTERS.findIndex(function(c) { return c.trackIndex === currentTrack; });
+        if (idx > 0) playChapter(CHAPTERS[idx - 1].trackIndex, 0, !audioEl.paused);
+    });
+    if (btnNext) btnNext.addEventListener('click', function() {
+        var idx = CHAPTERS.findIndex(function(c) { return c.trackIndex === currentTrack; });
+        if (idx >= 0 && idx < CHAPTERS.length - 1) playChapter(CHAPTERS[idx + 1].trackIndex, 0, !audioEl.paused);
+    });
+
+    // Time display
+    audioEl.addEventListener('timeupdate', function() {
+        if (timeEl) {
+            var cur = fmt(audioEl.currentTime);
+            var tot = isNaN(audioEl.duration) ? '\u2014' : fmt(audioEl.duration);
+            timeEl.textContent = cur + ' / ' + tot;
+        }
+        scheduleSave();
+    });
+    audioEl.addEventListener('pause', saveProgress);
+    window.addEventListener('beforeunload', saveProgress);
+
+    function fmt(s) {
+        var m = Math.floor(s / 60), ss = Math.floor(s % 60);
+        return m + ':' + (ss < 10 ? '0' : '') + ss;
+    }
+
+    function scheduleSave() {
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(saveProgress, 5000);
+    }
+
+    function saveProgress() {
+        clearTimeout(saveTimer);
+        var sec    = Math.floor(audioEl.currentTime);
+        var packed = currentTrack * 1000000 + sec;
+        if (packed === lastSaved || sec <= 0) return;
+        lastSaved = packed;
+        var body = new FormData();
+        body.append('currentPage', packed);
+        fetch(PROG_URL, { method: 'POST', body: body }).then(function(r) {
+            if (r.ok && saveInd) { saveInd.style.display = 'inline'; setTimeout(function() { saveInd.style.display = 'none'; }, 2000); }
+        }).catch(function() {});
+    }
+
+    // Speed buttons
+    document.querySelectorAll('.speed-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.speed-btn').forEach(function(b) { b.classList.remove('active'); });
+            btn.classList.add('active');
+            audioEl.playbackRate = parseFloat(btn.dataset.rate);
+        });
+    });
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        if (e.key === 'Escape') { window.location.href = '/books/' + BOOK_ID; return; }
+        if (e.key === ' ') { e.preventDefault(); if (audioEl.paused) audioEl.play().catch(function(){}); else audioEl.pause(); return; }
+        if (e.key === 'ArrowLeft')  audioEl.currentTime = Math.max(0, audioEl.currentTime - 10);
+        if (e.key === 'ArrowRight') audioEl.currentTime = Math.min(audioEl.duration || 0, audioEl.currentTime + 30);
+    });
+
+    // Restore position from packed progress
+    if (CHAPTERS.length > 0) {
+        var initTrack  = CHAPTERS.length > 0 ? Math.floor(INIT_PACKED / 1000000) : 0;
+        var initOffset = INIT_PACKED % 1000000;
+        // Find closest valid trackIndex
+        var startCh = CHAPTERS.find(function(c) { return c.trackIndex === initTrack; }) || CHAPTERS[0];
+        playChapter(startCh.trackIndex, initOffset, false);
+    }
 }());
 </script>
 @elseif(readerType == "comic")

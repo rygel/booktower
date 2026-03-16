@@ -10,6 +10,7 @@ import org.booktower.services.ComicService
 import org.booktower.services.EpubMetadataService
 import org.booktower.services.ExportService
 import org.booktower.services.GoodreadsImportService
+import org.booktower.services.SeedService
 import org.booktower.services.ReadingSessionService
 import org.booktower.services.MagicShelfService
 import org.booktower.services.MetadataFetchService
@@ -74,11 +75,13 @@ val appModule = module {
 
     single { ComicService() }
 
+    single { SeedService(get(), get(), get<AppConfig>().storage.coversPath, get<AppConfig>().storage.booksPath) }
+
     single { BulkBookHandler(get()) }
 
     single { ScanScheduleService(get<Database>().getJdbi(), get(), get<AppConfig>().autoScanMinutes) }
 
     single { WeblateHandler(get<AppConfig>().weblate) }
 
-    single { AppHandler(get(), get(), get(), get(), get(), get(), get(), get(), get(), get<AppConfig>().storage, get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    single { AppHandler(get(), get(), get(), get(), get(), get(), get(), get(), get(), get<AppConfig>().storage, get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
 }
