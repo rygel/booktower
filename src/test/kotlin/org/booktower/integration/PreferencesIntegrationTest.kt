@@ -220,7 +220,7 @@ class PreferencesIntegrationTest : IntegrationTestBase() {
     fun `POST preferences-lang with unsupported language defaults to en`() {
         val response = app(Request(Method.POST, "/preferences/lang")
             .header("Content-Type", "application/x-www-form-urlencoded")
-            .body("lang=zh"))
+            .body("lang=xx"))  // "xx" is not a supported language code
         val cookie = response.cookies().find { it.name == "app_lang" }
         assertNotNull(cookie)
         assertEquals("en", cookie!!.value)
