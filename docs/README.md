@@ -187,7 +187,7 @@ To create a new migration:
 
 ## License
 
-[Add your license information here]
+[GNU Affero General Public License v3.0 (AGPL-3.0)](LICENSE)
 
 ## Acknowledgments
 
