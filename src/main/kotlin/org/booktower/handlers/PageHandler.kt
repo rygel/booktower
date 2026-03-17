@@ -46,6 +46,7 @@ class PageHandler(
     private val magicShelfService: MagicShelfService,
     private val templateRenderer: TemplateRenderer,
     private val readingSessionService: ReadingSessionService? = null,
+    private val libraryWatchService: org.booktower.services.LibraryWatchService? = null,
 ) {
     // ── Page routes ────────────────────────────────────────────────────────────
 
@@ -216,6 +217,8 @@ class PageHandler(
                 "epub" -> "epub"
                 "cbz", "cbr" -> "comic"
                 "mp3", "m4b", "m4a", "ogg", "flac", "aac" -> "audio"
+                "fb2" -> "fb2"
+                "mobi", "azw3" -> "kindle"
                 else -> "pdf"
             }
         }
@@ -272,7 +275,8 @@ class PageHandler(
         val bookId = req.secondToLastPathSegment().toUuidOrNull() ?: return Response(Status.BAD_REQUEST)
         val book = bookService.getBook(userId, bookId) ?: return Response(Status.NOT_FOUND)
 
-        val meta = metadataFetchService.fetchMetadata(book.title, book.author)
+        val source = req.query("source")?.takeIf { it.isNotBlank() }
+        val meta = metadataFetchService.fetchMetadata(book.title, book.author, source)
             ?: return Response(Status.OK)
                 .header("HX-Trigger", toast(ctx.i18n.translate("msg.metadata.not.found"), "info"))
 
@@ -440,6 +444,7 @@ class PageHandler(
         val storagePath = req.form("path")?.trim()?.takeIf { it.isNotBlank() }
             ?: "./data/libraries/${name.lowercase().replace(Regex("[^a-z0-9]+"), "-")}"
         val library = libraryService.createLibrary(userId, CreateLibraryRequest(name, storagePath))
+        libraryWatchService?.registerLibrary(userId, java.util.UUID.fromString(library.id), library.path)
         return htmlOk(templateRenderer.render("components/libraryCard.kte", mapOf(
             "lib" to library,
             "i18n" to ctx.i18n,
@@ -451,6 +456,7 @@ class PageHandler(
         val ctx = WebContext(req)
         val libId = req.lastPathSegment().toUuidOrNull() ?: return Response(Status.BAD_REQUEST)
         libraryService.deleteLibrary(userId, libId)
+        libraryWatchService?.unregisterLibrary(libId)
         return Response(Status.OK)
             .header("HX-Trigger", toast(ctx.i18n.translate("msg.library-deleted")))
     }

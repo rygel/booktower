@@ -7,6 +7,7 @@ import org.booktower.services.ApiTokenService
 import org.booktower.services.AuthService
 import org.booktower.services.BookService
 import org.booktower.services.LibraryService
+import org.booktower.services.OpdsCredentialsService
 import org.http4k.core.Request
 import org.http4k.core.Response
 import org.http4k.core.Status
@@ -43,11 +44,16 @@ class OpdsHandler(
     private val bookService: BookService,
     private val storageConfig: StorageConfig,
     private val apiTokenService: ApiTokenService,
+    private val opdsCredentialsService: OpdsCredentialsService? = null,
 ) {
 
     // ── Authentication ────────────────────────────────────────────────────────
 
-    /** Accepts HTTP Basic Auth (username:password) or Bearer API token. */
+    /**
+     * Accepts HTTP Basic Auth or Bearer API token.
+     * For Basic Auth, tries OPDS-specific credentials first (if configured for that username),
+     * then falls back to main account credentials.
+     */
     private fun authenticate(req: Request): UUID? {
         val auth = req.header("Authorization") ?: return null
         if (auth.startsWith("Bearer ")) {
@@ -61,7 +67,9 @@ class OpdsHandler(
             if (colonIdx < 0) return null
             val username = decoded.substring(0, colonIdx)
             val password = decoded.substring(colonIdx + 1)
-            authService.getUserByCredentials(username, password)?.id
+            // Try OPDS-specific credentials first
+            opdsCredentialsService?.authenticate(username, password)
+                ?: authService.getUserByCredentials(username, password)?.id
         } catch (_: Exception) {
             null
         }

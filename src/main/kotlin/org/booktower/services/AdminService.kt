@@ -20,6 +20,17 @@ class AdminService(private val jdbi: Jdbi) {
         }
     }
 
+    fun getUserById(userId: UUID): UserAdminDto? {
+        return jdbi.withHandle<UserAdminDto?, Exception> { handle ->
+            handle.createQuery(
+                "SELECT id, username, email, created_at, is_admin FROM users WHERE id = ?",
+            )
+                .bind(0, userId.toString())
+                .map { row -> mapUserAdminDto(row) }
+                .firstOrNull()
+        }
+    }
+
     fun setAdmin(userId: UUID, isAdmin: Boolean): Boolean {
         val updated = jdbi.withHandle<Int, Exception> { handle ->
             handle.createUpdate("UPDATE users SET is_admin = ?, updated_at = ? WHERE id = ?")

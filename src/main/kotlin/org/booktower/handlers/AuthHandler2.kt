@@ -9,7 +9,9 @@ import org.booktower.models.CreateUserRequest
 import org.booktower.models.ErrorResponse
 import org.booktower.models.LoginRequest
 import org.booktower.models.SuccessResponse
+import org.booktower.services.AuditService
 import org.booktower.services.AuthService
+import org.booktower.services.EmailService
 import org.booktower.services.PasswordResetService
 import org.booktower.services.UserSettingsService
 import org.booktower.web.WebContext
@@ -31,8 +33,18 @@ class AuthHandler2(
     private val authService: AuthService,
     private val userSettingsService: UserSettingsService,
     private val passwordResetService: PasswordResetService,
+    private val emailService: EmailService,
+    private val appBaseUrl: String,
+    private val registrationOpen: Boolean = true,
+    private val auditService: AuditService? = null,
+    private val oidcForceOnly: Boolean = false,
 ) {
     fun register(req: Request): Response {
+        if (!registrationOpen) {
+            return Response(Status.FORBIDDEN)
+                .header("Content-Type", "application/json")
+                .body(Json.mapper.writeValueAsString(ErrorResponse("REGISTRATION_CLOSED", "Registration is closed on this server")))
+        }
         return try {
             val createRequest = parseRegisterRequest(req)
                 ?: return Response(Status.BAD_REQUEST)
@@ -51,6 +63,7 @@ class AuthHandler2(
             result.fold(
                 onSuccess = { loginResponse ->
                     logger.info("User registered successfully: ${loginResponse.user.username}")
+                    auditService?.record(UUID.fromString(loginResponse.user.id), loginResponse.user.username, "user.register", ipAddress = clientIp(req))
                     val base = if (isFormRequest(req)) {
                         Response(Status.SEE_OTHER)
                             .header("Location", "/")
@@ -91,6 +104,11 @@ class AuthHandler2(
     }
 
     fun login(req: Request): Response {
+        if (oidcForceOnly) {
+            return Response(Status.FORBIDDEN)
+                .header("Content-Type", "application/json")
+                .body(Json.mapper.writeValueAsString(ErrorResponse("OIDC_FORCE_ONLY", "Local login is disabled. Please use SSO to sign in.")))
+        }
         return try {
             val loginRequest = parseLoginRequest(req)
                 ?: return Response(Status.BAD_REQUEST)
@@ -109,6 +127,7 @@ class AuthHandler2(
             result.fold(
                 onSuccess = { loginResponse ->
                     logger.info("User logged in successfully: ${loginResponse.user.username}")
+                    auditService?.record(UUID.fromString(loginResponse.user.id), loginResponse.user.username, "user.login", ipAddress = clientIp(req))
                     val base = if (isFormRequest(req)) {
                         Response(Status.SEE_OTHER)
                             .header("Location", "/")
@@ -143,6 +162,48 @@ class AuthHandler2(
                 .header("Content-Type", "application/json")
                 .body(Json.mapper.writeValueAsString(ErrorResponse("INTERNAL_ERROR", "An unexpected error occurred")))
         }
+    }
+
+    /**
+     * POST /auth/refresh
+     * Body (JSON): {"refreshToken": "..."}
+     * Returns new access token + rotated refresh token.
+     */
+    fun refresh(req: Request): Response {
+        val body = try { Json.mapper.readTree(req.bodyString()) } catch (_: Exception) { null }
+        val token = body?.get("refreshToken")?.asText()
+        if (token.isNullOrBlank()) {
+            return Response(Status.BAD_REQUEST)
+                .header("Content-Type", "application/json")
+                .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "refreshToken is required")))
+        }
+        return authService.refreshAccessToken(token).fold(
+            onSuccess = { loginResponse ->
+                Response(Status.OK)
+                    .header("Content-Type", "application/json")
+                    .cookie(createAuthCookie(loginResponse.token))
+                    .body(Json.mapper.writeValueAsString(loginResponse))
+            },
+            onFailure = {
+                Response(Status.UNAUTHORIZED)
+                    .header("Content-Type", "application/json")
+                    .body(Json.mapper.writeValueAsString(ErrorResponse("INVALID_TOKEN", it.message ?: "Invalid refresh token")))
+            }
+        )
+    }
+
+    /**
+     * POST /auth/revoke
+     * Body (JSON): {"refreshToken": "..."}
+     * Revokes the given refresh token.
+     */
+    fun revokeToken(req: Request): Response {
+        val body = try { Json.mapper.readTree(req.bodyString()) } catch (_: Exception) { null }
+        val token = body?.get("refreshToken")?.asText()
+        if (!token.isNullOrBlank()) {
+            authService.revokeRefreshToken(token)
+        }
+        return Response(Status.NO_CONTENT)
     }
 
     fun logout(req: Request): Response {
@@ -287,13 +348,18 @@ class AuthHandler2(
         if (!email.isNullOrBlank()) {
             val token = passwordResetService.createToken(email)
             if (token != null) {
-                logger.info("Password reset token (show to user): $token")
+                val resetLink = "$appBaseUrl/reset-password?token=$token"
+                emailService.sendPasswordReset(email, resetLink)
+                if (!emailService.config.enabled) {
+                    // Fallback for self-hosted instances without SMTP
+                    logger.info("Password reset link (SMTP not configured — share with user): $resetLink")
+                }
             }
         }
         // Always 200 — do not reveal whether email exists
         return Response(Status.OK)
             .header("Content-Type", "application/json")
-            .body(Json.mapper.writeValueAsString(SuccessResponse("If that email is registered, a reset token has been generated. Check server logs.")))
+            .body(Json.mapper.writeValueAsString(SuccessResponse("If that email is registered, a password reset link has been sent.")))
     }
 
     /**
@@ -330,6 +396,10 @@ class AuthHandler2(
                 .body(Json.mapper.writeValueAsString(ErrorResponse("INVALID_TOKEN", "Token is invalid, expired, or already used")))
         }
     }
+
+    private fun clientIp(req: Request): String? =
+        req.header("X-Forwarded-For")?.split(",")?.firstOrNull()?.trim()
+            ?: req.header("X-Real-IP")
 
     private fun isFormRequest(req: Request): Boolean {
         val contentType = req.header("Content-Type") ?: ""

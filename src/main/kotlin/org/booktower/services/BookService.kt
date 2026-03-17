@@ -15,6 +15,7 @@ class BookService(
     private val jdbi: Jdbi,
     private val analyticsService: AnalyticsService? = null,
     private val readingSessionService: ReadingSessionService? = null,
+    private val metadataLockService: MetadataLockService? = null,
 ) {
     companion object {
         private const val MAX_PAGE_SIZE = 100
@@ -29,12 +30,14 @@ class BookService(
         statusFilter: String? = null,
         tagFilter: String? = null,
         ratingGte: Int? = null,
+        formatFilter: String? = null,
     ): BookListDto {
         val safePage = page.coerceAtLeast(1)
         val safePageSize = pageSize.coerceIn(1, MAX_PAGE_SIZE)
         val offset = (safePage - 1) * safePageSize
         val orderClause = sortBy.sql // whitelisted from enum, safe to interpolate
         val statusClause = if (statusFilter != null) " AND bs.status = ?" else ""
+        val formatClause = if (formatFilter != null) " AND b.book_format = ?" else ""
         val tagClause = if (tagFilter != null) " AND EXISTS (SELECT 1 FROM book_tags bt WHERE bt.book_id = b.id AND bt.user_id = ? AND bt.tag = ?)" else ""
         val ratingGteClause = if (ratingGte != null) " AND br.rating >= ?" else ""
 
@@ -47,7 +50,7 @@ class BookService(
                         INNER JOIN libraries l ON b.library_id = l.id
                         LEFT JOIN book_status bs ON bs.book_id = b.id AND bs.user_id = ?
                         LEFT JOIN book_ratings br ON br.book_id = b.id AND br.user_id = ?
-                        WHERE b.library_id = ? AND l.user_id = ?${statusClause}${tagClause}${ratingGteClause}
+                        WHERE b.library_id = ? AND l.user_id = ?${statusClause}${tagClause}${ratingGteClause}${formatClause}
                         ORDER BY $orderClause LIMIT ? OFFSET ?
                         """,
                     )
@@ -59,6 +62,7 @@ class BookService(
                     if (statusFilter != null) { q.bind(idx++, statusFilter) }
                     if (tagFilter != null) { q.bind(idx++, userId.toString()); q.bind(idx++, tagFilter) }
                     if (ratingGte != null) { q.bind(idx++, ratingGte) }
+                    if (formatFilter != null) { q.bind(idx++, formatFilter.uppercase()) }
                     q.bind(idx++, safePageSize)
                     q.bind(idx, offset)
                     q.map { row -> mapBook(row) }.list()
@@ -71,7 +75,7 @@ class BookService(
                     INNER JOIN libraries l ON b.library_id = l.id
                     LEFT JOIN book_status bs ON bs.book_id = b.id AND bs.user_id = ?
                     LEFT JOIN book_ratings br ON br.book_id = b.id AND br.user_id = ?
-                    WHERE l.user_id = ?${statusClause}${tagClause}${ratingGteClause}
+                    WHERE l.user_id = ?${statusClause}${tagClause}${ratingGteClause}${formatClause}
                     ORDER BY $orderClause LIMIT ? OFFSET ?
                 """,
                     )
@@ -82,6 +86,7 @@ class BookService(
                     if (statusFilter != null) { q.bind(idx++, statusFilter) }
                     if (tagFilter != null) { q.bind(idx++, userId.toString()); q.bind(idx++, tagFilter) }
                     if (ratingGte != null) { q.bind(idx++, ratingGte) }
+                    if (formatFilter != null) { q.bind(idx++, formatFilter.uppercase()) }
                     q.bind(idx++, safePageSize)
                     q.bind(idx, offset)
                     q.map { row -> mapBook(row) }.list()
@@ -89,7 +94,10 @@ class BookService(
             }
 
         val tagMap = fetchTagsForBooks(userId, books.map { it.id })
-        val enriched = books.map { it.copy(tags = tagMap[it.id] ?: emptyList()) }
+        val authorMap = fetchAuthorsForBooks(books.map { it.id })
+        val categoryMap = fetchCategoriesForBooks(userId, books.map { it.id })
+        val moodMap = fetchMoodsForBooks(userId, books.map { it.id })
+        val enriched = books.map { it.copy(tags = tagMap[it.id] ?: emptyList(), authors = authorMap[it.id] ?: emptyList(), categories = categoryMap[it.id] ?: emptyList(), moods = moodMap[it.id] ?: emptyList()) }
 
         val total =
             if (libraryId != null) {
@@ -99,7 +107,7 @@ class BookService(
                         SELECT COUNT(*) FROM books b INNER JOIN libraries l ON b.library_id = l.id
                         LEFT JOIN book_status bs ON bs.book_id = b.id AND bs.user_id = ?
                         LEFT JOIN book_ratings br ON br.book_id = b.id AND br.user_id = ?
-                        WHERE b.library_id = ? AND l.user_id = ?${statusClause}${tagClause}${ratingGteClause}
+                        WHERE b.library_id = ? AND l.user_id = ?${statusClause}${tagClause}${ratingGteClause}${formatClause}
                         """,
                     )
                         .bind(0, userId.toString())
@@ -110,6 +118,7 @@ class BookService(
                     if (statusFilter != null) { q.bind(idx++, statusFilter) }
                     if (tagFilter != null) { q.bind(idx++, userId.toString()); q.bind(idx++, tagFilter) }
                     if (ratingGte != null) { q.bind(idx++, ratingGte) }
+                    if (formatFilter != null) { q.bind(idx++, formatFilter.uppercase()) }
                     q.mapTo(Int::class.java).first() ?: 0
                 }
             } else {
@@ -119,7 +128,7 @@ class BookService(
                         SELECT COUNT(*) FROM books b INNER JOIN libraries l ON b.library_id = l.id
                         LEFT JOIN book_status bs ON bs.book_id = b.id AND bs.user_id = ?
                         LEFT JOIN book_ratings br ON br.book_id = b.id AND br.user_id = ?
-                        WHERE l.user_id = ?${statusClause}${tagClause}${ratingGteClause}
+                        WHERE l.user_id = ?${statusClause}${tagClause}${ratingGteClause}${formatClause}
                         """,
                     )
                         .bind(0, userId.toString())
@@ -129,6 +138,7 @@ class BookService(
                     if (statusFilter != null) { q.bind(idx++, statusFilter) }
                     if (tagFilter != null) { q.bind(idx++, userId.toString()); q.bind(idx++, tagFilter) }
                     if (ratingGte != null) { q.bind(idx++, ratingGte) }
+                    if (formatFilter != null) { q.bind(idx++, formatFilter.uppercase()) }
                     q.mapTo(Int::class.java).first() ?: 0
                 }
             }
@@ -148,7 +158,16 @@ class BookService(
         val safePage = page.coerceAtLeast(1)
         val safePageSize = pageSize.coerceIn(1, MAX_PAGE_SIZE)
         val offset = (safePage - 1) * safePageSize
-        val likeQuery = "%${query.trim().lowercase()}%"
+
+        // Normalize query: produces hiragana/katakana/half-width variants for CJK support
+        val likePatterns = SearchNormalizer.variants(query).map { "%${it.lowercase()}%" }
+        // One OR-group per variant: (title LIKE ? OR author LIKE ? OR desc LIKE ?)
+        val variantClauses = likePatterns.joinToString(" OR ") {
+            "(LOWER(b.title) LIKE ? OR LOWER(b.author) LIKE ? OR LOWER(b.description) LIKE ?)"
+        }
+        val searchClause = "AND ($variantClauses)"
+        // Params: 3 bindings per variant (title, author, description)
+        val searchParams = likePatterns.flatMap { listOf(it, it, it) }
 
         val libClause = if (libId != null) " AND l.id = ?" else ""
         val statusClause = if (statusFilter != null) " AND bs.status = ?" else ""
@@ -162,7 +181,7 @@ class BookService(
                 LEFT JOIN book_status bs ON bs.book_id = b.id AND bs.user_id = ?
                 LEFT JOIN book_ratings br ON br.book_id = b.id AND br.user_id = ?
                 WHERE l.user_id = ?
-                  AND (LOWER(b.title) LIKE ? OR LOWER(b.author) LIKE ? OR LOWER(b.description) LIKE ?)
+                  $searchClause
                   $libClause$statusClause$ratingClause
                 ORDER BY b.title LIMIT ? OFFSET ?
                 """,
@@ -170,10 +189,8 @@ class BookService(
                 .bind(0, userId.toString())
                 .bind(1, userId.toString())
                 .bind(2, userId.toString())
-                .bind(3, likeQuery)
-                .bind(4, likeQuery)
-                .bind(5, likeQuery)
-            var idx = 6
+            var idx = 3
+            for (p in searchParams) q.bind(idx++, p)
             if (libId != null) q.bind(idx++, libId)
             if (statusFilter != null) q.bind(idx++, statusFilter)
             if (minRating != null) q.bind(idx++, minRating)
@@ -183,7 +200,10 @@ class BookService(
         }
 
         val tagMap = fetchTagsForBooks(userId, books.map { it.id })
-        val enriched = books.map { it.copy(tags = tagMap[it.id] ?: emptyList()) }
+        val authorMap = fetchAuthorsForBooks(books.map { it.id })
+        val categoryMap = fetchCategoriesForBooks(userId, books.map { it.id })
+        val moodMap = fetchMoodsForBooks(userId, books.map { it.id })
+        val enriched = books.map { it.copy(tags = tagMap[it.id] ?: emptyList(), authors = authorMap[it.id] ?: emptyList(), categories = categoryMap[it.id] ?: emptyList(), moods = moodMap[it.id] ?: emptyList()) }
 
         val total = jdbi.withHandle<Int, Exception> { handle ->
             val q = handle.createQuery(
@@ -193,17 +213,15 @@ class BookService(
                 LEFT JOIN book_status bs ON bs.book_id = b.id AND bs.user_id = ?
                 LEFT JOIN book_ratings br ON br.book_id = b.id AND br.user_id = ?
                 WHERE l.user_id = ?
-                  AND (LOWER(b.title) LIKE ? OR LOWER(b.author) LIKE ? OR LOWER(b.description) LIKE ?)
+                  $searchClause
                   $libClause$statusClause$ratingClause
                 """,
             )
                 .bind(0, userId.toString())
                 .bind(1, userId.toString())
                 .bind(2, userId.toString())
-                .bind(3, likeQuery)
-                .bind(4, likeQuery)
-                .bind(5, likeQuery)
-            var idx = 6
+            var idx = 3
+            for (p in searchParams) q.bind(idx++, p)
             if (libId != null) q.bind(idx++, libId)
             if (statusFilter != null) q.bind(idx++, statusFilter)
             if (minRating != null) q.bind(idx++, minRating)
@@ -255,7 +273,11 @@ class BookService(
                 }.firstOrNull()
         }
         val tags = if (book != null) fetchTagsForBooks(userId, listOf(book.id))[book.id] ?: emptyList() else emptyList()
-        return book?.copy(tags = tags)
+        val authors = if (book != null) fetchAuthorsForBooks(listOf(book.id))[book.id] ?: emptyList() else emptyList()
+        val categories = if (book != null) fetchCategoriesForBooks(userId, listOf(book.id))[book.id] ?: emptyList() else emptyList()
+        val moods = if (book != null) fetchMoodsForBooks(userId, listOf(book.id))[book.id] ?: emptyList() else emptyList()
+        val lockedFields = if (book != null) metadataLockService?.getLockedFields(UUID.fromString(book.id))?.toList() ?: emptyList() else emptyList()
+        return book?.copy(tags = tags, authors = authors, categories = categories, moods = moods, lockedFields = lockedFields)
     }
 
     fun getRecentBooks(
@@ -294,12 +316,15 @@ class BookService(
         val now = Instant.now()
         val bookId = UUID.randomUUID()
 
+        val format = BookFormat.fromString(request.bookFormat)
+        val isPhysical = format == BookFormat.PHYSICAL
+
         jdbi.useHandle<Exception> { handle ->
             handle.createUpdate(
                 """
                 INSERT INTO books (id, library_id, title, author, description,
-                    file_path, file_size, added_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, '', 0, ?, ?)
+                    file_path, file_size, book_format, added_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
             )
                 .bind(0, bookId.toString())
@@ -307,12 +332,15 @@ class BookService(
                 .bind(2, request.title)
                 .bind(3, request.author)
                 .bind(4, request.description)
-                .bind(5, now.toString())
-                .bind(6, now.toString())
+                .bind(5, if (isPhysical) null else "")
+                .bind(6, if (isPhysical) null else 0L)
+                .bind(7, format.name)
+                .bind(8, now.toString())
+                .bind(9, now.toString())
                 .execute()
         }
 
-        logger.info("Book created: ${request.title}")
+        logger.info("Book created: ${request.title} (format=${format.name})")
 
         return Result.success(
             BookDto(
@@ -326,8 +354,29 @@ class BookService(
                 fileSize = 0,
                 addedAt = now.toString(),
                 progress = null,
+                bookFormat = format.name,
             ),
         )
+    }
+
+    /** Creates a book record for a file imported from the BookDrop folder. Library ownership is pre-verified by the caller. */
+    fun createBookFromDrop(userId: UUID, bookId: UUID, title: String, libraryId: String, filePath: String, fileSize: Long) {
+        val now = Instant.now()
+        jdbi.useHandle<Exception> { handle ->
+            handle.createUpdate(
+                """INSERT INTO books (id, library_id, title, file_path, file_size, added_at, updated_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
+            )
+                .bind(0, bookId.toString())
+                .bind(1, libraryId)
+                .bind(2, title)
+                .bind(3, filePath)
+                .bind(4, fileSize)
+                .bind(5, now.toString())
+                .bind(6, now.toString())
+                .execute()
+        }
+        logger.info("BookDrop import: $title ($bookId)")
     }
 
     fun updateBook(
@@ -406,6 +455,17 @@ class BookService(
             publisher = meta.publisher ?: book.publisher,
             publishedDate = meta.publishedDate ?: book.publishedDate,
         )
+    }
+
+    fun updateSeries(userId: UUID, bookId: UUID, series: String, seriesIndex: Float?) {
+        jdbi.useHandle<Exception> { h ->
+            h.createUpdate("UPDATE books SET series = ?, series_index = ?, updated_at = ? WHERE id = ?")
+                .bind(0, series)
+                .bind(1, seriesIndex)
+                .bind(2, Instant.now().toString())
+                .bind(3, bookId.toString())
+                .execute()
+        }
     }
 
     /** Converts a year-only string like "1984" to "1984-01-01" for DATE columns. */
@@ -674,7 +734,10 @@ class BookService(
                 .map { row -> mapBook(row) }.list()
         }
         val tagMap = fetchTagsForBooks(userId, books.map { it.id })
-        return books.map { it.copy(tags = tagMap[it.id] ?: emptyList()) }
+        val authorMap = fetchAuthorsForBooks(books.map { it.id })
+        val categoryMap = fetchCategoriesForBooks(userId, books.map { it.id })
+        val moodMap = fetchMoodsForBooks(userId, books.map { it.id })
+        return books.map { it.copy(tags = tagMap[it.id] ?: emptyList(), authors = authorMap[it.id] ?: emptyList(), categories = categoryMap[it.id] ?: emptyList(), moods = moodMap[it.id] ?: emptyList()) }
     }
 
     /** Returns all distinct series that belong to the user, with book count and a cover. */
@@ -721,7 +784,10 @@ class BookService(
                 .map { row -> mapBook(row) }.list()
         }
         val tagMap = fetchTagsForBooks(userId, books.map { it.id })
-        return books.map { it.copy(tags = tagMap[it.id] ?: emptyList()) }
+        val authorMap = fetchAuthorsForBooks(books.map { it.id })
+        val categoryMap = fetchCategoriesForBooks(userId, books.map { it.id })
+        val moodMap = fetchMoodsForBooks(userId, books.map { it.id })
+        return books.map { it.copy(tags = tagMap[it.id] ?: emptyList(), authors = authorMap[it.id] ?: emptyList(), categories = categoryMap[it.id] ?: emptyList(), moods = moodMap[it.id] ?: emptyList()) }
     }
 
     private fun mapBook(row: RowView): BookDto {
@@ -755,7 +821,176 @@ class BookService(
             publishedDate = try { row.getColumn("published_date", String::class.java) } catch (_: Exception) { null },
             series = try { row.getColumn("series", String::class.java) } catch (_: Exception) { null },
             seriesIndex = try { row.getColumn("series_index", java.lang.Double::class.java)?.toDouble() } catch (_: Exception) { null },
+            readingDirection = try { row.getColumn("reading_direction", String::class.java) } catch (_: Exception) { null },
+            subtitle = try { row.getColumn("subtitle", String::class.java) } catch (_: Exception) { null },
+            language = try { row.getColumn("language", String::class.java) } catch (_: Exception) { null },
+            contentRating = try { row.getColumn("content_rating", String::class.java) } catch (_: Exception) { null },
+            ageRating = try { row.getColumn("age_rating", String::class.java) } catch (_: Exception) { null },
+            goodreadsId = try { row.getColumn("goodreads_id", String::class.java) } catch (_: Exception) { null },
+            hardcoverId = try { row.getColumn("hardcover_id", String::class.java) } catch (_: Exception) { null },
+            comicvineId = try { row.getColumn("comicvine_id", String::class.java) } catch (_: Exception) { null },
+            openlibraryId = try { row.getColumn("openlibrary_id", String::class.java) } catch (_: Exception) { null },
+            googleBooksId = try { row.getColumn("google_books_id", String::class.java) } catch (_: Exception) { null },
+            amazonId = try { row.getColumn("amazon_id", String::class.java) } catch (_: Exception) { null },
+            audibleId = try { row.getColumn("audible_id", String::class.java) } catch (_: Exception) { null },
+            bookFormat = try { row.getColumn("book_format", String::class.java) ?: "EBOOK" } catch (_: Exception) { "EBOOK" },
+            communityRating = try { row.getColumn("community_rating", java.lang.Double::class.java)?.toDouble() } catch (_: Exception) { null },
+            communityRatingCount = try { row.getColumn("community_rating_count", java.lang.Integer::class.java)?.toInt() } catch (_: Exception) { null },
+            communityRatingSource = try { row.getColumn("community_rating_source", String::class.java) } catch (_: Exception) { null },
         )
+    }
+
+    private fun fetchMoodsForBooks(userId: UUID, bookIds: List<String>): Map<String, List<String>> {
+        if (bookIds.isEmpty()) return emptyMap()
+        return jdbi.withHandle<Map<String, List<String>>, Exception> { handle ->
+            val placeholders = bookIds.joinToString(",") { "?" }
+            val q = handle.createQuery(
+                "SELECT book_id, mood FROM book_moods WHERE user_id = ? AND book_id IN ($placeholders) ORDER BY mood"
+            )
+            q.bind(0, userId.toString())
+            bookIds.forEachIndexed { i, id -> q.bind(i + 1, id) }
+            q.map { row ->
+                Pair(row.getColumn("book_id", String::class.java), row.getColumn("mood", String::class.java))
+            }.list().groupBy({ it.first }, { it.second })
+        }
+    }
+
+    fun setMoods(userId: UUID, bookId: UUID, moods: List<String>): Boolean {
+        val exists = jdbi.withHandle<Boolean, Exception> { h ->
+            h.createQuery(
+                "SELECT COUNT(*) FROM books b JOIN libraries l ON b.library_id = l.id WHERE b.id = ? AND l.user_id = ?"
+            ).bind(0, bookId.toString()).bind(1, userId.toString()).mapTo(Int::class.java).firstOrNull()!! > 0
+        }
+        if (!exists) return false
+        jdbi.useHandle<Exception> { h ->
+            h.createUpdate("DELETE FROM book_moods WHERE user_id = ? AND book_id = ?")
+                .bind(0, userId.toString()).bind(1, bookId.toString()).execute()
+            moods.filter { it.isNotBlank() }.forEach { mood ->
+                h.createUpdate("INSERT INTO book_moods (id, user_id, book_id, mood) VALUES (?, ?, ?, ?)")
+                    .bind(0, java.util.UUID.randomUUID().toString())
+                    .bind(1, userId.toString())
+                    .bind(2, bookId.toString())
+                    .bind(3, mood)
+                    .execute()
+            }
+        }
+        return true
+    }
+
+    fun updateExternalIds(userId: UUID, bookId: UUID,
+        goodreadsId: String?, hardcoverId: String?, comicvineId: String?,
+        openlibraryId: String?, googleBooksId: String?, amazonId: String?, audibleId: String?
+    ): Boolean {
+        val updated = jdbi.withHandle<Int, Exception> { h ->
+            h.createUpdate(
+                """UPDATE books SET goodreads_id=?, hardcover_id=?, comicvine_id=?,
+                   openlibrary_id=?, google_books_id=?, amazon_id=?, audible_id=?
+                   WHERE id=? AND library_id IN (SELECT id FROM libraries WHERE user_id=?)"""
+            )
+                .bind(0, goodreadsId).bind(1, hardcoverId).bind(2, comicvineId)
+                .bind(3, openlibraryId).bind(4, googleBooksId).bind(5, amazonId).bind(6, audibleId)
+                .bind(7, bookId.toString()).bind(8, userId.toString())
+                .execute()
+        }
+        return updated > 0
+    }
+
+    fun updateExtendedMetadata(userId: UUID, bookId: UUID, subtitle: String?, language: String?, contentRating: String?, ageRating: String?): Boolean {
+        val updated = jdbi.withHandle<Int, Exception> { h ->
+            h.createUpdate(
+                """UPDATE books SET subtitle = ?, language = ?, content_rating = ?, age_rating = ?
+                   WHERE id = ? AND library_id IN (SELECT id FROM libraries WHERE user_id = ?)"""
+            )
+                .bind(0, subtitle).bind(1, language).bind(2, contentRating).bind(3, ageRating)
+                .bind(4, bookId.toString()).bind(5, userId.toString())
+                .execute()
+        }
+        return updated > 0
+    }
+
+    private fun fetchCategoriesForBooks(userId: UUID, bookIds: List<String>): Map<String, List<String>> {
+        if (bookIds.isEmpty()) return emptyMap()
+        return jdbi.withHandle<Map<String, List<String>>, Exception> { handle ->
+            val placeholders = bookIds.joinToString(",") { "?" }
+            val q = handle.createQuery(
+                "SELECT book_id, category FROM book_categories WHERE user_id = ? AND book_id IN ($placeholders) ORDER BY category"
+            )
+            q.bind(0, userId.toString())
+            bookIds.forEachIndexed { i, id -> q.bind(i + 1, id) }
+            q.map { row ->
+                Pair(row.getColumn("book_id", String::class.java), row.getColumn("category", String::class.java))
+            }.list().groupBy({ it.first }, { it.second })
+        }
+    }
+
+    fun setCategories(userId: UUID, bookId: UUID, categories: List<String>): Boolean {
+        val exists = jdbi.withHandle<Boolean, Exception> { h ->
+            h.createQuery(
+                "SELECT COUNT(*) FROM books b JOIN libraries l ON b.library_id = l.id WHERE b.id = ? AND l.user_id = ?"
+            ).bind(0, bookId.toString()).bind(1, userId.toString()).mapTo(Int::class.java).firstOrNull()!! > 0
+        }
+        if (!exists) return false
+        jdbi.useHandle<Exception> { h ->
+            h.createUpdate("DELETE FROM book_categories WHERE user_id = ? AND book_id = ?")
+                .bind(0, userId.toString()).bind(1, bookId.toString()).execute()
+            categories.filter { it.isNotBlank() }.forEach { cat ->
+                h.createUpdate("INSERT INTO book_categories (id, user_id, book_id, category) VALUES (?, ?, ?, ?)")
+                    .bind(0, java.util.UUID.randomUUID().toString())
+                    .bind(1, userId.toString())
+                    .bind(2, bookId.toString())
+                    .bind(3, cat)
+                    .execute()
+            }
+        }
+        return true
+    }
+
+    private fun fetchAuthorsForBooks(bookIds: List<String>): Map<String, List<String>> {
+        if (bookIds.isEmpty()) return emptyMap()
+        return jdbi.withHandle<Map<String, List<String>>, Exception> { handle ->
+            val placeholders = bookIds.joinToString(",") { "?" }
+            val q = handle.createQuery(
+                "SELECT book_id, author_name FROM book_authors WHERE book_id IN ($placeholders) ORDER BY author_order, author_name"
+            )
+            bookIds.forEachIndexed { i, id -> q.bind(i, id) }
+            q.map { row ->
+                Pair(
+                    row.getColumn("book_id", String::class.java),
+                    row.getColumn("author_name", String::class.java),
+                )
+            }.list().groupBy({ it.first }, { it.second })
+        }
+    }
+
+    fun setAuthors(userId: UUID, bookId: UUID, authors: List<String>): Boolean {
+        // Verify the book belongs to this user
+        val exists = jdbi.withHandle<Boolean, Exception> { h ->
+            h.createQuery(
+                "SELECT COUNT(*) FROM books b JOIN libraries l ON b.library_id = l.id WHERE b.id = ? AND l.user_id = ?"
+            ).bind(0, bookId.toString()).bind(1, userId.toString()).mapTo(Int::class.java).firstOrNull()!! > 0
+        }
+        if (!exists) return false
+
+        jdbi.useHandle<Exception> { h ->
+            h.createUpdate("DELETE FROM book_authors WHERE book_id = ?").bind(0, bookId.toString()).execute()
+            authors.forEachIndexed { idx, name ->
+                h.createUpdate(
+                    "INSERT INTO book_authors (id, book_id, author_name, author_order) VALUES (?, ?, ?, ?)"
+                )
+                    .bind(0, java.util.UUID.randomUUID().toString())
+                    .bind(1, bookId.toString())
+                    .bind(2, name)
+                    .bind(3, idx)
+                    .execute()
+            }
+            // Also sync the legacy author column with the primary author
+            val primary = authors.firstOrNull()
+            h.createUpdate("UPDATE books SET author = ? WHERE id = ?")
+                .bind(0, primary)
+                .bind(1, bookId.toString())
+                .execute()
+        }
+        return true
     }
 
     private fun fetchTagsForBooks(userId: UUID, bookIds: List<String>): Map<String, List<String>> {
@@ -809,7 +1044,10 @@ class BookService(
             q.map { row -> mapBook(row) }.list()
         }
         val tagMap = fetchTagsForBooks(userId, books.map { it.id })
-        return books.map { it.copy(tags = tagMap[it.id] ?: emptyList()) }
+        val authorMap = fetchAuthorsForBooks(books.map { it.id })
+        val categoryMap = fetchCategoriesForBooks(userId, books.map { it.id })
+        val moodMap = fetchMoodsForBooks(userId, books.map { it.id })
+        return books.map { it.copy(tags = tagMap[it.id] ?: emptyList(), authors = authorMap[it.id] ?: emptyList(), categories = categoryMap[it.id] ?: emptyList(), moods = moodMap[it.id] ?: emptyList()) }
     }
 
     fun setTags(userId: UUID, bookId: UUID, tags: List<String>) {
@@ -891,7 +1129,10 @@ class BookService(
                 .map { row -> mapBook(row) }.list()
         }
         val tagMap = fetchTagsForBooks(userId, books.map { it.id })
-        return books.map { it.copy(tags = tagMap[it.id] ?: emptyList()) }
+        val authorMap = fetchAuthorsForBooks(books.map { it.id })
+        val categoryMap = fetchCategoriesForBooks(userId, books.map { it.id })
+        val moodMap = fetchMoodsForBooks(userId, books.map { it.id })
+        return books.map { it.copy(tags = tagMap[it.id] ?: emptyList(), authors = authorMap[it.id] ?: emptyList(), categories = categoryMap[it.id] ?: emptyList(), moods = moodMap[it.id] ?: emptyList()) }
     }
 
     fun setStatus(userId: UUID, bookId: UUID, status: ReadStatus?) {
@@ -1196,6 +1437,86 @@ class BookService(
                 .bind(3, userId.toString())
                 .execute()
         }
+    }
+
+    /** Sets the reading direction for a comic/manga book (ltr or rtl). */
+    fun setReadingDirection(userId: UUID, bookId: UUID, direction: String): Boolean {
+        val normalized = if (direction.lowercase() == "rtl") "rtl" else "ltr"
+        val rows = jdbi.withHandle<Int, Exception> { handle ->
+            handle.createUpdate(
+                """UPDATE books SET reading_direction = ? WHERE id = ?
+                   AND id IN (SELECT b.id FROM books b
+                              INNER JOIN libraries l ON l.id = b.library_id
+                              WHERE l.user_id = ?)""",
+            ).bind(0, normalized).bind(1, bookId.toString()).bind(2, userId.toString()).execute()
+        }
+        return rows > 0
+    }
+
+    /**
+     * Merges [sourceId] into [targetId], moving user-specific data (reading progress, sessions,
+     * bookmarks, annotations, journal, reviews, notebooks, listen sessions, tags, categories)
+     * from source to target, then deletes the source book.
+     *
+     * If the target has no file but the source does, the source file path/size is copied to the target.
+     *
+     * Returns false if either book does not belong to the user.
+     */
+    fun mergeBooks(userId: UUID, targetId: UUID, sourceId: UUID): Boolean {
+        val target = getBook(userId, targetId) ?: return false
+        val source = getBook(userId, sourceId) ?: return false
+        if (targetId == sourceId) return false
+
+        jdbi.useHandle<Exception> { h ->
+            // Move rows with a simple PK — no conflict possible
+            for (table in listOf("reading_sessions", "bookmarks", "book_annotations",
+                    "book_journal_entries", "book_reviews", "book_notebooks",
+                    "listen_sessions", "metadata_proposals")) {
+                h.createUpdate("UPDATE $table SET book_id = ? WHERE book_id = ?")
+                    .bind(0, targetId.toString()).bind(1, sourceId.toString()).execute()
+            }
+
+            // Tags: move non-conflicting rows, drop the rest
+            h.createUpdate("""
+                DELETE FROM book_tags
+                WHERE book_id = ?
+                  AND tag IN (SELECT tag FROM book_tags WHERE book_id = ?)
+            """).bind(0, sourceId.toString()).bind(1, targetId.toString()).execute()
+            h.createUpdate("UPDATE book_tags SET book_id = ? WHERE book_id = ?")
+                .bind(0, targetId.toString()).bind(1, sourceId.toString()).execute()
+
+            // Categories: same pattern
+            h.createUpdate("""
+                DELETE FROM book_categories
+                WHERE book_id = ?
+                  AND category IN (SELECT category FROM book_categories WHERE book_id = ?)
+            """).bind(0, sourceId.toString()).bind(1, targetId.toString()).execute()
+            h.createUpdate("UPDATE book_categories SET book_id = ? WHERE book_id = ?")
+                .bind(0, targetId.toString()).bind(1, sourceId.toString()).execute()
+
+            // Reading progress: move if target has none for that user
+            h.createUpdate("""
+                UPDATE reading_progress SET book_id = ?
+                WHERE book_id = ?
+                  AND user_id NOT IN (SELECT user_id FROM reading_progress WHERE book_id = ?)
+            """).bind(0, targetId.toString()).bind(1, sourceId.toString()).bind(2, targetId.toString()).execute()
+            h.createUpdate("DELETE FROM reading_progress WHERE book_id = ?").bind(0, sourceId.toString()).execute()
+
+            // If target has no file but source does, adopt source file
+            if (target.filePath == null && source.filePath != null) {
+                h.createUpdate("UPDATE books SET file_path = ?, file_size = ? WHERE id = ?")
+                    .bind(0, source.filePath).bind(1, source.fileSize).bind(2, targetId.toString()).execute()
+            }
+
+            // Book files (alternative formats): re-parent
+            h.createUpdate("UPDATE book_files SET book_id = ? WHERE book_id = ?")
+                .bind(0, targetId.toString()).bind(1, sourceId.toString()).execute()
+        }
+
+        // Delete source — CASCADE cleans remaining FK rows
+        deleteBook(userId, sourceId)
+        logger.info("Merged book '${source.title}' (${sourceId}) into '${target.title}' (${targetId})")
+        return true
     }
 
     fun updateBookFileAggregateSize(bookId: UUID) {

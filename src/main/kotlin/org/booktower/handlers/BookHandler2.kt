@@ -26,8 +26,14 @@ class BookHandler2(
         val libraryId = req.query("libraryId")
         val page = req.query("page")?.toIntOrNull() ?: 1
         val pageSize = req.query("pageSize")?.toIntOrNull() ?: 20
+        val statusFilter = req.query("status")?.takeIf { it.isNotBlank() }
+        val tagFilter = req.query("tag")?.takeIf { it.isNotBlank() }
+        val ratingGte = req.query("ratingGte")?.toIntOrNull()
+        val formatFilter = req.query("format")?.takeIf { it.isNotBlank() }
 
-        val bookList = bookService.getBooks(userId, libraryId, page, pageSize)
+        val bookList = bookService.getBooks(userId, libraryId, page, pageSize,
+            statusFilter = statusFilter, tagFilter = tagFilter,
+            ratingGte = ratingGte, formatFilter = formatFilter)
         return Response(Status.OK)
             .header("Content-Type", "application/json")
             .body(Json.mapper.writeValueAsString(bookList))

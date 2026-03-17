@@ -243,4 +243,46 @@ class AuthIntegrationTest : IntegrationTestBase() {
 
         assertEquals(Status.OK, librariesResponse.status)
     }
+
+    @Test
+    fun `register returns 403 when registration is closed`() {
+        val closedApp = buildApp(registrationOpen = false)
+        val response = closedApp(
+            Request(Method.POST, "/auth/register")
+                .header("Content-Type", "application/json")
+                .body(registerJson(uniqueUser())),
+        )
+        assertEquals(Status.FORBIDDEN, response.status)
+        assertTrue(response.bodyString().contains("REGISTRATION_CLOSED"))
+    }
+
+    @Test
+    fun `form register returns 403 when registration is closed`() {
+        val closedApp = buildApp(registrationOpen = false)
+        val username = uniqueUser()
+        val response = closedApp(
+            Request(Method.POST, "/auth/register")
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .body("username=$username&email=$username%40test.com&password=password123"),
+        )
+        assertEquals(Status.FORBIDDEN, response.status)
+    }
+
+    @Test
+    fun `GET register redirects to login when registration is closed`() {
+        val closedApp = buildApp(registrationOpen = false)
+        val response = closedApp(Request(Method.GET, "/register"))
+        assertEquals(Status.SEE_OTHER, response.status)
+        assertEquals("/login", response.header("Location"))
+    }
+
+    @Test
+    fun `landing page hides sign-up link when registration is closed`() {
+        val closedApp = buildApp(registrationOpen = false)
+        val response = closedApp(Request(Method.GET, "/"))
+        assertEquals(Status.OK, response.status)
+        val body = response.bodyString()
+        assertTrue(body.contains("action.signin") || body.contains("Sign in") || body.contains("Login"))
+        assertTrue(!body.contains("/register"))
+    }
 }

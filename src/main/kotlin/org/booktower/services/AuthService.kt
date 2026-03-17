@@ -59,12 +59,14 @@ class AuthService(
                 isAdmin = false,
             )
         val token = jwtService.generateToken(user)
+        val refreshToken = issueRefreshToken(userId)
         logger.info("User registered: ${request.username}")
 
         return Result.success(
             LoginResponse(
                 token = token,
                 user = UserDto(userId.toString(), request.username, request.email, now.toString(), false),
+                refreshToken = refreshToken,
             ),
         )
     }
@@ -85,12 +87,14 @@ class AuthService(
         }
 
         val token = jwtService.generateToken(user)
+        val refreshToken = issueRefreshToken(user.id)
         logger.info("User logged in: ${user.username}")
 
         return Result.success(
             LoginResponse(
                 token = token,
                 user = UserDto(user.id.toString(), user.username, user.email, user.createdAt.toString(), user.isAdmin),
+                refreshToken = refreshToken,
             ),
         )
     }
@@ -180,6 +184,94 @@ class AuthService(
         return Result.success(Unit)
     }
 
+    /** Issues a long-lived refresh token, stores it in DB, returns the opaque token string. */
+    fun issueRefreshToken(userId: UUID): String {
+        val token = UUID.randomUUID().toString()
+        val expiresAt = Instant.now().plus(30, java.time.temporal.ChronoUnit.DAYS)
+        jdbi.useHandle<Exception> { handle ->
+            handle.createUpdate(
+                "INSERT INTO refresh_tokens (token, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)"
+            )
+                .bind(0, token)
+                .bind(1, userId.toString())
+                .bind(2, expiresAt.toString())
+                .bind(3, Instant.now().toString())
+                .execute()
+        }
+        return token
+    }
+
+    /** Validates a refresh token, rotates it, and returns a new LoginResponse with fresh access + refresh tokens. */
+    fun refreshAccessToken(refreshToken: String): Result<LoginResponse> {
+        val row = jdbi.withHandle<Map<String, String>?, Exception> { handle ->
+            handle.createQuery("SELECT user_id, expires_at FROM refresh_tokens WHERE token = ?")
+                .bind(0, refreshToken)
+                .map { r ->
+                    mapOf(
+                        "userId" to r.getColumn("user_id", String::class.java),
+                        "expiresAt" to r.getColumn("expires_at", String::class.java),
+                    )
+                }
+                .firstOrNull()
+        } ?: return Result.failure(IllegalArgumentException("Invalid or expired refresh token"))
+
+        val expiresAt = parseTimestamp(row["expiresAt"]!!)
+        if (Instant.now().isAfter(expiresAt)) {
+            jdbi.useHandle<Exception> { h ->
+                h.createUpdate("DELETE FROM refresh_tokens WHERE token = ?").bind(0, refreshToken).execute()
+            }
+            return Result.failure(IllegalArgumentException("Refresh token expired"))
+        }
+
+        val userId = UUID.fromString(row["userId"]!!)
+        val user = getUserById(userId)
+            ?: return Result.failure(IllegalArgumentException("User not found"))
+
+        // Rotate: delete old token, issue new one
+        jdbi.useHandle<Exception> { h ->
+            h.createUpdate("DELETE FROM refresh_tokens WHERE token = ?").bind(0, refreshToken).execute()
+        }
+        val newRefreshToken = issueRefreshToken(userId)
+        val accessToken = jwtService.generateToken(user)
+
+        return Result.success(
+            LoginResponse(
+                token = accessToken,
+                user = UserDto(user.id.toString(), user.username, user.email, user.createdAt.toString(), user.isAdmin),
+                refreshToken = newRefreshToken,
+            )
+        )
+    }
+
+    /** Revokes a specific refresh token. */
+    fun revokeRefreshToken(refreshToken: String) {
+        jdbi.useHandle<Exception> { handle ->
+            handle.createUpdate("DELETE FROM refresh_tokens WHERE token = ?").bind(0, refreshToken).execute()
+        }
+    }
+
+    /** Revokes all refresh tokens for a user (e.g., on logout-all). */
+    fun revokeAllRefreshTokens(userId: UUID) {
+        jdbi.useHandle<Exception> { handle ->
+            handle.createUpdate("DELETE FROM refresh_tokens WHERE user_id = ?").bind(0, userId.toString()).execute()
+        }
+    }
+
+    /**
+     * OIDC backchannel logout: finds the user by their OIDC sub claim and revokes all
+     * their refresh tokens. Returns the number of tokens revoked, or -1 if user not found.
+     */
+    fun backchannelLogout(sub: String): Int {
+        val user = jdbi.withHandle<User?, Exception> { h ->
+            h.createQuery("SELECT * FROM users WHERE oidc_sub = ?")
+                .bind(0, sub).map { row -> mapUser(row) }.firstOrNull()
+        } ?: return -1
+        return jdbi.withHandle<Int, Exception> { h ->
+            h.createUpdate("DELETE FROM refresh_tokens WHERE user_id = ?")
+                .bind(0, user.id.toString()).execute()
+        }
+    }
+
     /** Validates username/email + password without issuing a JWT. Used by OPDS Basic Auth. */
     fun getUserByCredentials(usernameOrEmail: String, password: String): User? {
         val credential = usernameOrEmail.trim()
@@ -200,6 +292,77 @@ class AuthService(
                 .map { row -> mapUser(row) }
                 .firstOrNull()
         }
+    }
+
+    /**
+     * Finds an existing user by their OIDC subject identifier, or creates a new account.
+     * Returns the user and a fresh JWT token.
+     */
+    fun findOrCreateOidcUser(sub: String, email: String?, name: String?, preferredUsername: String?, isAdminByGroup: Boolean = false): LoginResponse {
+        val now = Instant.now()
+        // Look up by oidc_sub if the column exists, else by email
+        val existing = jdbi.withHandle<User?, Exception> { h ->
+            h.createQuery("SELECT * FROM users WHERE oidc_sub = ?")
+                .bind(0, sub)
+                .map { row -> mapUser(row) }
+                .firstOrNull()
+        } ?: email?.let { e ->
+            jdbi.withHandle<User?, Exception> { h ->
+                h.createQuery("SELECT * FROM users WHERE email = ?")
+                    .bind(0, e)
+                    .map { row -> mapUser(row) }
+                    .firstOrNull()
+            }
+        }
+
+        val user = if (existing != null) {
+            // Update oidc_sub and sync admin status from group mapping
+            jdbi.useHandle<Exception> { h ->
+                h.createUpdate("UPDATE users SET oidc_sub = ?, is_admin = ?, updated_at = ? WHERE id = ?")
+                    .bind(0, sub).bind(1, isAdminByGroup).bind(2, now.toString()).bind(3, existing.id.toString()).execute()
+            }
+            existing.copy(isAdmin = isAdminByGroup)
+        } else {
+            // Create new account
+            val userId = UUID.randomUUID()
+            val username = (preferredUsername ?: name?.replace(" ", "_") ?: email?.substringBefore('@') ?: "oidc_$sub")
+                .take(50).replace(Regex("[^a-zA-Z0-9_.-]"), "_")
+            val uniqueUsername = ensureUniqueUsername(username)
+            jdbi.useHandle<Exception> { h ->
+                h.createUpdate(
+                    """INSERT INTO users (id, username, email, password_hash, oidc_sub, created_at, updated_at, is_admin)
+                       VALUES (?, ?, ?, '', ?, ?, ?, ?)""",
+                )
+                    .bind(0, userId.toString()).bind(1, uniqueUsername).bind(2, email ?: "")
+                    .bind(3, sub).bind(4, now.toString()).bind(5, now.toString())
+                    .bind(6, isAdminByGroup).execute()
+            }
+            User(id = userId, username = uniqueUsername, email = email ?: "", passwordHash = "",
+                createdAt = now, updatedAt = now, isAdmin = isAdminByGroup)
+        }
+
+        val token = jwtService.generateToken(user)
+        val userDto = org.booktower.models.UserDto(
+            id = user.id.toString(),
+            username = user.username,
+            email = user.email,
+            createdAt = user.createdAt.toString(),
+            isAdmin = user.isAdmin,
+        )
+        return LoginResponse(token = token, user = userDto)
+    }
+
+    private fun ensureUniqueUsername(base: String): String {
+        var candidate = base
+        var suffix = 1
+        while (jdbi.withHandle<Boolean, Exception> { h ->
+                h.createQuery("SELECT COUNT(*) FROM users WHERE username = ?")
+                    .bind(0, candidate).mapTo(Int::class.java).firstOrNull()!! > 0
+            }) {
+            candidate = "${base}_$suffix"
+            suffix++
+        }
+        return candidate
     }
 
     private fun mapUser(row: RowView): User {

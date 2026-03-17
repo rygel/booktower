@@ -16,7 +16,7 @@ class MetadataFetchServiceTest {
     /** Returns a pre-configured result instead of calling Open Library. */
     private fun stubService(result: FetchedMetadata?): MetadataFetchService =
         object : MetadataFetchService() {
-            override fun fetchMetadata(title: String, author: String?): FetchedMetadata? = result
+            override fun fetchMetadata(title: String, author: String?, source: String?): FetchedMetadata? = result
         }
 
     @Test
@@ -103,7 +103,7 @@ class MetadataFetchServiceTest {
         // Verifies the open class / open method contract works as expected.
         var called = false
         val service = object : MetadataFetchService() {
-            override fun fetchMetadata(title: String, author: String?): FetchedMetadata? {
+            override fun fetchMetadata(title: String, author: String?, source: String?): FetchedMetadata? {
                 called = true
                 return null
             }

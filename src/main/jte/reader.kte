@@ -243,6 +243,52 @@
         <div id="comic-wrap">
             <img id="comic-img" src="" alt="${i18n.translate("page.reader.comic.loading")}">
         </div>
+    @elseif(readerType == "fb2")
+        <!-- FB2 reader: server converts FB2 → HTML, displayed in a sandboxed iframe -->
+        <div id="fb2-wrap" style="flex:1; display:flex; flex-direction:column; min-height:0;">
+            <div id="fb2-loading" style="flex:1; display:flex; align-items:center; justify-content:center; color:var(--bt-muted); font-size:0.9rem;">
+                <i class="ri-loader-4-line" style="margin-right:0.5rem;"></i>${i18n.translate("page.reader.fb2.loading")}
+            </div>
+            <iframe id="fb2-iframe"
+                    src="/api/books/${book.id}/read-content"
+                    sandbox="allow-same-origin"
+                    style="flex:1; border:none; display:none; background:#fafaf8;"
+                    title="${book.title}">
+            </iframe>
+            <div id="fb2-error" style="flex:1; display:none; align-items:center; justify-content:center; flex-direction:column; gap:1rem; color:var(--bt-muted);">
+                <i class="ri-error-warning-line" style="font-size:2rem;"></i>
+                <p>${i18n.translate("page.reader.fb2.error")}</p>
+                <a href="/api/books/${book.id}/file" class="tool-btn">${i18n.translate("action.download")}</a>
+            </div>
+        </div>
+    @elseif(readerType == "kindle")
+        <!-- MOBI / AZW3: no in-browser renderer — provide a clear download + help UI -->
+        <div id="kindle-wrap" style="flex:1; display:flex; align-items:center; justify-content:center; padding:2rem;">
+            <div style="text-align:center; max-width:28rem;">
+                @if(book.coverUrl != null)
+                    <img src="${book.coverUrl}" alt="cover"
+                         style="max-height:14rem; border-radius:0.5rem; box-shadow:0 4px 16px rgba(0,0,0,0.25); margin-bottom:1.5rem;">
+                @else
+                    <div style="width:8rem; height:11rem; background:var(--bt-surface); border:1px solid var(--bt-border); border-radius:0.5rem; display:inline-flex; align-items:center; justify-content:center; margin-bottom:1.5rem;">
+                        <i class="ri-book-2-line" style="font-size:2.5rem; color:var(--bt-muted);"></i>
+                    </div>
+                @endif
+                <h2 style="font-size:1.1rem; font-weight:600; color:var(--bt-text); margin:0 0 0.25rem;">${book.title}</h2>
+                @if(book.author != null)
+                    <p style="font-size:0.875rem; color:var(--bt-muted); margin:0 0 1.5rem;">${book.author}</p>
+                @endif
+                <p style="font-size:0.825rem; color:var(--bt-subtle); margin:0 0 1.5rem; line-height:1.6;">
+                    ${i18n.translate("page.reader.kindle.hint")}
+                </p>
+                <a href="/api/books/${book.id}/file"
+                   style="display:inline-flex; align-items:center; gap:0.5rem; padding:0.6rem 1.25rem; border-radius:0.5rem; background:var(--bt-accent-dim); color:#fff; font-size:0.875rem; font-weight:500; text-decoration:none;">
+                    <i class="ri-download-line"></i>${i18n.translate("page.reader.kindle.download")}
+                </a>
+                <p style="font-size:0.75rem; color:var(--bt-faint); margin:1.5rem 0 0;">
+                    <i class="ri-information-line"></i> ${i18n.translate("page.reader.kindle.calibre.hint")}
+                </p>
+            </div>
+        </div>
     @else
         <div id="no-file">
             <i class="ri-file-warning-line" style="font-size:3rem; color:var(--bt-border-input);"></i>
@@ -961,6 +1007,38 @@
     }
 
     init();
+}());
+</script>
+@endif
+
+@if(readerType == "fb2")
+<script>
+(function() {
+    var iframe  = document.getElementById('fb2-iframe');
+    var loading = document.getElementById('fb2-loading');
+    var error   = document.getElementById('fb2-error');
+    if (!iframe) return;
+    iframe.addEventListener('load', function() {
+        loading.style.display = 'none';
+        error.style.display   = 'none';
+        iframe.style.display  = 'block';
+    });
+    iframe.addEventListener('error', function() {
+        loading.style.display = 'none';
+        iframe.style.display  = 'none';
+        error.style.display   = 'flex';
+    });
+    // Check if the iframe content indicates an error (non-200 response becomes a blank/error page)
+    setTimeout(function() {
+        try {
+            var doc = iframe.contentDocument || iframe.contentWindow.document;
+            if (!doc || doc.body.textContent.trim() === '') {
+                loading.style.display = 'none';
+                iframe.style.display  = 'none';
+                error.style.display   = 'flex';
+            }
+        } catch (e) { /* cross-origin — leave as-is */ }
+    }, 5000);
 }());
 </script>
 @endif
