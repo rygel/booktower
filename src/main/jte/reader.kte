@@ -685,11 +685,16 @@
                 btnNext.disabled = false;
             });
 
-            // Restore position or start at beginning
+            // Restore position, or start at first chapter (skip cover page)
             if (INIT_PCT > 0) {
                 rendition.display(INIT_PCT / 100.0);
             } else {
-                rendition.display();
+                book.loaded.navigation.then(function (nav) {
+                    // If the epub has a TOC, start at the first chapter entry to skip
+                    // the cover-image spine item that most ebooks place first.
+                    var firstChapter = nav && nav.toc && nav.toc.length > 0 ? nav.toc[0].href : null;
+                    rendition.display(firstChapter || undefined);
+                });
             }
         });
 
