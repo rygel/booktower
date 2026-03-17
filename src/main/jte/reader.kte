@@ -89,6 +89,9 @@
         .tool-btn:disabled { opacity: 0.35; cursor: not-allowed; }
         .tool-btn.active { color: var(--bt-accent-dim); border-color: var(--bt-accent-dim); }
         #page-info { font-size: 0.8rem; color: var(--bt-muted); white-space: nowrap; min-width: 6rem; text-align: center; }
+        #page-info.clickable { cursor: pointer; }
+        #page-info.clickable:hover { color: var(--bt-text); }
+        #loc-jump { display: none; width: 7rem; text-align: center; border-radius: 0.375rem; border: 1px solid var(--bt-accent-dim); background: var(--bt-bg); color: var(--bt-text); font-size: 0.75rem; padding: 0.2rem 0.375rem; outline: none; }
         #zoom-pct { font-size: 0.75rem; color: var(--bt-subtle); min-width: 2.5rem; text-align: center; }
         .sep { width: 1px; height: 1.5rem; background: var(--bt-border); flex-shrink: 0; }
         /* Annotation popup */
@@ -151,6 +154,9 @@
             <i class="ri-arrow-left-s-line"></i>
         </button>
         <span id="page-info">—</span>
+        @if(readerType == "epub")
+            <input id="loc-jump" type="number" min="1" placeholder="${i18n.translate("page.reader.loc.jump.placeholder")}" title="${i18n.translate("page.reader.loc.jump")}">
+        @endif
         <button id="btn-next" class="tool-btn" title="${i18n.translate("page.reader.next")} (→)" disabled>
             <i class="ri-arrow-right-s-line"></i>
         </button>
@@ -1075,13 +1081,87 @@ var BT_DEVICE = (function() {
                 allowScriptedContent: true,
             });
 
+            // ── Kindle-style locations ──────────────────────────────────────────
+            var locReady   = false;
+            var totalLocs  = 0;
+            var locJump    = document.getElementById('loc-jump');
+            var LOC_KEY    = 'bt_loc_' + BOOK_ID;
+
+            function showLocInput() {
+                if (!locReady) return;
+                pageInfo.style.display = 'none';
+                if (locJump) { locJump.style.display = ''; locJump.value = ''; locJump.focus(); }
+            }
+            function hideLocInput() {
+                if (locJump) locJump.style.display = 'none';
+                pageInfo.style.display = '';
+            }
+            if (pageInfo) {
+                pageInfo.addEventListener('click', showLocInput);
+            }
+            if (locJump) {
+                locJump.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        var n = parseInt(locJump.value);
+                        if (n >= 1 && n <= totalLocs) {
+                            var cfi = book.locations.cfiFromLocation(n);
+                            if (cfi) rendition.display(cfi);
+                        }
+                        hideLocInput();
+                    } else if (e.key === 'Escape') {
+                        hideLocInput();
+                    }
+                });
+                locJump.addEventListener('blur', hideLocInput);
+            }
+
+            function updateLocDisplay(location) {
+                var pct = Math.round((location.start.percentage || 0) * 100);
+                if (locReady && location.start.location > 0) {
+                    pageInfo.textContent = 'Loc\u00a0' + location.start.location.toLocaleString()
+                        + '\u00a0of\u00a0' + totalLocs.toLocaleString();
+                    pageInfo.title = pct + '%';
+                } else {
+                    pageInfo.textContent = pct + '%';
+                    pageInfo.title = '';
+                }
+            }
+
+            function initLocations(locLocation) {
+                var cached = null;
+                try { cached = localStorage.getItem(LOC_KEY); } catch(_) {}
+                if (cached) {
+                    try {
+                        book.locations.load(cached);
+                        locReady  = true;
+                        totalLocs = book.locations.length();
+                        if (pageInfo) pageInfo.classList.add('clickable');
+                        if (locLocation) updateLocDisplay(locLocation);
+                        return;
+                    } catch(_) {}
+                }
+                // Show computing indicator while generating
+                if (pageInfo) pageInfo.title = '${i18n.translate("page.reader.loc.computing")}';
+                book.locations.generate(150).then(function() {
+                    locReady  = true;
+                    totalLocs = book.locations.length();
+                    try { localStorage.setItem(LOC_KEY, book.locations.save()); } catch(_) {}
+                    if (pageInfo) pageInfo.classList.add('clickable');
+                    // Refresh display if rendition has already reported a location
+                    if (locLocation) updateLocDisplay(locLocation);
+                }).catch(function() {});
+            }
+
+            var lastLocation = null;
             rendition.on('relocated', function (location) {
-                const pct = Math.round((location.start.percentage || 0) * 100);
-                pageInfo.textContent = pct + '%';
+                lastLocation = location;
+                updateLocDisplay(location);
                 btnPrev.disabled = location.atStart;
                 btnNext.disabled = location.atEnd;
-                scheduleSave(pct);
+                scheduleSave(Math.round((location.start.percentage || 0) * 100));
             });
+
+            book.ready.then(function() { initLocations(lastLocation); });
 
             rendition.on('rendered', function () {
                 btnPrev.disabled = false;
