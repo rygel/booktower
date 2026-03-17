@@ -36,6 +36,7 @@ jobs:
           restore-keys: ${{ runner.os }}-maven-
 
       - name: Run tests
+        shell: bash
         run: mvn test -Dflyway.skip=true
 
       - name: Upload test results
