@@ -92,6 +92,7 @@ jobs:
           restore-keys: ${{ runner.os }}-maven-
 
       - name: Run tests
+        shell: bash
         run: mvn test -Dflyway.skip=true
 
       - name: Upload test results
@@ -171,6 +172,7 @@ jobs:
           restore-keys: ${{ runner.os }}-maven-
 
       - name: Package application
+        shell: bash
         run: mvn package -DskipTests -Dflyway.skip=true
 
       - name: Upload JAR
