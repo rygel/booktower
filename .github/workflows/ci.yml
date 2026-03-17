@@ -231,7 +231,7 @@ jobs:
               echo "Application ready"
               break
             fi
-            [ $i -eq 30 ] && { echo "Timeout waiting for app"; exit 1; }
+            [ "$i" -eq 30 ] && { echo "Timeout waiting for app"; exit 1; }
             sleep 2
           done
 
