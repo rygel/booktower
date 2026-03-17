@@ -23,10 +23,9 @@
 
 ## Database
 
-- H2 PostgreSQL mode for dev/test: `jdbc:h2:...;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE`
-- H2 MySQL mode for test config (legacy): `jdbc:h2:mem:booktower-test;MODE=MySQL`
+- H2 PostgreSQL mode for dev/test: `jdbc:h2:mem:booktower-test;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE`
 - PostgreSQL for production via `BOOKTOWER_DB_*` env vars
-- SQL must be compatible with both H2 and PostgreSQL — no MySQL-specific syntax
+- SQL must be compatible with both H2 and PostgreSQL
 
 ## Code Style
 
