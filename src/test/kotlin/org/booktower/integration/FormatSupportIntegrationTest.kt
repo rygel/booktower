@@ -155,6 +155,55 @@ class FormatSupportIntegrationTest : IntegrationTestBase() {
         assertEquals(422, resp.status.code)
     }
 
+    @Test
+    fun `read-content returns 422 for MOBI when Calibre is not installed`() {
+        org.junit.jupiter.api.Assumptions.assumeFalse(calibreAvailable(), "Calibre is installed — skipping no-Calibre fallback test")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId, "MOBI Test")
+        val mobiBytes = byteArrayOf(0x4D, 0x4F, 0x42, 0x49)
+        app(
+            Request(Method.POST, "/api/books/$bookId/upload")
+                .header("Cookie", "token=$token")
+                .header("X-Filename", "book.mobi")
+                .header("Content-Type", "application/octet-stream")
+                .body(org.http4k.core.Body(java.io.ByteArrayInputStream(mobiBytes), mobiBytes.size.toLong())),
+        )
+        val resp = app(
+            Request(Method.GET, "/api/books/$bookId/read-content")
+                .header("Cookie", "token=$token"),
+        )
+        assertEquals(422, resp.status.code)
+    }
+
+    @Test
+    fun `read-content returns 422 for AZW3 when Calibre is not installed`() {
+        org.junit.jupiter.api.Assumptions.assumeFalse(calibreAvailable(), "Calibre is installed — skipping no-Calibre fallback test")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId, "AZW3 Test")
+        val azw3Bytes = byteArrayOf(0x41, 0x5A, 0x57, 0x33)
+        app(
+            Request(Method.POST, "/api/books/$bookId/upload")
+                .header("Cookie", "token=$token")
+                .header("X-Filename", "book.azw3")
+                .header("Content-Type", "application/octet-stream")
+                .body(org.http4k.core.Body(java.io.ByteArrayInputStream(azw3Bytes), azw3Bytes.size.toLong())),
+        )
+        val resp = app(
+            Request(Method.GET, "/api/books/$bookId/read-content")
+                .header("Cookie", "token=$token"),
+        )
+        assertEquals(422, resp.status.code)
+    }
+
+    @Test
+    fun `kindle reader page contains Calibre conversion UI elements`() {
+        // Page should include both the converting spinner and download fallback markup
+        val body = readerPageBody("mobi")
+        assertTrue(body.contains("kindle-converting") || body.contains("kindle-download"),
+            "Kindle reader should include Calibre conversion UI")
+        assertTrue(body.contains("read-content"), "Page should reference read-content endpoint for Calibre probe")
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private fun minimalFb2Bytes(): ByteArray = """<?xml version="1.0" encoding="utf-8"?>
@@ -162,4 +211,11 @@ class FormatSupportIntegrationTest : IntegrationTestBase() {
   <description><title-info><book-title>Minimal</book-title></title-info></description>
   <body><section><p>Test content.</p></section></body>
 </FictionBook>""".toByteArray(Charsets.UTF_8)
+
+    private fun calibreAvailable(): Boolean = try {
+        val proc = ProcessBuilder("ebook-convert", "--version").redirectErrorStream(true).start()
+        proc.waitFor(5, java.util.concurrent.TimeUnit.SECONDS) && proc.exitValue() == 0
+    } catch (_: Exception) {
+        false
+    }
 }

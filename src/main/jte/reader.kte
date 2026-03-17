@@ -18,7 +18,7 @@
     <title>${book.title} — ${i18n.translate("page.reader.reading")} - BookTower</title>
     <style id="theme-style" data-theme="${currentTheme}">${themeCss}</style>
     <link rel="stylesheet" href="/static/css/app.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.1.0/fonts/remixicon.css">
+    <link rel="stylesheet" href="/static/vendor/remixicon.css">
     <style>
         *, *::before, *::after { box-sizing: border-box; }
         body { margin: 0; height: 100vh; display: flex; flex-direction: column; background: var(--bt-bg); overflow: hidden; font-family: inherit; }
@@ -262,8 +262,16 @@
             </div>
         </div>
     @elseif(readerType == "kindle")
-        <!-- MOBI / AZW3: no in-browser renderer — provide a clear download + help UI -->
-        <div id="kindle-wrap" style="flex:1; display:flex; align-items:center; justify-content:center; padding:2rem;">
+        <!-- MOBI / AZW3: try Calibre server-side conversion first; fall back to download UI -->
+        <div id="kindle-converting" style="flex:1; display:flex; align-items:center; justify-content:center; color:var(--bt-muted); font-size:0.9rem; gap:0.5rem;">
+            <i class="ri-loader-4-line"></i>${i18n.translate("page.reader.kindle.converting")}
+        </div>
+        <iframe id="kindle-iframe"
+                sandbox="allow-same-origin"
+                style="flex:1; border:none; display:none; background:#fafaf8;"
+                title="${book.title}">
+        </iframe>
+        <div id="kindle-download" style="flex:1; display:none; align-items:center; justify-content:center; padding:2rem;">
             <div style="text-align:center; max-width:28rem;">
                 @if(book.coverUrl != null)
                     <img src="${book.coverUrl}" alt="cover"
@@ -371,7 +379,7 @@
 </script>
 
 @if(readerType == "pdf")
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="/static/vendor/pdf.min.js"></script>
 <script>
 (function () {
     'use strict';
@@ -384,7 +392,7 @@
     const INIT_PAGE = ${if (book.progress != null && book.progress!!.currentPage > 0) book.progress!!.currentPage else 1};
 
     pdfjsLib.GlobalWorkerOptions.workerSrc =
-        'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        '/static/vendor/pdf.worker.min.js';
 
     // ── State ──────────────────────────────────────────────────────────────────
     let pdfDoc      = null;
@@ -518,7 +526,7 @@
         saveTimer = setTimeout(function () { saveProgress(page); }, 1200);
     }
     function saveProgress(page) {
-        const body = new FormData();
+        const body = new URLSearchParams();
         body.append('currentPage', page);
         fetch(PROG_URL, { method: 'POST', body: body }).then(function (r) {
             if (r.ok) { saveInd.style.display = 'inline'; setTimeout(function () { saveInd.style.display = 'none'; }, 2000); }
@@ -627,7 +635,8 @@
 }());
 </script>
 @elseif(readerType == "epub")
-<script src="https://cdn.jsdelivr.net/npm/epubjs/dist/epub.js"></script>
+<script src="/static/vendor/jszip.min.js"></script>
+<script src="/static/vendor/epub.js"></script>
 <script>
 (function () {
     'use strict';
@@ -649,59 +658,68 @@
     let fontSize  = 100;
     let saveTimer = null;
 
-    const book = ePub(EPUB_URL);
-    const rendition = book.renderTo('epub-viewer', {
-        width: '100%',
-        height: '100%',
-        spread: 'none',
-        flow: 'paginated',
-    });
+    let rendition;
 
-    // Restore position or start at beginning
-    if (INIT_PCT > 0) {
-        rendition.display(INIT_PCT / 100.0);
-    } else {
-        rendition.display();
-    }
+    fetch(EPUB_URL)
+        .then(function (r) { return r.arrayBuffer(); })
+        .then(function (buf) {
+            const book = ePub(buf);
+            rendition = book.renderTo('epub-viewer', {
+                width: '100%',
+                height: '100%',
+                spread: 'none',
+                flow: 'paginated',
+                allowScriptedContent: true,
+            });
 
-    rendition.on('relocated', function (location) {
-        const pct = Math.round((location.start.percentage || 0) * 100);
-        pageInfo.textContent = pct + '%';
-        btnPrev.disabled = location.atStart;
-        btnNext.disabled = location.atEnd;
-        scheduleSave(pct);
-    });
+            rendition.on('relocated', function (location) {
+                const pct = Math.round((location.start.percentage || 0) * 100);
+                pageInfo.textContent = pct + '%';
+                btnPrev.disabled = location.atStart;
+                btnNext.disabled = location.atEnd;
+                scheduleSave(pct);
+            });
 
-    rendition.on('rendered', function () {
-        btnPrev.disabled = false;
-        btnNext.disabled = false;
-    });
+            rendition.on('rendered', function () {
+                btnPrev.disabled = false;
+                btnNext.disabled = false;
+            });
 
-    btnPrev.addEventListener('click', function () { rendition.prev(); });
-    btnNext.addEventListener('click', function () { rendition.next(); });
+            // Restore position or start at beginning
+            if (INIT_PCT > 0) {
+                rendition.display(INIT_PCT / 100.0);
+            } else {
+                rendition.display();
+            }
+        });
+
+    // Placeholder until rendition is ready — all event handlers guard against null
+
+    btnPrev.addEventListener('click', function () { if (rendition) rendition.prev(); });
+    btnNext.addEventListener('click', function () { if (rendition) rendition.next(); });
 
     btnZoomIn.addEventListener('click', function () {
         fontSize = Math.min(200, fontSize + 10);
-        rendition.themes.fontSize(fontSize + '%');
+        if (rendition) rendition.themes.fontSize(fontSize + '%');
         zoomPct.textContent = fontSize + '%';
     });
     btnZoomOut.addEventListener('click', function () {
         fontSize = Math.max(70, fontSize - 10);
-        rendition.themes.fontSize(fontSize + '%');
+        if (rendition) rendition.themes.fontSize(fontSize + '%');
         zoomPct.textContent = fontSize + '%';
     });
 
     document.addEventListener('keydown', function (e) {
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-        if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   rendition.prev();
-        if (e.key === 'ArrowRight' || e.key === 'ArrowDown')  rendition.next();
+        if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   { if (rendition) rendition.prev(); }
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown')  { if (rendition) rendition.next(); }
         if (e.key === 'Escape') window.location.href = '/books/' + BOOK_ID;
     });
 
     function scheduleSave(pct) {
         clearTimeout(saveTimer);
         saveTimer = setTimeout(function () {
-            const body = new FormData();
+            const body = new URLSearchParams();
             body.append('currentPage', pct);
             fetch(PROG_URL, { method: 'POST', body: body }).then(function (r) {
                 if (r.ok) {
@@ -714,7 +732,7 @@
 
     // Expose jumpToPage for bookmark clicks (jump to approximate % position)
     window.jumpToPage = function (pct) {
-        rendition.display(Math.min(100, Math.max(0, pct)) / 100.0);
+        if (rendition) rendition.display(Math.min(100, Math.max(0, pct)) / 100.0);
     };
 }());
 </script>
@@ -770,7 +788,7 @@
         var sec = Math.floor(audioEl.currentTime);
         if (sec <= 0 || sec === lastSaved) return;
         lastSaved = sec;
-        var body = new FormData();
+        var body = new URLSearchParams();
         body.append('currentPage', sec);
         fetch(PROG_URL, { method: 'POST', body: body }).catch(function () {});
     }
@@ -899,7 +917,7 @@
         var packed = currentTrack * 1000000 + sec;
         if (packed === lastSaved || sec <= 0) return;
         lastSaved = packed;
-        var body = new FormData();
+        var body = new URLSearchParams();
         body.append('currentPage', packed);
         fetch(PROG_URL, { method: 'POST', body: body }).then(function(r) {
             if (r.ok && saveInd) { saveInd.style.display = 'inline'; setTimeout(function() { saveInd.style.display = 'none'; }, 2000); }
@@ -998,7 +1016,7 @@
     function scheduleSave(page) {
         clearTimeout(saveTimer);
         saveTimer = setTimeout(function() {
-            var body = new FormData();
+            var body = new URLSearchParams();
             body.append('currentPage', page);
             fetch(PROG_URL, { method: 'POST', body: body }).then(function(r) {
                 if (r.ok && saveInd) { saveInd.style.display = 'inline'; setTimeout(function() { saveInd.style.display = 'none'; }, 2000); }
@@ -1039,6 +1057,54 @@
             }
         } catch (e) { /* cross-origin — leave as-is */ }
     }, 5000);
+}());
+</script>
+@endif
+
+@if(readerType == "kindle")
+<script>
+(function() {
+    var converting = document.getElementById('kindle-converting');
+    var iframe     = document.getElementById('kindle-iframe');
+    var download   = document.getElementById('kindle-download');
+
+    // Probe read-content: if Calibre is available the server converts and returns 200;
+    // if not installed it returns 422.
+    fetch('/api/books/${book.id}/read-content', { method: 'HEAD' })
+        .then(function(r) {
+            if (r.ok) {
+                // Calibre available — load the iframe
+                iframe.src = '/api/books/${book.id}/read-content';
+                iframe.addEventListener('load', function() {
+                    converting.style.display = 'none';
+                    iframe.style.display = 'block';
+                });
+                iframe.addEventListener('error', function() {
+                    converting.style.display = 'none';
+                    iframe.style.display     = 'none';
+                    download.style.display   = 'flex';
+                });
+                // Fallback: if iframe is still blank after 10s, show download
+                setTimeout(function() {
+                    try {
+                        var doc = iframe.contentDocument || iframe.contentWindow.document;
+                        if (!doc || doc.body.textContent.trim() === '') {
+                            converting.style.display = 'none';
+                            iframe.style.display     = 'none';
+                            download.style.display   = 'flex';
+                        }
+                    } catch (e) {}
+                }, 10000);
+            } else {
+                // Calibre not available — show download UI
+                converting.style.display = 'none';
+                download.style.display   = 'flex';
+            }
+        })
+        .catch(function() {
+            converting.style.display = 'none';
+            download.style.display   = 'flex';
+        });
 }());
 </script>
 @endif
