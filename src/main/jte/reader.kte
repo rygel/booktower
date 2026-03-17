@@ -471,6 +471,21 @@
 </div>
 @endif
 
+<!-- Per-device preferences ID (persisted in localStorage) -->
+<script>
+var BT_DEVICE = (function() {
+    try {
+        var id = localStorage.getItem('bt_device_id');
+        if (!id || !/^[0-9a-f]{8}$/.test(id)) {
+            id = Array.from(crypto.getRandomValues(new Uint8Array(4)))
+                .map(function(b) { return b.toString(16).padStart(2, '0'); }).join('');
+            localStorage.setItem('bt_device_id', id);
+        }
+        return id;
+    } catch(e) { return 'default'; }
+})();
+</script>
+
 <!-- Bookmark panel toggle — always present -->
 <script>
 (function() {
@@ -533,7 +548,7 @@
     let pendingText = '';
 
     // ── Reader preferences ─────────────────────────────────────────────────────
-    const PDF_PREFS_URL = '/api/reader-preferences/pdf';
+    const PDF_PREFS_URL = '/api/reader-preferences/pdf?device=' + BT_DEVICE;
     const PDF_BG = { white: '#f0f0f0', dark: '#1a1a1a', sepia: '#e8dfc8' };
     let pdfPrefSaveTimer = null;
     let pdfTheme = 'dark';
@@ -818,7 +833,7 @@
     const zoomPct    = document.getElementById('zoom-pct');
     const saveInd    = document.getElementById('save-indicator');
 
-    const PREFS_URL = '/api/reader-preferences/epub';
+    const PREFS_URL = '/api/reader-preferences/epub?device=' + BT_DEVICE;
     let fontSize    = 100;
     let saveTimer   = null;
     let prefSaveTimer = null;
@@ -1277,7 +1292,7 @@
     let comicRtl    = false;
 
     // ── Reader preferences ─────────────────────────────────────────────────────
-    const COMIC_PREFS_URL = '/api/reader-preferences/comic';
+    const COMIC_PREFS_URL = '/api/reader-preferences/comic?device=' + BT_DEVICE;
     let comicPrefSaveTimer = null;
     let comicFit = 'contain';
 
