@@ -81,7 +81,7 @@ val appModule = module {
 
     single { AuthService(get<Database>().getJdbi(), get()) }
 
-    single { LibraryService(get<Database>().getJdbi(), get<org.booktower.services.PdfMetadataService>(), get<LibraryAccessService>()) }
+    single { LibraryService(get<Database>().getJdbi(), get<org.booktower.services.PdfMetadataService>(), get<LibraryAccessService>(), get(), get()) }
 
     single { BookService(get<Database>().getJdbi(), get(), get()) }
 
@@ -162,6 +162,9 @@ val appModule = module {
     single { org.booktower.services.FtsService(get<Database>().getJdbi(), get<AppConfig>().fts.enabled) }
     single { org.booktower.services.FtsIndexWorker(get(), get(), get<AppConfig>().fts.throttleMs) }
 
+    single { org.booktower.services.ComicPageHashService(get<Database>().getJdbi(), get()) }
+    single { org.booktower.services.ComicPageHashWorker(get(), get()) }
+
     single { UserPermissionsService(get<Database>().getJdbi()) }
 
     single { LibraryAccessService(get<Database>().getJdbi()) }
@@ -208,5 +211,5 @@ val appModule = module {
 
     single { WeblateHandler(get<AppConfig>().weblate) }
 
-    single { AppHandler(get(), get(), get(), get(), get(), get(), get(), get(), get(), get<AppConfig>().storage, get(), get(), get(), get(), get(), get(), get(), get(), get<AppConfig>().baseUrl, get<AppConfig>().registrationOpen, get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), communityRatingService = get(), demoMode = get<AppConfig>().demoMode) }
+    single { AppHandler(get(), get(), get(), get(), get(), get(), get(), get(), get(), get<AppConfig>().storage, get(), get(), get(), get(), get(), get(), get(), get(), get<AppConfig>().baseUrl, get<AppConfig>().registrationOpen, get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), communityRatingService = get(), comicPageHashService = get(), demoMode = get<AppConfig>().demoMode) }
 }

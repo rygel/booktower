@@ -118,6 +118,7 @@ abstract class IntegrationTestBase {
         val filterPresetService = FilterPresetService(jdbi)
         val telemetryService = TelemetryService(jdbi, userSettingsService)
         val communityRatingService = createCommunityRatingService(jdbi)
+        val comicPageHashService = org.booktower.services.ComicPageHashService(jdbi, comicService)
         val geoIpService = object : GeoIpService() {
             override fun lookup(ip: String): GeoLocation =
                 GeoLocation(countryCode = "US", countryName = "United States", city = "Test City")
@@ -166,6 +167,7 @@ abstract class IntegrationTestBase {
             filterPresetService = filterPresetService,
             telemetryService = telemetryService,
             communityRatingService = communityRatingService,
+            comicPageHashService = comicPageHashService,
             demoMode = demoMode,
             oidcService = if (oidcForceOnly) OidcService(OidcConfig(enabled = true, forceOnlyMode = true)) else null,
         )

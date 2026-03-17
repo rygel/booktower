@@ -23,6 +23,7 @@ class LibraryService(
     private val pdfMetadataService: PdfMetadataService,
     private val libraryAccessService: LibraryAccessService? = null,
     private val ftsService: org.booktower.services.FtsService? = null,
+    private val comicPageHashService: ComicPageHashService? = null,
 ) {
     fun getLibraries(userId: UUID): List<LibraryDto> {
         val accessibleIds = libraryAccessService?.getAccessibleLibraryIds(userId)
@@ -216,6 +217,9 @@ class LibraryService(
                     )
                     addedBooks += book
                     ftsService?.enqueue(bookId.toString())
+                    if (file.extension.lowercase() in setOf("cbz", "cbr")) {
+                        comicPageHashService?.enqueue(bookId.toString())
+                    }
                     added++
                     logger.info("Scan imported: $absolutePath as book $title")
                 } catch (e: Exception) {
