@@ -159,6 +159,9 @@ val appModule = module {
 
     single { ReaderPreferencesService(get()) }
 
+    single { org.booktower.services.FtsService(get<Database>().getJdbi(), get<AppConfig>().fts.enabled) }
+    single { org.booktower.services.FtsIndexWorker(get(), get(), get<AppConfig>().fts.throttleMs) }
+
     single { UserPermissionsService(get<Database>().getJdbi()) }
 
     single { LibraryAccessService(get<Database>().getJdbi()) }

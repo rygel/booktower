@@ -22,6 +22,7 @@ class LibraryService(
     private val jdbi: Jdbi,
     private val pdfMetadataService: PdfMetadataService,
     private val libraryAccessService: LibraryAccessService? = null,
+    private val ftsService: org.booktower.services.FtsService? = null,
 ) {
     fun getLibraries(userId: UUID): List<LibraryDto> {
         val accessibleIds = libraryAccessService?.getAccessibleLibraryIds(userId)
@@ -214,6 +215,7 @@ class LibraryService(
                         progress = null,
                     )
                     addedBooks += book
+                    ftsService?.enqueue(bookId.toString())
                     added++
                     logger.info("Scan imported: $absolutePath as book $title")
                 } catch (e: Exception) {
