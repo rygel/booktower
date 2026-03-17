@@ -16,6 +16,7 @@ class BookService(
     private val analyticsService: AnalyticsService? = null,
     private val readingSessionService: ReadingSessionService? = null,
     private val metadataLockService: MetadataLockService? = null,
+    private val ftsService: org.booktower.services.FtsService? = null,
 ) {
     companion object {
         private const val MAX_PAGE_SIZE = 100
@@ -165,9 +166,17 @@ class BookService(
         val variantClauses = likePatterns.joinToString(" OR ") {
             "(LOWER(b.title) LIKE ? OR LOWER(b.author) LIKE ? OR LOWER(b.description) LIKE ?)"
         }
-        val searchClause = "AND ($variantClauses)"
         // Params: 3 bindings per variant (title, author, description)
         val searchParams = likePatterns.flatMap { listOf(it, it, it) }
+
+        // FTS: get matching book IDs to OR into the metadata search
+        val ftsIds: Set<String> = if (ftsService?.isActive() == true && query.isNotBlank()) {
+            ftsService.search(query).map { it.bookId }.toSet()
+        } else emptySet()
+        val ftsClause = if (ftsIds.isNotEmpty()) {
+            " OR b.id IN (${ftsIds.joinToString(",") { "?" }})"
+        } else ""
+        val searchClause = "AND ($variantClauses$ftsClause)"
 
         val libClause = if (libId != null) " AND l.id = ?" else ""
         val statusClause = if (statusFilter != null) " AND bs.status = ?" else ""
@@ -191,6 +200,7 @@ class BookService(
                 .bind(2, userId.toString())
             var idx = 3
             for (p in searchParams) q.bind(idx++, p)
+            for (id in ftsIds) q.bind(idx++, id)
             if (libId != null) q.bind(idx++, libId)
             if (statusFilter != null) q.bind(idx++, statusFilter)
             if (minRating != null) q.bind(idx++, minRating)
@@ -204,6 +214,14 @@ class BookService(
         val categoryMap = fetchCategoriesForBooks(userId, books.map { it.id })
         val moodMap = fetchMoodsForBooks(userId, books.map { it.id })
         val enriched = books.map { it.copy(tags = tagMap[it.id] ?: emptyList(), authors = authorMap[it.id] ?: emptyList(), categories = categoryMap[it.id] ?: emptyList(), moods = moodMap[it.id] ?: emptyList()) }
+
+        // Attach FTS content snippets if available
+        val ftsSnippets: Map<String, String> = if (ftsService?.isActive() == true && query.isNotBlank()) {
+            ftsService.search(query, enriched.map { it.id }.toSet()).associate { it.bookId to it.snippet }
+        } else emptyMap()
+        val withSnippets = if (ftsSnippets.isEmpty()) enriched else enriched.map { b ->
+            if (ftsSnippets.containsKey(b.id)) b.copy(contentSnippet = ftsSnippets[b.id]) else b
+        }
 
         val total = jdbi.withHandle<Int, Exception> { handle ->
             val q = handle.createQuery(
@@ -222,13 +240,14 @@ class BookService(
                 .bind(2, userId.toString())
             var idx = 3
             for (p in searchParams) q.bind(idx++, p)
+            for (id in ftsIds) q.bind(idx++, id)
             if (libId != null) q.bind(idx++, libId)
             if (statusFilter != null) q.bind(idx++, statusFilter)
             if (minRating != null) q.bind(idx++, minRating)
             q.mapTo(java.lang.Integer::class.java).first()?.toInt() ?: 0
         }
 
-        return BookListDto(enriched, total, safePage, safePageSize)
+        return BookListDto(withSnippets, total, safePage, safePageSize)
     }
 
     fun getBook(

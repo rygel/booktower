@@ -15,6 +15,8 @@ import org.booktower.services.JwtService
 import org.booktower.services.LibraryService
 import org.booktower.services.EpubMetadataService
 import org.booktower.services.PdfMetadataService
+import org.booktower.services.FtsIndexWorker
+import org.booktower.services.FtsService
 import org.booktower.services.LibraryWatchService
 import org.booktower.services.ScanScheduleService
 import org.http4k.core.Method
@@ -48,11 +50,17 @@ fun main() {
     scanScheduleService.start()
     libraryWatchService.start()
 
+    val ftsService = koin.get<FtsService>()
+    val ftsIndexWorker = koin.get<FtsIndexWorker>()
+    ftsService.initialize()
+    ftsIndexWorker.start()
+
     Runtime.getRuntime().addShutdownHook(Thread {
         logger.info("Shutting down BookTower...")
         pdfMetadataService.shutdown()
         epubMetadataService.shutdown()
         database.close()
+        ftsIndexWorker.stop()
     })
 
     val isProduction = System.getenv("BOOKTOWER_ENV")?.lowercase() == "production"

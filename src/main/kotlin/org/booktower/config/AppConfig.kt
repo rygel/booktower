@@ -21,6 +21,7 @@ data class AppConfig(
     val oidc: OidcConfig = OidcConfig(),
     val metadata: MetadataConfig = MetadataConfig(),
     val demoMode: Boolean = false,
+    val fts: FtsConfig = FtsConfig(),
 ) {
     companion object {
         fun load(): AppConfig {
@@ -45,6 +46,7 @@ data class AppConfig(
                 oidc = OidcConfig.load(),
                 metadata = MetadataConfig.load(),
                 demoMode = System.getenv("BOOKTOWER_DEMO_MODE")?.lowercase() == "true",
+                fts = FtsConfig.load(),
             ).also {
                 logger.info("Loaded configuration: appName=${it.name}, port=${it.port}, autoScanMinutes=${it.autoScanMinutes}, smtpEnabled=${it.smtp.enabled}, registrationOpen=${it.registrationOpen}")
             }
@@ -199,6 +201,18 @@ data class MetadataConfig(
         fun load(): MetadataConfig = MetadataConfig(
             hardcoverApiKey = System.getenv("BOOKTOWER_HARDCOVER_API_KEY") ?: "",
             comicvineApiKey = System.getenv("BOOKTOWER_COMICVINE_API_KEY") ?: "",
+        )
+    }
+}
+
+data class FtsConfig(
+    val enabled: Boolean = false,
+    val throttleMs: Long = 300,
+) {
+    companion object {
+        fun load(): FtsConfig = FtsConfig(
+            enabled = System.getenv("BOOKTOWER_FTS_ENABLED")?.lowercase() == "true",
+            throttleMs = System.getenv("BOOKTOWER_FTS_THROTTLE_MS")?.toLongOrNull() ?: 300L,
         )
     }
 }
