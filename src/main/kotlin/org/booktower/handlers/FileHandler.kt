@@ -5,6 +5,7 @@ import org.booktower.config.StorageConfig
 import org.booktower.filters.AuthenticatedUser
 import org.booktower.models.ErrorResponse
 import org.booktower.services.BookService
+import org.booktower.services.CalibreConversionService
 import org.booktower.services.EpubMetadataService
 import org.booktower.services.Fb2ReaderService
 import org.booktower.services.PdfMetadataService
@@ -44,6 +45,7 @@ class FileHandler(
     private val epubMetadataService: EpubMetadataService,
     private val storageConfig: StorageConfig,
     private val fb2ReaderService: Fb2ReaderService = Fb2ReaderService(),
+    private val calibreService: CalibreConversionService? = null,
 ) {
 
     fun upload(req: Request): Response {
@@ -194,22 +196,40 @@ class FileHandler(
         if (!file.exists()) return Response(Status.NOT_FOUND)
 
         val ext = file.extension.lowercase()
-        if (ext != "fb2") {
-            return Response(Status.UNPROCESSABLE_ENTITY)
+        return when (ext) {
+            "fb2" -> try {
+                val html = fb2ReaderService.toHtml(file)
+                Response(Status.OK)
+                    .header("Content-Type", "text/html; charset=utf-8")
+                    .body(html)
+            } catch (e: Exception) {
+                logger.error("FB2 conversion failed for book $bookId", e)
+                Response(Status.INTERNAL_SERVER_ERROR)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"FB2 conversion failed: ${e.message}"}""")
+            }
+            "mobi", "azw3" -> {
+                val svc = calibreService
+                if (svc == null || !svc.isAvailable) {
+                    return Response(Status.UNPROCESSABLE_ENTITY)
+                        .header("Content-Type", "application/json")
+                        .body("""{"error":"Calibre is not installed — install it to enable in-browser Kindle reading"}""")
+                }
+                try {
+                    val html = svc.toHtml(file)
+                    Response(Status.OK)
+                        .header("Content-Type", "text/html; charset=utf-8")
+                        .body(html)
+                } catch (e: Exception) {
+                    logger.error("Calibre conversion failed for book $bookId", e)
+                    Response(Status.INTERNAL_SERVER_ERROR)
+                        .header("Content-Type", "application/json")
+                        .body("""{"error":"Calibre conversion failed: ${e.message}"}""")
+                }
+            }
+            else -> Response(Status.UNPROCESSABLE_ENTITY)
                 .header("Content-Type", "application/json")
-                .body("""{"error":"read-content is only supported for FB2 files"}""")
-        }
-
-        return try {
-            val html = fb2ReaderService.toHtml(file)
-            Response(Status.OK)
-                .header("Content-Type", "text/html; charset=utf-8")
-                .body(html)
-        } catch (e: Exception) {
-            logger.error("FB2 conversion failed for book $bookId", e)
-            Response(Status.INTERNAL_SERVER_ERROR)
-                .header("Content-Type", "application/json")
-                .body("""{"error":"FB2 conversion failed: ${e.message}"}""")
+                .body("""{"error":"read-content is only supported for FB2, MOBI, and AZW3 files"}""")
         }
     }
 

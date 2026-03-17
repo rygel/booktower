@@ -68,11 +68,11 @@ abstract class IntegrationTestBase {
     protected lateinit var app: HttpHandler
 
     @BeforeEach
-    fun setupApp() {
+    open fun setupApp() {
         app = buildApp()
     }
 
-    protected fun buildApp(registrationOpen: Boolean = true, demoMode: Boolean = false, oidcForceOnly: Boolean = false): HttpHandler {
+    fun buildApp(registrationOpen: Boolean = true, demoMode: Boolean = false, oidcForceOnly: Boolean = false): HttpHandler {
         val config = TestFixture.config
         val jdbi = TestFixture.database.getJdbi()
         val jwtService = JwtService(config.security)

@@ -108,6 +108,44 @@ jobs:
           name: jacoco-report-${{ matrix.os }}
           path: target/site/jacoco/
 
+  # ── Browser tests: Playwright on Linux (headless Chromium) ──────────────
+  browser-tests:
+    name: Browser Tests
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-browser-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-maven-
+
+      # Cache the downloaded Chromium binary (~250 MB) to avoid re-downloading
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ hashFiles('**/pom.xml') }}
+          restore-keys: playwright-chromium-
+
+      - name: Run browser tests
+        run: mvn test -P browser-tests -Dflyway.skip=true
+
+      - name: Upload browser test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: browser-test-results
+          path: target/surefire-reports/
+
   # ── Build: verify the JAR assembles on all three platforms ────────────────
   build:
     name: Build (${{ matrix.os }})
@@ -144,7 +182,7 @@ jobs:
   # ── Docker build: verify the image assembles correctly ───────────────────
   docker-build:
     name: Docker Build
-    needs: build
+    needs: [ build, browser-tests ]
     runs-on: ubuntu-latest
 
     steps:
