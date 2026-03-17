@@ -38,7 +38,7 @@ class TemplateRenderingTest {
         assertTrue(content.contains("<html"))
         assertTrue(content.contains("</html>"))
         assertTrue(content.contains("BookTower"))
-        assertTrue(content.contains("htmx.org"))
+        assertTrue(content.contains("htmx"))
     }
 
     @Test
@@ -73,7 +73,7 @@ class TemplateRenderingTest {
     @Test
     fun `index template includes HTMX script`() {
         val content = renderIndex()
-        assertTrue(content.contains("htmx.org"))
+        assertTrue(content.contains("htmx.min.js") || content.contains("htmx.org"))
     }
 
     @Test
@@ -89,16 +89,16 @@ class TemplateRenderingTest {
     }
 
     @Test
-    fun `HTMX script loads from unpkg CDN`() {
+    fun `HTMX script loads from vendor path`() {
         val content = renderIndex()
-        assertTrue(content.contains("https://unpkg.com/htmx.org@1.9.10"))
+        assertTrue(content.contains("/static/vendor/htmx.min.js"), "htmx must be served from vendor path, not CDN")
     }
 
     @Test
     fun `HTMX script is in head section`() {
         val content = renderIndex()
         val headSection = content.substring(content.indexOf("<head>"), content.indexOf("</head>"))
-        assertTrue(headSection.contains("htmx.org"))
+        assertTrue(headSection.contains("htmx"))
     }
 
     @Test
