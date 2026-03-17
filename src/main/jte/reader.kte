@@ -101,6 +101,21 @@
         .an-action-row button { font-size: 0.75rem; padding: 0.25rem 0.6rem; border-radius: 0.375rem; cursor: pointer; border: 1px solid var(--bt-border-input); }
         #annot-save-btn { background: var(--bt-accent); color: #fff; border-color: var(--bt-accent); }
         #annot-cancel-btn { background: transparent; color: var(--bt-muted); }
+        /* Preferences panel */
+        #prefs-panel { width: 0; overflow: hidden; background: var(--bt-surface); border-left: 1px solid var(--bt-border); transition: width 0.2s ease; flex-shrink: 0; display: flex; flex-direction: column; }
+        #prefs-panel.open { width: 17rem; }
+        #prefs-panel-inner { width: 17rem; height: 100%; overflow-y: auto; padding: 1rem; }
+        .pref-section { margin-bottom: 1.125rem; }
+        .pref-section-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--bt-subtle); font-weight: 600; margin: 0 0 0.5rem; }
+        .pref-btn-row { display: flex; gap: 0.375rem; flex-wrap: wrap; }
+        .pref-btn { background: transparent; border: 1px solid var(--bt-border-input); border-radius: 0.375rem; color: var(--bt-muted); cursor: pointer; padding: 0.3rem 0.625rem; font-size: 0.78rem; transition: color 0.15s, border-color 0.15s, background 0.15s; }
+        .pref-btn:hover { color: var(--bt-text); border-color: var(--bt-accent-dim); }
+        .pref-btn.active { color: var(--bt-accent-dim); border-color: var(--bt-accent-dim); background: var(--bt-icon-bg); }
+        .pref-fs-row { display: flex; align-items: center; gap: 0.5rem; }
+        .pref-fs-btn { background: transparent; border: 1px solid var(--bt-border-input); border-radius: 0.375rem; color: var(--bt-muted); cursor: pointer; width: 1.75rem; height: 1.75rem; font-size: 1rem; display: flex; align-items: center; justify-content: center; transition: color 0.15s, border-color 0.15s; }
+        .pref-fs-btn:hover { color: var(--bt-text); border-color: var(--bt-accent-dim); }
+        #pref-fs-val { font-size: 0.8rem; color: var(--bt-text); min-width: 2.75rem; text-align: center; }
+        .pref-select { width: 100%; background: var(--bt-bg); border: 1px solid var(--bt-border-input); border-radius: 0.375rem; color: var(--bt-text); font-size: 0.78rem; padding: 0.3rem 0.5rem; }
     </style>
 </head>
 <body>
@@ -154,6 +169,12 @@
     @if(readerType == "pdf")
         <button id="btn-annotations" class="tool-btn" title="${i18n.translate("page.reader.annotations")}">
             <i class="ri-sticky-note-line"></i> ${i18n.translate("page.reader.annotations")}
+        </button>
+    @endif
+    @if(readerType == "epub" || readerType == "pdf" || readerType == "comic")
+        <div class="sep"></div>
+        <button id="btn-prefs" class="tool-btn" title="${i18n.translate("page.reader.prefs")}">
+            <i class="ri-settings-3-line"></i>
         </button>
     @endif
     <span id="save-indicator" style="font-size:0.7rem; color:#34d399; display:none;">${i18n.translate("msg.progress.saved")}</span>
@@ -340,6 +361,73 @@
             </div>
         </div>
     @endif
+
+    @if(readerType == "epub" || readerType == "pdf" || readerType == "comic")
+    <!-- Preferences panel -->
+    <div id="prefs-panel">
+        <div id="prefs-panel-inner">
+            <p style="font-size:0.7rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--bt-subtle); font-weight:600; margin:0 0 0.875rem;">${i18n.translate("page.reader.prefs")}</p>
+
+            @if(readerType == "epub" || readerType == "pdf")
+            <div class="pref-section">
+                <p class="pref-section-label">${i18n.translate("page.reader.prefs.background")}</p>
+                <div class="pref-btn-row">
+                    <button class="pref-btn" data-pref="theme" data-val="white">${i18n.translate("page.reader.prefs.theme.white")}</button>
+                    <button class="pref-btn" data-pref="theme" data-val="sepia">${i18n.translate("page.reader.prefs.theme.sepia")}</button>
+                    <button class="pref-btn" data-pref="theme" data-val="dark">${i18n.translate("page.reader.prefs.theme.dark")}</button>
+                </div>
+            </div>
+            @endif
+
+            @if(readerType == "epub")
+            <div class="pref-section">
+                <p class="pref-section-label">${i18n.translate("page.reader.prefs.fontsize")}</p>
+                <div class="pref-fs-row">
+                    <button class="pref-fs-btn" id="pref-fs-dec">−</button>
+                    <span id="pref-fs-val">100%</span>
+                    <button class="pref-fs-btn" id="pref-fs-inc">+</button>
+                </div>
+            </div>
+            <div class="pref-section">
+                <p class="pref-section-label">${i18n.translate("page.reader.prefs.font")}</p>
+                <select class="pref-select" id="pref-font-family">
+                    <option value="">${i18n.translate("page.reader.prefs.font.default")}</option>
+                    <option value="Georgia, serif">Georgia</option>
+                    <option value="'Times New Roman', serif">Times New Roman</option>
+                    <option value="Arial, sans-serif">Arial</option>
+                    <option value="'Open Sans', sans-serif">Open Sans</option>
+                    <option value="'Courier New', monospace">Courier New</option>
+                </select>
+            </div>
+            <div class="pref-section">
+                <p class="pref-section-label">${i18n.translate("page.reader.prefs.layout")}</p>
+                <div class="pref-btn-row">
+                    <button class="pref-btn active" data-pref="flow" data-val="paginated">${i18n.translate("page.reader.prefs.layout.paginated")}</button>
+                    <button class="pref-btn" data-pref="flow" data-val="scrolled">${i18n.translate("page.reader.prefs.layout.scrolled")}</button>
+                </div>
+            </div>
+            @endif
+
+            @if(readerType == "comic")
+            <div class="pref-section">
+                <p class="pref-section-label">${i18n.translate("page.reader.prefs.fit")}</p>
+                <div class="pref-btn-row">
+                    <button class="pref-btn active" data-pref="fit" data-val="contain">${i18n.translate("page.reader.prefs.fit.page")}</button>
+                    <button class="pref-btn" data-pref="fit" data-val="width">${i18n.translate("page.reader.prefs.fit.width")}</button>
+                    <button class="pref-btn" data-pref="fit" data-val="height">${i18n.translate("page.reader.prefs.fit.height")}</button>
+                </div>
+            </div>
+            <div class="pref-section">
+                <p class="pref-section-label">${i18n.translate("page.reader.prefs.direction")}</p>
+                <div class="pref-btn-row">
+                    <button class="pref-btn active" data-pref="direction" data-val="ltr">${i18n.translate("page.reader.prefs.direction.ltr")}</button>
+                    <button class="pref-btn" data-pref="direction" data-val="rtl">${i18n.translate("page.reader.prefs.direction.rtl")}</button>
+                </div>
+            </div>
+            @endif
+        </div>
+    </div>
+    @endif
 </div>
 
 <!-- Annotation popup (PDF only) -->
@@ -373,6 +461,22 @@
             if (open && anPanel) { anPanel.classList.remove('open'); if (anBtn) anBtn.classList.remove('active'); }
         });
     }
+    // Preferences panel toggle
+    var prefsPanel = document.getElementById('prefs-panel');
+    var prefsBtn   = document.getElementById('btn-prefs');
+    if (prefsBtn && prefsPanel) {
+        prefsBtn.addEventListener('click', function () {
+            var open = prefsPanel.classList.toggle('open');
+            prefsBtn.classList.toggle('active', open);
+            // Close bookmarks and annotations if open
+            if (open) {
+                if (bmPanel)  { bmPanel.classList.remove('open');  if (bmBtn)  bmBtn.classList.remove('active'); }
+                var anPanel2 = document.getElementById('an-panel');
+                var anBtn2   = document.getElementById('btn-annotations');
+                if (anPanel2) { anPanel2.classList.remove('open'); if (anBtn2) anBtn2.classList.remove('active'); }
+            }
+        });
+    }
     // Fallback jumpToPage for "none" mode (no-op)
     window.jumpToPage = window.jumpToPage || function() {};
 }());
@@ -403,6 +507,41 @@
     let saveTimer   = null;
     let annotColor  = 'yellow';
     let pendingText = '';
+
+    // ── Reader preferences ─────────────────────────────────────────────────────
+    const PDF_PREFS_URL = '/api/reader-preferences/pdf';
+    const PDF_BG = { white: '#f0f0f0', dark: '#1a1a1a', sepia: '#e8dfc8' };
+    let pdfPrefSaveTimer = null;
+    let pdfTheme = 'dark';
+
+    function applyPdfTheme() {
+        var wrap = document.getElementById('canvas-wrap');
+        if (wrap) wrap.style.background = PDF_BG[pdfTheme] || PDF_BG.dark;
+        document.querySelectorAll('[data-pref="theme"]').forEach(function(b) {
+            b.classList.toggle('active', b.dataset.val === pdfTheme);
+        });
+    }
+    function savePdfPrefs() {
+        clearTimeout(pdfPrefSaveTimer);
+        pdfPrefSaveTimer = setTimeout(function() {
+            fetch(PDF_PREFS_URL, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ theme: pdfTheme })
+            }).catch(function() {});
+        }, 600);
+    }
+    document.querySelectorAll('[data-pref="theme"]').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            pdfTheme = btn.dataset.val;
+            applyPdfTheme();
+            savePdfPrefs();
+        });
+    });
+    fetch(PDF_PREFS_URL).then(function(r) { return r.json(); }).then(function(p) {
+        if (p.theme) pdfTheme = p.theme;
+        applyPdfTheme();
+    }).catch(function() { applyPdfTheme(); });
 
     // ── Elements ───────────────────────────────────────────────────────────────
     const canvas     = document.getElementById('pdf-canvas');
@@ -655,11 +794,117 @@
     const zoomPct    = document.getElementById('zoom-pct');
     const saveInd    = document.getElementById('save-indicator');
 
-    let fontSize  = 100;
-    let saveTimer = null;
-
+    const PREFS_URL = '/api/reader-preferences/epub';
+    let fontSize    = 100;
+    let saveTimer   = null;
+    let prefSaveTimer = null;
     let rendition;
+    let epubPrefs   = { theme: 'white', fontSize: 100, fontFamily: '', flow: 'paginated' };
 
+    const EPUB_THEMES = {
+        white: { 'body,p,div,span': { 'background': '#ffffff !important', 'color': '#111111 !important' } },
+        sepia: { 'body,p,div,span': { 'background': '#faf4e8 !important', 'color': '#3b2e1a !important' } },
+        dark:  { 'body,p,div,span': { 'background': '#1a1a1a !important', 'color': '#e0e0e0 !important' } },
+    };
+
+    function applyEpubTheme() {
+        if (!rendition) return;
+        var t = EPUB_THEMES[epubPrefs.theme] || EPUB_THEMES.white;
+        rendition.themes.register('bt', t);
+        rendition.themes.select('bt');
+        // Also tint epub-viewer background
+        var bg = epubPrefs.theme === 'sepia' ? '#faf4e8' : epubPrefs.theme === 'dark' ? '#1a1a1a' : '#ffffff';
+        document.getElementById('epub-viewer').style.background = bg;
+    }
+
+    function applyEpubFontSize() {
+        if (rendition) rendition.themes.fontSize(epubPrefs.fontSize + '%');
+        var fsVal = document.getElementById('pref-fs-val');
+        if (fsVal) fsVal.textContent = epubPrefs.fontSize + '%';
+        zoomPct.textContent = epubPrefs.fontSize + '%';
+        fontSize = epubPrefs.fontSize;
+    }
+
+    function applyEpubFont() {
+        if (rendition && epubPrefs.fontFamily) {
+            rendition.themes.font(epubPrefs.fontFamily);
+        }
+    }
+
+    function updatePrefButtons() {
+        document.querySelectorAll('[data-pref="theme"]').forEach(function(b) {
+            b.classList.toggle('active', b.dataset.val === epubPrefs.theme);
+        });
+        document.querySelectorAll('[data-pref="flow"]').forEach(function(b) {
+            b.classList.toggle('active', b.dataset.val === epubPrefs.flow);
+        });
+        var fsVal = document.getElementById('pref-fs-val');
+        if (fsVal) fsVal.textContent = epubPrefs.fontSize + '%';
+        var ffSel = document.getElementById('pref-font-family');
+        if (ffSel) ffSel.value = epubPrefs.fontFamily || '';
+    }
+
+    function saveEpubPrefs() {
+        clearTimeout(prefSaveTimer);
+        prefSaveTimer = setTimeout(function() {
+            fetch(PREFS_URL, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ theme: epubPrefs.theme, fontSize: epubPrefs.fontSize, fontFamily: epubPrefs.fontFamily, scrollMode: epubPrefs.flow })
+            }).catch(function() {});
+        }, 600);
+    }
+
+    // Wire pref panel controls
+    document.querySelectorAll('[data-pref="theme"]').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            epubPrefs.theme = btn.dataset.val;
+            applyEpubTheme();
+            updatePrefButtons();
+            saveEpubPrefs();
+        });
+    });
+    document.querySelectorAll('[data-pref="flow"]').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            if (btn.dataset.val === epubPrefs.flow) return;
+            epubPrefs.flow = btn.dataset.val;
+            updatePrefButtons();
+            saveEpubPrefs();
+            // Changing flow requires re-rendering; reload page with saved pref
+            window.location.reload();
+        });
+    });
+    var fsDecBtn = document.getElementById('pref-fs-dec');
+    var fsIncBtn = document.getElementById('pref-fs-inc');
+    if (fsDecBtn) fsDecBtn.addEventListener('click', function() {
+        epubPrefs.fontSize = Math.max(70, epubPrefs.fontSize - 10);
+        applyEpubFontSize();
+        saveEpubPrefs();
+    });
+    if (fsIncBtn) fsIncBtn.addEventListener('click', function() {
+        epubPrefs.fontSize = Math.min(200, epubPrefs.fontSize + 10);
+        applyEpubFontSize();
+        saveEpubPrefs();
+    });
+    var ffSel = document.getElementById('pref-font-family');
+    if (ffSel) ffSel.addEventListener('change', function() {
+        epubPrefs.fontFamily = ffSel.value;
+        applyEpubFont();
+        saveEpubPrefs();
+    });
+
+    // Load preferences then initialise book
+    fetch(PREFS_URL).then(function(r) { return r.json(); }).then(function(p) {
+        if (p.theme)      epubPrefs.theme      = p.theme;
+        if (p.fontSize)   epubPrefs.fontSize   = p.fontSize;
+        if (p.fontFamily) epubPrefs.fontFamily = p.fontFamily;
+        if (p.scrollMode) epubPrefs.flow       = p.scrollMode;
+        fontSize = epubPrefs.fontSize;
+        updatePrefButtons();
+        initEpub();
+    }).catch(function() { initEpub(); });
+
+    function initEpub() {
     fetch(EPUB_URL)
         .then(function (r) { return r.arrayBuffer(); })
         .then(function (buf) {
@@ -668,7 +913,7 @@
                 width: '100%',
                 height: '100%',
                 spread: 'none',
-                flow: 'paginated',
+                flow: epubPrefs.flow,
                 allowScriptedContent: true,
             });
 
@@ -683,6 +928,9 @@
             rendition.on('rendered', function () {
                 btnPrev.disabled = false;
                 btnNext.disabled = false;
+                applyEpubTheme();
+                applyEpubFontSize();
+                applyEpubFont();
             });
 
             // Restore position, or start at first chapter (skip cover page)
@@ -704,14 +952,14 @@
     btnNext.addEventListener('click', function () { if (rendition) rendition.next(); });
 
     btnZoomIn.addEventListener('click', function () {
-        fontSize = Math.min(200, fontSize + 10);
-        if (rendition) rendition.themes.fontSize(fontSize + '%');
-        zoomPct.textContent = fontSize + '%';
+        epubPrefs.fontSize = Math.min(200, epubPrefs.fontSize + 10);
+        applyEpubFontSize();
+        saveEpubPrefs();
     });
     btnZoomOut.addEventListener('click', function () {
-        fontSize = Math.max(70, fontSize - 10);
-        if (rendition) rendition.themes.fontSize(fontSize + '%');
-        zoomPct.textContent = fontSize + '%';
+        epubPrefs.fontSize = Math.max(70, epubPrefs.fontSize - 10);
+        applyEpubFontSize();
+        saveEpubPrefs();
     });
 
     document.addEventListener('keydown', function (e) {
@@ -739,6 +987,7 @@
     window.jumpToPage = function (pct) {
         if (rendition) rendition.display(Math.min(100, Math.max(0, pct)) / 100.0);
     };
+    } // end initEpub
 }());
 </script>
 @elseif(readerType == "audio")
@@ -975,6 +1224,69 @@
     let currentPage = 1;
     let totalPages  = 0;
     let saveTimer   = null;
+    let comicRtl    = false;
+
+    // ── Reader preferences ─────────────────────────────────────────────────────
+    const COMIC_PREFS_URL = '/api/reader-preferences/comic';
+    let comicPrefSaveTimer = null;
+    let comicFit = 'contain';
+
+    function applyComicFit() {
+        if (comicFit === 'width') {
+            comicImg.style.maxWidth  = '100%';
+            comicImg.style.maxHeight = 'none';
+            comicImg.style.width     = '100%';
+            comicImg.style.height    = 'auto';
+        } else if (comicFit === 'height') {
+            comicImg.style.maxWidth  = 'none';
+            comicImg.style.maxHeight = 'calc(100vh - 3rem - 3rem)';
+            comicImg.style.width     = 'auto';
+            comicImg.style.height    = 'calc(100vh - 3rem - 3rem)';
+        } else {
+            comicImg.style.maxWidth  = '100%';
+            comicImg.style.maxHeight = 'calc(100vh - 3rem - 3rem)';
+            comicImg.style.width     = '';
+            comicImg.style.height    = '';
+        }
+        document.querySelectorAll('[data-pref="fit"]').forEach(function(b) {
+            b.classList.toggle('active', b.dataset.val === comicFit);
+        });
+    }
+    function applyComicDirection() {
+        document.querySelectorAll('[data-pref="direction"]').forEach(function(b) {
+            b.classList.toggle('active', b.dataset.val === (comicRtl ? 'rtl' : 'ltr'));
+        });
+    }
+    function saveComicPrefs() {
+        clearTimeout(comicPrefSaveTimer);
+        comicPrefSaveTimer = setTimeout(function() {
+            fetch(COMIC_PREFS_URL, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fitMode: comicFit, direction: comicRtl ? 'rtl' : 'ltr' })
+            }).catch(function() {});
+        }, 600);
+    }
+    document.querySelectorAll('[data-pref="fit"]').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            comicFit = btn.dataset.val;
+            applyComicFit();
+            saveComicPrefs();
+        });
+    });
+    document.querySelectorAll('[data-pref="direction"]').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            comicRtl = btn.dataset.val === 'rtl';
+            applyComicDirection();
+            saveComicPrefs();
+        });
+    });
+    fetch(COMIC_PREFS_URL).then(function(r) { return r.json(); }).then(function(p) {
+        if (p.fitMode)   comicFit = p.fitMode;
+        if (p.direction) comicRtl = p.direction === 'rtl';
+        applyComicFit();
+        applyComicDirection();
+    }).catch(function() {});
 
     async function init() {
         try {
@@ -999,21 +1311,21 @@
         scheduleSave(currentPage);
     }
 
-    btnPrev.addEventListener('click', function() { if (currentPage > 1) goToPage(currentPage - 1); });
-    btnNext.addEventListener('click', function() { if (currentPage < totalPages) goToPage(currentPage + 1); });
+    btnPrev.addEventListener('click', function() { goToPage(comicRtl ? currentPage + 1 : currentPage - 1); });
+    btnNext.addEventListener('click', function() { goToPage(comicRtl ? currentPage - 1 : currentPage + 1); });
 
     document.addEventListener('keydown', function(e) {
         if (e.target.tagName === 'INPUT') return;
-        if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   goToPage(currentPage - 1);
-        if (e.key === 'ArrowRight' || e.key === 'ArrowDown')  goToPage(currentPage + 1);
+        if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   goToPage(comicRtl ? currentPage + 1 : currentPage - 1);
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown')  goToPage(comicRtl ? currentPage - 1 : currentPage + 1);
         if (e.key === 'Escape') window.location.href = '/books/' + BOOK_ID;
     });
 
-    // Click left/right half of image to page
+    // Click left/right half of image to page (RTL-aware)
     comicImg.addEventListener('click', function(e) {
         var rect = comicImg.getBoundingClientRect();
-        if (e.clientX < rect.left + rect.width / 2) { goToPage(currentPage - 1); }
-        else { goToPage(currentPage + 1); }
+        var leftHalf = e.clientX < rect.left + rect.width / 2;
+        goToPage(leftHalf === !comicRtl ? currentPage - 1 : currentPage + 1);
     });
 
     window.jumpToPage = function(n) { goToPage(n); };
