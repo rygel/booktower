@@ -13,7 +13,7 @@ class WebContext(val request: Request) {
 
         const val LANG_COOKIE = "app_lang"
         const val THEME_COOKIE = "app_theme"
-        val SUPPORTED_LANGS = listOf("en", "fr", "de")
+        val SUPPORTED_LANGS = listOf("en", "fr", "de", "es", "pt", "it", "nl", "pl", "ja", "zh")
     }
 
     val lang: String by lazy {

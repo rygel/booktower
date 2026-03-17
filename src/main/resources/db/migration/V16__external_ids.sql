@@ -1,0 +1,7 @@
+ALTER TABLE books ADD COLUMN goodreads_id VARCHAR(50);
+ALTER TABLE books ADD COLUMN hardcover_id VARCHAR(50);
+ALTER TABLE books ADD COLUMN comicvine_id VARCHAR(50);
+ALTER TABLE books ADD COLUMN openlibrary_id VARCHAR(50);
+ALTER TABLE books ADD COLUMN google_books_id VARCHAR(50);
+ALTER TABLE books ADD COLUMN amazon_id VARCHAR(50);
+ALTER TABLE books ADD COLUMN audible_id VARCHAR(50);

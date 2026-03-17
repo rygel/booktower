@@ -115,12 +115,50 @@ class MagicShelfService(
         }
     }
 
+    fun shareShelf(userId: UUID, shelfId: UUID): MagicShelfDto? {
+        val token = UUID.randomUUID().toString()
+        val updated = jdbi.withHandle<Int, Exception> { handle ->
+            handle.createUpdate(
+                "UPDATE magic_shelves SET is_public = TRUE, share_token = ? WHERE id = ? AND user_id = ?"
+            ).bind(0, token).bind(1, shelfId.toString()).bind(2, userId.toString()).execute()
+        }
+        if (updated == 0) return null
+        return getShelf(userId, shelfId)
+    }
+
+    fun unshareShelf(userId: UUID, shelfId: UUID): Boolean {
+        val updated = jdbi.withHandle<Int, Exception> { handle ->
+            handle.createUpdate(
+                "UPDATE magic_shelves SET is_public = FALSE, share_token = NULL WHERE id = ? AND user_id = ?"
+            ).bind(0, shelfId.toString()).bind(1, userId.toString()).execute()
+        }
+        return updated > 0
+    }
+
+    fun getPublicShelf(shareToken: String): PublicShelfDto? {
+        val shelf = jdbi.withHandle<MagicShelfDto?, Exception> { handle ->
+            handle.createQuery(
+                "SELECT * FROM magic_shelves WHERE share_token = ? AND is_public = TRUE"
+            ).bind(0, shareToken).map { row -> mapShelf(row) }.firstOrNull()
+        } ?: return null
+        val ownerId = jdbi.withHandle<String?, Exception> { handle ->
+            handle.createQuery("SELECT user_id FROM magic_shelves WHERE share_token = ?")
+                .bind(0, shareToken).mapTo(String::class.java).firstOrNull()
+        } ?: return null
+        val books = resolveBooks(UUID.fromString(ownerId), shelf)
+        return PublicShelfDto(shelf.name, shareToken, books)
+    }
+
     private fun mapShelf(row: RowView): MagicShelfDto {
         val ruleType = try {
             ShelfRuleType.valueOf(row.getColumn("rule_type", String::class.java))
         } catch (_: Exception) {
             ShelfRuleType.STATUS
         }
+        val isPublic = try {
+            row.getColumn("is_public", java.lang.Boolean::class.java) == true
+        } catch (_: Exception) { false }
+        val shareToken = try { row.getColumn("share_token", String::class.java) } catch (_: Exception) { null }
         return MagicShelfDto(
             id = row.getColumn("id", String::class.java),
             name = row.getColumn("name", String::class.java),
@@ -128,6 +166,8 @@ class MagicShelfService(
             ruleValue = row.getColumn("rule_value", String::class.java),
             bookCount = 0,
             createdAt = row.getColumn("created_at", String::class.java),
+            isPublic = isPublic,
+            shareToken = shareToken,
         )
     }
 }

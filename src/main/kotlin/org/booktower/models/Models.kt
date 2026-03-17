@@ -36,6 +36,7 @@ data class LoginRequest(
 data class LoginResponse(
     val token: String,
     val user: UserDto,
+    val refreshToken: String? = null,
 )
 
 data class Library(
@@ -64,6 +65,29 @@ data class UpdateLibraryRequest(
     val name: String,
 )
 
+data class LibrarySettings(
+    val formatAllowlist: List<String>?,   // null = all formats; e.g. ["pdf","epub"]
+    val metadataSource: String?,          // preferred source slug, null = default
+    val defaultSort: String?,             // e.g. "title","author","added_at", null = default
+    val additionalPaths: List<String>,    // extra scan paths beyond primary
+    val fileNamingPattern: String?,       // e.g. "{author}/{title}" or null = keep original names
+)
+
+data class UpdateLibrarySettingsRequest(
+    val formatAllowlist: List<String>?,
+    val metadataSource: String?,
+    val defaultSort: String?,
+    val additionalPaths: List<String>?,
+    val fileNamingPattern: String? = null,
+)
+
+data class OrganizeResult(
+    val moved: Int,
+    val skipped: Int,
+    val errors: Int,
+    val details: List<String>,
+)
+
 data class Book(
     val id: UUID,
     val libraryId: UUID,
@@ -81,6 +105,14 @@ data class Book(
     val addedAt: Instant,
     val updatedAt: Instant,
 )
+
+enum class BookFormat {
+    EBOOK, PHYSICAL, AUDIOBOOK;
+
+    companion object {
+        fun fromString(s: String?): BookFormat = values().firstOrNull { it.name.equals(s, ignoreCase = true) } ?: EBOOK
+    }
+}
 
 enum class BookSortOrder(val sql: String, val label: String) {
     TITLE("b.title", "sort.title"),
@@ -115,6 +147,46 @@ data class BookDto(
     val series: String? = null,
     val seriesIndex: Double? = null,
     val filePath: String? = null,
+    val readingDirection: String? = null,
+    val authors: List<String> = emptyList(),
+    val categories: List<String> = emptyList(),
+    val subtitle: String? = null,
+    val language: String? = null,
+    val contentRating: String? = null,
+    val ageRating: String? = null,
+    val moods: List<String> = emptyList(),
+    val goodreadsId: String? = null,
+    val hardcoverId: String? = null,
+    val comicvineId: String? = null,
+    val openlibraryId: String? = null,
+    val googleBooksId: String? = null,
+    val amazonId: String? = null,
+    val audibleId: String? = null,
+    val lockedFields: List<String> = emptyList(),
+    // Comic-specific fields
+    val issueNumber: String? = null,
+    val volumeNumber: String? = null,
+    val comicSeries: String? = null,
+    val coverDate: String? = null,
+    val storyArc: String? = null,
+    val characters: List<String> = emptyList(),
+    val teams: List<String> = emptyList(),
+    val locations: List<String> = emptyList(),
+    val bookFormat: String = "EBOOK",
+    val communityRating: Double? = null,
+    val communityRatingCount: Int? = null,
+    val communityRatingSource: String? = null,
+)
+
+data class ComicMetadataRequest(
+    val issueNumber: String? = null,
+    val volumeNumber: String? = null,
+    val comicSeries: String? = null,
+    val coverDate: String? = null,
+    val storyArc: String? = null,
+    val characters: List<String>? = null,
+    val teams: List<String>? = null,
+    val locations: List<String>? = null,
 )
 
 class BookListDto(
@@ -137,11 +209,29 @@ data class BookFileDto(
     @JsonIgnore val filePath: String? = null,
 )
 
+data class BookFormatDto(
+    val id: String,
+    val bookId: String,
+    val filePath: String,
+    val fileSize: Long,
+    val format: String,
+    val isPrimary: Boolean,
+    val label: String?,
+    val addedAt: String,
+)
+
+data class AddBookFileRequest(
+    val filePath: String,
+    val label: String? = null,
+    val isPrimary: Boolean = false,
+)
+
 data class CreateBookRequest(
     val title: String,
     val author: String?,
     val description: String?,
     val libraryId: String,
+    val bookFormat: String? = null,
 )
 
 data class UpdateBookRequest(
@@ -154,6 +244,17 @@ data class UpdateBookRequest(
     val publisher: String? = null,
     val publishedDate: String? = null,
     val pageCount: Int? = null,
+)
+
+data class MergeBookRequest(
+    val sourceId: String,
+)
+
+data class CommunityRatingDto(
+    val rating: Double?,
+    val count: Int?,
+    val source: String?,
+    val fetchedAt: String?,
 )
 
 data class ChangePasswordRequest(
@@ -192,6 +293,23 @@ data class ReadingSessionDto(
     val endPage: Int,
     val pagesRead: Int,
     val sessionAt: String,
+)
+
+data class ListenSessionDto(
+    val id: String,
+    val bookId: String,
+    val bookTitle: String,
+    val startPosSec: Int,
+    val endPosSec: Int,
+    val secondsListened: Int,
+    val sessionAt: String,
+)
+
+data class ListenProgressDto(
+    val bookId: String,
+    val positionSec: Int,
+    val totalSec: Int?,
+    val updatedAt: String,
 )
 
 data class SeriesDto(
@@ -290,7 +408,17 @@ data class FetchedMetadata(
     val isbn: String?,
     val publisher: String?,
     val publishedDate: String?,
-    val openLibraryCoverId: Long?,
+    val openLibraryCoverId: Long? = null,
+    val coverUrl: String? = null,
+    val source: String? = null,         // "openlibrary", "googlebooks", etc.
+    val pageCount: Int? = null,
+    val subtitle: String? = null,
+    val language: String? = null,
+    val genres: List<String> = emptyList(),
+    val series: String? = null,
+    val seriesIndex: Double? = null,
+    val narrator: String? = null,
+    val durationSeconds: Int? = null,
 )
 
 data class AnnotationDto(
@@ -311,6 +439,14 @@ data class MagicShelfDto(
     val ruleValue: String?,
     val bookCount: Int = 0,
     val createdAt: String,
+    val isPublic: Boolean = false,
+    val shareToken: String? = null,
+)
+
+data class PublicShelfDto(
+    val name: String,
+    val shareToken: String,
+    val books: List<BookDto>,
 )
 
 data class CreateMagicShelfRequest(

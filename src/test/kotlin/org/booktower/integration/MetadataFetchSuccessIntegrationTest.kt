@@ -21,7 +21,7 @@ class MetadataFetchSuccessIntegrationTest : IntegrationTestBase() {
     private val mapper = ObjectMapper()
 
     override fun createMetadataFetchService() = object : MetadataFetchService() {
-        override fun fetchMetadata(title: String, author: String?) = FetchedMetadata(
+        override fun fetchMetadata(title: String, author: String?, source: String?) = FetchedMetadata(
             title = "The Fetched Title",
             author = "Fetched Author Name",
             description = "A wonderful description fetched from Open Library.",

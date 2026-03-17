@@ -6,6 +6,7 @@ import org.booktower.filters.AuthenticatedUser
 import org.booktower.models.ErrorResponse
 import org.booktower.services.BookService
 import org.booktower.services.EpubMetadataService
+import org.booktower.services.Fb2ReaderService
 import org.booktower.services.PdfMetadataService
 import org.http4k.core.Request
 import org.http4k.core.Response
@@ -16,16 +17,18 @@ import java.util.UUID
 
 private val logger = LoggerFactory.getLogger("booktower.FileHandler")
 
-private val ALLOWED_EXTENSIONS = setOf("pdf", "epub", "mobi", "cbz", "cbr", "fb2", "mp3", "m4b", "m4a", "ogg", "flac", "aac")
+private val ALLOWED_EXTENSIONS = setOf("pdf", "epub", "mobi", "azw3", "cbz", "cbr", "fb2", "djvu", "mp3", "m4b", "m4a", "ogg", "flac", "aac")
 private val ALLOWED_COVER_EXTENSIONS = setOf("jpg", "jpeg", "png", "webp")
 private const val MAX_COVER_SIZE = 10L * 1024 * 1024 // 10 MB
 private val CONTENT_TYPES = mapOf(
     "pdf" to "application/pdf",
     "epub" to "application/epub+zip",
     "mobi" to "application/x-mobipocket-ebook",
+    "azw3" to "application/x-mobi8-ebook",
     "cbz" to "application/zip",
     "cbr" to "application/x-rar-compressed",
     "fb2" to "application/xml",
+    "djvu" to "image/vnd.djvu",
     "mp3" to "audio/mpeg",
     "m4b" to "audio/mp4",
     "m4a" to "audio/mp4",
@@ -40,6 +43,7 @@ class FileHandler(
     private val pdfMetadataService: PdfMetadataService,
     private val epubMetadataService: EpubMetadataService,
     private val storageConfig: StorageConfig,
+    private val fb2ReaderService: Fb2ReaderService = Fb2ReaderService(),
 ) {
 
     fun upload(req: Request): Response {
@@ -133,6 +137,80 @@ class FileHandler(
             .header("Content-Disposition", "attachment; filename=\"${file.name}\"")
             .header("Content-Length", file.length().toString())
             .body(file.inputStream())
+    }
+
+    /**
+     * GET /api/books/{id}/kepub — serves the EPUB as a KEPUB by returning it with the
+     * `.kepub.epub` extension and `application/x-kobo-epub+zip` content-type.
+     * Kobo firmware recognizes this and enables its enhanced reading UI.
+     */
+    fun downloadKepub(req: Request): Response {
+        val userId = AuthenticatedUser.from(req)
+        val bookId = req.uri.path.split("/").dropLast(1).lastOrNull()?.let { id ->
+            try { UUID.fromString(id) } catch (e: IllegalArgumentException) { null }
+        } ?: return badRequest("Invalid book ID")
+
+        val filePath = bookService.getBookFilePath(userId, bookId)
+            ?: return Response(Status.NOT_FOUND).header("Content-Type", "application/json")
+                .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "Book not found")))
+
+        if (filePath.isBlank()) {
+            return Response(Status.NOT_FOUND).header("Content-Type", "application/json")
+                .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "No file uploaded for this book")))
+        }
+
+        val file = File(filePath)
+        if (!file.exists() || !file.isFile) {
+            return Response(Status.NOT_FOUND).header("Content-Type", "application/json")
+                .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "File not found on disk")))
+        }
+
+        if (file.extension.lowercase() != "epub") {
+            return Response(Status.UNPROCESSABLE_ENTITY).header("Content-Type", "application/json")
+                .body(Json.mapper.writeValueAsString(ErrorResponse("UNSUPPORTED", "KEPUB conversion is only available for EPUB files")))
+        }
+
+        val kepubFilename = file.nameWithoutExtension + ".kepub.epub"
+        return Response(Status.OK)
+            .header("Content-Type", "application/x-kobo-epub+zip")
+            .header("Content-Disposition", "attachment; filename=\"$kepubFilename\"")
+            .header("Content-Length", file.length().toString())
+            .body(file.inputStream())
+    }
+
+    /**
+     * GET /api/books/{id}/read-content — converts FB2 to HTML for in-browser reading.
+     * Returns 422 for non-FB2 files.
+     */
+    fun readContent(req: Request): Response {
+        val userId = AuthenticatedUser.from(req)
+        val bookId = req.uri.path.split("/").dropLast(1).lastOrNull()?.let { id ->
+            try { UUID.fromString(id) } catch (e: IllegalArgumentException) { null }
+        } ?: return badRequest("Invalid book ID")
+
+        val filePath = bookService.getBookFilePath(userId, bookId)
+            ?: return Response(Status.NOT_FOUND)
+        val file = File(filePath)
+        if (!file.exists()) return Response(Status.NOT_FOUND)
+
+        val ext = file.extension.lowercase()
+        if (ext != "fb2") {
+            return Response(Status.UNPROCESSABLE_ENTITY)
+                .header("Content-Type", "application/json")
+                .body("""{"error":"read-content is only supported for FB2 files"}""")
+        }
+
+        return try {
+            val html = fb2ReaderService.toHtml(file)
+            Response(Status.OK)
+                .header("Content-Type", "text/html; charset=utf-8")
+                .body(html)
+        } catch (e: Exception) {
+            logger.error("FB2 conversion failed for book $bookId", e)
+            Response(Status.INTERNAL_SERVER_ERROR)
+                .header("Content-Type", "application/json")
+                .body("""{"error":"FB2 conversion failed: ${e.message}"}""")
+        }
     }
 
     /** GET /api/books/{id}/audio — streams audio with HTTP Range support for seeking */

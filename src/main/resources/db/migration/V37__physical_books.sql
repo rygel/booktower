@@ -1,0 +1,4 @@
+ALTER TABLE books ALTER COLUMN file_path DROP NOT NULL;
+ALTER TABLE books ALTER COLUMN file_size DROP NOT NULL;
+ALTER TABLE books ADD COLUMN book_format VARCHAR(20) NOT NULL DEFAULT 'EBOOK';
+CREATE INDEX idx_books_format ON books(book_format);

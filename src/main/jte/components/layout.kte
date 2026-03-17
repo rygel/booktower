@@ -19,6 +19,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${title}</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#6366f1">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="BookTower">
     <style id="theme-style" data-theme="${currentTheme}">${themeCss}</style>
     <link rel="stylesheet" href="/static/css/app.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.1.0/fonts/remixicon.css">
@@ -136,21 +141,13 @@
                         hx-post="/preferences/lang"
                         hx-trigger="change"
                         style="width:100%; font-size:0.78rem; padding:0.35rem 0.5rem; border-radius:0.4rem; cursor:pointer;">
-                    @if(lang == "en")
-                        <option value="en" selected>${i18n.translate("language.en")}</option>
-                    @else
-                        <option value="en">${i18n.translate("language.en")}</option>
-                    @endif
-                    @if(lang == "fr")
-                        <option value="fr" selected>${i18n.translate("language.fr")}</option>
-                    @else
-                        <option value="fr">${i18n.translate("language.fr")}</option>
-                    @endif
-                    @if(lang == "de")
-                        <option value="de" selected>${i18n.translate("language.de")}</option>
-                    @else
-                        <option value="de">${i18n.translate("language.de")}</option>
-                    @endif
+                    @for(code in listOf("en","fr","de","es","pt","it","nl","pl","ja","zh"))
+                        @if(code == lang)
+                            <option value="${code}" selected>${i18n.translate("language.$code")}</option>
+                        @else
+                            <option value="${code}">${i18n.translate("language.$code")}</option>
+                        @endif
+                    @endfor
                 </select>
             </div>
 

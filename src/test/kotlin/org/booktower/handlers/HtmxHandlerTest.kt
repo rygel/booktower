@@ -11,6 +11,8 @@ import org.booktower.services.BookmarkService
 import org.booktower.services.EpubMetadataService
 import org.booktower.services.GoodreadsImportService
 import org.booktower.services.ReadingSessionService
+import org.booktower.config.SmtpConfig
+import org.booktower.services.EmailService
 import org.booktower.services.SeedService
 import org.booktower.services.PdfMetadataService
 import org.booktower.services.UserSettingsService
@@ -55,6 +57,9 @@ class HtmxHandlerTest {
             config.storage, TestFixture.templateRenderer, weblateHandler, analyticsService, annotationService, metadataFetchService,
             org.booktower.services.MagicShelfService(jdbi, bookService),
             org.booktower.services.PasswordResetService(jdbi),
+            EmailService(SmtpConfig("", 587, "", "", "", true)),
+            "http://localhost:9999",
+            true,
             org.booktower.services.ApiTokenService(jdbi),
             org.booktower.services.ExportService(jdbi),
             org.booktower.services.ComicService(),

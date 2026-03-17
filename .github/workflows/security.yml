@@ -1,0 +1,78 @@
+name: Security
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+  schedule:
+    - cron: '0 6 * * 1'   # Weekly, Monday 06:00 UTC
+
+permissions:
+  contents: read
+  security-events: write   # Required to upload SARIF results to the Security tab
+
+jobs:
+  # ── actionlint: catch workflow syntax/logic errors early ───────────────────
+  actionlint:
+    name: actionlint
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run actionlint
+        uses: rhysd/actionlint@v1
+
+  # ── zizmor: audit workflows for security vulnerabilities ──────────────────
+  # Detects issues like script injection, overly-broad permissions,
+  # unsafe use of pull_request_target, etc.
+  zizmor:
+    name: zizmor
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Install zizmor
+        run: pip install zizmor --quiet
+
+      - name: Run zizmor
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          zizmor --format sarif .github/workflows/ > zizmor.sarif 2>&1 || true
+        # continue-on-error so the SARIF upload still runs even when findings exist
+
+      - name: Upload zizmor SARIF to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: zizmor.sarif
+          category: zizmor
+
+  # ── Checkov: scan Dockerfile for misconfigurations ────────────────────────
+  checkov:
+    name: Checkov (Dockerfile)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Checkov
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: .
+          framework: dockerfile
+          output_format: sarif
+          output_file_path: checkov.sarif
+          soft_fail: true   # report findings but don't fail the job
+
+      - name: Upload Checkov SARIF to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: checkov.sarif
+          category: checkov

@@ -81,6 +81,8 @@
         <http4k.version>6.1.0.0</http4k.version>
         <kotlin-logging.version>3.0.5</kotlin-logging.version>
         <koin.version>3.5.6</koin.version>
+        <simplejavamail.version>8.12.5</simplejavamail.version>
+        <greenmail.version>2.1.3</greenmail.version>
     </properties>
 
     <dependencyManagement>
@@ -350,6 +352,11 @@
             <version>${koin.version}</version>
         </dependency>
         <dependency>
+            <groupId>org.simplejavamail</groupId>
+            <artifactId>simple-java-mail</artifactId>
+            <version>${simplejavamail.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.jetbrains.kotlin</groupId>
                 <artifactId>kotlin-stdlib</artifactId>
         </dependency>
@@ -379,6 +386,12 @@
             <groupId>org.http4k</groupId>
             <artifactId>http4k-client-jetty</artifactId>
             <version>${http4k.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.icegreen</groupId>
+            <artifactId>greenmail-junit5</artifactId>
+            <version>${greenmail.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -461,6 +474,15 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
                 <version>${maven-jar-plugin.version}</version>
+                <configuration>
+                    <archive>
+                        <manifestEntries>
+                            <Implementation-Title>${project.artifactId}</Implementation-Title>
+                            <Implementation-Version>${project.version}</Implementation-Version>
+                            <Build-Jdk>${java.version}</Build-Jdk>
+                        </manifestEntries>
+                    </archive>
+                </configuration>
             </plugin>
 
             <plugin>
