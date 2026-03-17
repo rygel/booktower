@@ -73,6 +73,7 @@ nbdist/
 .AppleDouble
 .LSOverride
 Icon?
+!src/main/resources/static/icons/
 ._*
 
 # Windows
