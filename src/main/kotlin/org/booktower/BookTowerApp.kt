@@ -15,6 +15,7 @@ import org.booktower.services.JwtService
 import org.booktower.services.LibraryService
 import org.booktower.services.EpubMetadataService
 import org.booktower.services.PdfMetadataService
+import org.booktower.services.ComicPageHashWorker
 import org.booktower.services.FtsIndexWorker
 import org.booktower.services.FtsService
 import org.booktower.services.LibraryWatchService
@@ -55,12 +56,16 @@ fun main() {
     ftsService.initialize()
     ftsIndexWorker.start()
 
+    val comicPageHashWorker = koin.get<ComicPageHashWorker>()
+    comicPageHashWorker.start()
+
     Runtime.getRuntime().addShutdownHook(Thread {
         logger.info("Shutting down BookTower...")
         pdfMetadataService.shutdown()
         epubMetadataService.shutdown()
         database.close()
         ftsIndexWorker.stop()
+        comicPageHashWorker.stop()
     })
 
     val isProduction = System.getenv("BOOKTOWER_ENV")?.lowercase() == "production"

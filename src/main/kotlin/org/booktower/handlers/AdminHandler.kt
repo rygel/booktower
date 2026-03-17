@@ -8,6 +8,7 @@ import org.booktower.models.ErrorResponse
 import org.booktower.models.SuccessResponse
 import org.booktower.services.AdminService
 import org.booktower.services.AuditService
+import org.booktower.services.ComicPageHashService
 import org.booktower.services.DuplicateDetectionService
 import org.booktower.services.EmailService
 import org.booktower.services.PasswordResetService
@@ -34,6 +35,7 @@ class AdminHandler(
     private val auditService: AuditService? = null,
     private val userPermissionsService: UserPermissionsService? = null,
     private val libraryAccessService: LibraryAccessService? = null,
+    private val comicPageHashService: ComicPageHashService? = null,
 ) {
     fun adminPage(req: Request): Response {
         val ctx = WebContext(req)
@@ -139,6 +141,19 @@ class AdminHandler(
                 .body("""{"error":"Duplicate detection not available"}""")
         val userId = AuthenticatedUser.from(req)
         val groups = svc.findDuplicates(userId)
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(Json.mapper.writeValueAsString(groups))
+    }
+
+    /** GET /api/admin/comic-page-duplicates — returns pages that appear in more than one comic book */
+    fun findComicPageDuplicates(req: Request): Response {
+        val svc = comicPageHashService
+            ?: return Response(Status.SERVICE_UNAVAILABLE)
+                .header("Content-Type", "application/json")
+                .body("""{"error":"Comic page duplicate detection not available"}""")
+        val userId = AuthenticatedUser.from(req)
+        val groups = svc.findDuplicatePages(userId)
         return Response(Status.OK)
             .header("Content-Type", "application/json")
             .body(Json.mapper.writeValueAsString(groups))

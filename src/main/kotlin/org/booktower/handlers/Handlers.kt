@@ -176,6 +176,7 @@ class AppHandler(
     private val filterPresetService: FilterPresetService? = null,
     private val telemetryService: TelemetryService? = null,
     private val communityRatingService: org.booktower.services.CommunityRatingService? = null,
+    private val comicPageHashService: org.booktower.services.ComicPageHashService? = null,
     private val demoMode: Boolean = false,
 ) {
     private val authHandler = AuthHandler2(authService, userSettingsService, passwordResetService, emailService, appBaseUrl, registrationOpen, auditService, oidcService?.config?.forceOnlyMode ?: false)
@@ -185,7 +186,7 @@ class AppHandler(
     private val calibreService = CalibreConversionService(java.io.File(storageConfig.tempPath, "calibre-cache"))
     private val fileHandler = FileHandler(bookService, pdfMetadataService, epubMetadataService, storageConfig, calibreService = calibreService)
     private val settingsHandler = UserSettingsHandler(userSettingsService)
-    private val adminHandler = AdminHandler(adminService, templateRenderer, passwordResetService, seedService, emailService, appBaseUrl, duplicateDetectionService, auditService, userPermissionsService, libraryAccessService)
+    private val adminHandler = AdminHandler(adminService, templateRenderer, passwordResetService, seedService, emailService, appBaseUrl, duplicateDetectionService, auditService, userPermissionsService, libraryAccessService, comicPageHashService)
     private val pageHandler = PageHandler(jwtService, authService, libraryService, bookService, bookmarkService, userSettingsService, analyticsService, annotationService, metadataFetchService, magicShelfService, templateRenderer, readingSessionService, libraryWatchService)
     private val backgroundTaskHandler = backgroundTaskService?.let { BackgroundTaskHandler(it) }
     private val journalHandler = journalService?.let { JournalHandler(it) }
@@ -433,6 +434,7 @@ class AppHandler(
             "/api/notifications/{id}/read" bind Method.POST to authFilter.then(::markNotificationRead),
             "/api/notifications/{id}" bind Method.DELETE to authFilter.then(::deleteNotification),
             "/api/admin/duplicates" bind Method.GET to adminFilter.then(adminHandler::findDuplicates),
+            "/api/admin/comic-page-duplicates" bind Method.GET to adminFilter.then(adminHandler::findComicPageDuplicates),
             "/api/admin/audit" bind Method.GET to adminFilter.then(adminHandler::listAuditLog),
             "/api/admin/tasks" bind Method.GET to adminFilter.then(backgroundTaskHandler?.let { it::listAll } ?: { _ -> Response(Status.SERVICE_UNAVAILABLE) }),
             // Weblate translation sync (admin-only endpoints, require Weblate to be enabled)
