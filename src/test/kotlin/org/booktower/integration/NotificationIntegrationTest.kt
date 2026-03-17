@@ -119,6 +119,36 @@ class NotificationIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `GET notifications count returns zero initially`() {
+        val token = registerAndGetToken()
+        val resp = app(Request(Method.GET, "/api/notifications/count").header("Cookie", "token=$token"))
+        assertEquals(Status.OK, resp.status)
+        assertEquals(0, Json.mapper.readTree(resp.bodyString()).get("count").asInt())
+    }
+
+    @Test
+    fun `GET notifications count reflects unread count`() {
+        val token = registerAndGetToken()
+        publishDirect(token, "info", "N1")
+        publishDirect(token, "info", "N2")
+
+        val resp = app(Request(Method.GET, "/api/notifications/count").header("Cookie", "token=$token"))
+        assertEquals(Status.OK, resp.status)
+        assertEquals(2, Json.mapper.readTree(resp.bodyString()).get("count").asInt())
+    }
+
+    @Test
+    fun `GET notifications count decreases after mark-all-read`() {
+        val token = registerAndGetToken()
+        publishDirect(token, "info", "N1")
+        publishDirect(token, "info", "N2")
+        app(Request(Method.POST, "/api/notifications/read-all").header("Cookie", "token=$token"))
+
+        val resp = app(Request(Method.GET, "/api/notifications/count").header("Cookie", "token=$token"))
+        assertEquals(0, Json.mapper.readTree(resp.bodyString()).get("count").asInt())
+    }
+
+    @Test
     fun `notifications endpoints require authentication`() {
         val resp = app(Request(Method.GET, "/api/notifications"))
         assertEquals(Status.UNAUTHORIZED, resp.status)

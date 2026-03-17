@@ -19,8 +19,8 @@
     <title>${title}</title>
     <style id="theme-style" data-theme="${currentTheme}">${themeCss}</style>
     <link rel="stylesheet" href="/static/css/app.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.1.0/fonts/remixicon.css">
-    <script src="https://unpkg.com/htmx.org@1.9.10" defer></script>
+    <link rel="stylesheet" href="/static/vendor/remixicon.css">
+    <script src="/static/vendor/htmx.min.js" defer></script>
 </head>
 <body style="min-height:100vh; display:flex; flex-direction:column;">
 
