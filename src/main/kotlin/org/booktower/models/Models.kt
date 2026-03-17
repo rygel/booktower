@@ -245,6 +245,17 @@ data class UpdateBookRequest(
     val publisher: String? = null,
     val publishedDate: String? = null,
     val pageCount: Int? = null,
+    val subtitle: String? = null,
+    val language: String? = null,
+    val contentRating: String? = null,
+    val ageRating: String? = null,
+    val goodreadsId: String? = null,
+    val hardcoverId: String? = null,
+    val comicvineId: String? = null,
+    val openlibraryId: String? = null,
+    val googleBooksId: String? = null,
+    val amazonId: String? = null,
+    val audibleId: String? = null,
 )
 
 data class MergeBookRequest(

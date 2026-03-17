@@ -252,6 +252,49 @@
                                 placeholder="${i18n.translate("field.published.date")}"
                                 style="flex:1; border-radius:0.5rem; border:1px solid; padding:0.5rem 0.75rem; font-size:0.875rem;">
                         </div>
+                        <%-- Classification --%>
+                        <p style="font-size:0.75rem; font-weight:600; color:var(--bt-text-dim); margin:0.25rem 0 0;">${i18n.translate("page.book.edit.section.classification")}</p>
+                        <input type="text" name="subtitle" value="${book.subtitle ?: ""}" maxlength="500"
+                            placeholder="${i18n.translate("field.subtitle")}"
+                            style="border-radius:0.5rem; border:1px solid; padding:0.5rem 0.75rem; font-size:0.875rem; width:100%;">
+                        <div style="display:flex; gap:0.5rem;">
+                            <input type="text" name="language" value="${book.language ?: ""}" maxlength="10"
+                                placeholder="${i18n.translate("field.language")}"
+                                style="flex:1; border-radius:0.5rem; border:1px solid; padding:0.5rem 0.75rem; font-size:0.875rem;">
+                            <input type="text" name="contentRating" value="${book.contentRating ?: ""}" maxlength="50"
+                                placeholder="${i18n.translate("field.content.rating")}"
+                                style="flex:1; border-radius:0.5rem; border:1px solid; padding:0.5rem 0.75rem; font-size:0.875rem;">
+                            <input type="text" name="ageRating" value="${book.ageRating ?: ""}" maxlength="50"
+                                placeholder="${i18n.translate("field.age.rating")}"
+                                style="flex:1; border-radius:0.5rem; border:1px solid; padding:0.5rem 0.75rem; font-size:0.875rem;">
+                        </div>
+                        <%-- External IDs --%>
+                        <p style="font-size:0.75rem; font-weight:600; color:var(--bt-text-dim); margin:0.25rem 0 0;">${i18n.translate("page.book.edit.section.external.ids")}</p>
+                        <div style="display:flex; gap:0.5rem;">
+                            <input type="text" name="goodreadsId" value="${book.goodreadsId ?: ""}" maxlength="100"
+                                placeholder="${i18n.translate("field.goodreads.id")}"
+                                style="flex:1; border-radius:0.5rem; border:1px solid; padding:0.5rem 0.75rem; font-size:0.875rem;">
+                            <input type="text" name="hardcoverId" value="${book.hardcoverId ?: ""}" maxlength="100"
+                                placeholder="${i18n.translate("field.hardcover.id")}"
+                                style="flex:1; border-radius:0.5rem; border:1px solid; padding:0.5rem 0.75rem; font-size:0.875rem;">
+                            <input type="text" name="openlibraryId" value="${book.openlibraryId ?: ""}" maxlength="100"
+                                placeholder="${i18n.translate("field.openlibrary.id")}"
+                                style="flex:1; border-radius:0.5rem; border:1px solid; padding:0.5rem 0.75rem; font-size:0.875rem;">
+                        </div>
+                        <div style="display:flex; gap:0.5rem;">
+                            <input type="text" name="googleBooksId" value="${book.googleBooksId ?: ""}" maxlength="100"
+                                placeholder="${i18n.translate("field.google.books.id")}"
+                                style="flex:1; border-radius:0.5rem; border:1px solid; padding:0.5rem 0.75rem; font-size:0.875rem;">
+                            <input type="text" name="comicvineId" value="${book.comicvineId ?: ""}" maxlength="100"
+                                placeholder="${i18n.translate("field.comicvine.id")}"
+                                style="flex:1; border-radius:0.5rem; border:1px solid; padding:0.5rem 0.75rem; font-size:0.875rem;">
+                            <input type="text" name="amazonId" value="${book.amazonId ?: ""}" maxlength="100"
+                                placeholder="${i18n.translate("field.amazon.id")}"
+                                style="flex:1; border-radius:0.5rem; border:1px solid; padding:0.5rem 0.75rem; font-size:0.875rem;">
+                            <input type="text" name="audibleId" value="${book.audibleId ?: ""}" maxlength="100"
+                                placeholder="${i18n.translate("field.audible.id")}"
+                                style="flex:1; border-radius:0.5rem; border:1px solid; padding:0.5rem 0.75rem; font-size:0.875rem;">
+                        </div>
                         <div style="display:flex; gap:0.5rem;">
                             <button type="submit" class="btn-primary" style="display:inline-flex; align-items:center; gap:0.375rem;">
                                 <i class="ri-save-line"></i> ${i18n.translate("action.save")}

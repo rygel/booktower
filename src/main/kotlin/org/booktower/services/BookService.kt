@@ -410,6 +410,9 @@ class BookService(
                 """UPDATE books SET title = ?, author = ?, description = ?,
                    series = ?, series_index = ?,
                    isbn = ?, publisher = ?, published_date = ?, page_count = ?,
+                   subtitle = ?, language = ?, content_rating = ?, age_rating = ?,
+                   goodreads_id = ?, hardcover_id = ?, comicvine_id = ?,
+                   openlibrary_id = ?, google_books_id = ?, amazon_id = ?, audible_id = ?,
                    updated_at = ? WHERE id = ?""",
             )
                 .bind(0, request.title)
@@ -421,8 +424,19 @@ class BookService(
                 .bind(6, request.publisher)
                 .bind(7, request.publishedDate)
                 .bind(8, request.pageCount)
-                .bind(9, Instant.now().toString())
-                .bind(10, bookId.toString())
+                .bind(9, request.subtitle)
+                .bind(10, request.language)
+                .bind(11, request.contentRating)
+                .bind(12, request.ageRating)
+                .bind(13, request.goodreadsId)
+                .bind(14, request.hardcoverId)
+                .bind(15, request.comicvineId)
+                .bind(16, request.openlibraryId)
+                .bind(17, request.googleBooksId)
+                .bind(18, request.amazonId)
+                .bind(19, request.audibleId)
+                .bind(20, Instant.now().toString())
+                .bind(21, bookId.toString())
                 .execute()
         }
 
@@ -437,6 +451,17 @@ class BookService(
             publisher = request.publisher,
             publishedDate = request.publishedDate,
             pageCount = request.pageCount,
+            subtitle = request.subtitle,
+            language = request.language,
+            contentRating = request.contentRating,
+            ageRating = request.ageRating,
+            goodreadsId = request.goodreadsId,
+            hardcoverId = request.hardcoverId,
+            comicvineId = request.comicvineId,
+            openlibraryId = request.openlibraryId,
+            googleBooksId = request.googleBooksId,
+            amazonId = request.amazonId,
+            audibleId = request.audibleId,
         )
     }
 
