@@ -400,6 +400,30 @@
                 </select>
             </div>
             <div class="pref-section">
+                <p class="pref-section-label">${i18n.translate("page.reader.prefs.linespacing")}</p>
+                <div class="pref-btn-row">
+                    <button class="pref-btn" data-pref="lineSpacing" data-val="1.2">${i18n.translate("page.reader.prefs.linespacing.compact")}</button>
+                    <button class="pref-btn active" data-pref="lineSpacing" data-val="1.6">${i18n.translate("page.reader.prefs.linespacing.normal")}</button>
+                    <button class="pref-btn" data-pref="lineSpacing" data-val="1.9">${i18n.translate("page.reader.prefs.linespacing.relaxed")}</button>
+                    <button class="pref-btn" data-pref="lineSpacing" data-val="2.4">${i18n.translate("page.reader.prefs.linespacing.wide")}</button>
+                </div>
+            </div>
+            <div class="pref-section">
+                <p class="pref-section-label">${i18n.translate("page.reader.prefs.margins")}</p>
+                <div class="pref-btn-row">
+                    <button class="pref-btn" data-pref="margins" data-val="narrow">${i18n.translate("page.reader.prefs.margins.narrow")}</button>
+                    <button class="pref-btn active" data-pref="margins" data-val="normal">${i18n.translate("page.reader.prefs.margins.normal")}</button>
+                    <button class="pref-btn" data-pref="margins" data-val="wide">${i18n.translate("page.reader.prefs.margins.wide")}</button>
+                </div>
+            </div>
+            <div class="pref-section">
+                <p class="pref-section-label">${i18n.translate("page.reader.prefs.align")}</p>
+                <div class="pref-btn-row">
+                    <button class="pref-btn active" data-pref="textAlign" data-val="left">${i18n.translate("page.reader.prefs.align.left")}</button>
+                    <button class="pref-btn" data-pref="textAlign" data-val="justify">${i18n.translate("page.reader.prefs.align.justify")}</button>
+                </div>
+            </div>
+            <div class="pref-section">
                 <p class="pref-section-label">${i18n.translate("page.reader.prefs.layout")}</p>
                 <div class="pref-btn-row">
                     <button class="pref-btn active" data-pref="flow" data-val="paginated">${i18n.translate("page.reader.prefs.layout.paginated")}</button>
@@ -799,44 +823,65 @@
     let saveTimer   = null;
     let prefSaveTimer = null;
     let rendition;
-    let epubPrefs   = { theme: 'white', fontSize: 100, fontFamily: '', flow: 'paginated' };
-
-    const EPUB_THEMES = {
-        white: { 'body,p,div,span': { 'background': '#ffffff !important', 'color': '#111111 !important' } },
-        sepia: { 'body,p,div,span': { 'background': '#faf4e8 !important', 'color': '#3b2e1a !important' } },
-        dark:  { 'body,p,div,span': { 'background': '#1a1a1a !important', 'color': '#e0e0e0 !important' } },
+    let epubPrefs = {
+        theme: 'white', fontSize: 100, fontFamily: '',
+        flow: 'paginated', lineSpacing: '1.6', margins: 'normal', textAlign: 'left'
     };
 
-    function applyEpubTheme() {
-        if (!rendition) return;
-        var t = EPUB_THEMES[epubPrefs.theme] || EPUB_THEMES.white;
-        rendition.themes.register('bt', t);
-        rendition.themes.select('bt');
-        // Also tint epub-viewer background
-        var bg = epubPrefs.theme === 'sepia' ? '#faf4e8' : epubPrefs.theme === 'dark' ? '#1a1a1a' : '#ffffff';
-        document.getElementById('epub-viewer').style.background = bg;
+    const EPUB_COLORS = {
+        white: { bg: '#ffffff', fg: '#111111' },
+        sepia: { bg: '#faf4e8', fg: '#3b2e1a' },
+        dark:  { bg: '#1a1a1a', fg: '#e0e0e0' },
+    };
+    const EPUB_MARGIN_MAP = { narrow: '0 0.5em', normal: '0 2em', wide: '0 5em' };
+
+    function buildEpubCss() {
+        var c   = EPUB_COLORS[epubPrefs.theme] || EPUB_COLORS.white;
+        var mar = EPUB_MARGIN_MAP[epubPrefs.margins] || EPUB_MARGIN_MAP.normal;
+        var ff  = epubPrefs.fontFamily ? (epubPrefs.fontFamily + ' !important') : 'inherit';
+        return {
+            'html,body': {
+                'background': c.bg + ' !important',
+                'color':      c.fg + ' !important',
+            },
+            'body': {
+                'font-family':  ff,
+                'line-height':  epubPrefs.lineSpacing + ' !important',
+                'margin':       mar + ' !important',
+                'padding':      '1em 0 !important',
+                'text-align':   epubPrefs.textAlign + ' !important',
+            },
+            'p,li,blockquote,td': {
+                'color':       c.fg + ' !important',
+                'line-height': epubPrefs.lineSpacing + ' !important',
+                'text-align':  epubPrefs.textAlign + ' !important',
+            },
+        };
     }
 
-    function applyEpubFontSize() {
-        if (rendition) rendition.themes.fontSize(epubPrefs.fontSize + '%');
+    function applyEpubStyles() {
+        if (!rendition) return;
+        rendition.themes.register('bt', buildEpubCss());
+        rendition.themes.select('bt');
+        rendition.themes.fontSize(epubPrefs.fontSize + '%');
+        var c = EPUB_COLORS[epubPrefs.theme] || EPUB_COLORS.white;
+        document.getElementById('epub-viewer').style.background = c.bg;
         var fsVal = document.getElementById('pref-fs-val');
         if (fsVal) fsVal.textContent = epubPrefs.fontSize + '%';
         zoomPct.textContent = epubPrefs.fontSize + '%';
         fontSize = epubPrefs.fontSize;
     }
 
-    function applyEpubFont() {
-        if (rendition && epubPrefs.fontFamily) {
-            rendition.themes.font(epubPrefs.fontFamily);
-        }
-    }
+    // keep old names as aliases so call sites stay unchanged
+    var applyEpubTheme    = applyEpubStyles;
+    var applyEpubFontSize = applyEpubStyles;
+    var applyEpubFont     = applyEpubStyles;
 
     function updatePrefButtons() {
-        document.querySelectorAll('[data-pref="theme"]').forEach(function(b) {
-            b.classList.toggle('active', b.dataset.val === epubPrefs.theme);
-        });
-        document.querySelectorAll('[data-pref="flow"]').forEach(function(b) {
-            b.classList.toggle('active', b.dataset.val === epubPrefs.flow);
+        ['theme','flow','lineSpacing','margins','textAlign'].forEach(function(pref) {
+            document.querySelectorAll('[data-pref="' + pref + '"]').forEach(function(b) {
+                b.classList.toggle('active', b.dataset.val === String(epubPrefs[pref]));
+            });
         });
         var fsVal = document.getElementById('pref-fs-val');
         if (fsVal) fsVal.textContent = epubPrefs.fontSize + '%';
@@ -850,18 +895,20 @@
             fetch(PREFS_URL, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ theme: epubPrefs.theme, fontSize: epubPrefs.fontSize, fontFamily: epubPrefs.fontFamily, scrollMode: epubPrefs.flow })
+                body: JSON.stringify({ theme: epubPrefs.theme, fontSize: epubPrefs.fontSize, fontFamily: epubPrefs.fontFamily, scrollMode: epubPrefs.flow, lineSpacing: epubPrefs.lineSpacing, margins: epubPrefs.margins, textAlign: epubPrefs.textAlign })
             }).catch(function() {});
         }, 600);
     }
 
     // Wire pref panel controls
-    document.querySelectorAll('[data-pref="theme"]').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            epubPrefs.theme = btn.dataset.val;
-            applyEpubTheme();
-            updatePrefButtons();
-            saveEpubPrefs();
+    ['theme', 'lineSpacing', 'margins', 'textAlign'].forEach(function(pref) {
+        document.querySelectorAll('[data-pref="' + pref + '"]').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                epubPrefs[pref] = btn.dataset.val;
+                applyEpubStyles();
+                updatePrefButtons();
+                saveEpubPrefs();
+            });
         });
     });
     document.querySelectorAll('[data-pref="flow"]').forEach(function(btn) {
@@ -895,10 +942,13 @@
 
     // Load preferences then initialise book
     fetch(PREFS_URL).then(function(r) { return r.json(); }).then(function(p) {
-        if (p.theme)      epubPrefs.theme      = p.theme;
-        if (p.fontSize)   epubPrefs.fontSize   = p.fontSize;
-        if (p.fontFamily) epubPrefs.fontFamily = p.fontFamily;
-        if (p.scrollMode) epubPrefs.flow       = p.scrollMode;
+        if (p.theme)       epubPrefs.theme       = p.theme;
+        if (p.fontSize)    epubPrefs.fontSize    = p.fontSize;
+        if (p.fontFamily)  epubPrefs.fontFamily  = p.fontFamily;
+        if (p.scrollMode)  epubPrefs.flow        = p.scrollMode;
+        if (p.lineSpacing) epubPrefs.lineSpacing = p.lineSpacing;
+        if (p.margins)     epubPrefs.margins     = p.margins;
+        if (p.textAlign)   epubPrefs.textAlign   = p.textAlign;
         fontSize = epubPrefs.fontSize;
         updatePrefButtons();
         initEpub();
