@@ -33,7 +33,7 @@ jobs:
 
       - name: Rename fat JAR
         run: |
-          FAT=$(ls target/booktower-*-fat.jar | head -1)
+          FAT=$(find target/ -name "booktower-*-fat.jar" | head -1)
           cp "$FAT" target/booktower-${{ github.ref_name }}.jar
 
       - uses: actions/upload-artifact@v4
@@ -59,7 +59,7 @@ jobs:
             binary: booktower
             asset: booktower-linux-arm64
 
-          - os: macos-13          # Intel runner
+          - os: macos-15-intel    # Intel runner
             label: macos-x64
             binary: booktower
             asset: booktower-macos-x64
