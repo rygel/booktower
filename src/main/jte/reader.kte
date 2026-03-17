@@ -343,11 +343,35 @@
     <!-- Bookmarks panel (always rendered) -->
     <div id="bm-panel">
         <div id="bm-panel-inner">
-            <p style="font-size:0.7rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--bt-subtle); font-weight:600; margin:0 0 0.75rem;">
-                ${i18n.translate("page.reader.bookmarks")}
-            </p>
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.75rem;">
+                <p style="font-size:0.7rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--bt-subtle); font-weight:600; margin:0;">
+                    ${i18n.translate("page.reader.bookmarks")}
+                </p>
+                <button id="btn-add-bookmark" title="${i18n.translate("action.add")}"
+                    style="background:transparent; border:none; cursor:pointer; color:var(--bt-accent-dim); padding:0.1rem 0.25rem; font-size:1rem; line-height:1;">
+                    <i class="ri-bookmark-add-line"></i>
+                </button>
+            </div>
+            <!-- Inline add-bookmark form (hidden by default) -->
+            <div id="bm-add-form" style="display:none; flex-direction:column; gap:0.4rem; margin-bottom:0.75rem;">
+                <input id="bm-add-title" type="text" maxlength="255"
+                    placeholder="${i18n.translate("placeholder.label")}"
+                    style="border-radius:0.375rem; border:1px solid var(--bt-border); padding:0.35rem 0.5rem; font-size:0.8rem; background:var(--bt-input-bg, #fff); color:var(--bt-text);">
+                <textarea id="bm-add-note" rows="2" maxlength="1000"
+                    placeholder="${i18n.translate("placeholder.note")}"
+                    style="border-radius:0.375rem; border:1px solid var(--bt-border); padding:0.35rem 0.5rem; font-size:0.8rem; background:var(--bt-input-bg, #fff); color:var(--bt-text); resize:none;"></textarea>
+                <div style="display:flex; gap:0.4rem;">
+                    <button id="bm-add-save" class="btn-primary" style="font-size:0.75rem; padding:0.3rem 0.7rem;">
+                        <i class="ri-save-line"></i> ${i18n.translate("action.save")}
+                    </button>
+                    <button id="bm-add-cancel" class="btn-secondary" style="font-size:0.75rem; padding:0.3rem 0.7rem;">
+                        ${i18n.translate("action.cancel")}
+                    </button>
+                </div>
+            </div>
+            <div id="bm-list">
             @if(bookmarks.isEmpty())
-                <p style="font-size:0.8rem; color:var(--bt-faint);">${i18n.translate("page.book.bookmarks.empty")}</p>
+                <p id="bm-empty-hint" style="font-size:0.8rem; color:var(--bt-faint);">${i18n.translate("page.book.bookmarks.empty")}</p>
             @else
                 @for(bm in bookmarks)
                     <div class="bm-item" onclick="jumpToPage(${bm.page})" title="${i18n.translate("page.reader.jump.to.page")} ${bm.page}">
@@ -361,6 +385,7 @@
                     </div>
                 @endfor
             @endif
+            </div>
         </div>
     </div>
 
@@ -542,6 +567,69 @@ var BT_DEVICE = (function() {
     }
     // Fallback jumpToPage for "none" mode (no-op)
     window.jumpToPage = window.jumpToPage || function() {};
+
+    // ── Bookmark creation ───────────────────────────────────────────────────
+    // Each reader type exposes window.getBookmarkPage() returning an int.
+    // This script wires the add-bookmark form which is always in the DOM.
+    window.getBookmarkPage = window.getBookmarkPage || function() { return 0; };
+
+    var addBtn    = document.getElementById('btn-add-bookmark');
+    var addForm   = document.getElementById('bm-add-form');
+    var titleInp  = document.getElementById('bm-add-title');
+    var noteInp   = document.getElementById('bm-add-note');
+    var saveBtn   = document.getElementById('bm-add-save');
+    var cancelBtn = document.getElementById('bm-add-cancel');
+    var bmList    = document.getElementById('bm-list');
+    var bmEmpty   = document.getElementById('bm-empty-hint');
+
+    var BOOK_ID_BM = '${book.id}';
+
+    if (addBtn) {
+        addBtn.addEventListener('click', function() {
+            var showing = addForm.style.display !== 'none';
+            addForm.style.display = showing ? 'none' : 'flex';
+            if (!showing && titleInp) titleInp.focus();
+        });
+    }
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', function() {
+            addForm.style.display = 'none';
+            if (titleInp) titleInp.value = '';
+            if (noteInp)  noteInp.value  = '';
+        });
+    }
+    if (saveBtn) {
+        saveBtn.addEventListener('click', function() {
+            var page  = window.getBookmarkPage();  // capture current position
+            var title = titleInp ? titleInp.value.trim() : '';
+            var note  = noteInp  ? noteInp.value.trim()  : '';
+            var body  = new URLSearchParams();
+            body.append('page',  page);
+            if (title) body.append('title', title);
+            if (note)  body.append('note',  note);
+            fetch('/ui/books/' + BOOK_ID_BM + '/bookmarks', { method: 'POST', body: body })
+                .then(function(r) {
+                    if (!r.ok) return;
+                    return r.text().then(function(html) {
+                        if (bmEmpty) bmEmpty.style.display = 'none';
+                        var tmp = document.createElement('div');
+                        tmp.innerHTML = html;
+                        var el = tmp.firstElementChild;
+                        if (el) {
+                            // Wire jump-to-page on click (skip when clicking the delete button)
+                            el.style.cursor = 'pointer';
+                            el.addEventListener('click', function(e) {
+                                if (!e.target.closest('button')) window.jumpToPage(page);
+                            });
+                            bmList.insertBefore(el, bmList.firstChild);
+                        }
+                        addForm.style.display = 'none';
+                        if (titleInp) titleInp.value = '';
+                        if (noteInp)  noteInp.value  = '';
+                    });
+                }).catch(function() {});
+        });
+    }
 }());
 </script>
 
@@ -709,6 +797,7 @@ var BT_DEVICE = (function() {
     window.jumpToPage = function (page) {
         renderPage(Math.min(Math.max(1, page), totalPages || page));
     };
+    window.getBookmarkPage = function() { return currentPage; };
 
     // ── Zoom ───────────────────────────────────────────────────────────────────
     btnZoomIn.addEventListener('click', function () { zoomLevel = Math.min(3.0, zoomLevel + 0.25); renderPage(currentPage); });
@@ -1116,18 +1205,19 @@ var BT_DEVICE = (function() {
             }
 
             function updateLocDisplay(location) {
-                var pct = Math.round((location.start.percentage || 0) * 100);
-                if (locReady && location.start.location > 0) {
-                    pageInfo.textContent = 'Loc\u00a0' + location.start.location.toLocaleString()
-                        + '\u00a0of\u00a0' + totalLocs.toLocaleString();
-                    pageInfo.title = pct + '%';
-                } else {
-                    pageInfo.textContent = pct + '%';
-                    pageInfo.title = '';
+                if (!locReady) {
+                    // percentage is always 0 before generate() — show placeholder
+                    if (pageInfo) { pageInfo.textContent = '\u2014'; pageInfo.title = ''; }
+                    return;
                 }
+                var pct = Math.round((location.start.percentage || 0) * 100);
+                pageInfo.textContent = pct + '%';
+                pageInfo.title = location.start.location > 0
+                    ? 'Loc\u00a0' + location.start.location.toLocaleString() + '\u00a0of\u00a0' + totalLocs.toLocaleString()
+                    : '';
             }
 
-            function initLocations(locLocation) {
+            function initLocations() {
                 var cached = null;
                 try { cached = localStorage.getItem(LOC_KEY); } catch(_) {}
                 if (cached) {
@@ -1136,7 +1226,7 @@ var BT_DEVICE = (function() {
                         locReady  = true;
                         totalLocs = book.locations.length();
                         if (pageInfo) pageInfo.classList.add('clickable');
-                        if (locLocation) updateLocDisplay(locLocation);
+                        if (lastLocation) updateLocDisplay(lastLocation);
                         return;
                     } catch(_) {}
                 }
@@ -1147,8 +1237,8 @@ var BT_DEVICE = (function() {
                     totalLocs = book.locations.length();
                     try { localStorage.setItem(LOC_KEY, book.locations.save()); } catch(_) {}
                     if (pageInfo) pageInfo.classList.add('clickable');
-                    // Refresh display if rendition has already reported a location
-                    if (locLocation) updateLocDisplay(locLocation);
+                    // Use current lastLocation — it is populated by the relocated event
+                    if (lastLocation) updateLocDisplay(lastLocation);
                 }).catch(function() {});
             }
 
@@ -1161,7 +1251,7 @@ var BT_DEVICE = (function() {
                 scheduleSave(Math.round((location.start.percentage || 0) * 100));
             });
 
-            book.ready.then(function() { initLocations(lastLocation); });
+            book.ready.then(function() { initLocations(); });
 
             rendition.on('rendered', function () {
                 btnPrev.disabled = false;
@@ -1224,6 +1314,9 @@ var BT_DEVICE = (function() {
     // Expose jumpToPage for bookmark clicks (jump to approximate % position)
     window.jumpToPage = function (pct) {
         if (rendition) rendition.display(Math.min(100, Math.max(0, pct)) / 100.0);
+    };
+    window.getBookmarkPage = function() {
+        return lastLocation ? Math.round((lastLocation.start.percentage || 0) * 100) : 0;
     };
     } // end initEpub
 }());
@@ -1567,6 +1660,7 @@ var BT_DEVICE = (function() {
     });
 
     window.jumpToPage = function(n) { goToPage(n); };
+    window.getBookmarkPage = function() { return currentPage; };
 
     function scheduleSave(page) {
         clearTimeout(saveTimer);
