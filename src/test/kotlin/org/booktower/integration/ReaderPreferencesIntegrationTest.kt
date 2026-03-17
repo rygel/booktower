@@ -169,4 +169,40 @@ class ReaderPreferencesIntegrationTest {
         val resp = app(Request(Method.GET, "/api/reader-preferences/epub"))
         assertEquals(Status.UNAUTHORIZED, resp.status)
     }
+
+    @Test
+    fun `preferences are isolated per device`() {
+        val token = registerAndToken()
+        app(Request(Method.PUT, "/api/reader-preferences/epub?device=aabbccdd")
+            .header("Cookie", "token=$token").header("Content-Type", "application/json")
+            .body("""{"fontSize":22}"""))
+        app(Request(Method.PUT, "/api/reader-preferences/epub?device=11223344")
+            .header("Cookie", "token=$token").header("Content-Type", "application/json")
+            .body("""{"fontSize":14}"""))
+
+        val resp1 = app(Request(Method.GET, "/api/reader-preferences/epub?device=aabbccdd")
+            .header("Cookie", "token=$token"))
+        val resp2 = app(Request(Method.GET, "/api/reader-preferences/epub?device=11223344")
+            .header("Cookie", "token=$token"))
+
+        assertEquals(22, Json.mapper.readTree(resp1.bodyString()).get("fontSize")?.asInt())
+        assertEquals(14, Json.mapper.readTree(resp2.bodyString()).get("fontSize")?.asInt())
+    }
+
+    @Test
+    fun `device preferences are independent from global preferences`() {
+        val token = registerAndToken()
+        app(Request(Method.PUT, "/api/reader-preferences/epub")
+            .header("Cookie", "token=$token").header("Content-Type", "application/json")
+            .body("""{"fontSize":16}"""))
+        app(Request(Method.PUT, "/api/reader-preferences/epub?device=aabbccdd")
+            .header("Cookie", "token=$token").header("Content-Type", "application/json")
+            .body("""{"fontSize":20}"""))
+
+        val global = app(Request(Method.GET, "/api/reader-preferences/epub").header("Cookie", "token=$token"))
+        val device = app(Request(Method.GET, "/api/reader-preferences/epub?device=aabbccdd").header("Cookie", "token=$token"))
+
+        assertEquals(16, Json.mapper.readTree(global.bodyString()).get("fontSize")?.asInt())
+        assertEquals(20, Json.mapper.readTree(device.bodyString()).get("fontSize")?.asInt())
+    }
 }
