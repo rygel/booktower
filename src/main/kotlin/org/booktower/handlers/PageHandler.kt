@@ -538,7 +538,22 @@ class PageHandler(
         val publisher = req.form("publisher")?.trim()?.takeIf { it.isNotBlank() }
         val publishedDate = req.form("publishedDate")?.trim()?.takeIf { it.isNotBlank() }
         val pageCount = req.form("pageCount")?.toIntOrNull()?.coerceAtLeast(0)
-        bookService.updateBook(userId, bookId, UpdateBookRequest(title, author, description, series, seriesIndex, isbn, publisher, publishedDate, pageCount))
+        val subtitle = req.form("subtitle")?.trim()?.takeIf { it.isNotBlank() }
+        val language = req.form("language")?.trim()?.takeIf { it.isNotBlank() }
+        val contentRating = req.form("contentRating")?.trim()?.takeIf { it.isNotBlank() }
+        val ageRating = req.form("ageRating")?.trim()?.takeIf { it.isNotBlank() }
+        val goodreadsId = req.form("goodreadsId")?.trim()?.takeIf { it.isNotBlank() }
+        val hardcoverId = req.form("hardcoverId")?.trim()?.takeIf { it.isNotBlank() }
+        val comicvineId = req.form("comicvineId")?.trim()?.takeIf { it.isNotBlank() }
+        val openlibraryId = req.form("openlibraryId")?.trim()?.takeIf { it.isNotBlank() }
+        val googleBooksId = req.form("googleBooksId")?.trim()?.takeIf { it.isNotBlank() }
+        val amazonId = req.form("amazonId")?.trim()?.takeIf { it.isNotBlank() }
+        val audibleId = req.form("audibleId")?.trim()?.takeIf { it.isNotBlank() }
+        bookService.updateBook(userId, bookId, UpdateBookRequest(
+            title, author, description, series, seriesIndex, isbn, publisher, publishedDate, pageCount,
+            subtitle, language, contentRating, ageRating,
+            goodreadsId, hardcoverId, comicvineId, openlibraryId, googleBooksId, amazonId, audibleId,
+        ))
             ?: return Response(Status.NOT_FOUND)
         return Response(Status.OK)
             .header("HX-Redirect", "/books/${bookId}")
