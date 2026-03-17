@@ -83,6 +83,7 @@
         <koin.version>3.5.6</koin.version>
         <simplejavamail.version>8.12.5</simplejavamail.version>
         <greenmail.version>2.1.3</greenmail.version>
+        <playwright.version>1.49.0</playwright.version>
     </properties>
 
     <dependencyManagement>
@@ -394,6 +395,12 @@
             <version>${greenmail.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.microsoft.playwright</groupId>
+            <artifactId>playwright</artifactId>
+            <version>${playwright.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -491,6 +498,7 @@
                 <version>${maven-surefire-plugin.version}</version>
                 <configuration>
                     <argLine>-Dapp.name=booktower-test</argLine>
+                    <excludedGroups>browser</excludedGroups>
                 </configuration>
             </plugin>
 
@@ -951,6 +959,47 @@
                                 <id>build-native</id>
                                 <goals><goal>compile-no-fork</goal></goals>
                                 <phase>package</phase>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>browser-tests</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <argLine>-Dapp.name=booktower-test</argLine>
+                            <excludedGroups/>
+                            <groups>browser</groups>
+                            <!-- Kill any single test after 60 s, entire forked JVM after 10 min -->
+                            <forkedProcessTimeoutInSeconds>600</forkedProcessTimeoutInSeconds>
+                        </configuration>
+                    </plugin>
+                    <!-- Install Playwright browsers before running browser tests -->
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>${exec-maven-plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <id>playwright-install</id>
+                                <phase>test-compile</phase>
+                                <goals><goal>java</goal></goals>
+                                <configuration>
+                                    <mainClass>com.microsoft.playwright.CLI</mainClass>
+                                    <arguments>
+                                        <argument>install</argument>
+                                        <argument>chromium</argument>
+                                        <argument>--with-deps</argument>
+                                    </arguments>
+                                    <classpathScope>test</classpathScope>
+                                </configuration>
                             </execution>
                         </executions>
                     </plugin>

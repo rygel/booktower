@@ -11,6 +11,7 @@ import org.booktower.filters.RateLimitFilter
 import org.booktower.model.ThemeCatalog
 import org.booktower.services.AdminService
 import org.booktower.services.AnnotationService
+import org.booktower.services.CalibreConversionService
 import org.booktower.services.ApiTokenService
 import org.booktower.services.ComicService
 import org.booktower.services.EpubMetadataService
@@ -181,7 +182,8 @@ class AppHandler(
     private val libraryHandler = LibraryHandler2(libraryService, backgroundTaskService, storageConfig)
     private val bookHandler = BookHandler2(bookService, readingSessionService)
     private val bookmarkHandler = BookmarkHandler(bookmarkService)
-    private val fileHandler = FileHandler(bookService, pdfMetadataService, epubMetadataService, storageConfig)
+    private val calibreService = CalibreConversionService(java.io.File(storageConfig.tempPath, "calibre-cache"))
+    private val fileHandler = FileHandler(bookService, pdfMetadataService, epubMetadataService, storageConfig, calibreService = calibreService)
     private val settingsHandler = UserSettingsHandler(userSettingsService)
     private val adminHandler = AdminHandler(adminService, templateRenderer, passwordResetService, seedService, emailService, appBaseUrl, duplicateDetectionService, auditService, userPermissionsService, libraryAccessService)
     private val pageHandler = PageHandler(jwtService, authService, libraryService, bookService, bookmarkService, userSettingsService, analyticsService, annotationService, metadataFetchService, magicShelfService, templateRenderer, readingSessionService, libraryWatchService)
@@ -425,6 +427,7 @@ class AppHandler(
             "/api/books/{id}/audiobook-cover" bind Method.POST to authFilter.then(::uploadAudiobookCover),
             "/api/books/{id}/audiobook-cover" bind Method.GET to authFilter.then(::getAudiobookCover),
             "/api/notifications" bind Method.GET to authFilter.then(::listNotifications),
+            "/api/notifications/count" bind Method.GET to authFilter.then(::getNotificationCount),
             "/api/notifications/stream" bind Method.GET to authFilter.then(::streamNotifications),
             "/api/notifications/read-all" bind Method.POST to authFilter.then(::markAllNotificationsRead),
             "/api/notifications/{id}/read" bind Method.POST to authFilter.then(::markNotificationRead),
@@ -1937,6 +1940,14 @@ class AppHandler(
         val items = svc.list(userId, unreadOnly)
         return Response(Status.OK).header("Content-Type", "application/json")
             .body(org.booktower.config.Json.mapper.writeValueAsString(items))
+    }
+
+    private fun getNotificationCount(req: Request): Response {
+        val svc = notificationService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val userId = AuthenticatedUser.from(req)
+        val count = svc.unreadCount(userId)
+        return Response(Status.OK).header("Content-Type", "application/json")
+            .body("""{"count":$count}""")
     }
 
     /**
