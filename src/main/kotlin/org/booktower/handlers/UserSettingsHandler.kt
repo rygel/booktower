@@ -56,14 +56,21 @@ class UserSettingsHandler(
         // Accept plain text value or JSON string
         val value =
             when {
-                body.isBlank() -> null
-                body.startsWith("\"") ->
+                body.isBlank() -> {
+                    null
+                }
+
+                body.startsWith("\"") -> {
                     try {
                         Json.mapper.readValue(body, String::class.java)
                     } catch (e: Exception) {
                         body
                     }
-                else -> body.trim()
+                }
+
+                else -> {
+                    body.trim()
+                }
             }
 
         return try {

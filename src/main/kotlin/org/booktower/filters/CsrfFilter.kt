@@ -18,19 +18,25 @@ fun csrfFilter(allowedHosts: Set<String>): Filter =
 
                 val sourceHost: String? =
                     when {
-                        origin != null ->
+                        origin != null -> {
                             try {
                                 URI(origin).host
                             } catch (e: Exception) {
                                 origin
                             }
-                        referer != null ->
+                        }
+
+                        referer != null -> {
                             try {
                                 URI(referer).host
                             } catch (e: Exception) {
                                 null
                             }
-                        else -> null
+                        }
+
+                        else -> {
+                            null
+                        }
                     }
 
                 if (sourceHost == null || sourceHost in allowedHosts) {

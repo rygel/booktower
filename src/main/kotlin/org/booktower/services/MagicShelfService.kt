@@ -97,7 +97,7 @@ class MagicShelfService(
         shelf: MagicShelfDto,
     ): Int =
         when (shelf.ruleType) {
-            ShelfRuleType.STATUS ->
+            ShelfRuleType.STATUS -> {
                 jdbi.withHandle<Int, Exception> { handle ->
                     handle
                         .createQuery(
@@ -111,7 +111,9 @@ class MagicShelfService(
                         .mapTo(Int::class.java)
                         .first() ?: 0
                 }
-            ShelfRuleType.TAG ->
+            }
+
+            ShelfRuleType.TAG -> {
                 jdbi.withHandle<Int, Exception> { handle ->
                     handle
                         .createQuery(
@@ -125,6 +127,8 @@ class MagicShelfService(
                         .mapTo(Int::class.java)
                         .first() ?: 0
                 }
+            }
+
             ShelfRuleType.RATING_GTE -> {
                 val minRating = shelf.ruleValue?.toIntOrNull() ?: 1
                 jdbi.withHandle<Int, Exception> { handle ->
