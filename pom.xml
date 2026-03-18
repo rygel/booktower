@@ -54,7 +54,7 @@
         <spotbugs.version>4.9.3</spotbugs.version>
         <checkstyle.version>3.6.0</checkstyle.version>
         <pmd.version>3.28.0</pmd.version>
-        <errorprone.version>2.34.0</errorprone.version>
+        <errorprone.version>2.48.0</errorprone.version>
         <spotless.version>2.43.0</spotless.version>
         <ktlint.version>3.5.0</ktlint.version>
         <sonar-scanner.version>4.10.0.2812</sonar-scanner.version>
