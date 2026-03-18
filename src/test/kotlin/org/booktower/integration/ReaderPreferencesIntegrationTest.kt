@@ -5,7 +5,6 @@ import org.booktower.config.Json
 import org.booktower.config.SmtpConfig
 import org.booktower.config.WeblateConfig
 import org.booktower.filters.globalErrorFilter
-import org.booktower.handlers.AppHandler
 import org.booktower.models.LoginResponse
 import org.booktower.services.AdminService
 import org.booktower.services.AnalyticsService
@@ -67,53 +66,7 @@ class ReaderPreferencesIntegrationTest {
         val goodreadsImportService = GoodreadsImportService(bookService)
         val seedService = SeedService(bookService, libraryService, config.storage.coversPath, config.storage.booksPath)
         val readerPreferencesService = ReaderPreferencesService(userSettingsService)
-        val appHandler =
-            AppHandler(
-                authService,
-                libraryService,
-                bookService,
-                bookmarkService,
-                userSettingsService,
-                pdfMetadataService,
-                epubMetadataService,
-                adminService,
-                jwtService,
-                config.storage,
-                TestFixture.templateRenderer,
-                WeblateHandler(WeblateConfig("", "", "", false)),
-                analyticsService,
-                annotationService,
-                MetadataFetchService(),
-                magicShelfService,
-                passwordResetService,
-                EmailService(SmtpConfig("", 587, "", "", "", false)),
-                "http://localhost:9999",
-                true,
-                apiTokenService,
-                exportService,
-                comicService,
-                goodreadsImportService,
-                readingSessionService,
-                seedService,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                readerPreferencesService,
-            )
-        app = globalErrorFilter().then(appHandler.routes())
+        app = buildTestApp(authService = authService, libraryService = libraryService, bookService = bookService, jwtService = jwtService, readerPreferencesService = readerPreferencesService)
     }
 
     private fun registerAndToken(): String {
