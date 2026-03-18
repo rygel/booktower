@@ -149,9 +149,8 @@ jte-classes/
 # Application logs
 app.log
 
-# Non-PowerShell scripts (if you only use PowerShell)
+# Non-PowerShell scripts (local batch files only; .sh scripts are tracked for CI)
 e2e-test.bat
-e2e-test.sh
 
 # Local configuration
 application-local.properties
