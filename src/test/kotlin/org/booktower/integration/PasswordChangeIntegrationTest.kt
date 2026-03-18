@@ -7,99 +7,108 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 class PasswordChangeIntegrationTest : IntegrationTestBase() {
-
     @Test
     fun `happy path - correct current password changes successfully`() {
         val token = registerAndGetToken("pwchange")
-        val resp = app(
-            Request(Method.POST, "/api/auth/change-password")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"currentPassword":"password123","newPassword":"newpassword456"}"""),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/api/auth/change-password")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"currentPassword":"password123","newPassword":"newpassword456"}"""),
+            )
         assertEquals(Status.OK, resp.status)
     }
 
     @Test
     fun `wrong current password is rejected with 400`() {
         val token = registerAndGetToken("pwwrong")
-        val resp = app(
-            Request(Method.POST, "/api/auth/change-password")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"currentPassword":"wrongpassword","newPassword":"newpassword456"}"""),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/api/auth/change-password")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"currentPassword":"wrongpassword","newPassword":"newpassword456"}"""),
+            )
         assertEquals(Status.BAD_REQUEST, resp.status)
     }
 
     @Test
     fun `new password too short is rejected with 400`() {
         val token = registerAndGetToken("pwshort")
-        val resp = app(
-            Request(Method.POST, "/api/auth/change-password")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"currentPassword":"password123","newPassword":"abc"}"""),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/api/auth/change-password")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"currentPassword":"password123","newPassword":"abc"}"""),
+            )
         assertEquals(Status.BAD_REQUEST, resp.status)
     }
 
     @Test
     fun `blank current password is rejected with 400`() {
         val token = registerAndGetToken("pwblank")
-        val resp = app(
-            Request(Method.POST, "/api/auth/change-password")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"currentPassword":"","newPassword":"newpassword456"}"""),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/api/auth/change-password")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"currentPassword":"","newPassword":"newpassword456"}"""),
+            )
         assertEquals(Status.BAD_REQUEST, resp.status)
     }
 
     @Test
     fun `blank new password is rejected with 400`() {
         val token = registerAndGetToken("pwblanknew")
-        val resp = app(
-            Request(Method.POST, "/api/auth/change-password")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"currentPassword":"password123","newPassword":""}"""),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/api/auth/change-password")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"currentPassword":"password123","newPassword":""}"""),
+            )
         assertEquals(Status.BAD_REQUEST, resp.status)
     }
 
     @Test
     fun `empty body returns 400`() {
         val token = registerAndGetToken("pwempty")
-        val resp = app(
-            Request(Method.POST, "/api/auth/change-password")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body(""),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/api/auth/change-password")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body(""),
+            )
         assertEquals(Status.BAD_REQUEST, resp.status)
     }
 
     @Test
     fun `unauthenticated request returns 401`() {
-        val resp = app(
-            Request(Method.POST, "/api/auth/change-password")
-                .header("Content-Type", "application/json")
-                .body("""{"currentPassword":"password123","newPassword":"newpassword456"}"""),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/api/auth/change-password")
+                    .header("Content-Type", "application/json")
+                    .body("""{"currentPassword":"password123","newPassword":"newpassword456"}"""),
+            )
         assertEquals(Status.UNAUTHORIZED, resp.status)
     }
 
     @Test
     fun `new password works for login after change`() {
         val username = "pwlogin_${System.nanoTime()}"
-        val registerResp = app(
-            Request(Method.POST, "/auth/register")
-                .header("Content-Type", "application/json")
-                .body("""{"username":"$username","email":"$username@test.com","password":"password123"}"""),
-        )
-        val token = org.booktower.config.Json.mapper
-            .readValue(registerResp.bodyString(), org.booktower.models.LoginResponse::class.java).token
+        val registerResp =
+            app(
+                Request(Method.POST, "/auth/register")
+                    .header("Content-Type", "application/json")
+                    .body("""{"username":"$username","email":"$username@test.com","password":"password123"}"""),
+            )
+        val token =
+            org.booktower.config.Json.mapper
+                .readValue(registerResp.bodyString(), org.booktower.models.LoginResponse::class.java)
+                .token
 
         app(
             Request(Method.POST, "/api/auth/change-password")
@@ -109,19 +118,21 @@ class PasswordChangeIntegrationTest : IntegrationTestBase() {
         )
 
         // old password login fails
-        val oldLogin = app(
-            Request(Method.POST, "/auth/login")
-                .header("Content-Type", "application/json")
-                .body("""{"username":"$username","password":"password123"}"""),
-        )
+        val oldLogin =
+            app(
+                Request(Method.POST, "/auth/login")
+                    .header("Content-Type", "application/json")
+                    .body("""{"username":"$username","password":"password123"}"""),
+            )
         assertEquals(Status.UNAUTHORIZED, oldLogin.status)
 
         // new password login succeeds
-        val newLogin = app(
-            Request(Method.POST, "/auth/login")
-                .header("Content-Type", "application/json")
-                .body("""{"username":"$username","password":"brandnewpass"}"""),
-        )
+        val newLogin =
+            app(
+                Request(Method.POST, "/auth/login")
+                    .header("Content-Type", "application/json")
+                    .body("""{"username":"$username","password":"brandnewpass"}"""),
+            )
         assertEquals(Status.OK, newLogin.status)
     }
 
@@ -138,13 +149,14 @@ class PasswordChangeIntegrationTest : IntegrationTestBase() {
                     .body("""{"currentPassword":"password123","newPassword":"newpass_$it"}"""),
             )
         }
-        val resp = app(
-            Request(Method.POST, "/api/auth/change-password")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .header("X-Forwarded-For", ip)
-                .body("""{"currentPassword":"irrelevant","newPassword":"aaabbbccc"}"""),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/api/auth/change-password")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .header("X-Forwarded-For", ip)
+                    .body("""{"currentPassword":"irrelevant","newPassword":"aaabbbccc"}"""),
+            )
         assertEquals(Status.TOO_MANY_REQUESTS, resp.status)
     }
 }

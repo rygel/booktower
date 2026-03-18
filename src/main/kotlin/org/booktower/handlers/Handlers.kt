@@ -4,82 +4,80 @@ package org.booktower.handlers
 
 import org.booktower.config.StorageConfig
 import org.booktower.config.TemplateRenderer
-import org.booktower.filters.AdminFilter
-import org.booktower.filters.DemoModeFilter
-import org.booktower.filters.JwtAuthFilter
+import org.booktower.filters.AuthenticatedUser
 import org.booktower.filters.RateLimitFilter
+import org.booktower.filters.adminFilter
+import org.booktower.filters.jwtAuthFilter
 import org.booktower.model.ThemeCatalog
 import org.booktower.services.AdminService
-import org.booktower.services.AnnotationService
-import org.booktower.services.CalibreConversionService
-import org.booktower.services.ApiTokenService
-import org.booktower.services.ComicService
-import org.booktower.services.EpubMetadataService
-import org.booktower.services.ExportService
-import org.booktower.services.GoodreadsImportService
-import org.booktower.services.MagicShelfService
-import org.booktower.services.ReadingSessionService
-import org.booktower.services.MetadataFetchService
-import org.booktower.services.AuthService
-import org.booktower.services.BookmarkService
-import org.booktower.services.BookService
-import org.booktower.services.JwtService
-import org.booktower.services.LibraryService
-import org.booktower.services.EmailService
-import org.booktower.services.AuditService
-import org.booktower.services.BackgroundTaskService
-import org.booktower.services.DuplicateDetectionService
-import org.booktower.services.JournalService
 import org.booktower.services.AlternativeCoverService
+import org.booktower.services.AnalyticsService
+import org.booktower.services.AnnotationService
+import org.booktower.services.ApiTokenService
+import org.booktower.services.AudiobookMetaService
+import org.booktower.services.AuditService
+import org.booktower.services.AuthService
+import org.booktower.services.AuthorMetadataService
+import org.booktower.services.BackgroundTaskService
 import org.booktower.services.BookDeliveryService
 import org.booktower.services.BookDropService
-import org.booktower.services.OidcService
-import org.booktower.services.AuthorMetadataService
-import org.booktower.services.AuthorInfo
-import org.booktower.services.RecommendationService
-import org.booktower.services.LibraryHealthService
-import org.booktower.services.LibraryWatchService
-import org.booktower.services.KoboSyncService
-import org.booktower.services.KOReaderSyncService
-import org.booktower.services.KomgaApiService
-import org.booktower.services.FontService
-import org.booktower.services.ReaderPreferencesService
-import org.booktower.services.LibraryAccessService
-import org.booktower.services.HardcoverSyncService
-import org.booktower.services.ListeningSessionService
-import org.booktower.services.OpdsCredentialsService
 import org.booktower.services.BookFilesService
-import org.booktower.services.EmailProviderService
-import org.booktower.services.CreateEmailProviderRequest
-import org.booktower.services.UpdateEmailProviderRequest
-import org.booktower.services.ScheduledTaskService
-import org.booktower.services.CreateScheduledTaskRequest
-import org.booktower.services.UpdateScheduledTaskRequest
-import org.booktower.services.BulkCoverService
-import org.booktower.services.ComicMetadataService
-import org.booktower.services.ContentRestrictionsService
-import org.booktower.services.BookReviewService
-import org.booktower.services.CreateReviewRequest
-import org.booktower.services.UpdateReviewRequest
 import org.booktower.services.BookNotebookService
+import org.booktower.services.BookReviewService
+import org.booktower.services.BookService
+import org.booktower.services.BookmarkService
+import org.booktower.services.BulkCoverService
+import org.booktower.services.CalibreConversionService
+import org.booktower.services.ComicMetadataService
+import org.booktower.services.ComicService
+import org.booktower.services.ContentRestrictionsService
+import org.booktower.services.CreateEmailProviderRequest
 import org.booktower.services.CreateNotebookRequest
-import org.booktower.services.UpdateNotebookRequest
-import org.booktower.services.NotificationService
-import org.booktower.services.AudiobookMetaService
-import org.booktower.services.UpdateAudiobookMetaRequest
+import org.booktower.services.CreateReviewRequest
+import org.booktower.services.CreateScheduledTaskRequest
+import org.booktower.services.DuplicateDetectionService
+import org.booktower.services.EmailProviderService
+import org.booktower.services.EmailService
+import org.booktower.services.EpubMetadataService
+import org.booktower.services.ExportService
 import org.booktower.services.FilterPresetService
-import org.booktower.services.SaveFilterPresetRequest
-import org.booktower.services.TelemetryService
+import org.booktower.services.FontService
+import org.booktower.services.GoodreadsImportService
+import org.booktower.services.HardcoverSyncService
+import org.booktower.services.JournalService
+import org.booktower.services.JwtService
+import org.booktower.services.KOReaderSyncService
+import org.booktower.services.KoboSyncService
+import org.booktower.services.KomgaApiService
+import org.booktower.services.LibraryAccessService
+import org.booktower.services.LibraryHealthService
+import org.booktower.services.LibraryService
+import org.booktower.services.LibraryWatchService
+import org.booktower.services.ListeningSessionService
 import org.booktower.services.ListeningStatsService
-import org.booktower.services.MetadataProposalService
+import org.booktower.services.MagicShelfService
+import org.booktower.services.MetadataFetchService
 import org.booktower.services.MetadataLockService
-import org.booktower.services.ReadingStatsService
-import org.booktower.services.UserPermissionsService
+import org.booktower.services.MetadataProposalService
+import org.booktower.services.NotificationService
+import org.booktower.services.OidcService
+import org.booktower.services.OpdsCredentialsService
 import org.booktower.services.PasswordResetService
 import org.booktower.services.PdfMetadataService
-import org.booktower.services.AnalyticsService
+import org.booktower.services.ReaderPreferencesService
+import org.booktower.services.ReadingSessionService
+import org.booktower.services.ReadingStatsService
+import org.booktower.services.RecommendationService
+import org.booktower.services.SaveFilterPresetRequest
+import org.booktower.services.ScheduledTaskService
+import org.booktower.services.TelemetryService
+import org.booktower.services.UpdateAudiobookMetaRequest
+import org.booktower.services.UpdateEmailProviderRequest
+import org.booktower.services.UpdateNotebookRequest
+import org.booktower.services.UpdateReviewRequest
+import org.booktower.services.UpdateScheduledTaskRequest
+import org.booktower.services.UserPermissionsService
 import org.booktower.services.UserSettingsService
-import org.booktower.filters.AuthenticatedUser
 import org.booktower.web.WebContext
 import org.booktower.weblate.WeblateHandler
 import org.http4k.core.*
@@ -91,24 +89,28 @@ import org.http4k.routing.RoutingHttpHandler
 import org.http4k.routing.bind
 import org.http4k.routing.routes
 import org.http4k.routing.static
+import org.slf4j.LoggerFactory
 
 /** All book/audio formats supported by BookTower, with MIME types. */
-val SUPPORTED_FORMATS: Map<String, String> = mapOf(
-    "pdf"  to "application/pdf",
-    "epub" to "application/epub+zip",
-    "mobi" to "application/x-mobipocket-ebook",
-    "azw3" to "application/x-mobi8-ebook",
-    "fb2"  to "application/xml",
-    "cbz"  to "application/zip",
-    "cbr"  to "application/x-rar-compressed",
-    "djvu" to "image/vnd.djvu",
-    "mp3"  to "audio/mpeg",
-    "m4b"  to "audio/mp4",
-    "m4a"  to "audio/mp4",
-    "ogg"  to "audio/ogg",
-    "flac" to "audio/flac",
-    "aac"  to "audio/aac",
-)
+val SUPPORTED_FORMATS: Map<String, String> =
+    mapOf(
+        "pdf" to "application/pdf",
+        "epub" to "application/epub+zip",
+        "mobi" to "application/x-mobipocket-ebook",
+        "azw3" to "application/x-mobi8-ebook",
+        "fb2" to "application/xml",
+        "cbz" to "application/zip",
+        "cbr" to "application/x-rar-compressed",
+        "djvu" to "image/vnd.djvu",
+        "mp3" to "audio/mpeg",
+        "m4b" to "audio/mp4",
+        "m4a" to "audio/mp4",
+        "ogg" to "audio/ogg",
+        "flac" to "audio/flac",
+        "aac" to "audio/aac",
+    )
+
+private val logger = LoggerFactory.getLogger("booktower.AppHandler")
 
 class AppHandler(
     private val authService: AuthService,
@@ -176,17 +178,31 @@ class AppHandler(
     private val filterPresetService: FilterPresetService? = null,
     private val telemetryService: TelemetryService? = null,
     private val communityRatingService: org.booktower.services.CommunityRatingService? = null,
+    private val comicPageHashService: org.booktower.services.ComicPageHashService? = null,
     private val demoMode: Boolean = false,
 ) {
-    private val authHandler = AuthHandler2(authService, userSettingsService, passwordResetService, emailService, appBaseUrl, registrationOpen, auditService, oidcService?.config?.forceOnlyMode ?: false)
+    private val authHandler =
+        AuthHandler2(
+            authService,
+            userSettingsService,
+            passwordResetService,
+            emailService,
+            appBaseUrl,
+            registrationOpen,
+            auditService,
+            oidcService?.config?.forceOnlyMode ?: false,
+        )
     private val libraryHandler = LibraryHandler2(libraryService, backgroundTaskService, storageConfig)
     private val bookHandler = BookHandler2(bookService, readingSessionService)
     private val bookmarkHandler = BookmarkHandler(bookmarkService)
     private val calibreService = CalibreConversionService(java.io.File(storageConfig.tempPath, "calibre-cache"))
-    private val fileHandler = FileHandler(bookService, pdfMetadataService, epubMetadataService, storageConfig, calibreService = calibreService)
+    private val fileHandler =
+        FileHandler(bookService, pdfMetadataService, epubMetadataService, storageConfig, calibreService = calibreService)
     private val settingsHandler = UserSettingsHandler(userSettingsService)
-    private val adminHandler = AdminHandler(adminService, templateRenderer, passwordResetService, seedService, emailService, appBaseUrl, duplicateDetectionService, auditService, userPermissionsService, libraryAccessService)
-    private val pageHandler = PageHandler(jwtService, authService, libraryService, bookService, bookmarkService, userSettingsService, analyticsService, annotationService, metadataFetchService, magicShelfService, templateRenderer, readingSessionService, libraryWatchService)
+    private val adminHandler =
+        AdminHandler(adminService, templateRenderer, passwordResetService, seedService, emailService, appBaseUrl, duplicateDetectionService, auditService, userPermissionsService, libraryAccessService, comicPageHashService)
+    private val pageHandler =
+        PageHandler(jwtService, authService, libraryService, bookService, bookmarkService, userSettingsService, analyticsService, annotationService, metadataFetchService, magicShelfService, templateRenderer, readingSessionService, libraryWatchService)
     private val backgroundTaskHandler = backgroundTaskService?.let { BackgroundTaskHandler(it) }
     private val journalHandler = journalService?.let { JournalHandler(it) }
     private val oidcHandler = oidcService?.let { OidcHandler(it, authService) }
@@ -200,12 +216,12 @@ class AppHandler(
     private val exportHandler = ExportHandler(exportService, jwtService)
     private val goodreadsImportHandler = GoodreadsImportHandler(goodreadsImportService, jwtService)
     private val bulkBookHandler = BulkBookHandler(bookService)
-    private val authFilter = JwtAuthFilter(jwtService) { userId -> authService.getUserById(userId) != null }
-    private val adminFilter = authFilter.then(AdminFilter())
+    private val authFilter = jwtAuthFilter(jwtService) { userId: java.util.UUID -> authService.getUserById(userId) != null }
+    private val adminFilter = authFilter.then(adminFilter())
     private val authRateLimit = RateLimitFilter(maxRequests = 10, windowSeconds = 60)
 
-    fun routes(): RoutingHttpHandler {
-        return routes(
+    fun routes(): RoutingHttpHandler =
+        routes(
             "/static" bind static(ResourceLoader.Classpath("/static")),
             "/covers/{filename}" bind Method.GET to fileHandler::cover,
             "/manifest.json" bind Method.GET to ::pwaManifest,
@@ -232,10 +248,31 @@ class AppHandler(
             "/ui/preferences/analytics" bind Method.POST to pageHandler::setAnalytics,
             "/admin" bind Method.GET to adminFilter.then(adminHandler::adminPage),
             // OIDC / SSO
-            "/auth/oidc/login" bind Method.GET to (oidcHandler?.let { it::login } ?: { _ -> Response(Status.NOT_FOUND).body("""{"error":"OIDC not enabled"}""") }),
-            "/auth/oidc/callback" bind Method.GET to (oidcHandler?.let { it::callback } ?: { _ -> Response(Status.NOT_FOUND).body("""{"error":"OIDC not enabled"}""") }),
-            "/auth/oidc/backchannel-logout" bind Method.POST to (oidcHandler?.let { it::backchannelLogout } ?: { _ -> Response(Status.NOT_FOUND).body("""{"error":"OIDC not enabled"}""") }),
-            "/api/oidc/status" bind Method.GET to (oidcHandler?.let { it::status } ?: { _ -> Response(Status.OK).header("Content-Type","application/json").body("""{"enabled":false,"forceOnly":false,"groupMappingEnabled":false,"discoveryAvailable":false,"loginUrl":null}""") }),
+            "/auth/oidc/login" bind Method.GET to (
+                oidcHandler?.let { it::login } ?: { _ ->
+                    Response(Status.NOT_FOUND).body("""{"error":"OIDC not enabled"}""")
+                }
+            ),
+            "/auth/oidc/callback" bind Method.GET to (
+                oidcHandler?.let { it::callback } ?: { _ ->
+                    Response(Status.NOT_FOUND).body("""{"error":"OIDC not enabled"}""")
+                }
+            ),
+            "/auth/oidc/backchannel-logout" bind Method.POST to (
+                oidcHandler?.let { it::backchannelLogout } ?: { _ ->
+                    Response(Status.NOT_FOUND).body("""{"error":"OIDC not enabled"}""")
+                }
+            ),
+            "/api/oidc/status" bind Method.GET to (
+                oidcHandler?.let { it::status } ?: { _ ->
+                    Response(
+                        Status.OK,
+                    ).header(
+                        "Content-Type",
+                        "application/json",
+                    ).body("""{"enabled":false,"forceOnly":false,"groupMappingEnabled":false,"discoveryAvailable":false,"loginUrl":null}""")
+                }
+            ),
             // Auth (rate-limited: 10 requests per 60 s per IP)
             "/auth/register" bind Method.POST to authRateLimit.then(authHandler::register),
             "/auth/login" bind Method.POST to authRateLimit.then(authHandler::login),
@@ -264,16 +301,45 @@ class AppHandler(
             "/ui/books/{id}/annotations" bind Method.POST to pageHandler::createAnnotation,
             "/ui/annotations/{id}" bind Method.DELETE to pageHandler::deleteAnnotation,
             // Journal / notebook
-            "/api/books/{id}/journal" bind Method.GET to authFilter.then(journalHandler?.let { it::list } ?: { _ -> Response(Status.SERVICE_UNAVAILABLE) }),
-            "/api/books/{id}/journal" bind Method.POST to authFilter.then(journalHandler?.let { it::create } ?: { _ -> Response(Status.SERVICE_UNAVAILABLE) }),
-            "/api/books/{id}/journal/{entryId}" bind Method.PUT to authFilter.then(journalHandler?.let { it::update } ?: { _ -> Response(Status.SERVICE_UNAVAILABLE) }),
-            "/api/books/{id}/journal/{entryId}" bind Method.DELETE to authFilter.then(journalHandler?.let { it::delete } ?: { _ -> Response(Status.SERVICE_UNAVAILABLE) }),
-            "/api/journal" bind Method.GET to authFilter.then(journalHandler?.let { it::listAll } ?: { _ -> Response(Status.SERVICE_UNAVAILABLE) }),
+            "/api/books/{id}/journal" bind Method.GET to
+                authFilter.then(
+                    journalHandler?.let { it::list } ?: { _ ->
+                        Response(Status.SERVICE_UNAVAILABLE)
+                    },
+                ),
+            "/api/books/{id}/journal" bind Method.POST to
+                authFilter.then(
+                    journalHandler?.let { it::create } ?: { _ ->
+                        Response(Status.SERVICE_UNAVAILABLE)
+                    },
+                ),
+            "/api/books/{id}/journal/{entryId}" bind Method.PUT to
+                authFilter.then(
+                    journalHandler?.let { it::update } ?: { _ ->
+                        Response(Status.SERVICE_UNAVAILABLE)
+                    },
+                ),
+            "/api/books/{id}/journal/{entryId}" bind Method.DELETE to
+                authFilter.then(
+                    journalHandler?.let { it::delete } ?: { _ ->
+                        Response(Status.SERVICE_UNAVAILABLE)
+                    },
+                ),
+            "/api/journal" bind Method.GET to
+                authFilter.then(
+                    journalHandler?.let { it::listAll } ?: { _ ->
+                        Response(Status.SERVICE_UNAVAILABLE)
+                    },
+                ),
             // Health & version (public, no auth required)
             "/health" bind Method.GET to { Response(Status.OK).header("Content-Type", "application/json").body("""{"status":"ok"}""") },
             "/api/version" bind Method.GET to {
-                Response(Status.OK).header("Content-Type", "application/json")
-                    .body(org.booktower.config.Json.mapper.writeValueAsString(org.booktower.services.VersionService.info))
+                Response(Status.OK)
+                    .header("Content-Type", "application/json")
+                    .body(
+                        org.booktower.config.Json.mapper
+                            .writeValueAsString(org.booktower.services.VersionService.info),
+                    )
             },
             // Preferences
             "/preferences/theme" bind Method.POST to ::setTheme,
@@ -311,8 +377,14 @@ class AppHandler(
             "/api/search" bind Method.GET to authFilter.then(bookHandler::search),
             "/api/books/{id}/apply-filename-metadata" bind Method.POST to authFilter.then(::applyFilenameMetadata),
             "/api/books/{id}/apply-sidecar-metadata" bind Method.POST to authFilter.then(::applySidecarMetadata),
-            "/api/formats" bind Method.GET to { Response(Status.OK).header("Content-Type", "application/json")
-                .body(org.booktower.config.Json.mapper.writeValueAsString(mapOf("formats" to org.booktower.handlers.SUPPORTED_FORMATS))) },
+            "/api/formats" bind Method.GET to {
+                Response(Status.OK)
+                    .header("Content-Type", "application/json")
+                    .body(
+                        org.booktower.config.Json.mapper
+                            .writeValueAsString(mapOf("formats" to org.booktower.handlers.SUPPORTED_FORMATS)),
+                    )
+            },
             "/api/metadata/search" bind Method.GET to authFilter.then(::metadataSearch),
             "/api/metadata/sources" bind Method.GET to authFilter.then(::metadataSources),
             // OPDS separate credentials
@@ -379,7 +451,10 @@ class AppHandler(
             "/api/admin/users/{userId}/library-access" bind Method.GET to adminFilter.then(adminHandler::getLibraryAccess),
             "/api/admin/users/{userId}/library-access" bind Method.PUT to adminFilter.then(adminHandler::setLibraryRestricted),
             "/api/admin/users/{userId}/library-access" bind Method.POST to adminFilter.then(adminHandler::grantLibraryAccess),
-            "/api/admin/users/{userId}/library-access/{libraryId}" bind Method.DELETE to adminFilter.then(adminHandler::revokeLibraryAccess),
+            "/api/admin/users/{userId}/library-access/{libraryId}" bind Method.DELETE to
+                adminFilter.then(
+                    adminHandler::revokeLibraryAccess,
+                ),
             "/api/admin/users/{userId}" bind Method.DELETE to adminFilter.then(adminHandler::deleteUser),
             "/api/admin/email-providers" bind Method.GET to adminFilter.then(::listEmailProviders),
             "/api/admin/email-providers" bind Method.POST to adminFilter.then(::createEmailProvider),
@@ -433,8 +508,14 @@ class AppHandler(
             "/api/notifications/{id}/read" bind Method.POST to authFilter.then(::markNotificationRead),
             "/api/notifications/{id}" bind Method.DELETE to authFilter.then(::deleteNotification),
             "/api/admin/duplicates" bind Method.GET to adminFilter.then(adminHandler::findDuplicates),
+            "/api/admin/comic-page-duplicates" bind Method.GET to adminFilter.then(adminHandler::findComicPageDuplicates),
             "/api/admin/audit" bind Method.GET to adminFilter.then(adminHandler::listAuditLog),
-            "/api/admin/tasks" bind Method.GET to adminFilter.then(backgroundTaskHandler?.let { it::listAll } ?: { _ -> Response(Status.SERVICE_UNAVAILABLE) }),
+            "/api/admin/tasks" bind Method.GET to
+                adminFilter.then(
+                    backgroundTaskHandler?.let { it::listAll } ?: { _ ->
+                        Response(Status.SERVICE_UNAVAILABLE)
+                    },
+                ),
             // Weblate translation sync (admin-only endpoints, require Weblate to be enabled)
             "/api/weblate/pull" bind Method.POST to weblateHandler::pull,
             "/api/weblate/push" bind Method.POST to weblateHandler::push,
@@ -446,8 +527,18 @@ class AppHandler(
             // Export & Import
             "/api/export" bind Method.GET to authFilter.then(exportHandler::export),
             "/api/import/goodreads" bind Method.POST to authFilter.then(goodreadsImportHandler::import),
-            "/api/tasks" bind Method.GET to authFilter.then(backgroundTaskHandler?.let { it::list } ?: { _ -> Response(Status.SERVICE_UNAVAILABLE) }),
-            "/api/tasks/{id}" bind Method.DELETE to authFilter.then(backgroundTaskHandler?.let { it::dismiss } ?: { _ -> Response(Status.SERVICE_UNAVAILABLE) }),
+            "/api/tasks" bind Method.GET to
+                authFilter.then(
+                    backgroundTaskHandler?.let { it::list } ?: { _ ->
+                        Response(Status.SERVICE_UNAVAILABLE)
+                    },
+                ),
+            "/api/tasks/{id}" bind Method.DELETE to
+                authFilter.then(
+                    backgroundTaskHandler?.let { it::dismiss } ?: { _ ->
+                        Response(Status.SERVICE_UNAVAILABLE)
+                    },
+                ),
             // Smart shelves
             "/shelves/{id}" bind Method.GET to pageHandler::magicShelf,
             "/ui/shelves" bind Method.POST to pageHandler::createMagicShelf,
@@ -463,25 +554,104 @@ class AppHandler(
             "/opds/books/{id}/file" bind Method.GET to opdsHandler::download,
             "/opds/books/{id}/chapters/{trackIndex}" bind Method.GET to opdsHandler::streamChapter,
             // Kobo device sync
-            "/api/kobo/devices" bind Method.POST to authFilter.then(koboSyncHandler?.let { it::register } ?: { _ -> Response(Status.SERVICE_UNAVAILABLE) }),
-            "/api/kobo/devices" bind Method.GET to authFilter.then(koboSyncHandler?.let { it::listDevices } ?: { _ -> Response(Status.SERVICE_UNAVAILABLE) }),
-            "/api/kobo/devices/{token}" bind Method.DELETE to authFilter.then(koboSyncHandler?.let { it::deleteDevice } ?: { _ -> Response(Status.SERVICE_UNAVAILABLE) }),
-            "/kobo/{token}/v1/initialization" bind Method.GET to (koboSyncHandler?.let { it::initialization } ?: { _ -> Response(Status.SERVICE_UNAVAILABLE) }),
-            "/kobo/{token}/v1/library/sync" bind Method.POST to (koboSyncHandler?.let { it::sync } ?: { _ -> Response(Status.SERVICE_UNAVAILABLE) }),
-            "/kobo/{token}/v1/library/snapshot" bind Method.GET to (koboSyncHandler?.let { it::snapshot } ?: { _ -> Response(Status.SERVICE_UNAVAILABLE) }),
-            "/kobo/{token}/v1/library/{bookId}/reading-state" bind Method.PUT to (koboSyncHandler?.let { it::readingState } ?: { _ -> Response(Status.SERVICE_UNAVAILABLE) }),
+            "/api/kobo/devices" bind Method.POST to
+                authFilter.then(
+                    koboSyncHandler?.let { it::register } ?: { _ ->
+                        Response(Status.SERVICE_UNAVAILABLE)
+                    },
+                ),
+            "/api/kobo/devices" bind Method.GET to
+                authFilter.then(
+                    koboSyncHandler?.let { it::listDevices } ?: { _ ->
+                        Response(Status.SERVICE_UNAVAILABLE)
+                    },
+                ),
+            "/api/kobo/devices/{token}" bind Method.DELETE to
+                authFilter.then(
+                    koboSyncHandler?.let { it::deleteDevice } ?: { _ ->
+                        Response(Status.SERVICE_UNAVAILABLE)
+                    },
+                ),
+            "/kobo/{token}/v1/initialization" bind Method.GET to (
+                koboSyncHandler?.let { it::initialization } ?: { _ ->
+                    Response(Status.SERVICE_UNAVAILABLE)
+                }
+            ),
+            "/kobo/{token}/v1/library/sync" bind Method.POST to (
+                koboSyncHandler?.let { it::sync } ?: { _ ->
+                    Response(Status.SERVICE_UNAVAILABLE)
+                }
+            ),
+            "/kobo/{token}/v1/library/snapshot" bind Method.GET to (
+                koboSyncHandler?.let { it::snapshot } ?: { _ ->
+                    Response(Status.SERVICE_UNAVAILABLE)
+                }
+            ),
+            "/kobo/{token}/v1/library/{bookId}/reading-state" bind Method.PUT to (
+                koboSyncHandler?.let { it::readingState } ?: { _ ->
+                    Response(Status.SERVICE_UNAVAILABLE)
+                }
+            ),
             // KOReader sync (kosync protocol)
-            "/api/koreader/devices" bind Method.POST to authFilter.then(koReaderSyncHandler?.let { it::register } ?: { _ -> Response(Status.SERVICE_UNAVAILABLE) }),
-            "/api/koreader/devices" bind Method.GET to authFilter.then(koReaderSyncHandler?.let { it::listDevices } ?: { _ -> Response(Status.SERVICE_UNAVAILABLE) }),
-            "/api/koreader/devices/{token}" bind Method.DELETE to authFilter.then(koReaderSyncHandler?.let { it::deleteDevice } ?: { _ -> Response(Status.SERVICE_UNAVAILABLE) }),
-            "/koreader/{token}/syncs/progress" bind Method.PUT to (koReaderSyncHandler?.let { it::pushProgress } ?: { _ -> Response(Status.SERVICE_UNAVAILABLE) }),
-            "/koreader/{token}/syncs/progress/{document}" bind Method.GET to (koReaderSyncHandler?.let { it::getProgress } ?: { _ -> Response(Status.SERVICE_UNAVAILABLE) }),
+            "/api/koreader/devices" bind Method.POST to
+                authFilter.then(
+                    koReaderSyncHandler?.let { it::register } ?: { _ ->
+                        Response(Status.SERVICE_UNAVAILABLE)
+                    },
+                ),
+            "/api/koreader/devices" bind Method.GET to
+                authFilter.then(
+                    koReaderSyncHandler?.let { it::listDevices } ?: { _ ->
+                        Response(Status.SERVICE_UNAVAILABLE)
+                    },
+                ),
+            "/api/koreader/devices/{token}" bind Method.DELETE to
+                authFilter.then(
+                    koReaderSyncHandler?.let { it::deleteDevice } ?: { _ ->
+                        Response(Status.SERVICE_UNAVAILABLE)
+                    },
+                ),
+            "/koreader/{token}/syncs/progress" bind Method.PUT to (
+                koReaderSyncHandler?.let { it::pushProgress } ?: { _ ->
+                    Response(Status.SERVICE_UNAVAILABLE)
+                }
+            ),
+            "/koreader/{token}/syncs/progress/{document}" bind Method.GET to (
+                koReaderSyncHandler?.let { it::getProgress } ?: { _ ->
+                    Response(Status.SERVICE_UNAVAILABLE)
+                }
+            ),
             // Komga-compatible API (for Tachiyomi / Paperback)
-            "/api/v1/libraries" bind Method.GET to authFilter.then(komgaApiHandler?.let { it::libraries } ?: { _ -> Response(Status.SERVICE_UNAVAILABLE) }),
-            "/api/v1/series" bind Method.GET to authFilter.then(komgaApiHandler?.let { it::series } ?: { _ -> Response(Status.SERVICE_UNAVAILABLE) }),
-            "/api/v1/series/{id}" bind Method.GET to authFilter.then(komgaApiHandler?.let { it::seriesById } ?: { _ -> Response(Status.SERVICE_UNAVAILABLE) }),
-            "/api/v1/books" bind Method.GET to authFilter.then(komgaApiHandler?.let { it::books } ?: { _ -> Response(Status.SERVICE_UNAVAILABLE) }),
-            "/api/v1/books/{id}" bind Method.GET to authFilter.then(komgaApiHandler?.let { it::bookById } ?: { _ -> Response(Status.SERVICE_UNAVAILABLE) }),
+            "/api/v1/libraries" bind Method.GET to
+                authFilter.then(
+                    komgaApiHandler?.let { it::libraries } ?: { _ ->
+                        Response(Status.SERVICE_UNAVAILABLE)
+                    },
+                ),
+            "/api/v1/series" bind Method.GET to
+                authFilter.then(
+                    komgaApiHandler?.let { it::series } ?: { _ ->
+                        Response(Status.SERVICE_UNAVAILABLE)
+                    },
+                ),
+            "/api/v1/series/{id}" bind Method.GET to
+                authFilter.then(
+                    komgaApiHandler?.let { it::seriesById } ?: { _ ->
+                        Response(Status.SERVICE_UNAVAILABLE)
+                    },
+                ),
+            "/api/v1/books" bind Method.GET to
+                authFilter.then(
+                    komgaApiHandler?.let { it::books } ?: { _ ->
+                        Response(Status.SERVICE_UNAVAILABLE)
+                    },
+                ),
+            "/api/v1/books/{id}" bind Method.GET to
+                authFilter.then(
+                    komgaApiHandler?.let { it::bookById } ?: { _ ->
+                        Response(Status.SERVICE_UNAVAILABLE)
+                    },
+                ),
             // Comic/manga reading direction
             "/api/books/{id}/reading-direction" bind Method.PUT to authFilter.then(::setReadingDirection),
             // Multi-author support
@@ -506,34 +676,78 @@ class AppHandler(
             "/api/listen-sessions" bind Method.GET to authFilter.then(::getRecentListenSessions),
             // Custom fonts for EPUB reader
             "/api/fonts" bind Method.GET to authFilter.then(fontHandler?.let { it::list } ?: { _ -> Response(Status.SERVICE_UNAVAILABLE) }),
-            "/api/fonts" bind Method.POST to authFilter.then(fontHandler?.let { it::upload } ?: { _ -> Response(Status.SERVICE_UNAVAILABLE) }),
-            "/api/fonts/{id}" bind Method.DELETE to authFilter.then(fontHandler?.let { it::delete } ?: { _ -> Response(Status.SERVICE_UNAVAILABLE) }),
+            "/api/fonts" bind Method.POST to
+                authFilter.then(
+                    fontHandler?.let { it::upload } ?: { _ ->
+                        Response(Status.SERVICE_UNAVAILABLE)
+                    },
+                ),
+            "/api/fonts/{id}" bind Method.DELETE to
+                authFilter.then(
+                    fontHandler?.let { it::delete } ?: { _ ->
+                        Response(Status.SERVICE_UNAVAILABLE)
+                    },
+                ),
             "/fonts/{userId}/{filename}" bind Method.GET to (fontHandler?.let { it::serve } ?: { _ -> Response(Status.NOT_FOUND) }),
             // Per-format reader preferences
-            "/api/reader-preferences/{format}" bind Method.GET to authFilter.then(readerPreferencesHandler?.let { it::get } ?: { _ -> Response(Status.SERVICE_UNAVAILABLE) }),
-            "/api/reader-preferences/{format}" bind Method.PUT to authFilter.then(readerPreferencesHandler?.let { it::set } ?: { _ -> Response(Status.SERVICE_UNAVAILABLE) }),
-            "/api/reader-preferences/{format}" bind Method.PATCH to authFilter.then(readerPreferencesHandler?.let { it::merge } ?: { _ -> Response(Status.SERVICE_UNAVAILABLE) }),
-            "/api/reader-preferences/{format}" bind Method.DELETE to authFilter.then(readerPreferencesHandler?.let { it::delete } ?: { _ -> Response(Status.SERVICE_UNAVAILABLE) }),
+            "/api/reader-preferences/{format}" bind Method.GET to
+                authFilter.then(
+                    readerPreferencesHandler?.let { it::get } ?: { _ ->
+                        Response(Status.SERVICE_UNAVAILABLE)
+                    },
+                ),
+            "/api/reader-preferences/{format}" bind Method.PUT to
+                authFilter.then(
+                    readerPreferencesHandler?.let { it::set } ?: { _ ->
+                        Response(Status.SERVICE_UNAVAILABLE)
+                    },
+                ),
+            "/api/reader-preferences/{format}" bind Method.PATCH to
+                authFilter.then(
+                    readerPreferencesHandler?.let { it::merge } ?: { _ ->
+                        Response(Status.SERVICE_UNAVAILABLE)
+                    },
+                ),
+            "/api/reader-preferences/{format}" bind Method.DELETE to
+                authFilter.then(
+                    readerPreferencesHandler?.let { it::delete } ?: { _ ->
+                        Response(Status.SERVICE_UNAVAILABLE)
+                    },
+                ),
         )
-    }
 
     /** PUT /api/books/{id}/reading-direction — set comic/manga reading direction (ltr or rtl). */
     private fun setReadingDirection(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
-        val bookId = req.uri.path.split("/").filter { it.isNotBlank() }
-            .let { parts -> parts.getOrNull(parts.indexOf("books") + 1) }
-            ?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() }
-            ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json")
-                .body("""{"error":"Invalid book ID"}""")
-        val body = runCatching { org.booktower.config.Json.mapper.readTree(req.bodyString()) }.getOrNull()
-        val direction = body?.get("direction")?.asText()?.takeIf { it.isNotBlank() }
-            ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json")
-                .body("""{"error":"Missing direction field (ltr or rtl)"}""")
+        val bookId =
+            req.uri.path
+                .split("/")
+                .filter { it.isNotBlank() }
+                .let { parts -> parts.getOrNull(parts.indexOf("books") + 1) }
+                ?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() }
+                ?: return Response(Status.BAD_REQUEST)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"Invalid book ID"}""")
+        val body =
+            runCatching {
+                org.booktower.config.Json.mapper
+                    .readTree(req.bodyString())
+            }.getOrNull()
+        val direction =
+            body?.get("direction")?.asText()?.takeIf { it.isNotBlank() }
+                ?: return Response(Status.BAD_REQUEST)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"Missing direction field (ltr or rtl)"}""")
         val updated = bookService.setReadingDirection(userId, bookId, direction)
-        return if (updated) Response(Status.OK).header("Content-Type", "application/json")
-            .body("""{"direction":"${if (direction.lowercase() == "rtl") "rtl" else "ltr"}"}""")
-        else Response(Status.NOT_FOUND).header("Content-Type", "application/json")
-            .body("""{"error":"Book not found"}""")
+        return if (updated) {
+            Response(Status.OK)
+                .header("Content-Type", "application/json")
+                .body("""{"direction":"${if (direction.lowercase() == "rtl") "rtl" else "ltr"}"}""")
+        } else {
+            Response(Status.NOT_FOUND)
+                .header("Content-Type", "application/json")
+                .body("""{"error":"Book not found"}""")
+        }
     }
 
     /** GET /api/stats/reading — returns reading statistics for the authenticated user */
@@ -542,21 +756,31 @@ class AppHandler(
         val userId = AuthenticatedUser.from(req)
         val days = req.query("days")?.toIntOrNull()?.coerceIn(7, 365) ?: 365
         val stats = svc.getStats(userId, days)
-        return Response(Status.OK).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(stats))
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(stats),
+            )
     }
 
     /** POST /api/books/{id}/listen — record a listening session (startPosSec, endPosSec, totalSec?) */
     private fun recordListenSession(req: Request): Response {
         val svc = listeningSessionService ?: return Response(Status.SERVICE_UNAVAILABLE)
         val userId = AuthenticatedUser.from(req)
-        val bookId = extractBookIdFromPath(req)
-            ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"Invalid book ID"}""")
-        val body = runCatching { org.booktower.config.Json.mapper.readTree(req.bodyString()) }.getOrNull()
-            ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"Invalid JSON"}""")
+        val bookId =
+            extractBookIdFromPath(req)
+                ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"Invalid book ID"}""")
+        val body =
+            runCatching {
+                org.booktower.config.Json.mapper
+                    .readTree(req.bodyString())
+            }.getOrNull()
+                ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"Invalid JSON"}""")
         val startPos = body.get("startPosSec")?.asInt() ?: 0
-        val endPos = body.get("endPosSec")?.asInt()
-            ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"endPosSec required"}""")
+        val endPos =
+            body.get("endPosSec")?.asInt()
+                ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"endPosSec required"}""")
         val totalSec = body.get("totalSec")?.takeIf { !it.isNull }?.asInt()
         svc.recordSession(userId, bookId, startPos, endPos, totalSec)
         return Response(Status.NO_CONTENT)
@@ -566,24 +790,38 @@ class AppHandler(
     private fun getListenProgress(req: Request): Response {
         val svc = listeningSessionService ?: return Response(Status.SERVICE_UNAVAILABLE)
         val userId = AuthenticatedUser.from(req)
-        val bookId = extractBookIdFromPath(req)
-            ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"Invalid book ID"}""")
-        val progress = svc.getProgress(userId, bookId)
-            ?: return Response(Status.NOT_FOUND).header("Content-Type", "application/json").body("""{"error":"No progress found"}""")
-        return Response(Status.OK).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(progress))
+        val bookId =
+            extractBookIdFromPath(req)
+                ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"Invalid book ID"}""")
+        val progress =
+            svc.getProgress(userId, bookId)
+                ?: return Response(Status.NOT_FOUND).header("Content-Type", "application/json").body("""{"error":"No progress found"}""")
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(progress),
+            )
     }
 
     /** PUT /api/books/{id}/listen-progress — update position without creating a session */
     private fun updateListenProgress(req: Request): Response {
         val svc = listeningSessionService ?: return Response(Status.SERVICE_UNAVAILABLE)
         val userId = AuthenticatedUser.from(req)
-        val bookId = extractBookIdFromPath(req)
-            ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"Invalid book ID"}""")
-        val body = runCatching { org.booktower.config.Json.mapper.readTree(req.bodyString()) }.getOrNull()
-            ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"Invalid JSON"}""")
-        val positionSec = body.get("positionSec")?.asInt()
-            ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"positionSec required"}""")
+        val bookId =
+            extractBookIdFromPath(req)
+                ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"Invalid book ID"}""")
+        val body =
+            runCatching {
+                org.booktower.config.Json.mapper
+                    .readTree(req.bodyString())
+            }.getOrNull()
+                ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"Invalid JSON"}""")
+        val positionSec =
+            body.get("positionSec")?.asInt()
+                ?: return Response(
+                    Status.BAD_REQUEST,
+                ).header("Content-Type", "application/json").body("""{"error":"positionSec required"}""")
         val totalSec = body.get("totalSec")?.takeIf { !it.isNull }?.asInt()
         svc.updateProgress(userId, bookId, positionSec, totalSec)
         return Response(Status.NO_CONTENT)
@@ -595,8 +833,12 @@ class AppHandler(
         val userId = AuthenticatedUser.from(req)
         val days = req.query("days")?.toIntOrNull()?.coerceIn(7, 365) ?: 365
         val stats = svc.getStats(userId, days)
-        return Response(Status.OK).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(stats))
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(stats),
+            )
     }
 
     /** GET /api/listen-sessions — returns recent listening sessions for the authenticated user */
@@ -605,83 +847,165 @@ class AppHandler(
         val userId = AuthenticatedUser.from(req)
         val limit = req.query("limit")?.toIntOrNull()?.coerceIn(1, 100) ?: 20
         val sessions = svc.getRecentSessions(userId, limit)
-        return Response(Status.OK).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(sessions))
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(sessions),
+            )
     }
 
     private fun extractBookIdFromPath(req: Request): java.util.UUID? =
-        req.uri.path.split("/").filter { it.isNotBlank() }
+        req.uri.path
+            .split("/")
+            .filter { it.isNotBlank() }
             .let { parts -> parts.getOrNull(parts.indexOf("books") + 1) }
             ?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() }
 
     /** GET /api/books/{id}/metadata-locks — returns list of locked field names */
     private fun getMetadataLocks(req: Request): Response {
         val svc = metadataLockService ?: return Response(Status.SERVICE_UNAVAILABLE)
-        val bookId = extractBookIdFromPath(req)
-            ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"Invalid book ID"}""")
+        val bookId =
+            extractBookIdFromPath(req)
+                ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"Invalid book ID"}""")
         val locked = svc.getLockedFields(bookId).sorted()
-        return Response(Status.OK).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(mapOf("lockedFields" to locked)))
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(mapOf("lockedFields" to locked)),
+            )
     }
 
     /** PUT /api/books/{id}/metadata-locks — replaces locked field set. Body: {"lockedFields":["title","author"]} */
     private fun setMetadataLocks(req: Request): Response {
         val svc = metadataLockService ?: return Response(Status.SERVICE_UNAVAILABLE)
-        val bookId = extractBookIdFromPath(req)
-            ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"Invalid book ID"}""")
-        val body = runCatching { org.booktower.config.Json.mapper.readTree(req.bodyString()) }.getOrNull()
-            ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"Request body required"}""")
-        val fields = body.get("lockedFields")?.takeIf { it.isArray }?.map { it.asText() }?.filter { it.isNotBlank() } ?: emptyList()
+        val bookId =
+            extractBookIdFromPath(req)
+                ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"Invalid book ID"}""")
+        val body =
+            runCatching {
+                org.booktower.config.Json.mapper
+                    .readTree(req.bodyString())
+            }.getOrNull()
+                ?: return Response(
+                    Status.BAD_REQUEST,
+                ).header("Content-Type", "application/json").body("""{"error":"Request body required"}""")
+        val fields =
+            body
+                .get("lockedFields")
+                ?.takeIf { it.isArray }
+                ?.map { it.asText() }
+                ?.filter { it.isNotBlank() } ?: emptyList()
         svc.setLockedFields(bookId, fields)
-        return Response(Status.OK).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(mapOf("lockedFields" to fields)))
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(mapOf("lockedFields" to fields)),
+            )
     }
 
     /** PUT /api/books/{id}/external-ids — set external IDs (Goodreads, Hardcover, etc.) */
     private fun setExternalIds(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
-        val bookId = req.uri.path.split("/").filter { it.isNotBlank() }
-            .let { parts -> parts.getOrNull(parts.indexOf("books") + 1) }
-            ?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() }
-            ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"Invalid book ID"}""")
-        val body = runCatching { org.booktower.config.Json.mapper.readTree(req.bodyString()) }.getOrNull()
-            ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"Request body required"}""")
+        val bookId =
+            req.uri.path
+                .split("/")
+                .filter { it.isNotBlank() }
+                .let { parts -> parts.getOrNull(parts.indexOf("books") + 1) }
+                ?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() }
+                ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"Invalid book ID"}""")
+        val body =
+            runCatching {
+                org.booktower.config.Json.mapper
+                    .readTree(req.bodyString())
+            }.getOrNull()
+                ?: return Response(
+                    Status.BAD_REQUEST,
+                ).header("Content-Type", "application/json").body("""{"error":"Request body required"}""")
+
         fun str(key: String) = body.get(key)?.asText()?.takeIf { it.isNotBlank() }
-        val updated = bookService.updateExternalIds(userId, bookId,
-            str("goodreadsId"), str("hardcoverId"), str("comicvineId"),
-            str("openlibraryId"), str("googleBooksId"), str("amazonId"), str("audibleId"))
+        val updated =
+            bookService.updateExternalIds(
+                userId,
+                bookId,
+                str("goodreadsId"),
+                str("hardcoverId"),
+                str("comicvineId"),
+                str("openlibraryId"),
+                str("googleBooksId"),
+                str("amazonId"),
+                str("audibleId"),
+            )
         return if (updated) {
             val book = bookService.getBook(userId, bookId) ?: return Response(Status.NOT_FOUND)
-            Response(Status.OK).header("Content-Type", "application/json")
-                .body(org.booktower.config.Json.mapper.writeValueAsString(book))
-        } else Response(Status.NOT_FOUND).header("Content-Type", "application/json").body("""{"error":"Book not found"}""")
+            Response(Status.OK)
+                .header("Content-Type", "application/json")
+                .body(
+                    org.booktower.config.Json.mapper
+                        .writeValueAsString(book),
+                )
+        } else {
+            Response(Status.NOT_FOUND).header("Content-Type", "application/json").body("""{"error":"Book not found"}""")
+        }
     }
 
     /** PUT /api/books/{id}/moods — replace moods for a book. Body: {"moods":["dark","hopeful"]} */
     private fun setMoods(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
-        val bookId = req.uri.path.split("/").filter { it.isNotBlank() }
-            .let { parts -> parts.getOrNull(parts.indexOf("books") + 1) }
-            ?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() }
-            ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"Invalid book ID"}""")
-        val body = runCatching { org.booktower.config.Json.mapper.readTree(req.bodyString()) }.getOrNull()
-        val moods = body?.get("moods")?.takeIf { it.isArray }?.map { it.asText() }?.filter { it.isNotBlank() }
-            ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"moods array is required"}""")
+        val bookId =
+            req.uri.path
+                .split("/")
+                .filter { it.isNotBlank() }
+                .let { parts -> parts.getOrNull(parts.indexOf("books") + 1) }
+                ?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() }
+                ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"Invalid book ID"}""")
+        val body =
+            runCatching {
+                org.booktower.config.Json.mapper
+                    .readTree(req.bodyString())
+            }.getOrNull()
+        val moods =
+            body
+                ?.get("moods")
+                ?.takeIf { it.isArray }
+                ?.map { it.asText() }
+                ?.filter { it.isNotBlank() }
+                ?: return Response(
+                    Status.BAD_REQUEST,
+                ).header("Content-Type", "application/json").body("""{"error":"moods array is required"}""")
         val updated = bookService.setMoods(userId, bookId, moods)
-        return if (updated) Response(Status.OK).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(mapOf("moods" to moods)))
-        else Response(Status.NOT_FOUND).header("Content-Type", "application/json").body("""{"error":"Book not found"}""")
+        return if (updated) {
+            Response(Status.OK)
+                .header("Content-Type", "application/json")
+                .body(
+                    org.booktower.config.Json.mapper
+                        .writeValueAsString(mapOf("moods" to moods)),
+                )
+        } else {
+            Response(Status.NOT_FOUND).header("Content-Type", "application/json").body("""{"error":"Book not found"}""")
+        }
     }
 
     /** PUT /api/books/{id}/extended-metadata — update subtitle, language, content_rating, age_rating */
     private fun setExtendedMetadata(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
-        val bookId = req.uri.path.split("/").filter { it.isNotBlank() }
-            .let { parts -> parts.getOrNull(parts.indexOf("books") + 1) }
-            ?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() }
-            ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"Invalid book ID"}""")
-        val body = runCatching { org.booktower.config.Json.mapper.readTree(req.bodyString()) }.getOrNull()
-            ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"Request body required"}""")
+        val bookId =
+            req.uri.path
+                .split("/")
+                .filter { it.isNotBlank() }
+                .let { parts -> parts.getOrNull(parts.indexOf("books") + 1) }
+                ?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() }
+                ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"Invalid book ID"}""")
+        val body =
+            runCatching {
+                org.booktower.config.Json.mapper
+                    .readTree(req.bodyString())
+            }.getOrNull()
+                ?: return Response(
+                    Status.BAD_REQUEST,
+                ).header("Content-Type", "application/json").body("""{"error":"Request body required"}""")
         val subtitle = body.get("subtitle")?.asText()?.takeIf { it.isNotBlank() }
         val language = body.get("language")?.asText()?.takeIf { it.isNotBlank() }
         val contentRating = body.get("contentRating")?.asText()?.takeIf { it.isNotBlank() }
@@ -689,131 +1013,217 @@ class AppHandler(
         val updated = bookService.updateExtendedMetadata(userId, bookId, subtitle, language, contentRating, ageRating)
         return if (updated) {
             val book = bookService.getBook(userId, bookId) ?: return Response(Status.NOT_FOUND)
-            Response(Status.OK).header("Content-Type", "application/json")
-                .body(org.booktower.config.Json.mapper.writeValueAsString(book))
-        } else Response(Status.NOT_FOUND).header("Content-Type", "application/json").body("""{"error":"Book not found"}""")
+            Response(Status.OK)
+                .header("Content-Type", "application/json")
+                .body(
+                    org.booktower.config.Json.mapper
+                        .writeValueAsString(book),
+                )
+        } else {
+            Response(Status.NOT_FOUND).header("Content-Type", "application/json").body("""{"error":"Book not found"}""")
+        }
     }
 
     /** PUT /api/books/{id}/categories — replace the full category list for a book. Body: {"categories":["Fiction","Mystery"]} */
     private fun setCategories(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
-        val bookId = req.uri.path.split("/").filter { it.isNotBlank() }
-            .let { parts -> parts.getOrNull(parts.indexOf("books") + 1) }
-            ?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() }
-            ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json")
-                .body("""{"error":"Invalid book ID"}""")
-        val body = runCatching { org.booktower.config.Json.mapper.readTree(req.bodyString()) }.getOrNull()
-        val categories = body?.get("categories")?.takeIf { it.isArray }
-            ?.map { it.asText() }?.filter { it.isNotBlank() }
-            ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json")
-                .body("""{"error":"categories array is required"}""")
+        val bookId =
+            req.uri.path
+                .split("/")
+                .filter { it.isNotBlank() }
+                .let { parts -> parts.getOrNull(parts.indexOf("books") + 1) }
+                ?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() }
+                ?: return Response(Status.BAD_REQUEST)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"Invalid book ID"}""")
+        val body =
+            runCatching {
+                org.booktower.config.Json.mapper
+                    .readTree(req.bodyString())
+            }.getOrNull()
+        val categories =
+            body
+                ?.get("categories")
+                ?.takeIf { it.isArray }
+                ?.map { it.asText() }
+                ?.filter { it.isNotBlank() }
+                ?: return Response(Status.BAD_REQUEST)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"categories array is required"}""")
         val updated = bookService.setCategories(userId, bookId, categories)
-        return if (updated) Response(Status.OK).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(mapOf("categories" to categories)))
-        else Response(Status.NOT_FOUND).header("Content-Type", "application/json")
-            .body("""{"error":"Book not found"}""")
+        return if (updated) {
+            Response(Status.OK)
+                .header("Content-Type", "application/json")
+                .body(
+                    org.booktower.config.Json.mapper
+                        .writeValueAsString(mapOf("categories" to categories)),
+                )
+        } else {
+            Response(Status.NOT_FOUND)
+                .header("Content-Type", "application/json")
+                .body("""{"error":"Book not found"}""")
+        }
     }
 
     /** PUT /api/books/{id}/authors — replace the full author list for a book. Body: {"authors":["Alice","Bob"]} */
     private fun setAuthors(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
-        val bookId = req.uri.path.split("/").filter { it.isNotBlank() }
-            .let { parts -> parts.getOrNull(parts.indexOf("books") + 1) }
-            ?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() }
-            ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json")
-                .body("""{"error":"Invalid book ID"}""")
-        val body = runCatching { org.booktower.config.Json.mapper.readTree(req.bodyString()) }.getOrNull()
-        val authors = body?.get("authors")?.takeIf { it.isArray }
-            ?.map { it.asText() }?.filter { it.isNotBlank() }
-            ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json")
-                .body("""{"error":"authors array is required"}""")
+        val bookId =
+            req.uri.path
+                .split("/")
+                .filter { it.isNotBlank() }
+                .let { parts -> parts.getOrNull(parts.indexOf("books") + 1) }
+                ?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() }
+                ?: return Response(Status.BAD_REQUEST)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"Invalid book ID"}""")
+        val body =
+            runCatching {
+                org.booktower.config.Json.mapper
+                    .readTree(req.bodyString())
+            }.getOrNull()
+        val authors =
+            body
+                ?.get("authors")
+                ?.takeIf { it.isArray }
+                ?.map { it.asText() }
+                ?.filter { it.isNotBlank() }
+                ?: return Response(Status.BAD_REQUEST)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"authors array is required"}""")
         val updated = bookService.setAuthors(userId, bookId, authors)
-        return if (updated) Response(Status.OK).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(mapOf("authors" to authors)))
-        else Response(Status.NOT_FOUND).header("Content-Type", "application/json")
-            .body("""{"error":"Book not found"}""")
+        return if (updated) {
+            Response(Status.OK)
+                .header("Content-Type", "application/json")
+                .body(
+                    org.booktower.config.Json.mapper
+                        .writeValueAsString(mapOf("authors" to authors)),
+                )
+        } else {
+            Response(Status.NOT_FOUND)
+                .header("Content-Type", "application/json")
+                .body("""{"error":"Book not found"}""")
+        }
     }
 
     /** POST /api/books/{id}/apply-sidecar-metadata — load metadata from .opf/.nfo file next to the book */
     private fun applySidecarMetadata(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
-        val bookId = req.uri.path.split("/").filter { it.isNotBlank() }
-            .let { parts -> parts.getOrNull(parts.indexOf("books") + 1) }
-            ?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() }
-            ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json")
-                .body("""{"error":"Invalid book ID"}""")
-        val book = bookService.getBook(userId, bookId)
-            ?: return Response(Status.NOT_FOUND).header("Content-Type", "application/json")
-                .body("""{"error":"Book not found"}""")
-        val sidecar = org.booktower.services.SidecarMetadataService.read(book.filePath ?: "")
-            ?: return Response(Status.NOT_FOUND).header("Content-Type", "application/json")
-                .body("""{"error":"No sidecar file found"}""")
-        val updated = bookService.applyFetchedMetadata(userId, bookId, sidecar)
-            ?: return Response(Status.NOT_FOUND).header("Content-Type", "application/json")
-                .body("""{"error":"Book not found"}""")
-        return Response(Status.OK).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(
-                mapOf("book" to updated, "source" to sidecar.source)
-            ))
+        val bookId =
+            req.uri.path
+                .split("/")
+                .filter { it.isNotBlank() }
+                .let { parts -> parts.getOrNull(parts.indexOf("books") + 1) }
+                ?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() }
+                ?: return Response(Status.BAD_REQUEST)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"Invalid book ID"}""")
+        val book =
+            bookService.getBook(userId, bookId)
+                ?: return Response(Status.NOT_FOUND)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"Book not found"}""")
+        val sidecar =
+            org.booktower.services.SidecarMetadataService
+                .read(book.filePath ?: "")
+                ?: return Response(Status.NOT_FOUND)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"No sidecar file found"}""")
+        val updated =
+            bookService.applyFetchedMetadata(userId, bookId, sidecar)
+                ?: return Response(Status.NOT_FOUND)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"Book not found"}""")
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper.writeValueAsString(
+                    mapOf("book" to updated, "source" to sidecar.source),
+                ),
+            )
     }
 
     /** POST /api/books/{id}/apply-filename-metadata — parse title/author/series from the book's filename */
     private fun applyFilenameMetadata(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
-        val bookId = req.uri.path.split("/").filter { it.isNotBlank() }
-            .let { parts -> parts.getOrNull(parts.indexOf("books") + 1) }
-            ?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() }
-            ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json")
-                .body("""{"error":"Invalid book ID"}""")
-        val book = bookService.getBook(userId, bookId)
-            ?: return Response(Status.NOT_FOUND).header("Content-Type", "application/json")
-                .body("""{"error":"Book not found"}""")
-        val fileMeta = org.booktower.services.FilenameMetadataService.extract(book.filePath ?: book.title)
-        val fetchedMeta = org.booktower.models.FetchedMetadata(
-            title = fileMeta.title,
-            author = fileMeta.author,
-            description = null,
-            isbn = null,
-            publisher = null,
-            publishedDate = null,
-            source = "filename",
-        )
-        val updated = bookService.applyFetchedMetadata(userId, bookId, fetchedMeta)
-            ?: return Response(Status.NOT_FOUND).header("Content-Type", "application/json")
-                .body("""{"error":"Book not found"}""")
+        val bookId =
+            req.uri.path
+                .split("/")
+                .filter { it.isNotBlank() }
+                .let { parts -> parts.getOrNull(parts.indexOf("books") + 1) }
+                ?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() }
+                ?: return Response(Status.BAD_REQUEST)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"Invalid book ID"}""")
+        val book =
+            bookService.getBook(userId, bookId)
+                ?: return Response(Status.NOT_FOUND)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"Book not found"}""")
+        val fileMeta =
+            org.booktower.services.FilenameMetadataService
+                .extract(book.filePath ?: book.title)
+        val fetchedMeta =
+            org.booktower.models.FetchedMetadata(
+                title = fileMeta.title,
+                author = fileMeta.author,
+                description = null,
+                isbn = null,
+                publisher = null,
+                publishedDate = null,
+                source = "filename",
+            )
+        val updated =
+            bookService.applyFetchedMetadata(userId, bookId, fetchedMeta)
+                ?: return Response(Status.NOT_FOUND)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"Book not found"}""")
         // Also persist series if extracted
         if (fileMeta.series != null) {
             bookService.updateSeries(userId, bookId, fileMeta.series, fileMeta.seriesIndex)
         }
-        return Response(Status.OK).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(
-                mapOf("book" to updated, "extracted" to fileMeta)
-            ))
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper.writeValueAsString(
+                    mapOf("book" to updated, "extracted" to fileMeta),
+                ),
+            )
     }
 
-    /** GET /api/libraries/health — per-book file and metadata health check for the user's libraries */
     // ─── Email providers (admin) ─────────────────────────────────────────────
 
     private fun listEmailProviders(req: Request): Response {
         val svc = emailProviderService ?: return Response(Status.SERVICE_UNAVAILABLE)
-        return Response(Status.OK).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(svc.list()))
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(svc.list()),
+            )
     }
 
     private fun createEmailProvider(req: Request): Response {
         val svc = emailProviderService ?: return Response(Status.SERVICE_UNAVAILABLE)
-        val request = runCatching {
-            org.booktower.config.Json.mapper.readValue(req.bodyString(), CreateEmailProviderRequest::class.java)
-        }.getOrNull() ?: return Response(Status.BAD_REQUEST)
-            .body("""{"error":"Invalid request body"}""")
+        val request =
+            runCatching {
+                org.booktower.config.Json.mapper
+                    .readValue(req.bodyString(), CreateEmailProviderRequest::class.java)
+            }.getOrNull() ?: return Response(Status.BAD_REQUEST)
+                .body("""{"error":"Invalid request body"}""")
         return runCatching { svc.create(request) }
             .fold(
                 onSuccess = { dto ->
-                    Response(Status.CREATED).header("Content-Type", "application/json")
-                        .body(org.booktower.config.Json.mapper.writeValueAsString(dto))
+                    Response(Status.CREATED)
+                        .header("Content-Type", "application/json")
+                        .body(
+                            org.booktower.config.Json.mapper
+                                .writeValueAsString(dto),
+                        )
                 },
                 onFailure = { e ->
-                    Response(Status.BAD_REQUEST).header("Content-Type", "application/json")
+                    Response(Status.BAD_REQUEST)
+                        .header("Content-Type", "application/json")
                         .body("""{"error":"${e.message}"}""")
                 },
             )
@@ -821,18 +1231,30 @@ class AppHandler(
 
     private fun updateEmailProvider(req: Request): Response {
         val svc = emailProviderService ?: return Response(Status.SERVICE_UNAVAILABLE)
-        val id = req.uri.path.split("/").lastOrNull() ?: return Response(Status.BAD_REQUEST)
-        val request = runCatching {
-            org.booktower.config.Json.mapper.readValue(req.bodyString(), UpdateEmailProviderRequest::class.java)
-        }.getOrNull() ?: return Response(Status.BAD_REQUEST).body("""{"error":"Invalid request body"}""")
+        val id =
+            req.uri.path
+                .split("/")
+                .lastOrNull() ?: return Response(Status.BAD_REQUEST)
+        val request =
+            runCatching {
+                org.booktower.config.Json.mapper
+                    .readValue(req.bodyString(), UpdateEmailProviderRequest::class.java)
+            }.getOrNull() ?: return Response(Status.BAD_REQUEST).body("""{"error":"Invalid request body"}""")
         val updated = svc.update(id, request) ?: return Response(Status.NOT_FOUND)
-        return Response(Status.OK).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(updated))
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(updated),
+            )
     }
 
     private fun deleteEmailProvider(req: Request): Response {
         val svc = emailProviderService ?: return Response(Status.SERVICE_UNAVAILABLE)
-        val id = req.uri.path.split("/").lastOrNull() ?: return Response(Status.BAD_REQUEST)
+        val id =
+            req.uri.path
+                .split("/")
+                .lastOrNull() ?: return Response(Status.BAD_REQUEST)
         return if (svc.delete(id)) Response(Status.NO_CONTENT) else Response(Status.NOT_FOUND)
     }
 
@@ -847,37 +1269,68 @@ class AppHandler(
 
     private fun listScheduledTasks(req: Request): Response {
         val svc = scheduledTaskService ?: return Response(Status.SERVICE_UNAVAILABLE)
-        return Response(Status.OK).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(svc.list()))
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(svc.list()),
+            )
     }
 
     private fun createScheduledTask(req: Request): Response {
         val svc = scheduledTaskService ?: return Response(Status.SERVICE_UNAVAILABLE)
-        val request = runCatching {
-            org.booktower.config.Json.mapper.readValue(req.bodyString(), CreateScheduledTaskRequest::class.java)
-        }.getOrNull() ?: return Response(Status.BAD_REQUEST).body("""{"error":"Invalid request body"}""")
+        val request =
+            runCatching {
+                org.booktower.config.Json.mapper
+                    .readValue(req.bodyString(), CreateScheduledTaskRequest::class.java)
+            }.getOrNull() ?: return Response(Status.BAD_REQUEST).body("""{"error":"Invalid request body"}""")
         return runCatching { svc.create(request) }
             .fold(
-                onSuccess = { Response(Status.CREATED).header("Content-Type", "application/json").body(org.booktower.config.Json.mapper.writeValueAsString(it)) },
-                onFailure = { e -> Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"${e.message}"}""") },
+                onSuccess = {
+                    Response(
+                        Status.CREATED,
+                    ).header("Content-Type", "application/json").body(
+                        org.booktower.config.Json.mapper
+                            .writeValueAsString(it),
+                    )
+                },
+                onFailure = { e ->
+                    Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"${e.message}"}""")
+                },
             )
     }
 
     private fun updateScheduledTask(req: Request): Response {
         val svc = scheduledTaskService ?: return Response(Status.SERVICE_UNAVAILABLE)
-        val id = req.uri.path.split("/").lastOrNull() ?: return Response(Status.BAD_REQUEST)
-        val request = runCatching {
-            org.booktower.config.Json.mapper.readValue(req.bodyString(), UpdateScheduledTaskRequest::class.java)
-        }.getOrNull() ?: return Response(Status.BAD_REQUEST).body("""{"error":"Invalid request body"}""")
-        val updated = runCatching { svc.update(id, request) }
-            .getOrElse { e -> return Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"${e.message}"}""") }
-            ?: return Response(Status.NOT_FOUND)
-        return Response(Status.OK).header("Content-Type", "application/json").body(org.booktower.config.Json.mapper.writeValueAsString(updated))
+        val id =
+            req.uri.path
+                .split("/")
+                .lastOrNull() ?: return Response(Status.BAD_REQUEST)
+        val request =
+            runCatching {
+                org.booktower.config.Json.mapper
+                    .readValue(req.bodyString(), UpdateScheduledTaskRequest::class.java)
+            }.getOrNull() ?: return Response(Status.BAD_REQUEST).body("""{"error":"Invalid request body"}""")
+        val updated =
+            runCatching { svc.update(id, request) }
+                .getOrElse { e ->
+                    return Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"${e.message}"}""")
+                }
+                ?: return Response(Status.NOT_FOUND)
+        return Response(
+            Status.OK,
+        ).header("Content-Type", "application/json").body(
+            org.booktower.config.Json.mapper
+                .writeValueAsString(updated),
+        )
     }
 
     private fun deleteScheduledTask(req: Request): Response {
         val svc = scheduledTaskService ?: return Response(Status.SERVICE_UNAVAILABLE)
-        val id = req.uri.path.split("/").lastOrNull() ?: return Response(Status.BAD_REQUEST)
+        val id =
+            req.uri.path
+                .split("/")
+                .lastOrNull() ?: return Response(Status.BAD_REQUEST)
         return if (svc.delete(id)) Response(Status.NO_CONTENT) else Response(Status.NOT_FOUND)
     }
 
@@ -893,8 +1346,12 @@ class AppHandler(
         val svc = scheduledTaskService ?: return Response(Status.SERVICE_UNAVAILABLE)
         val parts = req.uri.path.split("/")
         val id = parts.dropLast(1).lastOrNull() ?: return Response(Status.BAD_REQUEST)
-        return Response(Status.OK).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(svc.getHistory(id)))
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(svc.getHistory(id)),
+            )
     }
 
     // ─── Book notebooks ───────────────────────────────────────────────────────
@@ -902,54 +1359,99 @@ class AppHandler(
     private fun listNotebooks(req: Request): Response {
         val svc = bookNotebookService ?: return Response(Status.SERVICE_UNAVAILABLE)
         val userId = AuthenticatedUser.from(req)
-        val bookId = req.uri.path.split("/").dropLast(1).lastOrNull() ?: return Response(Status.BAD_REQUEST)
-        return Response(Status.OK).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(svc.listForBook(bookId, userId)))
+        val bookId =
+            req.uri.path
+                .split("/")
+                .dropLast(1)
+                .lastOrNull() ?: return Response(Status.BAD_REQUEST)
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(svc.listForBook(bookId, userId)),
+            )
     }
 
     private fun createNotebook(req: Request): Response {
         val svc = bookNotebookService ?: return Response(Status.SERVICE_UNAVAILABLE)
         val userId = AuthenticatedUser.from(req)
-        val bookId = req.uri.path.split("/").dropLast(1).lastOrNull() ?: return Response(Status.BAD_REQUEST)
-        val request = runCatching {
-            org.booktower.config.Json.mapper.readValue(req.bodyString(), CreateNotebookRequest::class.java)
-        }.getOrNull() ?: return Response(Status.BAD_REQUEST).body("""{"error":"Invalid request body"}""")
+        val bookId =
+            req.uri.path
+                .split("/")
+                .dropLast(1)
+                .lastOrNull() ?: return Response(Status.BAD_REQUEST)
+        val request =
+            runCatching {
+                org.booktower.config.Json.mapper
+                    .readValue(req.bodyString(), CreateNotebookRequest::class.java)
+            }.getOrNull() ?: return Response(Status.BAD_REQUEST).body("""{"error":"Invalid request body"}""")
         return runCatching { svc.create(bookId, userId, request) }
             .fold(
-                onSuccess = { Response(Status.CREATED).header("Content-Type", "application/json").body(org.booktower.config.Json.mapper.writeValueAsString(it)) },
-                onFailure = { e -> Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"${e.message}"}""") },
+                onSuccess = {
+                    Response(
+                        Status.CREATED,
+                    ).header("Content-Type", "application/json").body(
+                        org.booktower.config.Json.mapper
+                            .writeValueAsString(it),
+                    )
+                },
+                onFailure = { e ->
+                    Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"${e.message}"}""")
+                },
             )
     }
 
     private fun getNotebook(req: Request): Response {
         val svc = bookNotebookService ?: return Response(Status.SERVICE_UNAVAILABLE)
         val userId = AuthenticatedUser.from(req)
-        val parts = req.uri.path.split("/").filter { it.isNotBlank() }
+        val parts =
+            req.uri.path
+                .split("/")
+                .filter { it.isNotBlank() }
         val notebookId = parts.lastOrNull() ?: return Response(Status.BAD_REQUEST)
         val bookId = parts.dropLast(2).lastOrNull() ?: return Response(Status.BAD_REQUEST)
         val nb = svc.get(bookId, notebookId, userId) ?: return Response(Status.NOT_FOUND)
-        return Response(Status.OK).header("Content-Type", "application/json").body(org.booktower.config.Json.mapper.writeValueAsString(nb))
+        return Response(Status.OK).header("Content-Type", "application/json").body(
+            org.booktower.config.Json.mapper
+                .writeValueAsString(nb),
+        )
     }
 
     private fun updateNotebook(req: Request): Response {
         val svc = bookNotebookService ?: return Response(Status.SERVICE_UNAVAILABLE)
         val userId = AuthenticatedUser.from(req)
-        val parts = req.uri.path.split("/").filter { it.isNotBlank() }
+        val parts =
+            req.uri.path
+                .split("/")
+                .filter { it.isNotBlank() }
         val notebookId = parts.lastOrNull() ?: return Response(Status.BAD_REQUEST)
         val bookId = parts.dropLast(2).lastOrNull() ?: return Response(Status.BAD_REQUEST)
-        val request = runCatching {
-            org.booktower.config.Json.mapper.readValue(req.bodyString(), UpdateNotebookRequest::class.java)
-        }.getOrNull() ?: return Response(Status.BAD_REQUEST).body("""{"error":"Invalid request body"}""")
-        val updated = runCatching { svc.update(bookId, notebookId, userId, request) }
-            .getOrElse { e -> return Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"${e.message}"}""") }
-            ?: return Response(Status.NOT_FOUND)
-        return Response(Status.OK).header("Content-Type", "application/json").body(org.booktower.config.Json.mapper.writeValueAsString(updated))
+        val request =
+            runCatching {
+                org.booktower.config.Json.mapper
+                    .readValue(req.bodyString(), UpdateNotebookRequest::class.java)
+            }.getOrNull() ?: return Response(Status.BAD_REQUEST).body("""{"error":"Invalid request body"}""")
+        val updated =
+            runCatching { svc.update(bookId, notebookId, userId, request) }
+                .getOrElse { e ->
+                    return Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"${e.message}"}""")
+                }
+                ?: return Response(Status.NOT_FOUND)
+        return Response(
+            Status.OK,
+        ).header("Content-Type", "application/json").body(
+            org.booktower.config.Json.mapper
+                .writeValueAsString(updated),
+        )
     }
 
     private fun deleteNotebook(req: Request): Response {
         val svc = bookNotebookService ?: return Response(Status.SERVICE_UNAVAILABLE)
         val userId = AuthenticatedUser.from(req)
-        val parts = req.uri.path.split("/").filter { it.isNotBlank() }
+        val parts =
+            req.uri.path
+                .split("/")
+                .filter { it.isNotBlank() }
         val notebookId = parts.lastOrNull() ?: return Response(Status.BAD_REQUEST)
         val bookId = parts.dropLast(2).lastOrNull() ?: return Response(Status.BAD_REQUEST)
         return if (svc.delete(bookId, notebookId, userId)) Response(Status.NO_CONTENT) else Response(Status.NOT_FOUND)
@@ -959,44 +1461,83 @@ class AppHandler(
 
     private fun listReviews(req: Request): Response {
         val svc = bookReviewService ?: return Response(Status.SERVICE_UNAVAILABLE)
-        val bookId = req.uri.path.split("/").dropLast(1).lastOrNull() ?: return Response(Status.BAD_REQUEST)
-        return Response(Status.OK).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(svc.listForBook(bookId)))
+        val bookId =
+            req.uri.path
+                .split("/")
+                .dropLast(1)
+                .lastOrNull() ?: return Response(Status.BAD_REQUEST)
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(svc.listForBook(bookId)),
+            )
     }
 
     private fun createReview(req: Request): Response {
         val svc = bookReviewService ?: return Response(Status.SERVICE_UNAVAILABLE)
         val userId = AuthenticatedUser.from(req)
-        val bookId = req.uri.path.split("/").dropLast(1).lastOrNull() ?: return Response(Status.BAD_REQUEST)
-        val request = runCatching {
-            org.booktower.config.Json.mapper.readValue(req.bodyString(), CreateReviewRequest::class.java)
-        }.getOrNull() ?: return Response(Status.BAD_REQUEST).body("""{"error":"Invalid request body"}""")
+        val bookId =
+            req.uri.path
+                .split("/")
+                .dropLast(1)
+                .lastOrNull() ?: return Response(Status.BAD_REQUEST)
+        val request =
+            runCatching {
+                org.booktower.config.Json.mapper
+                    .readValue(req.bodyString(), CreateReviewRequest::class.java)
+            }.getOrNull() ?: return Response(Status.BAD_REQUEST).body("""{"error":"Invalid request body"}""")
         return runCatching { svc.create(bookId, userId, request) }
             .fold(
-                onSuccess = { Response(Status.CREATED).header("Content-Type", "application/json").body(org.booktower.config.Json.mapper.writeValueAsString(it)) },
-                onFailure = { e -> Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"${e.message}"}""") },
+                onSuccess = {
+                    Response(
+                        Status.CREATED,
+                    ).header("Content-Type", "application/json").body(
+                        org.booktower.config.Json.mapper
+                            .writeValueAsString(it),
+                    )
+                },
+                onFailure = { e ->
+                    Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"${e.message}"}""")
+                },
             )
     }
 
     private fun updateReview(req: Request): Response {
         val svc = bookReviewService ?: return Response(Status.SERVICE_UNAVAILABLE)
         val userId = AuthenticatedUser.from(req)
-        val parts = req.uri.path.split("/").filter { it.isNotBlank() }
+        val parts =
+            req.uri.path
+                .split("/")
+                .filter { it.isNotBlank() }
         val reviewId = parts.lastOrNull() ?: return Response(Status.BAD_REQUEST)
         val bookId = parts.dropLast(2).lastOrNull() ?: return Response(Status.BAD_REQUEST)
-        val request = runCatching {
-            org.booktower.config.Json.mapper.readValue(req.bodyString(), UpdateReviewRequest::class.java)
-        }.getOrNull() ?: return Response(Status.BAD_REQUEST).body("""{"error":"Invalid request body"}""")
-        val updated = runCatching { svc.update(bookId, reviewId, userId, request) }
-            .getOrElse { e -> return Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"${e.message}"}""") }
-            ?: return Response(Status.NOT_FOUND)
-        return Response(Status.OK).header("Content-Type", "application/json").body(org.booktower.config.Json.mapper.writeValueAsString(updated))
+        val request =
+            runCatching {
+                org.booktower.config.Json.mapper
+                    .readValue(req.bodyString(), UpdateReviewRequest::class.java)
+            }.getOrNull() ?: return Response(Status.BAD_REQUEST).body("""{"error":"Invalid request body"}""")
+        val updated =
+            runCatching { svc.update(bookId, reviewId, userId, request) }
+                .getOrElse { e ->
+                    return Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"${e.message}"}""")
+                }
+                ?: return Response(Status.NOT_FOUND)
+        return Response(
+            Status.OK,
+        ).header("Content-Type", "application/json").body(
+            org.booktower.config.Json.mapper
+                .writeValueAsString(updated),
+        )
     }
 
     private fun deleteReview(req: Request): Response {
         val svc = bookReviewService ?: return Response(Status.SERVICE_UNAVAILABLE)
         val userId = AuthenticatedUser.from(req)
-        val parts = req.uri.path.split("/").filter { it.isNotBlank() }
+        val parts =
+            req.uri.path
+                .split("/")
+                .filter { it.isNotBlank() }
         val reviewId = parts.lastOrNull() ?: return Response(Status.BAD_REQUEST)
         val bookId = parts.dropLast(2).lastOrNull() ?: return Response(Status.BAD_REQUEST)
         return if (svc.delete(bookId, reviewId, userId)) Response(Status.NO_CONTENT) else Response(Status.NOT_FOUND)
@@ -1009,22 +1550,33 @@ class AppHandler(
         val svc = contentRestrictionsService ?: return Response(Status.SERVICE_UNAVAILABLE)
         val userId = AuthenticatedUser.from(req)
         val restrictions = svc.get(userId)
-        return Response(Status.OK).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(restrictions))
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(restrictions),
+            )
     }
 
     /** PUT /api/user/content-restrictions */
     private fun updateContentRestrictions(req: Request): Response {
         val svc = contentRestrictionsService ?: return Response(Status.SERVICE_UNAVAILABLE)
         val userId = AuthenticatedUser.from(req)
-        val body = runCatching { org.booktower.config.Json.mapper.readTree(req.bodyString()) }.getOrNull()
-            ?: return Response(Status.BAD_REQUEST).body("""{"error":"Invalid JSON"}""")
+        val body =
+            runCatching {
+                org.booktower.config.Json.mapper
+                    .readTree(req.bodyString())
+            }.getOrNull()
+                ?: return Response(Status.BAD_REQUEST).body("""{"error":"Invalid JSON"}""")
 
         val maxRating = if (body.has("maxAgeRating") && !body.get("maxAgeRating").isNull) body.get("maxAgeRating").asText() else null
-        val blockedTags = if (body.has("blockedTags")) {
-            val node = body.get("blockedTags")
-            if (node.isArray) (0 until node.size()).map { node[it].asText() } else emptyList()
-        } else null
+        val blockedTags =
+            if (body.has("blockedTags")) {
+                val node = body.get("blockedTags")
+                if (node.isArray) (0 until node.size()).map { node[it].asText() } else emptyList()
+            } else {
+                null
+            }
 
         return runCatching {
             if (body.has("maxAgeRating")) svc.setMaxAgeRating(userId, maxRating)
@@ -1032,11 +1584,16 @@ class AppHandler(
             svc.get(userId)
         }.fold(
             onSuccess = { r ->
-                Response(Status.OK).header("Content-Type", "application/json")
-                    .body(org.booktower.config.Json.mapper.writeValueAsString(r))
+                Response(Status.OK)
+                    .header("Content-Type", "application/json")
+                    .body(
+                        org.booktower.config.Json.mapper
+                            .writeValueAsString(r),
+                    )
             },
             onFailure = { e ->
-                Response(Status.BAD_REQUEST).header("Content-Type", "application/json")
+                Response(Status.BAD_REQUEST)
+                    .header("Content-Type", "application/json")
                     .body("""{"error":"${e.message}"}""")
             },
         )
@@ -1047,22 +1604,40 @@ class AppHandler(
     /** GET /api/books/{id}/comic-metadata */
     private fun getComicMetadata(req: Request): Response {
         val svc = comicMetadataService ?: return Response(Status.SERVICE_UNAVAILABLE)
-        val bookId = req.uri.path.split("/").dropLast(1).lastOrNull() ?: return Response(Status.BAD_REQUEST)
+        val bookId =
+            req.uri.path
+                .split("/")
+                .dropLast(1)
+                .lastOrNull() ?: return Response(Status.BAD_REQUEST)
         val meta = svc.get(bookId)
-        return Response(Status.OK).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(meta))
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(meta),
+            )
     }
 
     /** PUT /api/books/{id}/comic-metadata */
     private fun updateComicMetadata(req: Request): Response {
         val svc = comicMetadataService ?: return Response(Status.SERVICE_UNAVAILABLE)
-        val bookId = req.uri.path.split("/").dropLast(1).lastOrNull() ?: return Response(Status.BAD_REQUEST)
-        val request = runCatching {
-            org.booktower.config.Json.mapper.readValue(req.bodyString(), org.booktower.models.ComicMetadataRequest::class.java)
-        }.getOrNull() ?: return Response(Status.BAD_REQUEST).body("""{"error":"Invalid request body"}""")
+        val bookId =
+            req.uri.path
+                .split("/")
+                .dropLast(1)
+                .lastOrNull() ?: return Response(Status.BAD_REQUEST)
+        val request =
+            runCatching {
+                org.booktower.config.Json.mapper
+                    .readValue(req.bodyString(), org.booktower.models.ComicMetadataRequest::class.java)
+            }.getOrNull() ?: return Response(Status.BAD_REQUEST).body("""{"error":"Invalid request body"}""")
         val updated = svc.update(bookId, request)
-        return Response(Status.OK).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(updated))
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(updated),
+            )
     }
 
     /** POST /api/covers/regenerate?libraryId={id} — bulk-submit cover extraction */
@@ -1071,87 +1646,137 @@ class AppHandler(
         val userId = AuthenticatedUser.from(req)
         val libraryId = req.query("libraryId")
         val result = svc.regenerateCovers(userId, libraryId)
-        return Response(Status.OK).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(result))
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(result),
+            )
     }
 
     private fun libraryHealth(req: Request): Response {
-        val svc = libraryHealthService
-            ?: return Response(Status.SERVICE_UNAVAILABLE).header("Content-Type", "application/json")
-                .body("""{"error":"Library health service not available"}""")
+        val svc =
+            libraryHealthService
+                ?: return Response(Status.SERVICE_UNAVAILABLE)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"Library health service not available"}""")
         val userId = AuthenticatedUser.from(req)
         val report = svc.check(userId)
-        return Response(Status.OK).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(report))
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(report),
+            )
     }
 
     /** GET /api/metadata/search?title=...&author=...&source=... */
     private fun metadataSearch(req: Request): Response {
-        val title = req.query("title")?.takeIf { it.isNotBlank() }
-            ?: return Response(Status.BAD_REQUEST)
-                .header("Content-Type", "application/json")
-                .body("""{"error":"title is required"}""")
+        val title =
+            req.query("title")?.takeIf { it.isNotBlank() }
+                ?: return Response(Status.BAD_REQUEST)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"title is required"}""")
         val author = req.query("author")?.takeIf { it.isNotBlank() }
         val source = req.query("source")?.takeIf { it.isNotBlank() }
         val result = metadataFetchService.fetchMetadata(title, author, source)
         return if (result != null) {
-            Response(Status.OK).header("Content-Type", "application/json")
-                .body(org.booktower.config.Json.mapper.writeValueAsString(result))
+            Response(Status.OK)
+                .header("Content-Type", "application/json")
+                .body(
+                    org.booktower.config.Json.mapper
+                        .writeValueAsString(result),
+                )
         } else {
-            Response(Status.NOT_FOUND).header("Content-Type", "application/json")
+            Response(Status.NOT_FOUND)
+                .header("Content-Type", "application/json")
                 .body("""{"error":"No metadata found"}""")
         }
     }
 
     /** GET /api/bookdrop — list files waiting in the drop folder */
     private fun bookDropList(req: Request): Response {
-        val svc = bookDropService
-            ?: return Response(Status.SERVICE_UNAVAILABLE).header("Content-Type", "application/json")
-                .body("""{"error":"BookDrop service not available"}""")
+        val svc =
+            bookDropService
+                ?: return Response(Status.SERVICE_UNAVAILABLE)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"BookDrop service not available"}""")
         val pending = svc.listPending()
-        return Response(Status.OK).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(mapOf("files" to pending)))
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(mapOf("files" to pending)),
+            )
     }
 
     /** POST /api/bookdrop/{filename}/import — import a dropped file into a library */
     private fun bookDropImport(req: Request): Response {
-        val svc = bookDropService
-            ?: return Response(Status.SERVICE_UNAVAILABLE).header("Content-Type", "application/json")
-                .body("""{"error":"BookDrop service not available"}""")
+        val svc =
+            bookDropService
+                ?: return Response(Status.SERVICE_UNAVAILABLE)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"BookDrop service not available"}""")
         val userId = AuthenticatedUser.from(req)
-        val filename = req.uri.path.split("/").let { parts ->
-            val idx = parts.indexOf("bookdrop")
-            if (idx >= 0 && idx + 1 < parts.size) parts[idx + 1] else null
-        }?.let { java.net.URLDecoder.decode(it, "UTF-8") }
-            ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json")
-                .body("""{"error":"filename is required"}""")
-        val body = runCatching { org.booktower.config.Json.mapper.readTree(req.bodyString()) }.getOrNull()
-        val libraryId = body?.get("libraryId")?.asText()?.takeIf { it.isNotBlank() }
-            ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json")
-                .body("""{"error":"libraryId is required"}""")
+        val filename =
+            req.uri.path
+                .split("/")
+                .let { parts ->
+                    val idx = parts.indexOf("bookdrop")
+                    if (idx >= 0 && idx + 1 < parts.size) parts[idx + 1] else null
+                }?.let { java.net.URLDecoder.decode(it, "UTF-8") }
+                ?: return Response(Status.BAD_REQUEST)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"filename is required"}""")
+        val body =
+            runCatching {
+                org.booktower.config.Json.mapper
+                    .readTree(req.bodyString())
+            }.getOrNull()
+        val libraryId =
+            body?.get("libraryId")?.asText()?.takeIf { it.isNotBlank() }
+                ?: return Response(Status.BAD_REQUEST)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"libraryId is required"}""")
         // Verify the user owns the library
-        val libUuid = runCatching { java.util.UUID.fromString(libraryId) }.getOrNull()
-            ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json")
-                .body("""{"error":"Invalid library ID"}""")
-        val library = libraryService.getLibrary(userId, libUuid)
-            ?: return Response(Status.NOT_FOUND).header("Content-Type", "application/json")
-                .body("""{"error":"Library not found"}""")
-        val bookId = svc.import(userId, filename, libraryId, library.path)
-            ?: return Response(Status.NOT_FOUND).header("Content-Type", "application/json")
-                .body("""{"error":"File not found in drop folder"}""")
-        return Response(Status.CREATED).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(mapOf("bookId" to bookId)))
+        val libUuid =
+            runCatching { java.util.UUID.fromString(libraryId) }.getOrNull()
+                ?: return Response(Status.BAD_REQUEST)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"Invalid library ID"}""")
+        val library =
+            libraryService.getLibrary(userId, libUuid)
+                ?: return Response(Status.NOT_FOUND)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"Library not found"}""")
+        val bookId =
+            svc.import(userId, filename, libraryId, library.path)
+                ?: return Response(Status.NOT_FOUND)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"File not found in drop folder"}""")
+        return Response(Status.CREATED)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(mapOf("bookId" to bookId)),
+            )
     }
 
     /** DELETE /api/bookdrop/{filename} — discard a dropped file */
     private fun bookDropDiscard(req: Request): Response {
-        val svc = bookDropService
-            ?: return Response(Status.SERVICE_UNAVAILABLE).header("Content-Type", "application/json")
-                .body("""{"error":"BookDrop service not available"}""")
-        val filename = req.uri.path.split("/").lastOrNull()
-            ?.let { java.net.URLDecoder.decode(it, "UTF-8") }
-            ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json")
-                .body("""{"error":"filename is required"}""")
+        val svc =
+            bookDropService
+                ?: return Response(Status.SERVICE_UNAVAILABLE)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"BookDrop service not available"}""")
+        val filename =
+            req.uri.path
+                .split("/")
+                .lastOrNull()
+                ?.let { java.net.URLDecoder.decode(it, "UTF-8") }
+                ?: return Response(Status.BAD_REQUEST)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"filename is required"}""")
         return if (svc.discard(filename)) {
             Response(Status.NO_CONTENT)
         } else {
@@ -1161,71 +1786,118 @@ class AppHandler(
 
     /** POST /api/books/{id}/send — send the book file to an email address */
     private fun sendBook(req: Request): Response {
-        val svc = bookDeliveryService
-            ?: return Response(Status.SERVICE_UNAVAILABLE).header("Content-Type", "application/json")
-                .body("""{"error":"Book delivery service not available"}""")
+        val svc =
+            bookDeliveryService
+                ?: return Response(Status.SERVICE_UNAVAILABLE)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"Book delivery service not available"}""")
         val userId = AuthenticatedUser.from(req)
-        val bookId = req.uri.path.split("/").filter { it.isNotBlank() }
-            .let { parts -> parts.getOrNull(parts.indexOf("books") + 1) }
-            ?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() }
-            ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json")
-                .body("""{"error":"Invalid book ID"}""")
-        val body = runCatching { org.booktower.config.Json.mapper.readTree(req.bodyString()) }.getOrNull()
-        val toEmail = body?.get("email")?.asText()?.takeIf { it.isNotBlank() }
-            ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json")
-                .body("""{"error":"email is required"}""")
+        val bookId =
+            req.uri.path
+                .split("/")
+                .filter { it.isNotBlank() }
+                .let { parts -> parts.getOrNull(parts.indexOf("books") + 1) }
+                ?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() }
+                ?: return Response(Status.BAD_REQUEST)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"Invalid book ID"}""")
+        val body =
+            runCatching {
+                org.booktower.config.Json.mapper
+                    .readTree(req.bodyString())
+            }.getOrNull()
+        val toEmail =
+            body?.get("email")?.asText()?.takeIf { it.isNotBlank() }
+                ?: return Response(Status.BAD_REQUEST)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"email is required"}""")
         return try {
             svc.sendBook(userId, bookId, toEmail)
-            Response(Status.OK).header("Content-Type", "application/json")
+            Response(Status.OK)
+                .header("Content-Type", "application/json")
                 .body("""{"sent":true}""")
         } catch (e: IllegalArgumentException) {
-            Response(Status.BAD_REQUEST).header("Content-Type", "application/json")
-                .body(org.booktower.config.Json.mapper.writeValueAsString(mapOf("error" to e.message)))
+            Response(Status.BAD_REQUEST)
+                .header("Content-Type", "application/json")
+                .body(
+                    org.booktower.config.Json.mapper
+                        .writeValueAsString(mapOf("error" to e.message)),
+                )
         }
     }
 
     /** GET /api/delivery/recipients */
     private fun listRecipients(req: Request): Response {
-        val svc = bookDeliveryService
-            ?: return Response(Status.SERVICE_UNAVAILABLE).header("Content-Type", "application/json")
-                .body("""{"error":"Book delivery service not available"}""")
+        val svc =
+            bookDeliveryService
+                ?: return Response(Status.SERVICE_UNAVAILABLE)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"Book delivery service not available"}""")
         val userId = AuthenticatedUser.from(req)
-        return Response(Status.OK).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(mapOf("recipients" to svc.listRecipients(userId))))
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(mapOf("recipients" to svc.listRecipients(userId))),
+            )
     }
 
     /** POST /api/delivery/recipients */
     private fun addRecipient(req: Request): Response {
-        val svc = bookDeliveryService
-            ?: return Response(Status.SERVICE_UNAVAILABLE).header("Content-Type", "application/json")
-                .body("""{"error":"Book delivery service not available"}""")
+        val svc =
+            bookDeliveryService
+                ?: return Response(Status.SERVICE_UNAVAILABLE)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"Book delivery service not available"}""")
         val userId = AuthenticatedUser.from(req)
-        val body = runCatching { org.booktower.config.Json.mapper.readTree(req.bodyString()) }.getOrNull()
-        val label = body?.get("label")?.asText()?.takeIf { it.isNotBlank() }
-            ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json")
-                .body("""{"error":"label is required"}""")
-        val email = body.get("email")?.asText()?.takeIf { it.isNotBlank() }
-            ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json")
-                .body("""{"error":"email is required"}""")
+        val body =
+            runCatching {
+                org.booktower.config.Json.mapper
+                    .readTree(req.bodyString())
+            }.getOrNull()
+        val label =
+            body?.get("label")?.asText()?.takeIf { it.isNotBlank() }
+                ?: return Response(Status.BAD_REQUEST)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"label is required"}""")
+        val email =
+            body.get("email")?.asText()?.takeIf { it.isNotBlank() }
+                ?: return Response(Status.BAD_REQUEST)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"email is required"}""")
         return try {
             val recipient = svc.addRecipient(userId, org.booktower.services.AddRecipientRequest(label, email))
-            Response(Status.CREATED).header("Content-Type", "application/json")
-                .body(org.booktower.config.Json.mapper.writeValueAsString(recipient))
+            Response(Status.CREATED)
+                .header("Content-Type", "application/json")
+                .body(
+                    org.booktower.config.Json.mapper
+                        .writeValueAsString(recipient),
+                )
         } catch (e: IllegalArgumentException) {
-            Response(Status.BAD_REQUEST).header("Content-Type", "application/json")
-                .body(org.booktower.config.Json.mapper.writeValueAsString(mapOf("error" to e.message)))
+            Response(Status.BAD_REQUEST)
+                .header("Content-Type", "application/json")
+                .body(
+                    org.booktower.config.Json.mapper
+                        .writeValueAsString(mapOf("error" to e.message)),
+                )
         }
     }
 
     /** DELETE /api/delivery/recipients/{id} */
     private fun deleteRecipient(req: Request): Response {
-        val svc = bookDeliveryService
-            ?: return Response(Status.SERVICE_UNAVAILABLE).header("Content-Type", "application/json")
-                .body("""{"error":"Book delivery service not available"}""")
+        val svc =
+            bookDeliveryService
+                ?: return Response(Status.SERVICE_UNAVAILABLE)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"Book delivery service not available"}""")
         val userId = AuthenticatedUser.from(req)
-        val recipientId = req.uri.path.split("/").lastOrNull()
-            ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json")
-                .body("""{"error":"Invalid recipient ID"}""")
+        val recipientId =
+            req.uri.path
+                .split("/")
+                .lastOrNull()
+                ?: return Response(Status.BAD_REQUEST)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"Invalid recipient ID"}""")
         return if (svc.deleteRecipient(userId, recipientId)) {
             Response(Status.NO_CONTENT)
         } else {
@@ -1235,96 +1907,155 @@ class AppHandler(
 
     /** GET /api/books/{id}/covers/alternatives — list candidate cover URLs from OpenLibrary + Google Books */
     private fun alternativeCovers(req: Request): Response {
-        val svc = alternativeCoverService
-            ?: return Response(Status.SERVICE_UNAVAILABLE).header("Content-Type", "application/json")
-                .body("""{"error":"Alternative cover service not available"}""")
+        val svc =
+            alternativeCoverService
+                ?: return Response(Status.SERVICE_UNAVAILABLE)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"Alternative cover service not available"}""")
         val userId = AuthenticatedUser.from(req)
-        val bookId = req.uri.path.split("/").filter { it.isNotBlank() }
-            .let { parts -> parts.getOrNull(parts.indexOf("books") + 1) }
-            ?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() }
-            ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json")
-                .body("""{"error":"Invalid book ID"}""")
-        val book = bookService.getBook(userId, bookId)
-            ?: return Response(Status.NOT_FOUND).header("Content-Type", "application/json")
-                .body("""{"error":"Book not found"}""")
+        val bookId =
+            req.uri.path
+                .split("/")
+                .filter { it.isNotBlank() }
+                .let { parts -> parts.getOrNull(parts.indexOf("books") + 1) }
+                ?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() }
+                ?: return Response(Status.BAD_REQUEST)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"Invalid book ID"}""")
+        val book =
+            bookService.getBook(userId, bookId)
+                ?: return Response(Status.NOT_FOUND)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"Book not found"}""")
         val candidates = svc.fetchCandidates(book.title, book.author, book.isbn)
-        return Response(Status.OK).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(mapOf("covers" to candidates)))
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(mapOf("covers" to candidates)),
+            )
     }
 
     /** POST /api/books/{id}/cover/apply-url — download a cover image from a URL and save it */
     private fun applyCoverUrl(req: Request): Response {
-        val svc = alternativeCoverService
-            ?: return Response(Status.SERVICE_UNAVAILABLE).header("Content-Type", "application/json")
-                .body("""{"error":"Alternative cover service not available"}""")
+        val svc =
+            alternativeCoverService
+                ?: return Response(Status.SERVICE_UNAVAILABLE)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"Alternative cover service not available"}""")
         val userId = AuthenticatedUser.from(req)
-        val bookId = req.uri.path.split("/").filter { it.isNotBlank() }
-            .let { parts -> parts.getOrNull(parts.indexOf("books") + 1) }
-            ?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() }
-            ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json")
-                .body("""{"error":"Invalid book ID"}""")
+        val bookId =
+            req.uri.path
+                .split("/")
+                .filter { it.isNotBlank() }
+                .let { parts -> parts.getOrNull(parts.indexOf("books") + 1) }
+                ?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() }
+                ?: return Response(Status.BAD_REQUEST)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"Invalid book ID"}""")
         bookService.getBook(userId, bookId)
-            ?: return Response(Status.NOT_FOUND).header("Content-Type", "application/json")
+            ?: return Response(Status.NOT_FOUND)
+                .header("Content-Type", "application/json")
                 .body("""{"error":"Book not found"}""")
-        val body = runCatching { org.booktower.config.Json.mapper.readTree(req.bodyString()) }.getOrNull()
-        val url = body?.get("url")?.asText()?.takeIf { it.isNotBlank() }
-            ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json")
-                .body("""{"error":"url is required"}""")
+        val body =
+            runCatching {
+                org.booktower.config.Json.mapper
+                    .readTree(req.bodyString())
+            }.getOrNull()
+        val url =
+            body?.get("url")?.asText()?.takeIf { it.isNotBlank() }
+                ?: return Response(Status.BAD_REQUEST)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"url is required"}""")
         // Derive extension from URL; default to jpg
-        val ext = url.substringAfterLast('.', "jpg").lowercase()
-            .takeIf { it in setOf("jpg", "jpeg", "png", "webp") } ?: "jpg"
-        val bytes = svc.downloadBytes(url)
-            ?: return Response(Status.BAD_GATEWAY).header("Content-Type", "application/json")
-                .body("""{"error":"Failed to download cover from URL"}""")
+        val ext =
+            url
+                .substringAfterLast('.', "jpg")
+                .lowercase()
+                .takeIf { it in setOf("jpg", "jpeg", "png", "webp") } ?: "jpg"
+        val bytes =
+            svc.downloadBytes(url)
+                ?: return Response(Status.BAD_GATEWAY)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"Failed to download cover from URL"}""")
         val coversDir = java.io.File(storageConfig.coversPath)
-        if (!coversDir.exists()) coversDir.mkdirs()
+        if (!coversDir.exists() && !coversDir.mkdirs()) logger.warn("Could not create covers directory: ${coversDir.absolutePath}")
         val coverFilename = "$bookId.$ext"
         java.io.File(coversDir, coverFilename).writeBytes(bytes)
         bookService.updateCoverPath(userId, bookId, coverFilename)
-        return Response(Status.OK).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(mapOf("coverUrl" to "/covers/$coverFilename")))
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(mapOf("coverUrl" to "/covers/$coverFilename")),
+            )
     }
 
     /** GET /api/authors/{name}/metadata — fetch author bio and photo from OpenLibrary */
     private fun authorMetadata(req: Request): Response {
-        val svc = authorMetadataService
-            ?: return Response(Status.SERVICE_UNAVAILABLE).header("Content-Type", "application/json")
-                .body("""{"error":"Author metadata service not available"}""")
-        val name = req.uri.path.split("/").filter { it.isNotBlank() }
-            .let { parts -> parts.getOrNull(parts.indexOf("authors") + 1) }
-            ?.let { java.net.URLDecoder.decode(it, "UTF-8") }
-            ?.takeIf { it.isNotBlank() }
-            ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json")
-                .body("""{"error":"Author name is required"}""")
-        val info = svc.fetch(name)
-            ?: return Response(Status.NOT_FOUND).header("Content-Type", "application/json")
-                .body("""{"error":"Author not found"}""")
-        return Response(Status.OK).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(info))
+        val svc =
+            authorMetadataService
+                ?: return Response(Status.SERVICE_UNAVAILABLE)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"Author metadata service not available"}""")
+        val name =
+            req.uri.path
+                .split("/")
+                .filter { it.isNotBlank() }
+                .let { parts -> parts.getOrNull(parts.indexOf("authors") + 1) }
+                ?.let { java.net.URLDecoder.decode(it, "UTF-8") }
+                ?.takeIf { it.isNotBlank() }
+                ?: return Response(Status.BAD_REQUEST)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"Author name is required"}""")
+        val info =
+            svc.fetch(name)
+                ?: return Response(Status.NOT_FOUND)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"Author not found"}""")
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(info),
+            )
     }
 
     /** GET /api/books/{id}/similar — find similar books in the user's library */
     private fun similarBooks(req: Request): Response {
-        val svc = recommendationService
-            ?: return Response(Status.SERVICE_UNAVAILABLE).header("Content-Type", "application/json")
-                .body("""{"error":"Recommendation service not available"}""")
+        val svc =
+            recommendationService
+                ?: return Response(Status.SERVICE_UNAVAILABLE)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"Recommendation service not available"}""")
         val userId = AuthenticatedUser.from(req)
-        val bookId = req.uri.path.split("/").filter { it.isNotBlank() }
-            .let { parts -> parts.getOrNull(parts.indexOf("books") + 1) }
-            ?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() }
-            ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json")
-                .body("""{"error":"Invalid book ID"}""")
+        val bookId =
+            req.uri.path
+                .split("/")
+                .filter { it.isNotBlank() }
+                .let { parts -> parts.getOrNull(parts.indexOf("books") + 1) }
+                ?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() }
+                ?: return Response(Status.BAD_REQUEST)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"Invalid book ID"}""")
         val similar = svc.findSimilar(userId, bookId)
-        return Response(Status.OK).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(mapOf("similar" to similar)))
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(mapOf("similar" to similar)),
+            )
     }
 
     /** GET /api/metadata/sources — lists available metadata provider keys */
     private fun metadataSources(req: Request): Response =
-        Response(Status.OK).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(
-                mapOf("sources" to org.booktower.services.METADATA_SOURCES)
-            ))
+        Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper.writeValueAsString(
+                    mapOf("sources" to org.booktower.services.METADATA_SOURCES),
+                ),
+            )
 
     /**
      * POST /api/books/{id}/metadata/propose
@@ -1334,62 +2065,97 @@ class AppHandler(
     private fun proposeMetadata(req: Request): Response {
         val svc = metadataProposalService ?: return Response(Status.SERVICE_UNAVAILABLE)
         val userId = AuthenticatedUser.from(req)
-        val bookId = extractBookIdFromPath(req)
-            ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"Invalid book ID"}""")
-        val book = bookService.getBook(userId, bookId)
-            ?: return Response(Status.NOT_FOUND).header("Content-Type", "application/json").body("""{"error":"Book not found"}""")
-        val body = runCatching { org.booktower.config.Json.mapper.readTree(req.bodyString()) }.getOrNull()
+        val bookId =
+            extractBookIdFromPath(req)
+                ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"Invalid book ID"}""")
+        val book =
+            bookService.getBook(userId, bookId)
+                ?: return Response(Status.NOT_FOUND).header("Content-Type", "application/json").body("""{"error":"Book not found"}""")
+        val body =
+            runCatching {
+                org.booktower.config.Json.mapper
+                    .readTree(req.bodyString())
+            }.getOrNull()
         val title = body?.get("title")?.asText()?.takeIf { it.isNotBlank() } ?: book.title
         val author = body?.get("author")?.asText()?.takeIf { it.isNotBlank() } ?: book.author
         val source = body?.get("source")?.asText()?.takeIf { it.isNotBlank() }
-        val meta = metadataFetchService.fetchMetadata(title, author, source)
-            ?: return Response(Status.NOT_FOUND).header("Content-Type", "application/json").body("""{"error":"No metadata found"}""")
+        val meta =
+            metadataFetchService.fetchMetadata(title, author, source)
+                ?: return Response(Status.NOT_FOUND).header("Content-Type", "application/json").body("""{"error":"No metadata found"}""")
         val proposal = svc.propose(userId, bookId, meta)
-        return Response(Status.CREATED).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(proposal))
+        return Response(Status.CREATED)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(proposal),
+            )
     }
 
     /** GET /api/books/{id}/metadata/proposals — list pending proposals for a book */
     private fun listMetadataProposals(req: Request): Response {
         val svc = metadataProposalService ?: return Response(Status.SERVICE_UNAVAILABLE)
         val userId = AuthenticatedUser.from(req)
-        val bookId = extractBookIdFromPath(req)
-            ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"Invalid book ID"}""")
+        val bookId =
+            extractBookIdFromPath(req)
+                ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"Invalid book ID"}""")
         val proposals = svc.listProposals(userId, bookId)
-        return Response(Status.OK).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(proposals))
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(proposals),
+            )
     }
 
     /** POST /api/books/{id}/metadata/proposals/{proposalId}/apply — apply a proposal to the book */
     private fun applyMetadataProposal(req: Request): Response {
         val svc = metadataProposalService ?: return Response(Status.SERVICE_UNAVAILABLE)
         val userId = AuthenticatedUser.from(req)
-        val bookId = extractBookIdFromPath(req)
-            ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"Invalid book ID"}""")
-        val proposalId = req.uri.path.split("/")
-            .let { parts -> parts.getOrNull(parts.indexOf("proposals") + 1) }
-            ?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() }
-            ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"Invalid proposal ID"}""")
-        val meta = svc.applyProposal(userId, bookId, proposalId)
-            ?: return Response(Status.NOT_FOUND).header("Content-Type", "application/json").body("""{"error":"Proposal not found"}""")
-        val updated = bookService.applyFetchedMetadata(userId, bookId, meta)
-            ?: return Response(Status.NOT_FOUND).header("Content-Type", "application/json").body("""{"error":"Book not found"}""")
-        return Response(Status.OK).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(updated))
+        val bookId =
+            extractBookIdFromPath(req)
+                ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"Invalid book ID"}""")
+        val proposalId =
+            req.uri.path
+                .split("/")
+                .let { parts -> parts.getOrNull(parts.indexOf("proposals") + 1) }
+                ?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() }
+                ?: return Response(
+                    Status.BAD_REQUEST,
+                ).header("Content-Type", "application/json").body("""{"error":"Invalid proposal ID"}""")
+        val meta =
+            svc.applyProposal(userId, bookId, proposalId)
+                ?: return Response(Status.NOT_FOUND).header("Content-Type", "application/json").body("""{"error":"Proposal not found"}""")
+        val updated =
+            bookService.applyFetchedMetadata(userId, bookId, meta)
+                ?: return Response(Status.NOT_FOUND).header("Content-Type", "application/json").body("""{"error":"Book not found"}""")
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(updated),
+            )
     }
 
     /** DELETE /api/books/{id}/metadata/proposals/{proposalId} — dismiss a proposal */
     private fun dismissMetadataProposal(req: Request): Response {
         val svc = metadataProposalService ?: return Response(Status.SERVICE_UNAVAILABLE)
         val userId = AuthenticatedUser.from(req)
-        val bookId = extractBookIdFromPath(req)
-            ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"Invalid book ID"}""")
-        val proposalId = req.uri.path.split("/")
-            .let { parts -> parts.getOrNull(parts.indexOf("proposals") + 1) }
-            ?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() }
-            ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"Invalid proposal ID"}""")
-        return if (svc.dismissProposal(userId, bookId, proposalId)) Response(Status.NO_CONTENT)
-        else Response(Status.NOT_FOUND).header("Content-Type", "application/json").body("""{"error":"Proposal not found"}""")
+        val bookId =
+            extractBookIdFromPath(req)
+                ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"Invalid book ID"}""")
+        val proposalId =
+            req.uri.path
+                .split("/")
+                .let { parts -> parts.getOrNull(parts.indexOf("proposals") + 1) }
+                ?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() }
+                ?: return Response(
+                    Status.BAD_REQUEST,
+                ).header("Content-Type", "application/json").body("""{"error":"Invalid proposal ID"}""")
+        return if (svc.dismissProposal(userId, bookId, proposalId)) {
+            Response(Status.NO_CONTENT)
+        } else {
+            Response(Status.NOT_FOUND).header("Content-Type", "application/json").body("""{"error":"Proposal not found"}""")
+        }
     }
 
     /** GET /api/user/opds-credentials — returns whether OPDS credentials are configured */
@@ -1397,28 +2163,40 @@ class AppHandler(
         val svc = opdsCredentialsService ?: return Response(Status.SERVICE_UNAVAILABLE)
         val userId = AuthenticatedUser.from(req)
         val info = svc.getCredentials(userId)
-        return Response(Status.OK).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(
-                mapOf("configured" to (info != null), "opdsUsername" to info?.opdsUsername)
-            ))
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper.writeValueAsString(
+                    mapOf("configured" to (info != null), "opdsUsername" to info?.opdsUsername),
+                ),
+            )
     }
 
     /** PUT /api/user/opds-credentials — set OPDS-specific credentials */
     private fun setOpdsCredentials(req: Request): Response {
         val svc = opdsCredentialsService ?: return Response(Status.SERVICE_UNAVAILABLE)
         val userId = AuthenticatedUser.from(req)
-        val body = runCatching { org.booktower.config.Json.mapper.readTree(req.bodyString()) }.getOrNull()
-        val opdsUsername = body?.get("opdsUsername")?.asText()?.takeIf { it.isNotBlank() }
-            ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json")
-                .body("""{"error":"opdsUsername required"}""")
-        val password = body.get("password")?.asText()?.takeIf { it.isNotBlank() }
-            ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json")
-                .body("""{"error":"password required"}""")
+        val body =
+            runCatching {
+                org.booktower.config.Json.mapper
+                    .readTree(req.bodyString())
+            }.getOrNull()
+        val opdsUsername =
+            body?.get("opdsUsername")?.asText()?.takeIf { it.isNotBlank() }
+                ?: return Response(Status.BAD_REQUEST)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"opdsUsername required"}""")
+        val password =
+            body.get("password")?.asText()?.takeIf { it.isNotBlank() }
+                ?: return Response(Status.BAD_REQUEST)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"password required"}""")
         return try {
             svc.setCredentials(userId, opdsUsername, password)
             Response(Status.NO_CONTENT)
         } catch (e: IllegalArgumentException) {
-            Response(Status.BAD_REQUEST).header("Content-Type", "application/json")
+            Response(Status.BAD_REQUEST)
+                .header("Content-Type", "application/json")
                 .body("""{"error":"${e.message}"}""")
         }
     }
@@ -1435,7 +2213,11 @@ class AppHandler(
     private fun setHardcoverKey(req: Request): Response {
         val svc = hardcoverSyncService ?: return Response(Status.SERVICE_UNAVAILABLE)
         val userId = AuthenticatedUser.from(req)
-        val body = runCatching { org.booktower.config.Json.mapper.readTree(req.bodyString()) }.getOrNull()
+        val body =
+            runCatching {
+                org.booktower.config.Json.mapper
+                    .readTree(req.bodyString())
+            }.getOrNull()
         val apiKey = body?.get("apiKey")?.asText() ?: ""
         svc.setApiKey(userId, apiKey)
         return Response(Status.NO_CONTENT)
@@ -1447,50 +2229,72 @@ class AppHandler(
         val userId = AuthenticatedUser.from(req)
         val hasKey = svc.hasApiKey(userId)
         if (!hasKey) {
-            return Response(Status.OK).header("Content-Type", "application/json")
+            return Response(Status.OK)
+                .header("Content-Type", "application/json")
                 .body("""{"configured":false,"connected":false}""")
         }
         val username = svc.testConnection(userId)
-        return Response(Status.OK).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(
-                mapOf("configured" to true, "connected" to (username != null), "username" to username)
-            ))
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper.writeValueAsString(
+                    mapOf("configured" to true, "connected" to (username != null), "username" to username),
+                ),
+            )
     }
 
     /** POST /api/books/{id}/hardcover/sync — manually sync a book's status to Hardcover */
     private fun syncBookToHardcover(req: Request): Response {
         val svc = hardcoverSyncService ?: return Response(Status.SERVICE_UNAVAILABLE)
         val userId = AuthenticatedUser.from(req)
-        val bookId = extractBookIdFromPath(req)
-            ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"Invalid book ID"}""")
-        val book = bookService.getBook(userId, bookId)
-            ?: return Response(Status.NOT_FOUND).header("Content-Type", "application/json").body("""{"error":"Book not found"}""")
-        val body = runCatching { org.booktower.config.Json.mapper.readTree(req.bodyString()) }.getOrNull()
+        val bookId =
+            extractBookIdFromPath(req)
+                ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"Invalid book ID"}""")
+        val book =
+            bookService.getBook(userId, bookId)
+                ?: return Response(Status.NOT_FOUND).header("Content-Type", "application/json").body("""{"error":"Book not found"}""")
+        val body =
+            runCatching {
+                org.booktower.config.Json.mapper
+                    .readTree(req.bodyString())
+            }.getOrNull()
         val status = body?.get("status")?.asText()?.takeIf { it.isNotBlank() }
         val currentPage = body?.get("currentPage")?.asInt()
-        val result = if (currentPage != null) {
-            svc.syncProgress(userId, bookId, book.isbn, book.title, book.author, currentPage)
-        } else if (status != null) {
-            svc.syncBookStatus(userId, bookId, book.isbn, book.title, book.author, status)
-        } else {
-            return Response(Status.BAD_REQUEST).header("Content-Type", "application/json")
-                .body("""{"error":"Provide status or currentPage"}""")
-        }
+        val result =
+            if (currentPage != null) {
+                svc.syncProgress(userId, bookId, book.isbn, book.title, book.author, currentPage)
+            } else if (status != null) {
+                svc.syncBookStatus(userId, bookId, book.isbn, book.title, book.author, status)
+            } else {
+                return Response(Status.BAD_REQUEST)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"Provide status or currentPage"}""")
+            }
         val code = if (result.synced) Status.OK else Status.BAD_GATEWAY
-        return Response(code).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(result))
+        return Response(code)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(result),
+            )
     }
 
     /** GET /api/books/{id}/hardcover/mapping — get the Hardcover book ID mapping */
     private fun getHardcoverMapping(req: Request): Response {
         val svc = hardcoverSyncService ?: return Response(Status.SERVICE_UNAVAILABLE)
         val userId = AuthenticatedUser.from(req)
-        val bookId = extractBookIdFromPath(req)
-            ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"Invalid book ID"}""")
-        val mapping = svc.getMapping(userId, bookId)
-            ?: return Response(Status.NOT_FOUND).header("Content-Type", "application/json").body("""{"error":"No mapping found"}""")
-        return Response(Status.OK).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(mapping))
+        val bookId =
+            extractBookIdFromPath(req)
+                ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"Invalid book ID"}""")
+        val mapping =
+            svc.getMapping(userId, bookId)
+                ?: return Response(Status.NOT_FOUND).header("Content-Type", "application/json").body("""{"error":"No mapping found"}""")
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(mapping),
+            )
     }
 
     private fun pwaManifest(req: Request): Response {
@@ -1520,43 +2324,45 @@ class AppHandler(
             return pageHandler.dashboard(req)
         }
         val ctx = WebContext(req)
-        val content = templateRenderer.render(
-            "index.kte",
-            mapOf<String, Any?>(
-                "title" to "BookTower",
-                "isAuthenticated" to false,
-                "username" to null,
-                "libraries" to null,
-                "showLogin" to false,
-                "showRegister" to false,
-                "registrationOpen" to registrationOpen,
-                "themeCss" to ctx.themeCss,
-                "currentTheme" to ctx.theme,
-                "lang" to ctx.lang,
-                "i18n" to ctx.i18n,
-            ),
-        )
+        val content =
+            templateRenderer.render(
+                "index.kte",
+                mapOf<String, Any?>(
+                    "title" to "BookTower",
+                    "isAuthenticated" to false,
+                    "username" to null,
+                    "libraries" to null,
+                    "showLogin" to false,
+                    "showRegister" to false,
+                    "registrationOpen" to registrationOpen,
+                    "themeCss" to ctx.themeCss,
+                    "currentTheme" to ctx.theme,
+                    "lang" to ctx.lang,
+                    "i18n" to ctx.i18n,
+                ),
+            )
         return Response(Status.OK).header("Content-Type", "text/html; charset=utf-8").body(content)
     }
 
     private fun loginPage(req: Request): Response {
         val ctx = WebContext(req)
-        val content = templateRenderer.render(
-            "index.kte",
-            mapOf<String, Any?>(
-                "title" to "Login - BookTower",
-                "isAuthenticated" to false,
-                "username" to null,
-                "libraries" to null,
-                "showLogin" to true,
-                "showRegister" to false,
-                "registrationOpen" to registrationOpen,
-                "themeCss" to ctx.themeCss,
-                "currentTheme" to ctx.theme,
-                "lang" to ctx.lang,
-                "i18n" to ctx.i18n,
-            ),
-        )
+        val content =
+            templateRenderer.render(
+                "index.kte",
+                mapOf<String, Any?>(
+                    "title" to "Login - BookTower",
+                    "isAuthenticated" to false,
+                    "username" to null,
+                    "libraries" to null,
+                    "showLogin" to true,
+                    "showRegister" to false,
+                    "registrationOpen" to registrationOpen,
+                    "themeCss" to ctx.themeCss,
+                    "currentTheme" to ctx.theme,
+                    "lang" to ctx.lang,
+                    "i18n" to ctx.i18n,
+                ),
+            )
         return Response(Status.OK).header("Content-Type", "text/html; charset=utf-8").body(content)
     }
 
@@ -1565,52 +2371,55 @@ class AppHandler(
             return Response(Status.SEE_OTHER).header("Location", "/login")
         }
         val ctx = WebContext(req)
-        val content = templateRenderer.render(
-            "index.kte",
-            mapOf<String, Any?>(
-                "title" to "Register - BookTower",
-                "isAuthenticated" to false,
-                "username" to null,
-                "libraries" to null,
-                "showLogin" to false,
-                "showRegister" to true,
-                "registrationOpen" to true,
-                "themeCss" to ctx.themeCss,
-                "currentTheme" to ctx.theme,
-                "lang" to ctx.lang,
-                "i18n" to ctx.i18n,
-            ),
-        )
+        val content =
+            templateRenderer.render(
+                "index.kte",
+                mapOf<String, Any?>(
+                    "title" to "Register - BookTower",
+                    "isAuthenticated" to false,
+                    "username" to null,
+                    "libraries" to null,
+                    "showLogin" to false,
+                    "showRegister" to true,
+                    "registrationOpen" to true,
+                    "themeCss" to ctx.themeCss,
+                    "currentTheme" to ctx.theme,
+                    "lang" to ctx.lang,
+                    "i18n" to ctx.i18n,
+                ),
+            )
         return Response(Status.OK).header("Content-Type", "text/html; charset=utf-8").body(content)
     }
 
     private fun forgotPasswordPage(req: Request): Response {
         val ctx = WebContext(req)
-        val content = templateRenderer.render(
-            "forgot-password.kte",
-            mapOf<String, Any?>(
-                "themeCss" to ctx.themeCss,
-                "currentTheme" to ctx.theme,
-                "lang" to ctx.lang,
-                "i18n" to ctx.i18n,
-            ),
-        )
+        val content =
+            templateRenderer.render(
+                "forgot-password.kte",
+                mapOf<String, Any?>(
+                    "themeCss" to ctx.themeCss,
+                    "currentTheme" to ctx.theme,
+                    "lang" to ctx.lang,
+                    "i18n" to ctx.i18n,
+                ),
+            )
         return Response(Status.OK).header("Content-Type", "text/html; charset=utf-8").body(content)
     }
 
     private fun resetPasswordPage(req: Request): Response {
         val token = req.query("token") ?: ""
         val ctx = WebContext(req)
-        val content = templateRenderer.render(
-            "reset-password.kte",
-            mapOf<String, Any?>(
-                "token" to token,
-                "themeCss" to ctx.themeCss,
-                "currentTheme" to ctx.theme,
-                "lang" to ctx.lang,
-                "i18n" to ctx.i18n,
-            ),
-        )
+        val content =
+            templateRenderer.render(
+                "reset-password.kte",
+                mapOf<String, Any?>(
+                    "token" to token,
+                    "themeCss" to ctx.themeCss,
+                    "currentTheme" to ctx.theme,
+                    "lang" to ctx.lang,
+                    "i18n" to ctx.i18n,
+                ),
+            )
         return Response(Status.OK).header("Content-Type", "text/html; charset=utf-8").body(content)
     }
 
@@ -1633,34 +2442,49 @@ class AppHandler(
             .body("")
     }
 
-    /** GET /api/books/{id}/comic/pages — returns page count for a CBZ/CBR book */
     // ─── Book formats / alternative files ───────────────────────────────────
 
     /** GET /api/books/{id}/formats */
     private fun listBookFiles(req: Request): Response {
         val svc = bookFilesService ?: return Response(Status.SERVICE_UNAVAILABLE)
-        val bookId = req.uri.path.split("/").dropLast(1).lastOrNull() ?: return Response(Status.BAD_REQUEST)
+        val bookId =
+            req.uri.path
+                .split("/")
+                .dropLast(1)
+                .lastOrNull() ?: return Response(Status.BAD_REQUEST)
         return Response(Status.OK)
             .header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(svc.listFiles(bookId)))
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(svc.listFiles(bookId)),
+            )
     }
 
     /** POST /api/books/{id}/formats */
     private fun addBookFile(req: Request): Response {
         val svc = bookFilesService ?: return Response(Status.SERVICE_UNAVAILABLE)
-        val bookId = req.uri.path.split("/").dropLast(1).lastOrNull() ?: return Response(Status.BAD_REQUEST)
-        val request = runCatching {
-            org.booktower.config.Json.mapper.readValue(req.bodyString(), org.booktower.models.AddBookFileRequest::class.java)
-        }.getOrNull() ?: return Response(Status.BAD_REQUEST)
-            .header("Content-Type", "application/json")
-            .body("""{"error":"Invalid request body"}""")
+        val bookId =
+            req.uri.path
+                .split("/")
+                .dropLast(1)
+                .lastOrNull() ?: return Response(Status.BAD_REQUEST)
+        val request =
+            runCatching {
+                org.booktower.config.Json.mapper
+                    .readValue(req.bodyString(), org.booktower.models.AddBookFileRequest::class.java)
+            }.getOrNull() ?: return Response(Status.BAD_REQUEST)
+                .header("Content-Type", "application/json")
+                .body("""{"error":"Invalid request body"}""")
 
         return runCatching { svc.addFile(bookId, request) }
             .fold(
                 onSuccess = { dto ->
                     Response(Status.CREATED)
                         .header("Content-Type", "application/json")
-                        .body(org.booktower.config.Json.mapper.writeValueAsString(dto))
+                        .body(
+                            org.booktower.config.Json.mapper
+                                .writeValueAsString(dto),
+                        )
                 },
                 onFailure = { e ->
                     Response(Status.BAD_REQUEST)
@@ -1673,7 +2497,10 @@ class AppHandler(
     /** DELETE /api/books/{id}/formats/{fileId} */
     private fun removeBookFile(req: Request): Response {
         val svc = bookFilesService ?: return Response(Status.SERVICE_UNAVAILABLE)
-        val parts = req.uri.path.split("/").filter { it.isNotBlank() }
+        val parts =
+            req.uri.path
+                .split("/")
+                .filter { it.isNotBlank() }
         val fileId = parts.lastOrNull() ?: return Response(Status.BAD_REQUEST)
         val bookId = parts.dropLast(2).lastOrNull() ?: return Response(Status.BAD_REQUEST)
         val removed = svc.removeFile(bookId, fileId)
@@ -1682,9 +2509,13 @@ class AppHandler(
 
     private fun comicPages(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
-        val bookId = req.uri.path.split("/").dropLast(2).lastOrNull()
-            ?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() }
-            ?: return Response(Status.BAD_REQUEST)
+        val bookId =
+            req.uri.path
+                .split("/")
+                .dropLast(2)
+                .lastOrNull()
+                ?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() }
+                ?: return Response(Status.BAD_REQUEST)
         val filePath = bookService.getBookFilePath(userId, bookId) ?: return Response(Status.NOT_FOUND)
         val count = comicService.getPageCount(filePath)
         return Response(Status.OK)
@@ -1695,11 +2526,17 @@ class AppHandler(
     /** GET /api/books/{id}/comic/{page} — returns a single comic page image */
     private fun comicPage(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
-        val parts = req.uri.path.split("/").filter { it.isNotBlank() }
+        val parts =
+            req.uri.path
+                .split("/")
+                .filter { it.isNotBlank() }
         val pageIndex = parts.lastOrNull()?.toIntOrNull() ?: return Response(Status.BAD_REQUEST)
-        val bookId = parts.dropLast(2).lastOrNull()
-            ?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() }
-            ?: return Response(Status.BAD_REQUEST)
+        val bookId =
+            parts
+                .dropLast(2)
+                .lastOrNull()
+                ?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() }
+                ?: return Response(Status.BAD_REQUEST)
         val filePath = bookService.getBookFilePath(userId, bookId) ?: return Response(Status.NOT_FOUND)
         val bytes = comicService.getPage(filePath, pageIndex) ?: return Response(Status.NOT_FOUND)
         val pages = comicService.listPages(filePath)
@@ -1712,17 +2549,27 @@ class AppHandler(
 
     // ─── Demo mode ────────────────────────────────────────────────────────────
 
-    private fun demoStatus(@Suppress("UNUSED_PARAMETER") req: Request): Response =
-        Response(Status.OK).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(mapOf("demoMode" to demoMode)))
+    private fun demoStatus(
+        @Suppress("UNUSED_PARAMETER") req: Request,
+    ): Response =
+        Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(mapOf("demoMode" to demoMode)),
+            )
 
     // ─── Telemetry ────────────────────────────────────────────────────────────
 
     private fun telemetryStatus(req: Request): Response {
         val svc = telemetryService ?: return Response(Status.SERVICE_UNAVAILABLE)
         val userId = AuthenticatedUser.from(req)
-        return Response(Status.OK).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(mapOf("optedIn" to svc.isOptedIn(userId))))
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(mapOf("optedIn" to svc.isOptedIn(userId))),
+            )
     }
 
     private fun telemetryOptIn(req: Request): Response {
@@ -1742,71 +2589,103 @@ class AppHandler(
     private fun telemetryStats(req: Request): Response {
         val svc = telemetryService ?: return Response(Status.SERVICE_UNAVAILABLE)
         val stats = svc.getStats()
-        return Response(Status.OK).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(stats))
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(stats),
+            )
     }
 
     // ─── First-run setup wizard ───────────────────────────────────────────────
 
-    private val SETUP_STEPS = listOf("profile", "library", "import", "preferences")
-    private val SETUP_COMPLETED_KEY = "setup.wizard.completed"
+    private val setupSteps = listOf("profile", "library", "import", "preferences")
+    private val setupCompletedKey = "setup.wizard.completed"
+
     private fun setupStepKey(step: String) = "setup.wizard.$step"
 
     private fun setupStatus(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
-        val completed = userSettingsService.get(userId, SETUP_COMPLETED_KEY) == "true"
-        val stepStatus = SETUP_STEPS.associate { step ->
-            step to (userSettingsService.get(userId, setupStepKey(step)) == "true")
-        }
-        return Response(Status.OK).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(
-                mapOf("completed" to completed, "steps" to stepStatus),
-            ))
+        val completed = userSettingsService.get(userId, setupCompletedKey) == "true"
+        val stepStatus =
+            setupSteps.associate { step ->
+                step to (userSettingsService.get(userId, setupStepKey(step)) == "true")
+            }
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper.writeValueAsString(
+                    mapOf("completed" to completed, "steps" to stepStatus),
+                ),
+            )
     }
 
     private fun completeSetupStep(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
-        val step = req.uri.path.split("/").dropLast(1).lastOrNull()
-            ?: return Response(Status.BAD_REQUEST)
-        if (step !in SETUP_STEPS) return Response(Status.BAD_REQUEST).header("Content-Type", "application/json")
-            .body("""{"error":"Unknown step '$step'. Valid steps: ${SETUP_STEPS.joinToString()}"}""")
+        val step =
+            req.uri.path
+                .split("/")
+                .dropLast(1)
+                .lastOrNull()
+                ?: return Response(Status.BAD_REQUEST)
+        if (step !in setupSteps) {
+            return Response(Status.BAD_REQUEST)
+                .header("Content-Type", "application/json")
+                .body("""{"error":"Unknown step '$step'. Valid steps: ${setupSteps.joinToString()}"}""")
+        }
         userSettingsService.set(userId, setupStepKey(step), "true")
-        return Response(Status.OK).header("Content-Type", "application/json")
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
             .body("""{"step":"$step","completed":true}""")
     }
 
     private fun completeSetup(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
-        userSettingsService.set(userId, SETUP_COMPLETED_KEY, "true")
-        return Response(Status.OK).header("Content-Type", "application/json")
+        userSettingsService.set(userId, setupCompletedKey, "true")
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
             .body("""{"completed":true}""")
     }
 
     // ─── Browse mode preference ───────────────────────────────────────────────
 
-    private val VALID_BROWSE_MODES = setOf("grid", "list", "table")
-    private val BROWSE_MODE_KEY = "browse.mode"
+    private val validBrowseModes = setOf("grid", "list", "table")
+    private val browseModeKey = "browse.mode"
 
     private fun getBrowseMode(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
-        val mode = userSettingsService.get(userId, BROWSE_MODE_KEY) ?: "grid"
-        return Response(Status.OK).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(mapOf("browseMode" to mode)))
+        val mode = userSettingsService.get(userId, browseModeKey) ?: "grid"
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(mapOf("browseMode" to mode)),
+            )
     }
 
     private fun setBrowseMode(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
-        val body = runCatching { org.booktower.config.Json.mapper.readTree(req.bodyString()) }.getOrNull()
-            ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json")
-                .body("""{"error":"Invalid JSON"}""")
+        val body =
+            runCatching {
+                org.booktower.config.Json.mapper
+                    .readTree(req.bodyString())
+            }.getOrNull()
+                ?: return Response(Status.BAD_REQUEST)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"Invalid JSON"}""")
         val mode = body.get("browseMode")?.asText()
-        if (mode.isNullOrBlank() || mode !in VALID_BROWSE_MODES) {
-            return Response(Status.BAD_REQUEST).header("Content-Type", "application/json")
-                .body("""{"error":"Invalid browseMode. Must be one of: ${VALID_BROWSE_MODES.joinToString()}"}""")
+        if (mode.isNullOrBlank() || mode !in validBrowseModes) {
+            return Response(Status.BAD_REQUEST)
+                .header("Content-Type", "application/json")
+                .body("""{"error":"Invalid browseMode. Must be one of: ${validBrowseModes.joinToString()}"}""")
         }
-        userSettingsService.set(userId, BROWSE_MODE_KEY, mode)
-        return Response(Status.OK).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(mapOf("browseMode" to mode)))
+        userSettingsService.set(userId, browseModeKey, mode)
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(mapOf("browseMode" to mode)),
+            )
     }
 
     // ─── Filter presets ───────────────────────────────────────────────────────
@@ -1814,51 +2693,88 @@ class AppHandler(
     private fun listFilterPresets(req: Request): Response {
         val svc = filterPresetService ?: return Response(Status.SERVICE_UNAVAILABLE)
         val userId = AuthenticatedUser.from(req)
-        return Response(Status.OK).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(svc.list(userId)))
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(svc.list(userId)),
+            )
     }
 
     private fun createFilterPreset(req: Request): Response {
         val svc = filterPresetService ?: return Response(Status.SERVICE_UNAVAILABLE)
         val userId = AuthenticatedUser.from(req)
-        val request = runCatching {
-            org.booktower.config.Json.mapper.readValue(req.bodyString(), SaveFilterPresetRequest::class.java)
-        }.getOrNull() ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json")
-            .body("""{"error":"Invalid request body"}""")
-        val result = runCatching { svc.create(userId, request) }
-            .getOrElse { e -> return Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"${e.message}"}""") }
-        return Response(Status.CREATED).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(result))
+        val request =
+            runCatching {
+                org.booktower.config.Json.mapper
+                    .readValue(req.bodyString(), SaveFilterPresetRequest::class.java)
+            }.getOrNull() ?: return Response(Status.BAD_REQUEST)
+                .header("Content-Type", "application/json")
+                .body("""{"error":"Invalid request body"}""")
+        val result =
+            runCatching { svc.create(userId, request) }
+                .getOrElse { e ->
+                    return Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"${e.message}"}""")
+                }
+        return Response(Status.CREATED)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(result),
+            )
     }
 
     private fun getFilterPreset(req: Request): Response {
         val svc = filterPresetService ?: return Response(Status.SERVICE_UNAVAILABLE)
         val userId = AuthenticatedUser.from(req)
-        val presetId = req.uri.path.split("/").lastOrNull() ?: return Response(Status.BAD_REQUEST)
+        val presetId =
+            req.uri.path
+                .split("/")
+                .lastOrNull() ?: return Response(Status.BAD_REQUEST)
         val preset = svc.get(userId, presetId) ?: return Response(Status.NOT_FOUND)
-        return Response(Status.OK).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(preset))
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(preset),
+            )
     }
 
     private fun updateFilterPreset(req: Request): Response {
         val svc = filterPresetService ?: return Response(Status.SERVICE_UNAVAILABLE)
         val userId = AuthenticatedUser.from(req)
-        val presetId = req.uri.path.split("/").lastOrNull() ?: return Response(Status.BAD_REQUEST)
-        val request = runCatching {
-            org.booktower.config.Json.mapper.readValue(req.bodyString(), SaveFilterPresetRequest::class.java)
-        }.getOrNull() ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json")
-            .body("""{"error":"Invalid request body"}""")
-        val result = runCatching { svc.update(userId, presetId, request) }
-            .getOrElse { e -> return Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"${e.message}"}""") }
-            ?: return Response(Status.NOT_FOUND)
-        return Response(Status.OK).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(result))
+        val presetId =
+            req.uri.path
+                .split("/")
+                .lastOrNull() ?: return Response(Status.BAD_REQUEST)
+        val request =
+            runCatching {
+                org.booktower.config.Json.mapper
+                    .readValue(req.bodyString(), SaveFilterPresetRequest::class.java)
+            }.getOrNull() ?: return Response(Status.BAD_REQUEST)
+                .header("Content-Type", "application/json")
+                .body("""{"error":"Invalid request body"}""")
+        val result =
+            runCatching { svc.update(userId, presetId, request) }
+                .getOrElse { e ->
+                    return Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"${e.message}"}""")
+                }
+                ?: return Response(Status.NOT_FOUND)
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(result),
+            )
     }
 
     private fun deleteFilterPreset(req: Request): Response {
         val svc = filterPresetService ?: return Response(Status.SERVICE_UNAVAILABLE)
         val userId = AuthenticatedUser.from(req)
-        val presetId = req.uri.path.split("/").lastOrNull() ?: return Response(Status.BAD_REQUEST)
+        val presetId =
+            req.uri.path
+                .split("/")
+                .lastOrNull() ?: return Response(Status.BAD_REQUEST)
         return if (svc.delete(userId, presetId)) Response(Status.NO_CONTENT) else Response(Status.NOT_FOUND)
     }
 
@@ -1867,66 +2783,111 @@ class AppHandler(
     private fun getAudiobookMeta(req: Request): Response {
         val svc = audiobookMetaService ?: return Response(Status.SERVICE_UNAVAILABLE)
         AuthenticatedUser.from(req) // ensure authenticated
-        val bookId = req.uri.path.split("/").dropLast(1).lastOrNull() ?: return Response(Status.BAD_REQUEST)
+        val bookId =
+            req.uri.path
+                .split("/")
+                .dropLast(1)
+                .lastOrNull() ?: return Response(Status.BAD_REQUEST)
         val meta = svc.get(bookId) ?: return Response(Status.NOT_FOUND)
-        return Response(Status.OK).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(meta))
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(meta),
+            )
     }
 
     private fun updateAudiobookMeta(req: Request): Response {
         val svc = audiobookMetaService ?: return Response(Status.SERVICE_UNAVAILABLE)
         AuthenticatedUser.from(req)
-        val bookId = req.uri.path.split("/").dropLast(1).lastOrNull() ?: return Response(Status.BAD_REQUEST)
-        val request = runCatching {
-            org.booktower.config.Json.mapper.readValue(req.bodyString(), UpdateAudiobookMetaRequest::class.java)
-        }.getOrNull() ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json")
-            .body("""{"error":"Invalid request body"}""")
+        val bookId =
+            req.uri.path
+                .split("/")
+                .dropLast(1)
+                .lastOrNull() ?: return Response(Status.BAD_REQUEST)
+        val request =
+            runCatching {
+                org.booktower.config.Json.mapper
+                    .readValue(req.bodyString(), UpdateAudiobookMetaRequest::class.java)
+            }.getOrNull() ?: return Response(Status.BAD_REQUEST)
+                .header("Content-Type", "application/json")
+                .body("""{"error":"Invalid request body"}""")
         val result = svc.upsert(bookId, request)
-        return Response(Status.OK).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(result))
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(result),
+            )
     }
 
     private fun deleteAudiobookMeta(req: Request): Response {
         val svc = audiobookMetaService ?: return Response(Status.SERVICE_UNAVAILABLE)
         AuthenticatedUser.from(req)
-        val bookId = req.uri.path.split("/").dropLast(1).lastOrNull() ?: return Response(Status.BAD_REQUEST)
+        val bookId =
+            req.uri.path
+                .split("/")
+                .dropLast(1)
+                .lastOrNull() ?: return Response(Status.BAD_REQUEST)
         return if (svc.delete(bookId)) Response(Status.NO_CONTENT) else Response(Status.NOT_FOUND)
     }
 
     private fun uploadAudiobookCover(req: Request): Response {
         val svc = audiobookMetaService ?: return Response(Status.SERVICE_UNAVAILABLE)
         AuthenticatedUser.from(req)
-        val bookId = req.uri.path.split("/").dropLast(1).lastOrNull() ?: return Response(Status.BAD_REQUEST)
-        val filename = req.header("X-Filename")?.trim()
-            ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json")
-                .body("""{"error":"X-Filename header required"}""")
+        val bookId =
+            req.uri.path
+                .split("/")
+                .dropLast(1)
+                .lastOrNull() ?: return Response(Status.BAD_REQUEST)
+        val filename =
+            req.header("X-Filename")?.trim()
+                ?: return Response(Status.BAD_REQUEST)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"X-Filename header required"}""")
         val ext = filename.substringAfterLast('.', "").lowercase()
-        if (ext !in setOf("jpg", "jpeg", "png", "webp")) return Response(Status.BAD_REQUEST).header("Content-Type", "application/json")
-            .body("""{"error":"Unsupported image type"}""")
+        if (ext !in setOf("jpg", "jpeg", "png", "webp")) {
+            return Response(Status.BAD_REQUEST)
+                .header("Content-Type", "application/json")
+                .body("""{"error":"Unsupported image type"}""")
+        }
         val bytes = req.body.stream.readBytes()
-        if (bytes.isEmpty()) return Response(Status.BAD_REQUEST).header("Content-Type", "application/json")
-            .body("""{"error":"Empty body"}""")
+        if (bytes.isEmpty()) {
+            return Response(Status.BAD_REQUEST)
+                .header("Content-Type", "application/json")
+                .body("""{"error":"Empty body"}""")
+        }
         val coversDir = java.io.File(storageConfig.coversPath, "audiobook-covers")
-        if (!coversDir.exists()) coversDir.mkdirs()
+        if (!coversDir.exists() && !coversDir.mkdirs()) logger.warn("Could not create covers directory: ${coversDir.absolutePath}")
         val coverFilename = "$bookId-audio.$ext"
         java.io.File(coversDir, coverFilename).writeBytes(bytes)
         svc.upsert(bookId, UpdateAudiobookMetaRequest(audioCover = "audiobook-covers/$coverFilename"))
-        return Response(Status.OK).header("Content-Type", "application/json")
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
             .body("""{"coverUrl":"/api/books/$bookId/audiobook-cover"}""")
     }
 
     private fun getAudiobookCover(req: Request): Response {
         val svc = audiobookMetaService ?: return Response(Status.SERVICE_UNAVAILABLE)
         AuthenticatedUser.from(req)
-        val bookId = req.uri.path.split("/").dropLast(1).lastOrNull() ?: return Response(Status.BAD_REQUEST)
+        val bookId =
+            req.uri.path
+                .split("/")
+                .dropLast(1)
+                .lastOrNull() ?: return Response(Status.BAD_REQUEST)
         val meta = svc.get(bookId) ?: return Response(Status.NOT_FOUND)
         val coverPath = meta.audioCover ?: return Response(Status.NOT_FOUND)
         val file = java.io.File(storageConfig.coversPath, coverPath)
         if (!file.exists()) return Response(Status.NOT_FOUND)
-        val contentType = when (file.extension.lowercase()) {
-            "jpg", "jpeg" -> "image/jpeg"; "png" -> "image/png"; "webp" -> "image/webp"; else -> "application/octet-stream"
-        }
-        return Response(Status.OK).header("Content-Type", contentType)
+        val contentType =
+            when (file.extension.lowercase()) {
+                "jpg", "jpeg" -> "image/jpeg"
+                "png" -> "image/png"
+                "webp" -> "image/webp"
+                else -> "application/octet-stream"
+            }
+        return Response(Status.OK)
+            .header("Content-Type", contentType)
             .header("Content-Length", file.length().toString())
             .body(file.inputStream())
     }
@@ -1938,15 +2899,20 @@ class AppHandler(
         val userId = AuthenticatedUser.from(req)
         val unreadOnly = req.uri.query.contains("unread=true")
         val items = svc.list(userId, unreadOnly)
-        return Response(Status.OK).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(items))
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(items),
+            )
     }
 
     private fun getNotificationCount(req: Request): Response {
         val svc = notificationService ?: return Response(Status.SERVICE_UNAVAILABLE)
         val userId = AuthenticatedUser.from(req)
         val count = svc.unreadCount(userId)
-        return Response(Status.OK).header("Content-Type", "application/json")
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
             .body("""{"count":$count}""")
     }
 
@@ -1976,86 +2942,151 @@ class AppHandler(
     private fun markNotificationRead(req: Request): Response {
         val svc = notificationService ?: return Response(Status.SERVICE_UNAVAILABLE)
         val userId = AuthenticatedUser.from(req)
-        val notificationId = req.uri.path.split("/").dropLast(1).lastOrNull()
-            ?: return Response(Status.BAD_REQUEST)
-        return if (svc.markRead(userId, notificationId)) Response(Status.OK).header("Content-Type", "application/json").body("{}")
-        else Response(Status.NOT_FOUND)
+        val notificationId =
+            req.uri.path
+                .split("/")
+                .dropLast(1)
+                .lastOrNull()
+                ?: return Response(Status.BAD_REQUEST)
+        return if (svc.markRead(userId, notificationId)) {
+            Response(Status.OK).header("Content-Type", "application/json").body("{}")
+        } else {
+            Response(Status.NOT_FOUND)
+        }
     }
 
     private fun markAllNotificationsRead(req: Request): Response {
         val svc = notificationService ?: return Response(Status.SERVICE_UNAVAILABLE)
         val userId = AuthenticatedUser.from(req)
         val count = svc.markAllRead(userId)
-        return Response(Status.OK).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(mapOf("marked" to count)))
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(mapOf("marked" to count)),
+            )
     }
 
     private fun deleteNotification(req: Request): Response {
         val svc = notificationService ?: return Response(Status.SERVICE_UNAVAILABLE)
         val userId = AuthenticatedUser.from(req)
-        val notificationId = req.uri.path.split("/").lastOrNull()
-            ?: return Response(Status.BAD_REQUEST)
+        val notificationId =
+            req.uri.path
+                .split("/")
+                .lastOrNull()
+                ?: return Response(Status.BAD_REQUEST)
         return if (svc.delete(userId, notificationId)) Response(Status.NO_CONTENT) else Response(Status.NOT_FOUND)
     }
 
     private fun setBookStatus(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
-        val bookId = req.uri.path.split("/").dropLast(1).lastOrNull()
-            ?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() }
-            ?: return Response(Status.BAD_REQUEST)
-        val body = runCatching { org.booktower.config.Json.mapper.readTree(req.bodyString()) }.getOrNull()
+        val bookId =
+            req.uri.path
+                .split("/")
+                .dropLast(1)
+                .lastOrNull()
+                ?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() }
+                ?: return Response(Status.BAD_REQUEST)
+        val body =
+            runCatching {
+                org.booktower.config.Json.mapper
+                    .readTree(req.bodyString())
+            }.getOrNull()
         val statusName = body?.get("status")?.asText()?.takeIf { it.isNotBlank() && it != "NONE" }
-        val status = statusName?.let { n -> org.booktower.models.ReadStatus.entries.firstOrNull { it.name == n } }
+        val status =
+            statusName?.let { n ->
+                org.booktower.models.ReadStatus.entries
+                    .firstOrNull { it.name == n }
+            }
         bookService.setStatus(userId, bookId, status)
-        return Response(Status.OK).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(mapOf("status" to (status?.name ?: "NONE"))))
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(mapOf("status" to (status?.name ?: "NONE"))),
+            )
     }
 
     // ─── Community ratings ────────────────────────────────────────────────────
 
     private fun getCommunityRating(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
-        val bookId = req.uri.path.split("/").dropLast(1).lastOrNull()
-            ?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() }
-            ?: return Response(Status.BAD_REQUEST)
-        val rating = communityRatingService?.getStored(userId, bookId)
-            ?: return Response(Status.NOT_FOUND).header("Content-Type", "application/json")
-                .body("""{"error":"Community ratings not available"}""")
-        return Response(Status.OK).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(rating))
+        val bookId =
+            req.uri.path
+                .split("/")
+                .dropLast(1)
+                .lastOrNull()
+                ?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() }
+                ?: return Response(Status.BAD_REQUEST)
+        val rating =
+            communityRatingService?.getStored(userId, bookId)
+                ?: return Response(Status.NOT_FOUND)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"Community ratings not available"}""")
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(rating),
+            )
     }
 
     private fun fetchCommunityRating(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
-        val bookId = req.uri.path.split("/").dropLast(2).lastOrNull()
-            ?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() }
-            ?: return Response(Status.BAD_REQUEST)
-        val svc = communityRatingService
-            ?: return Response(Status.SERVICE_UNAVAILABLE).header("Content-Type", "application/json")
-                .body("""{"error":"Community rating service not configured"}""")
-        val result = svc.fetchAndStore(userId, bookId)
-            ?: return Response(Status.NOT_FOUND).header("Content-Type", "application/json")
-                .body("""{"error":"No community rating found for this book"}""")
-        return Response(Status.OK).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(result))
+        val bookId =
+            req.uri.path
+                .split("/")
+                .dropLast(2)
+                .lastOrNull()
+                ?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() }
+                ?: return Response(Status.BAD_REQUEST)
+        val svc =
+            communityRatingService
+                ?: return Response(Status.SERVICE_UNAVAILABLE)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"Community rating service not configured"}""")
+        val result =
+            svc.fetchAndStore(userId, bookId)
+                ?: return Response(Status.NOT_FOUND)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"No community rating found for this book"}""")
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(result),
+            )
     }
 
     // ─── Duplicate book merge ─────────────────────────────────────────────────
 
     private fun mergeBook(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
-        val targetId = req.uri.path.split("/").dropLast(1).lastOrNull()
-            ?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() }
-            ?: return Response(Status.BAD_REQUEST).body("""{"error":"Invalid target book id"}""")
-        val body = runCatching { org.booktower.config.Json.mapper.readValue(req.bodyString(), org.booktower.models.MergeBookRequest::class.java) }.getOrNull()
-            ?: return Response(Status.BAD_REQUEST).body("""{"error":"Invalid request body"}""")
-        val sourceId = runCatching { java.util.UUID.fromString(body.sourceId) }.getOrNull()
-            ?: return Response(Status.BAD_REQUEST).body("""{"error":"Invalid source book id"}""")
+        val targetId =
+            req.uri.path
+                .split("/")
+                .dropLast(1)
+                .lastOrNull()
+                ?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() }
+                ?: return Response(Status.BAD_REQUEST).body("""{"error":"Invalid target book id"}""")
+        val body =
+            runCatching {
+                org.booktower.config.Json.mapper.readValue(
+                    req.bodyString(),
+                    org.booktower.models.MergeBookRequest::class.java,
+                )
+            }.getOrNull()
+                ?: return Response(Status.BAD_REQUEST).body("""{"error":"Invalid request body"}""")
+        val sourceId =
+            runCatching { java.util.UUID.fromString(body.sourceId) }.getOrNull()
+                ?: return Response(Status.BAD_REQUEST).body("""{"error":"Invalid source book id"}""")
         if (!bookService.mergeBooks(userId, targetId, sourceId)) {
-            return Response(Status.NOT_FOUND).header("Content-Type", "application/json")
+            return Response(Status.NOT_FOUND)
+                .header("Content-Type", "application/json")
                 .body("""{"error":"One or both books not found, or they are the same book"}""")
         }
-        return Response(Status.OK).header("Content-Type", "application/json")
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
             .body("""{"merged":true}""")
     }
 
@@ -2064,52 +3095,99 @@ class AppHandler(
     private fun listShelves(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
         val shelves = magicShelfService.getShelves(userId)
-        return Response(Status.OK).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(shelves))
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(shelves),
+            )
     }
 
     private fun createShelf(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
-        val body = runCatching { org.booktower.config.Json.mapper.readTree(req.bodyString()) }.getOrNull()
-            ?: return Response(Status.BAD_REQUEST)
-        val name = body.get("name")?.asText()?.trim()?.takeIf { it.isNotBlank() }
-            ?: return Response(Status.BAD_REQUEST)
-        val ruleTypeStr = body.get("ruleType")?.asText()?.trim()
-            ?: return Response(Status.BAD_REQUEST)
-        val ruleType = runCatching { org.booktower.models.ShelfRuleType.valueOf(ruleTypeStr) }.getOrNull()
-            ?: return Response(Status.BAD_REQUEST)
+        val body =
+            runCatching {
+                org.booktower.config.Json.mapper
+                    .readTree(req.bodyString())
+            }.getOrNull()
+                ?: return Response(Status.BAD_REQUEST)
+        val name =
+            body
+                .get("name")
+                ?.asText()
+                ?.trim()
+                ?.takeIf { it.isNotBlank() }
+                ?: return Response(Status.BAD_REQUEST)
+        val ruleTypeStr =
+            body.get("ruleType")?.asText()?.trim()
+                ?: return Response(Status.BAD_REQUEST)
+        val ruleType =
+            runCatching {
+                org.booktower.models.ShelfRuleType
+                    .valueOf(ruleTypeStr)
+            }.getOrNull()
+                ?: return Response(Status.BAD_REQUEST)
         val ruleValue = body.get("ruleValue")?.takeIf { !it.isNull }?.asText()
         val shelf = magicShelfService.createShelf(userId, org.booktower.models.CreateMagicShelfRequest(name, ruleType, ruleValue))
-        return Response(Status.CREATED).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(shelf))
+        return Response(Status.CREATED)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(shelf),
+            )
     }
 
     private fun shareShelf(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
-        val shelfId = req.uri.path.split("/").dropLast(1).lastOrNull()
-            ?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() }
-            ?: return Response(Status.BAD_REQUEST)
-        val shelf = magicShelfService.shareShelf(userId, shelfId)
-            ?: return Response(Status.NOT_FOUND)
-        return Response(Status.OK).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(shelf))
+        val shelfId =
+            req.uri.path
+                .split("/")
+                .dropLast(1)
+                .lastOrNull()
+                ?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() }
+                ?: return Response(Status.BAD_REQUEST)
+        val shelf =
+            magicShelfService.shareShelf(userId, shelfId)
+                ?: return Response(Status.NOT_FOUND)
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(shelf),
+            )
     }
 
     private fun unshareShelf(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
-        val shelfId = req.uri.path.split("/").dropLast(1).lastOrNull()
-            ?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() }
-            ?: return Response(Status.BAD_REQUEST)
-        return if (magicShelfService.unshareShelf(userId, shelfId)) Response(Status.NO_CONTENT)
-        else Response(Status.NOT_FOUND)
+        val shelfId =
+            req.uri.path
+                .split("/")
+                .dropLast(1)
+                .lastOrNull()
+                ?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() }
+                ?: return Response(Status.BAD_REQUEST)
+        return if (magicShelfService.unshareShelf(userId, shelfId)) {
+            Response(Status.NO_CONTENT)
+        } else {
+            Response(Status.NOT_FOUND)
+        }
     }
 
     private fun getPublicShelf(req: Request): Response {
-        val token = req.uri.path.split("/").lastOrNull()?.takeIf { it.isNotBlank() }
-            ?: return Response(Status.BAD_REQUEST)
-        val shelf = magicShelfService.getPublicShelf(token)
-            ?: return Response(Status.NOT_FOUND)
-        return Response(Status.OK).header("Content-Type", "application/json")
-            .body(org.booktower.config.Json.mapper.writeValueAsString(shelf))
+        val token =
+            req.uri.path
+                .split("/")
+                .lastOrNull()
+                ?.takeIf { it.isNotBlank() }
+                ?: return Response(Status.BAD_REQUEST)
+        val shelf =
+            magicShelfService.getPublicShelf(token)
+                ?: return Response(Status.NOT_FOUND)
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(shelf),
+            )
     }
 }

@@ -18,20 +18,27 @@ data class GoodreadsImportResult(
     val errors: Int,
 )
 
-class GoodreadsImportService(private val bookService: BookService) {
-
-    fun import(userId: UUID, libraryId: String, csvStream: InputStream): GoodreadsImportResult {
+class GoodreadsImportService(
+    private val bookService: BookService,
+) {
+    fun import(
+        userId: UUID,
+        libraryId: String,
+        csvStream: InputStream,
+    ): GoodreadsImportResult {
         var imported = 0
         var skipped = 0
         var errors = 0
 
         try {
-            val format = CSVFormat.DEFAULT.builder()
-                .setHeader()
-                .setSkipHeaderRecord(true)
-                .setIgnoreHeaderCase(true)
-                .setTrim(true)
-                .build()
+            val format =
+                CSVFormat.DEFAULT
+                    .builder()
+                    .setHeader()
+                    .setSkipHeaderRecord(true)
+                    .setIgnoreHeaderCase(true)
+                    .setTrim(true)
+                    .build()
 
             InputStreamReader(csvStream, Charsets.UTF_8).use { reader ->
                 format.parse(reader).use { parser ->
@@ -47,10 +54,11 @@ class GoodreadsImportService(private val bookService: BookService) {
                             val publisher = record.safeGet("publisher")
                             val year = record.safeGet("year published")
 
-                            val result = bookService.createBook(
-                                userId,
-                                CreateBookRequest(title = title, author = author, description = null, libraryId = libraryId),
-                            )
+                            val result =
+                                bookService.createBook(
+                                    userId,
+                                    CreateBookRequest(title = title, author = author, description = null, libraryId = libraryId),
+                                )
                             if (result.isFailure) {
                                 errors++
                                 continue
@@ -60,10 +68,15 @@ class GoodreadsImportService(private val bookService: BookService) {
 
                             if (isbn != null || publisher != null || year != null) {
                                 bookService.applyFetchedMetadata(
-                                    userId, bookId,
+                                    userId,
+                                    bookId,
                                     FetchedMetadata(
-                                        title = null, author = null, description = null,
-                                        isbn = isbn, publisher = publisher, publishedDate = year,
+                                        title = null,
+                                        author = null,
+                                        description = null,
+                                        isbn = isbn,
+                                        publisher = publisher,
+                                        publishedDate = year,
                                         openLibraryCoverId = null,
                                     ),
                                 )
@@ -75,12 +88,13 @@ class GoodreadsImportService(private val bookService: BookService) {
                             }
 
                             val shelf = record.safeGet("exclusive shelf")?.lowercase()
-                            val status = when (shelf) {
-                                "read" -> ReadStatus.FINISHED
-                                "currently-reading" -> ReadStatus.READING
-                                "to-read" -> ReadStatus.WANT_TO_READ
-                                else -> null
-                            }
+                            val status =
+                                when (shelf) {
+                                    "read" -> ReadStatus.FINISHED
+                                    "currently-reading" -> ReadStatus.READING
+                                    "to-read" -> ReadStatus.WANT_TO_READ
+                                    else -> null
+                                }
                             if (status != null) {
                                 bookService.setStatus(userId, bookId, status)
                             }
@@ -88,9 +102,11 @@ class GoodreadsImportService(private val bookService: BookService) {
                             val shelves = record.safeGet("bookshelves")
                             if (!shelves.isNullOrBlank()) {
                                 val excluded = setOf("read", "currently-reading", "to-read")
-                                val tags = shelves.split(",")
-                                    .map { it.trim().lowercase() }
-                                    .filter { it.isNotBlank() && it !in excluded }
+                                val tags =
+                                    shelves
+                                        .split(",")
+                                        .map { it.trim().lowercase() }
+                                        .filter { it.isNotBlank() && it !in excluded }
                                 if (tags.isNotEmpty()) {
                                     bookService.setTags(userId, bookId, tags)
                                 }
@@ -113,8 +129,7 @@ class GoodreadsImportService(private val bookService: BookService) {
         return GoodreadsImportResult(imported, skipped, errors)
     }
 
-    private fun CSVRecord.safeGet(name: String): String? =
-        if (isMapped(name)) get(name)?.takeIf { it.isNotBlank() } else null
+    private fun CSVRecord.safeGet(name: String): String? = if (isMapped(name)) get(name)?.takeIf { it.isNotBlank() } else null
 
     // Goodreads ISBNs are wrapped like ="0123456789" — strip the wrapping
     private fun parseIsbn(raw: String): String? {

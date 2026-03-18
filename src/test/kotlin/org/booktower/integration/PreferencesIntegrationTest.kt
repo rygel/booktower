@@ -12,18 +12,18 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class PreferencesIntegrationTest : IntegrationTestBase() {
-
     // ── Login preference sync ──────────────────────────────────────────────────
 
     @Test
     fun `login applies stored theme and language as cookies`() {
         val username = "prefsync_${System.nanoTime()}"
         val password = "password123"
-        val regResponse = app(
-            Request(Method.POST, "/auth/register")
-                .header("Content-Type", "application/json")
-                .body("""{"username":"$username","email":"$username@test.com","password":"$password"}"""),
-        )
+        val regResponse =
+            app(
+                Request(Method.POST, "/auth/register")
+                    .header("Content-Type", "application/json")
+                    .body("""{"username":"$username","email":"$username@test.com","password":"$password"}"""),
+            )
         val token = Json.mapper.readValue(regResponse.bodyString(), LoginResponse::class.java).token
 
         // Store preferences
@@ -31,11 +31,12 @@ class PreferencesIntegrationTest : IntegrationTestBase() {
         app(Request(Method.PUT, "/api/settings/language").header("Cookie", "token=$token").body("de"))
 
         // Login again
-        val loginResponse = app(
-            Request(Method.POST, "/auth/login")
-                .header("Content-Type", "application/json")
-                .body("""{"username":"$username","password":"$password"}"""),
-        )
+        val loginResponse =
+            app(
+                Request(Method.POST, "/auth/login")
+                    .header("Content-Type", "application/json")
+                    .body("""{"username":"$username","password":"$password"}"""),
+            )
 
         val themeCookie = loginResponse.cookies().find { it.name == "app_theme" }
         val langCookie = loginResponse.cookies().find { it.name == "app_lang" }
@@ -55,11 +56,12 @@ class PreferencesIntegrationTest : IntegrationTestBase() {
                 .body("""{"username":"$username","email":"$username@test.com","password":"$password"}"""),
         )
 
-        val loginResponse = app(
-            Request(Method.POST, "/auth/login")
-                .header("Content-Type", "application/json")
-                .body("""{"username":"$username","password":"$password"}"""),
-        )
+        val loginResponse =
+            app(
+                Request(Method.POST, "/auth/login")
+                    .header("Content-Type", "application/json")
+                    .body("""{"username":"$username","password":"$password"}"""),
+            )
 
         val themeCookie = loginResponse.cookies().find { it.name == "app_theme" }
         val langCookie = loginResponse.cookies().find { it.name == "app_lang" }
@@ -71,9 +73,12 @@ class PreferencesIntegrationTest : IntegrationTestBase() {
 
     @Test
     fun `POST preferences-theme returns 200 with style element`() {
-        val response = app(Request(Method.POST, "/preferences/theme")
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .body("theme=nord"))
+        val response =
+            app(
+                Request(Method.POST, "/preferences/theme")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("theme=nord"),
+            )
         assertEquals(Status.OK, response.status)
         val body = response.bodyString()
         assertTrue(body.contains("<style"))
@@ -83,9 +88,12 @@ class PreferencesIntegrationTest : IntegrationTestBase() {
 
     @Test
     fun `POST preferences-theme returns CSS variables in body`() {
-        val response = app(Request(Method.POST, "/preferences/theme")
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .body("theme=dracula"))
+        val response =
+            app(
+                Request(Method.POST, "/preferences/theme")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("theme=dracula"),
+            )
         val body = response.bodyString()
         assertTrue(body.contains(":root"))
         assertTrue(body.contains("--bt-"))
@@ -93,9 +101,12 @@ class PreferencesIntegrationTest : IntegrationTestBase() {
 
     @Test
     fun `POST preferences-theme sets app_theme cookie`() {
-        val response = app(Request(Method.POST, "/preferences/theme")
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .body("theme=tokyo-night"))
+        val response =
+            app(
+                Request(Method.POST, "/preferences/theme")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("theme=tokyo-night"),
+            )
         val cookie = response.cookies().find { it.name == "app_theme" }
         assertNotNull(cookie)
         assertEquals("tokyo-night", cookie!!.value)
@@ -103,9 +114,12 @@ class PreferencesIntegrationTest : IntegrationTestBase() {
 
     @Test
     fun `POST preferences-theme cookie has long max-age`() {
-        val response = app(Request(Method.POST, "/preferences/theme")
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .body("theme=nord"))
+        val response =
+            app(
+                Request(Method.POST, "/preferences/theme")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("theme=nord"),
+            )
         val cookie = response.cookies().find { it.name == "app_theme" }
         assertNotNull(cookie)
         assertTrue((cookie!!.maxAge ?: 0) > 86400, "Cookie maxAge should be at least one day")
@@ -113,34 +127,63 @@ class PreferencesIntegrationTest : IntegrationTestBase() {
 
     @Test
     fun `POST preferences-theme with unknown theme defaults to catppuccin-mocha`() {
-        val response = app(Request(Method.POST, "/preferences/theme")
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .body("theme=does-not-exist"))
+        val response =
+            app(
+                Request(Method.POST, "/preferences/theme")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("theme=does-not-exist"),
+            )
         assertEquals(Status.OK, response.status)
         assertTrue(response.bodyString().contains("catppuccin-mocha"))
     }
 
     @Test
     fun `POST preferences-theme sets HTML content type`() {
-        val response = app(Request(Method.POST, "/preferences/theme")
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .body("theme=everforest"))
+        val response =
+            app(
+                Request(Method.POST, "/preferences/theme")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("theme=everforest"),
+            )
         assertTrue(response.header("Content-Type")?.startsWith("text/html") == true)
     }
 
     @Test
     fun `all 24 themes render valid CSS`() {
-        val themes = listOf(
-            "dark", "dracula", "one-dark", "monokai", "tokyo-night", "tokyo-storm",
-            "ayu-dark", "night-owl", "rose-pine", "rose-pine-moon", "gruvbox-dark",
-            "everforest", "nord", "material", "github-dark", "solarized-dark",
-            "catppuccin-mocha", "catppuccin-macchiato", "catppuccin-frappe", "catppuccin-latte",
-            "rose-pine-dawn", "gruvbox-light", "solarized-light", "light"
-        )
+        val themes =
+            listOf(
+                "dark",
+                "dracula",
+                "one-dark",
+                "monokai",
+                "tokyo-night",
+                "tokyo-storm",
+                "ayu-dark",
+                "night-owl",
+                "rose-pine",
+                "rose-pine-moon",
+                "gruvbox-dark",
+                "everforest",
+                "nord",
+                "material",
+                "github-dark",
+                "solarized-dark",
+                "catppuccin-mocha",
+                "catppuccin-macchiato",
+                "catppuccin-frappe",
+                "catppuccin-latte",
+                "rose-pine-dawn",
+                "gruvbox-light",
+                "solarized-light",
+                "light",
+            )
         for (themeId in themes) {
-            val response = app(Request(Method.POST, "/preferences/theme")
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .body("theme=$themeId"))
+            val response =
+                app(
+                    Request(Method.POST, "/preferences/theme")
+                        .header("Content-Type", "application/x-www-form-urlencoded")
+                        .body("theme=$themeId"),
+                )
             assertEquals(Status.OK, response.status, "Theme $themeId should return 200")
             assertTrue(response.bodyString().contains(":root"), "Theme $themeId should have CSS variables")
             assertTrue(response.bodyString().contains(themeId), "Response should reference theme $themeId")
@@ -153,8 +196,11 @@ class PreferencesIntegrationTest : IntegrationTestBase() {
     fun `theme cookie is read on subsequent page load`() {
         val token = registerAndGetToken("themetest")
         // Load landing page with a theme cookie — the injected <style> should reflect it
-        val response = app(Request(Method.GET, "/")
-            .header("Cookie", "app_theme=nord"))
+        val response =
+            app(
+                Request(Method.GET, "/")
+                    .header("Cookie", "app_theme=nord"),
+            )
         assertEquals(Status.OK, response.status)
         assertTrue(response.bodyString().contains("theme-style"))
         // Nord theme CSS should be injected (nord uses a blue accent)
@@ -164,8 +210,11 @@ class PreferencesIntegrationTest : IntegrationTestBase() {
     @Test
     fun `library page renders with theme from cookie`() {
         val token = registerAndGetToken("themelib")
-        val response = app(Request(Method.GET, "/libraries")
-            .header("Cookie", "token=$token; app_theme=dracula"))
+        val response =
+            app(
+                Request(Method.GET, "/libraries")
+                    .header("Cookie", "token=$token; app_theme=dracula"),
+            )
         assertEquals(Status.OK, response.status)
         val body = response.bodyString()
         assertTrue(body.contains("data-theme=\"dracula\""))
@@ -182,17 +231,23 @@ class PreferencesIntegrationTest : IntegrationTestBase() {
 
     @Test
     fun `POST preferences-lang returns 200`() {
-        val response = app(Request(Method.POST, "/preferences/lang")
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .body("lang=fr"))
+        val response =
+            app(
+                Request(Method.POST, "/preferences/lang")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("lang=fr"),
+            )
         assertEquals(Status.OK, response.status)
     }
 
     @Test
     fun `POST preferences-lang sets app_lang cookie`() {
-        val response = app(Request(Method.POST, "/preferences/lang")
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .body("lang=de"))
+        val response =
+            app(
+                Request(Method.POST, "/preferences/lang")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("lang=de"),
+            )
         val cookie = response.cookies().find { it.name == "app_lang" }
         assertNotNull(cookie)
         assertEquals("de", cookie!!.value)
@@ -200,17 +255,23 @@ class PreferencesIntegrationTest : IntegrationTestBase() {
 
     @Test
     fun `POST preferences-lang sends HX-Refresh true`() {
-        val response = app(Request(Method.POST, "/preferences/lang")
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .body("lang=fr"))
+        val response =
+            app(
+                Request(Method.POST, "/preferences/lang")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("lang=fr"),
+            )
         assertEquals("true", response.header("HX-Refresh"))
     }
 
     @Test
     fun `POST preferences-lang cookie has long max-age`() {
-        val response = app(Request(Method.POST, "/preferences/lang")
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .body("lang=en"))
+        val response =
+            app(
+                Request(Method.POST, "/preferences/lang")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("lang=en"),
+            )
         val cookie = response.cookies().find { it.name == "app_lang" }
         assertNotNull(cookie)
         assertTrue((cookie!!.maxAge ?: 0) > 86400, "Cookie maxAge should be at least one day")
@@ -218,9 +279,12 @@ class PreferencesIntegrationTest : IntegrationTestBase() {
 
     @Test
     fun `POST preferences-lang with unsupported language defaults to en`() {
-        val response = app(Request(Method.POST, "/preferences/lang")
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .body("lang=xx"))  // "xx" is not a supported language code
+        val response =
+            app(
+                Request(Method.POST, "/preferences/lang")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("lang=xx"),
+            ) // "xx" is not a supported language code
         val cookie = response.cookies().find { it.name == "app_lang" }
         assertNotNull(cookie)
         assertEquals("en", cookie!!.value)
@@ -229,9 +293,12 @@ class PreferencesIntegrationTest : IntegrationTestBase() {
     @Test
     fun `all supported languages set cookie correctly`() {
         for (lang in listOf("en", "fr", "de")) {
-            val response = app(Request(Method.POST, "/preferences/lang")
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .body("lang=$lang"))
+            val response =
+                app(
+                    Request(Method.POST, "/preferences/lang")
+                        .header("Content-Type", "application/x-www-form-urlencoded")
+                        .body("lang=$lang"),
+                )
             val cookie = response.cookies().find { it.name == "app_lang" }
             assertNotNull(cookie, "Cookie should be set for lang=$lang")
             assertEquals(lang, cookie!!.value, "Cookie value should be $lang")
@@ -243,8 +310,11 @@ class PreferencesIntegrationTest : IntegrationTestBase() {
     @Test
     fun `library page renders in German when lang cookie is de`() {
         val token = registerAndGetToken("langde")
-        val response = app(Request(Method.GET, "/libraries")
-            .header("Cookie", "token=$token; app_lang=de"))
+        val response =
+            app(
+                Request(Method.GET, "/libraries")
+                    .header("Cookie", "token=$token; app_lang=de"),
+            )
         assertEquals(Status.OK, response.status)
         val body = response.bodyString()
         // German translation for "page.libraries.title" = "Meine Bibliotheken"
@@ -254,8 +324,11 @@ class PreferencesIntegrationTest : IntegrationTestBase() {
     @Test
     fun `library page renders in French when lang cookie is fr`() {
         val token = registerAndGetToken("langfr")
-        val response = app(Request(Method.GET, "/libraries")
-            .header("Cookie", "token=$token; app_lang=fr"))
+        val response =
+            app(
+                Request(Method.GET, "/libraries")
+                    .header("Cookie", "token=$token; app_lang=fr"),
+            )
         assertEquals(Status.OK, response.status)
         val body = response.bodyString()
         // French translation for "page.libraries.title" = "Mes bibliothèques"
@@ -265,8 +338,11 @@ class PreferencesIntegrationTest : IntegrationTestBase() {
     @Test
     fun `library page renders in English by default`() {
         val token = registerAndGetToken("langen")
-        val response = app(Request(Method.GET, "/libraries")
-            .header("Cookie", "token=$token"))
+        val response =
+            app(
+                Request(Method.GET, "/libraries")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, response.status)
         assertTrue(response.bodyString().contains("My Libraries"))
     }
@@ -274,8 +350,11 @@ class PreferencesIntegrationTest : IntegrationTestBase() {
     @Test
     fun `html lang attribute reflects active language`() {
         val token = registerAndGetToken("htmllang")
-        val response = app(Request(Method.GET, "/libraries")
-            .header("Cookie", "token=$token; app_lang=de"))
+        val response =
+            app(
+                Request(Method.GET, "/libraries")
+                    .header("Cookie", "token=$token; app_lang=de"),
+            )
         assertEquals(Status.OK, response.status)
         assertTrue(response.bodyString().contains("lang=\"de\""))
     }
@@ -283,8 +362,11 @@ class PreferencesIntegrationTest : IntegrationTestBase() {
     @Test
     fun `logout button text is translated in German`() {
         val token = registerAndGetToken("logoutde")
-        val response = app(Request(Method.GET, "/libraries")
-            .header("Cookie", "token=$token; app_lang=de"))
+        val response =
+            app(
+                Request(Method.GET, "/libraries")
+                    .header("Cookie", "token=$token; app_lang=de"),
+            )
         assertEquals(Status.OK, response.status)
         // German translation for "auth.logout" = "Abmelden"
         assertTrue(response.bodyString().contains("Abmelden"))

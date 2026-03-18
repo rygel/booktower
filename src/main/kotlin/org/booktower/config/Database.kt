@@ -37,7 +37,8 @@ class Database private constructor(
             val dataSource = HikariDataSource(hikariConfig)
 
             val flyway =
-                Flyway.configure()
+                Flyway
+                    .configure()
                     .dataSource(dataSource)
                     .locations("classpath:db/migration")
                     .baselineOnMigrate(true)

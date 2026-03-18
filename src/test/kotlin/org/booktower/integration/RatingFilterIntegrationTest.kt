@@ -23,7 +23,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class RatingFilterIntegrationTest : IntegrationTestBase() {
-
     private lateinit var bookService: BookService
     private lateinit var userId: UUID
     private lateinit var libId: String
@@ -41,16 +40,20 @@ class RatingFilterIntegrationTest : IntegrationTestBase() {
         val pdfMetadataService = PdfMetadataService(jdbi, config.storage.coversPath)
         val libraryService = LibraryService(jdbi, pdfMetadataService)
 
-        val result = authService.register(
-            CreateUserRequest("rf_${System.nanoTime()}", "rf_${System.nanoTime()}@test.com", "password123"),
-        )
+        val result =
+            authService.register(
+                CreateUserRequest("rf_${System.nanoTime()}", "rf_${System.nanoTime()}@test.com", "password123"),
+            )
         val loginResponse = result.getOrThrow()
         userId = jwtService.extractUserId(loginResponse.token)!!
         token = loginResponse.token
         libId = libraryService.createLibrary(userId, CreateLibraryRequest("Rating Lib", "./data/rf-${System.nanoTime()}")).id
     }
 
-    private fun createBookWithRating(title: String, rating: Int): String {
+    private fun createBookWithRating(
+        title: String,
+        rating: Int,
+    ): String {
         val book = bookService.createBook(userId, CreateBookRequest(title, null, null, libId)).getOrThrow()
         bookService.setRating(userId, UUID.fromString(book.id), rating)
         return book.id
@@ -159,30 +162,33 @@ class RatingFilterIntegrationTest : IntegrationTestBase() {
     @Test
     fun `library page with rating=3 returns 200`() {
         val libId2 = createLibrary(token)
-        val response = app(
-            Request(Method.GET, "/libraries/$libId2?rating=3")
-                .header("Cookie", "token=$token"),
-        )
+        val response =
+            app(
+                Request(Method.GET, "/libraries/$libId2?rating=3")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, response.status)
     }
 
     @Test
     fun `library page with invalid rating param is ignored`() {
         val libId2 = createLibrary(token)
-        val response = app(
-            Request(Method.GET, "/libraries/$libId2?rating=abc")
-                .header("Cookie", "token=$token"),
-        )
+        val response =
+            app(
+                Request(Method.GET, "/libraries/$libId2?rating=abc")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, response.status)
     }
 
     @Test
     fun `library page rating=0 returns all books`() {
         val libId2 = createLibrary(token)
-        val response = app(
-            Request(Method.GET, "/libraries/$libId2?rating=0")
-                .header("Cookie", "token=$token"),
-        )
+        val response =
+            app(
+                Request(Method.GET, "/libraries/$libId2?rating=0")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, response.status)
     }
 }

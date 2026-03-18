@@ -7,8 +7,8 @@ import java.util.UUID
 private val logger = LoggerFactory.getLogger("booktower.DuplicateDetectionService")
 
 data class DuplicateGroup(
-    val reason: String,        // "isbn", "title_author", "file_hash"
-    val matchValue: String,    // the shared value
+    val reason: String,
+    val matchValue: String,
     val books: List<DuplicateBookEntry>,
 )
 
@@ -23,8 +23,9 @@ data class DuplicateBookEntry(
     val addedAt: String,
 )
 
-class DuplicateDetectionService(private val jdbi: Jdbi) {
-
+class DuplicateDetectionService(
+    private val jdbi: Jdbi,
+) {
     /**
      * Returns all duplicate groups for the given user's libraries.
      * Checks three signals in priority order:
@@ -44,10 +45,15 @@ class DuplicateDetectionService(private val jdbi: Jdbi) {
         return groups
     }
 
-    private fun findByIsbn(userId: UUID, seen: MutableSet<String>): List<DuplicateGroup> {
-        val rows = jdbi.withHandle<List<Map<String, Any?>>, Exception> { handle ->
-            handle.createQuery(
-                """
+    private fun findByIsbn(
+        userId: UUID,
+        seen: MutableSet<String>,
+    ): List<DuplicateGroup> {
+        val rows =
+            jdbi.withHandle<List<Map<String, Any?>>, Exception> { handle ->
+                handle
+                    .createQuery(
+                        """
                 SELECT b.id, b.title, b.author, b.isbn, b.library_id, l.name AS library_name,
                        b.file_path, b.file_size, b.added_at
                 FROM books b
@@ -55,15 +61,22 @@ class DuplicateDetectionService(private val jdbi: Jdbi) {
                 WHERE l.user_id = ? AND b.isbn IS NOT NULL AND b.isbn <> ''
                 ORDER BY b.isbn, b.added_at
                 """,
-            ).bind(0, userId.toString()).mapToMap().list()
-        }
+                    ).bind(0, userId.toString())
+                    .mapToMap()
+                    .list()
+            }
         return groupBy(rows, "isbn", "isbn", seen)
     }
 
-    private fun findByFileHash(userId: UUID, seen: MutableSet<String>): List<DuplicateGroup> {
-        val rows = jdbi.withHandle<List<Map<String, Any?>>, Exception> { handle ->
-            handle.createQuery(
-                """
+    private fun findByFileHash(
+        userId: UUID,
+        seen: MutableSet<String>,
+    ): List<DuplicateGroup> {
+        val rows =
+            jdbi.withHandle<List<Map<String, Any?>>, Exception> { handle ->
+                handle
+                    .createQuery(
+                        """
                 SELECT b.id, b.title, b.author, b.file_hash AS isbn, b.library_id, l.name AS library_name,
                        b.file_path, b.file_size, b.added_at
                 FROM books b
@@ -71,15 +84,22 @@ class DuplicateDetectionService(private val jdbi: Jdbi) {
                 WHERE l.user_id = ? AND b.file_hash IS NOT NULL AND b.file_hash <> ''
                 ORDER BY b.file_hash, b.added_at
                 """,
-            ).bind(0, userId.toString()).mapToMap().list()
-        }
+                    ).bind(0, userId.toString())
+                    .mapToMap()
+                    .list()
+            }
         return groupBy(rows, "isbn", "file_hash", seen)
     }
 
-    private fun findByTitleAuthor(userId: UUID, seen: MutableSet<String>): List<DuplicateGroup> {
-        val rows = jdbi.withHandle<List<Map<String, Any?>>, Exception> { handle ->
-            handle.createQuery(
-                """
+    private fun findByTitleAuthor(
+        userId: UUID,
+        seen: MutableSet<String>,
+    ): List<DuplicateGroup> {
+        val rows =
+            jdbi.withHandle<List<Map<String, Any?>>, Exception> { handle ->
+                handle
+                    .createQuery(
+                        """
                 SELECT b.id, b.title, b.author, b.library_id, l.name AS library_name,
                        b.file_path, b.file_size, b.added_at
                 FROM books b
@@ -87,15 +107,19 @@ class DuplicateDetectionService(private val jdbi: Jdbi) {
                 WHERE l.user_id = ?
                 ORDER BY b.title, b.author, b.added_at
                 """,
-            ).bind(0, userId.toString()).mapToMap().list()
-        }
+                    ).bind(0, userId.toString())
+                    .mapToMap()
+                    .list()
+            }
 
         // Group by normalised(title)+normalised(author)
-        val grouped = rows.groupBy { row ->
-            val title = (row["title"] as? String ?: "").normalise()
-            val author = (row["author"] as? String ?: "").normalise()
-            "$title||$author"
-        }.filter { it.value.size > 1 && it.key != "||" }
+        val grouped =
+            rows
+                .groupBy { row ->
+                    val title = (row["title"] as? String ?: "").normalise()
+                    val author = (row["author"] as? String ?: "").normalise()
+                    "$title||$author"
+                }.filter { it.value.size > 1 && it.key != "||" }
 
         return grouped.mapNotNull { (key, group) ->
             val newBooks = group.filter { (it["id"] as String) !in seen }
@@ -115,7 +139,8 @@ class DuplicateDetectionService(private val jdbi: Jdbi) {
         reason: String,
         seen: MutableSet<String>,
     ): List<DuplicateGroup> {
-        return rows.groupBy { it[keyCol] as? String ?: "" }
+        return rows
+            .groupBy { it[keyCol] as? String ?: "" }
             .filter { it.key.isNotBlank() && it.value.size > 1 }
             .mapNotNull { (matchValue, group) ->
                 val newBooks = group.filter { (it["id"] as String) !in seen }
@@ -129,18 +154,22 @@ class DuplicateDetectionService(private val jdbi: Jdbi) {
             }
     }
 
-    private fun Map<String, Any?>.toEntry() = DuplicateBookEntry(
-        id = this["id"] as String,
-        title = this["title"] as? String ?: "",
-        author = this["author"] as? String,
-        libraryId = this["library_id"] as String,
-        libraryName = this["library_name"] as? String ?: "",
-        filePath = this["file_path"] as? String ?: "",
-        fileSize = (this["file_size"] as? Number)?.toLong() ?: 0L,
-        addedAt = this["added_at"]?.toString() ?: "",
-    )
+    private fun Map<String, Any?>.toEntry() =
+        DuplicateBookEntry(
+            id = this["id"] as String,
+            title = this["title"] as? String ?: "",
+            author = this["author"] as? String,
+            libraryId = this["library_id"] as String,
+            libraryName = this["library_name"] as? String ?: "",
+            filePath = this["file_path"] as? String ?: "",
+            fileSize = (this["file_size"] as? Number)?.toLong() ?: 0L,
+            addedAt = this["added_at"]?.toString() ?: "",
+        )
 
-    private fun String.normalise() = this.trim().lowercase()
-        .replace(Regex("[^a-z0-9 ]"), "")
-        .replace(Regex("\\s+"), " ")
+    private fun String.normalise() =
+        this
+            .trim()
+            .lowercase()
+            .replace(Regex("[^a-z0-9 ]"), "")
+            .replace(Regex("\\s+"), " ")
 }

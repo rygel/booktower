@@ -6,14 +6,15 @@ import org.http4k.core.Request
 import org.http4k.core.Status
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.util.Base64
 
 class OpdsCredentialsIntegrationTest : IntegrationTestBase() {
-
-    private fun basicAuthHeader(username: String, password: String): String {
+    private fun basicAuthHeader(
+        username: String,
+        password: String,
+    ): String {
         val encoded = Base64.getEncoder().encodeToString("$username:$password".toByteArray())
         return "Basic $encoded"
     }
@@ -31,12 +32,13 @@ class OpdsCredentialsIntegrationTest : IntegrationTestBase() {
     @Test
     fun `PUT opds credentials saves them`() {
         val token = registerAndGetToken()
-        val putResp = app(
-            Request(Method.PUT, "/api/user/opds-credentials")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"opdsUsername":"myopds","password":"securepass123"}"""),
-        )
+        val putResp =
+            app(
+                Request(Method.PUT, "/api/user/opds-credentials")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"opdsUsername":"myopds","password":"securepass123"}"""),
+            )
         assertEquals(Status.NO_CONTENT, putResp.status)
 
         val getResp = app(Request(Method.GET, "/api/user/opds-credentials").header("Cookie", "token=$token"))
@@ -55,10 +57,11 @@ class OpdsCredentialsIntegrationTest : IntegrationTestBase() {
                 .body("""{"opdsUsername":"opds_user","password":"password123"}"""),
         )
 
-        val opdsResp = app(
-            Request(Method.GET, "/opds/catalog")
-                .header("Authorization", basicAuthHeader("opds_user", "password123")),
-        )
+        val opdsResp =
+            app(
+                Request(Method.GET, "/opds/catalog")
+                    .header("Authorization", basicAuthHeader("opds_user", "password123")),
+            )
         assertEquals(Status.OK, opdsResp.status)
     }
 
@@ -72,19 +75,23 @@ class OpdsCredentialsIntegrationTest : IntegrationTestBase() {
                 .body("""{"opdsUsername":"opds_user2","password":"correctpass123"}"""),
         )
 
-        val opdsResp = app(
-            Request(Method.GET, "/opds/catalog")
-                .header("Authorization", basicAuthHeader("opds_user2", "wrongpass")),
-        )
+        val opdsResp =
+            app(
+                Request(Method.GET, "/opds/catalog")
+                    .header("Authorization", basicAuthHeader("opds_user2", "wrongpass")),
+            )
         assertEquals(Status.UNAUTHORIZED, opdsResp.status)
     }
 
     @Test
     fun `DELETE opds credentials removes them`() {
         val token = registerAndGetToken()
-        app(Request(Method.PUT, "/api/user/opds-credentials").header("Cookie", "token=$token")
-            .header("Content-Type", "application/json")
-            .body("""{"opdsUsername":"todelete","password":"password123"}"""))
+        app(
+            Request(Method.PUT, "/api/user/opds-credentials")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/json")
+                .body("""{"opdsUsername":"todelete","password":"password123"}"""),
+        )
 
         val delResp = app(Request(Method.DELETE, "/api/user/opds-credentials").header("Cookie", "token=$token"))
         assertEquals(Status.NO_CONTENT, delResp.status)
@@ -97,12 +104,13 @@ class OpdsCredentialsIntegrationTest : IntegrationTestBase() {
     @Test
     fun `PUT opds credentials with short password returns 400`() {
         val token = registerAndGetToken()
-        val resp = app(
-            Request(Method.PUT, "/api/user/opds-credentials")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"opdsUsername":"user","password":"short"}"""),
-        )
+        val resp =
+            app(
+                Request(Method.PUT, "/api/user/opds-credentials")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"opdsUsername":"user","password":"short"}"""),
+            )
         assertEquals(Status.BAD_REQUEST, resp.status)
     }
 
@@ -124,10 +132,11 @@ class OpdsCredentialsIntegrationTest : IntegrationTestBase() {
                 .header("Content-Type", "application/json")
                 .body("""{"username":"$username","email":"$username@test.com","password":"$password"}"""),
         )
-        val opdsResp = app(
-            Request(Method.GET, "/opds/catalog")
-                .header("Authorization", basicAuthHeader(username, password)),
-        )
+        val opdsResp =
+            app(
+                Request(Method.GET, "/opds/catalog")
+                    .header("Authorization", basicAuthHeader(username, password)),
+            )
         assertEquals(Status.OK, opdsResp.status)
     }
 }

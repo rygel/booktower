@@ -24,12 +24,12 @@ import java.util.concurrent.TimeUnit
  * First-time setup: mvn exec:java -e -D exec.mainClass=com.microsoft.playwright.CLI
  *                       -D exec.args="install chromium" -D exec.classpathScope=test
  * Or just run: mvn test -P browser-tests  (the profile installs browsers automatically)
+ *
+ * Each browser test must complete within 45 seconds or it is killed.
  */
-/** Each browser test must complete within 45 seconds or it is killed. */
 @Tag("browser")
 @Timeout(value = 45, unit = TimeUnit.SECONDS)
 abstract class BrowserTestBase : IntegrationTestBase() {
-
     companion object {
         @Volatile private var initialized = false
 
@@ -47,9 +47,10 @@ abstract class BrowserTestBase : IntegrationTestBase() {
                 synchronized(BrowserTestBase::class.java) {
                     if (!initialized) {
                         playwright = Playwright.create()
-                        browser = playwright.chromium().launch(
-                            BrowserType.LaunchOptions().setHeadless(true),
-                        )
+                        browser =
+                            playwright.chromium().launch(
+                                BrowserType.LaunchOptions().setHeadless(true),
+                            )
                         initialized = true
                         Runtime.getRuntime().addShutdownHook(
                             Thread {
@@ -106,9 +107,15 @@ abstract class BrowserTestBase : IntegrationTestBase() {
     }
 
     /** Uploads bytes to the book's file endpoint (via the in-process app, not the browser). */
-    protected fun uploadFile(token: String, bookId: String, filename: String, bytes: ByteArray) {
+    protected fun uploadFile(
+        token: String,
+        bookId: String,
+        filename: String,
+        bytes: ByteArray,
+    ) {
         app(
-            org.http4k.core.Request(org.http4k.core.Method.POST, "/api/books/$bookId/upload")
+            org.http4k.core
+                .Request(org.http4k.core.Method.POST, "/api/books/$bookId/upload")
                 .header("Cookie", "token=$token")
                 .header("X-Filename", filename)
                 .header("Content-Type", "application/octet-stream")
@@ -126,7 +133,11 @@ abstract class BrowserTestBase : IntegrationTestBase() {
             val mimeBytes = "application/epub+zip".toByteArray()
             mimeEntry.size = mimeBytes.size.toLong()
             mimeEntry.compressedSize = mimeBytes.size.toLong()
-            mimeEntry.crc = java.util.zip.CRC32().also { it.update(mimeBytes) }.value
+            mimeEntry.crc =
+                java.util.zip
+                    .CRC32()
+                    .also { it.update(mimeBytes) }
+                    .value
             zip.putNextEntry(mimeEntry)
             zip.write(mimeBytes)
             zip.closeEntry()

@@ -29,11 +29,12 @@ class ApiTokenHandler(
         val userId = userId(req) ?: return unauthorized()
         val body = req.bodyString()
         if (body.isBlank()) return badRequest("Request body is required")
-        val request = try {
-            Json.mapper.readValue(body, CreateApiTokenRequest::class.java)
-        } catch (_: Exception) {
-            return badRequest("Invalid JSON body")
-        }
+        val request =
+            try {
+                Json.mapper.readValue(body, CreateApiTokenRequest::class.java)
+            } catch (_: Exception) {
+                return badRequest("Invalid JSON body")
+            }
         if (request.name.isBlank()) return badRequest("name is required")
         if (request.name.length > 100) return badRequest("name must be 100 characters or fewer")
         val result = apiTokenService.createToken(userId, request.name.trim())
@@ -45,24 +46,31 @@ class ApiTokenHandler(
     /** DELETE /api/tokens/{id} */
     fun revoke(req: Request): Response {
         val userId = userId(req) ?: return unauthorized()
-        val tokenId = req.uri.path.split("/").lastOrNull()
-            ?.let { runCatching { UUID.fromString(it) }.getOrNull() }
-            ?: return badRequest("Invalid token ID")
+        val tokenId =
+            req.uri.path
+                .split("/")
+                .lastOrNull()
+                ?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+                ?: return badRequest("Invalid token ID")
         val deleted = apiTokenService.revokeToken(userId, tokenId)
-        return if (deleted) Response(Status.OK).header("Content-Type", "application/json").body("{}")
-        else Response(Status.NOT_FOUND)
-            .header("Content-Type", "application/json")
-            .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "Token not found")))
+        return if (deleted) {
+            Response(Status.OK).header("Content-Type", "application/json").body("{}")
+        } else {
+            Response(Status.NOT_FOUND)
+                .header("Content-Type", "application/json")
+                .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "Token not found")))
+        }
     }
 
-    private fun userId(req: Request): UUID? =
-        jwtService.extractUserId(req.cookie("token")?.value ?: "")
+    private fun userId(req: Request): UUID? = jwtService.extractUserId(req.cookie("token")?.value ?: "")
 
-    private fun unauthorized() = Response(Status.UNAUTHORIZED)
-        .header("Content-Type", "application/json")
-        .body(Json.mapper.writeValueAsString(ErrorResponse("UNAUTHORIZED", "Authentication required")))
+    private fun unauthorized() =
+        Response(Status.UNAUTHORIZED)
+            .header("Content-Type", "application/json")
+            .body(Json.mapper.writeValueAsString(ErrorResponse("UNAUTHORIZED", "Authentication required")))
 
-    private fun badRequest(msg: String) = Response(Status.BAD_REQUEST)
-        .header("Content-Type", "application/json")
-        .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", msg)))
+    private fun badRequest(msg: String) =
+        Response(Status.BAD_REQUEST)
+            .header("Content-Type", "application/json")
+            .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", msg)))
 }

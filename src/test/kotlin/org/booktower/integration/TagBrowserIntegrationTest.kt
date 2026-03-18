@@ -9,8 +9,11 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class TagBrowserIntegrationTest : IntegrationTestBase() {
-
-    private fun setTags(token: String, bookId: String, tags: String) {
+    private fun setTags(
+        token: String,
+        bookId: String,
+        tags: String,
+    ) {
         app(
             Request(Method.POST, "/ui/books/$bookId/tags")
                 .header("Cookie", "token=$token")
@@ -55,9 +58,10 @@ class TagBrowserIntegrationTest : IntegrationTestBase() {
         val bookId = createBook(token, libId, "Foundation")
         setTags(token, bookId, "scifi")
 
-        val response = app(
-            Request(Method.GET, "/tags/scifi").header("Cookie", "token=$token"),
-        )
+        val response =
+            app(
+                Request(Method.GET, "/tags/scifi").header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, response.status)
         assertTrue(response.bodyString().contains("scifi"))
     }
@@ -73,9 +77,10 @@ class TagBrowserIntegrationTest : IntegrationTestBase() {
         setTags(token, b2, "fantasy")
         setTags(token, b3, "mystery")
 
-        val body = app(
-            Request(Method.GET, "/tags/fantasy").header("Cookie", "token=$token"),
-        ).bodyString()
+        val body =
+            app(
+                Request(Method.GET, "/tags/fantasy").header("Cookie", "token=$token"),
+            ).bodyString()
         assertTrue(body.contains(b1))
         assertTrue(body.contains(b2))
         assertFalse(body.contains(b3))
@@ -126,9 +131,10 @@ class TagBrowserIntegrationTest : IntegrationTestBase() {
         val bookId = createBook(token, libId, "Some Book")
         setTags(token, bookId, "must read")
 
-        val response = app(
-            Request(Method.GET, "/tags/must%20read").header("Cookie", "token=$token"),
-        )
+        val response =
+            app(
+                Request(Method.GET, "/tags/must%20read").header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, response.status)
         assertTrue(response.bodyString().contains("must read"))
     }

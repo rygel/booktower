@@ -35,19 +35,21 @@ class MagicShelfServiceTest {
         bookService = BookService(jdbi)
         magicShelfService = MagicShelfService(jdbi, bookService)
 
-        val result = authService.register(
-            CreateUserRequest("shelf_${System.nanoTime()}", "shelf_${System.nanoTime()}@test.com", "password123"),
-        )
+        val result =
+            authService.register(
+                CreateUserRequest("shelf_${System.nanoTime()}", "shelf_${System.nanoTime()}@test.com", "password123"),
+            )
         userId = jwtService.extractUserId(result.getOrThrow().token)!!
         libId = libraryService.createLibrary(userId, CreateLibraryRequest("Shelf Lib", "./data/sl-${System.nanoTime()}")).id
     }
 
     @Test
     fun `createShelf persists and returns shelf`() {
-        val shelf = magicShelfService.createShelf(
-            userId,
-            CreateMagicShelfRequest("Reading Now", ShelfRuleType.STATUS, "READING"),
-        )
+        val shelf =
+            magicShelfService.createShelf(
+                userId,
+                CreateMagicShelfRequest("Reading Now", ShelfRuleType.STATUS, "READING"),
+            )
         assertEquals("Reading Now", shelf.name)
         assertEquals(ShelfRuleType.STATUS, shelf.ruleType)
         assertEquals("READING", shelf.ruleValue)
@@ -66,9 +68,10 @@ class MagicShelfServiceTest {
 
     @Test
     fun `getShelves returns empty for user with no shelves`() {
-        val otherResult = authService.register(
-            CreateUserRequest("shelfother_${System.nanoTime()}", "shelfother_${System.nanoTime()}@test.com", "password123"),
-        )
+        val otherResult =
+            authService.register(
+                CreateUserRequest("shelfother_${System.nanoTime()}", "shelfother_${System.nanoTime()}@test.com", "password123"),
+            )
         val otherId = jwtService.extractUserId(otherResult.getOrThrow().token)!!
         assertTrue(magicShelfService.getShelves(otherId).isEmpty())
     }
@@ -84,9 +87,10 @@ class MagicShelfServiceTest {
     @Test
     fun `getShelf returns null for wrong user`() {
         val created = magicShelfService.createShelf(userId, CreateMagicShelfRequest("Mine", ShelfRuleType.STATUS, "READING"))
-        val otherResult = authService.register(
-            CreateUserRequest("shelfwrong_${System.nanoTime()}", "shelfwrong_${System.nanoTime()}@test.com", "password123"),
-        )
+        val otherResult =
+            authService.register(
+                CreateUserRequest("shelfwrong_${System.nanoTime()}", "shelfwrong_${System.nanoTime()}@test.com", "password123"),
+            )
         val otherId = jwtService.extractUserId(otherResult.getOrThrow().token)!!
         assertNull(magicShelfService.getShelf(otherId, UUID.fromString(created.id)))
     }
@@ -106,9 +110,10 @@ class MagicShelfServiceTest {
     @Test
     fun `deleteShelf returns false for wrong user`() {
         val shelf = magicShelfService.createShelf(userId, CreateMagicShelfRequest("Protected", ShelfRuleType.STATUS, "READING"))
-        val otherResult = authService.register(
-            CreateUserRequest("shelfprot_${System.nanoTime()}", "shelfprot_${System.nanoTime()}@test.com", "password123"),
-        )
+        val otherResult =
+            authService.register(
+                CreateUserRequest("shelfprot_${System.nanoTime()}", "shelfprot_${System.nanoTime()}@test.com", "password123"),
+            )
         val otherId = jwtService.extractUserId(otherResult.getOrThrow().token)!!
         assertFalse(magicShelfService.deleteShelf(otherId, UUID.fromString(shelf.id)))
     }

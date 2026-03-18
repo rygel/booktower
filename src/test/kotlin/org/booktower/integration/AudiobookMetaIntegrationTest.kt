@@ -6,18 +6,82 @@ import org.http4k.core.Request
 import org.http4k.core.Status
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class AudiobookMetaIntegrationTest : IntegrationTestBase() {
-
-    private fun smallPng(): ByteArray = byteArrayOf(
-        -119, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82,
-        0, 0, 0, 1, 0, 0, 0, 1, 8, 2, 0, 0, 0, -112, 119, 83, -34, 0,
-        0, 0, 12, 73, 68, 65, 84, 8, -41, 99, -8, -49, -64, 0, 0, 0, 2,
-        0, 1, -30, 33, -68, 51, 0, 0, 0, 0, 73, 69, 78, 68, -82, 66, 96, -126,
-    )
+    private fun smallPng(): ByteArray =
+        byteArrayOf(
+            -119,
+            80,
+            78,
+            71,
+            13,
+            10,
+            26,
+            10,
+            0,
+            0,
+            0,
+            13,
+            73,
+            72,
+            68,
+            82,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            1,
+            8,
+            2,
+            0,
+            0,
+            0,
+            -112,
+            119,
+            83,
+            -34,
+            0,
+            0,
+            0,
+            12,
+            73,
+            68,
+            65,
+            84,
+            8,
+            -41,
+            99,
+            -8,
+            -49,
+            -64,
+            0,
+            0,
+            0,
+            2,
+            0,
+            1,
+            -30,
+            33,
+            -68,
+            51,
+            0,
+            0,
+            0,
+            0,
+            73,
+            69,
+            78,
+            68,
+            -82,
+            66,
+            96,
+            -126,
+        )
 
     @Test
     fun `GET audiobook-meta returns 404 when none set`() {
@@ -35,12 +99,13 @@ class AudiobookMetaIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
 
-        val resp = app(
-            Request(Method.PUT, "/api/books/$bookId/audiobook-meta")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"narrator":"John Smith","abridged":true,"durationSec":36000}"""),
-        )
+        val resp =
+            app(
+                Request(Method.PUT, "/api/books/$bookId/audiobook-meta")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"narrator":"John Smith","abridged":true,"durationSec":36000}"""),
+            )
         assertEquals(Status.OK, resp.status)
         val tree = Json.mapper.readTree(resp.bodyString())
         assertEquals("John Smith", tree.get("narrator").asText())
@@ -119,12 +184,13 @@ class AudiobookMetaIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
 
-        val uploadResp = app(
-            Request(Method.POST, "/api/books/$bookId/audiobook-cover")
-                .header("Cookie", "token=$token")
-                .header("X-Filename", "cover.png")
-                .body(String(smallPng(), Charsets.ISO_8859_1)),
-        )
+        val uploadResp =
+            app(
+                Request(Method.POST, "/api/books/$bookId/audiobook-cover")
+                    .header("Cookie", "token=$token")
+                    .header("X-Filename", "cover.png")
+                    .body(String(smallPng(), Charsets.ISO_8859_1)),
+            )
         assertEquals(Status.OK, uploadResp.status)
         val tree = Json.mapper.readTree(uploadResp.bodyString())
         assertTrue(tree.get("coverUrl").asText().contains(bookId))

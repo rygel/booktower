@@ -9,12 +9,19 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class PdfAnnotationsIntegrationTest : IntegrationTestBase() {
-
-    private fun postAnnotation(token: String, bookId: String, page: Int = 1, text: String = "selected text", color: String = "yellow"): org.http4k.core.Response =
-        app(Request(Method.POST, "/ui/books/$bookId/annotations")
-            .header("Cookie", "token=$token")
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .body("page=$page&selectedText=${java.net.URLEncoder.encode(text, "UTF-8")}&color=$color"))
+    private fun postAnnotation(
+        token: String,
+        bookId: String,
+        page: Int = 1,
+        text: String = "selected text",
+        color: String = "yellow",
+    ): org.http4k.core.Response =
+        app(
+            Request(Method.POST, "/ui/books/$bookId/annotations")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .body("page=$page&selectedText=${java.net.URLEncoder.encode(text, "UTF-8")}&color=$color"),
+        )
 
     // ── GET annotations ──────────────────────────────────────────────────────
 
@@ -24,8 +31,11 @@ class PdfAnnotationsIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
 
-        val response = app(Request(Method.GET, "/ui/books/$bookId/annotations")
-            .header("Cookie", "token=$token"))
+        val response =
+            app(
+                Request(Method.GET, "/ui/books/$bookId/annotations")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, response.status)
         assertTrue(response.bodyString().contains("[]"), "Should return empty JSON array")
     }
@@ -62,10 +72,13 @@ class PdfAnnotationsIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
 
-        val response = app(Request(Method.POST, "/ui/books/$bookId/annotations")
-            .header("Cookie", "token=$token")
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .body("page=1&color=yellow"))
+        val response =
+            app(
+                Request(Method.POST, "/ui/books/$bookId/annotations")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("page=1&color=yellow"),
+            )
         assertEquals(Status.BAD_REQUEST, response.status)
     }
 
@@ -75,10 +88,13 @@ class PdfAnnotationsIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
 
-        val response = app(Request(Method.POST, "/ui/books/$bookId/annotations")
-            .header("Cookie", "token=$token")
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .body("selectedText=hello&color=yellow"))
+        val response =
+            app(
+                Request(Method.POST, "/ui/books/$bookId/annotations")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("selectedText=hello&color=yellow"),
+            )
         assertEquals(Status.BAD_REQUEST, response.status)
     }
 
@@ -91,8 +107,11 @@ class PdfAnnotationsIntegrationTest : IntegrationTestBase() {
         val bookId = createBook(token, libId)
         postAnnotation(token, bookId, 3, "my annotation text", "blue")
 
-        val body = app(Request(Method.GET, "/ui/books/$bookId/annotations")
-            .header("Cookie", "token=$token")).bodyString()
+        val body =
+            app(
+                Request(Method.GET, "/ui/books/$bookId/annotations")
+                    .header("Cookie", "token=$token"),
+            ).bodyString()
         assertTrue(body.contains("my annotation text"), "Created annotation should appear in list")
         assertTrue(body.contains("blue"), "Color should be preserved")
     }
@@ -105,8 +124,11 @@ class PdfAnnotationsIntegrationTest : IntegrationTestBase() {
         postAnnotation(token, bookId, 1, "page one text", "yellow")
         postAnnotation(token, bookId, 5, "page five text", "green")
 
-        val body = app(Request(Method.GET, "/ui/books/$bookId/annotations?page=1")
-            .header("Cookie", "token=$token")).bodyString()
+        val body =
+            app(
+                Request(Method.GET, "/ui/books/$bookId/annotations?page=1")
+                    .header("Cookie", "token=$token"),
+            ).bodyString()
         assertTrue(body.contains("page one text"), "Should return page 1 annotation")
         assertFalse(body.contains("page five text"), "Should not return page 5 annotation")
     }
@@ -119,10 +141,18 @@ class PdfAnnotationsIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
         val annotJson = postAnnotation(token, bookId).bodyString()
-        val annotId = com.fasterxml.jackson.databind.ObjectMapper().readTree(annotJson).get("id").asText()
+        val annotId =
+            com.fasterxml.jackson.databind
+                .ObjectMapper()
+                .readTree(annotJson)
+                .get("id")
+                .asText()
 
-        val response = app(Request(Method.DELETE, "/ui/annotations/$annotId")
-            .header("Cookie", "token=$token"))
+        val response =
+            app(
+                Request(Method.DELETE, "/ui/annotations/$annotId")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, response.status)
     }
 
@@ -132,12 +162,20 @@ class PdfAnnotationsIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
         val annotJson = postAnnotation(token, bookId, 1, "text to delete", "pink").bodyString()
-        val annotId = com.fasterxml.jackson.databind.ObjectMapper().readTree(annotJson).get("id").asText()
+        val annotId =
+            com.fasterxml.jackson.databind
+                .ObjectMapper()
+                .readTree(annotJson)
+                .get("id")
+                .asText()
 
         app(Request(Method.DELETE, "/ui/annotations/$annotId").header("Cookie", "token=$token"))
 
-        val body = app(Request(Method.GET, "/ui/books/$bookId/annotations")
-            .header("Cookie", "token=$token")).bodyString()
+        val body =
+            app(
+                Request(Method.GET, "/ui/books/$bookId/annotations")
+                    .header("Cookie", "token=$token"),
+            ).bodyString()
         assertFalse(body.contains("text to delete"), "Deleted annotation should not appear in list")
     }
 
@@ -155,13 +193,19 @@ class PdfAnnotationsIntegrationTest : IntegrationTestBase() {
         val bookId2 = createBook(token2, libId2, "User2 Book")
 
         // User2 cannot see user1's annotations (different book)
-        val body2 = app(Request(Method.GET, "/ui/books/$bookId2/annotations")
-            .header("Cookie", "token=$token2")).bodyString()
+        val body2 =
+            app(
+                Request(Method.GET, "/ui/books/$bookId2/annotations")
+                    .header("Cookie", "token=$token2"),
+            ).bodyString()
         assertFalse(body2.contains("user1 secret note"), "User2 should not see user1's annotations")
 
         // User1's annotations still intact
-        val body1 = app(Request(Method.GET, "/ui/books/$bookId1/annotations")
-            .header("Cookie", "token=$token1")).bodyString()
+        val body1 =
+            app(
+                Request(Method.GET, "/ui/books/$bookId1/annotations")
+                    .header("Cookie", "token=$token1"),
+            ).bodyString()
         assertTrue(body1.contains("user1 secret note"), "User1 should still see own annotations")
     }
 
@@ -172,11 +216,19 @@ class PdfAnnotationsIntegrationTest : IntegrationTestBase() {
         val libId1 = createLibrary(token1)
         val bookId1 = createBook(token1, libId1)
         val annotJson = postAnnotation(token1, bookId1, 1, "owner annotation", "green").bodyString()
-        val annotId = com.fasterxml.jackson.databind.ObjectMapper().readTree(annotJson).get("id").asText()
+        val annotId =
+            com.fasterxml.jackson.databind
+                .ObjectMapper()
+                .readTree(annotJson)
+                .get("id")
+                .asText()
 
         // Token2 tries to delete token1's annotation — should return 404 (not found for this user)
-        val response = app(Request(Method.DELETE, "/ui/annotations/$annotId")
-            .header("Cookie", "token=$token2"))
+        val response =
+            app(
+                Request(Method.DELETE, "/ui/annotations/$annotId")
+                    .header("Cookie", "token=$token2"),
+            )
         assertEquals(Status.NOT_FOUND, response.status)
     }
 }

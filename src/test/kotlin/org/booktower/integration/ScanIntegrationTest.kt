@@ -13,7 +13,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class ScanIntegrationTest : IntegrationTestBase() {
-
     private val tempDirs = mutableListOf<File>()
 
     @AfterEach
@@ -28,16 +27,23 @@ class ScanIntegrationTest : IntegrationTestBase() {
         return dir
     }
 
-    private fun createLibraryWithPath(token: String, path: String): String {
+    private fun createLibraryWithPath(
+        token: String,
+        path: String,
+    ): String {
         val name = "ScanLib ${System.nanoTime()}"
-        val response = app(
-            Request(Method.POST, "/api/libraries")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"name":"$name","path":"${path.replace("\\", "\\\\")}"}"""),
-        )
+        val response =
+            app(
+                Request(Method.POST, "/api/libraries")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"name":"$name","path":"${path.replace("\\", "\\\\")}"}"""),
+            )
         assertEquals(Status.CREATED, response.status)
-        return Json.mapper.readTree(response.bodyString()).get("id").asText()
+        return Json.mapper
+            .readTree(response.bodyString())
+            .get("id")
+            .asText()
     }
 
     @Test
@@ -46,10 +52,11 @@ class ScanIntegrationTest : IntegrationTestBase() {
         val dir = createTempLibraryDir()
         val libId = createLibraryWithPath(token, dir.absolutePath)
 
-        val response = app(
-            Request(Method.POST, "/api/libraries/$libId/scan")
-                .header("Cookie", "token=$token"),
-        )
+        val response =
+            app(
+                Request(Method.POST, "/api/libraries/$libId/scan")
+                    .header("Cookie", "token=$token"),
+            )
 
         assertEquals(Status.OK, response.status)
         val result = Json.mapper.readValue(response.bodyString(), ScanResult::class.java)
@@ -68,10 +75,11 @@ class ScanIntegrationTest : IntegrationTestBase() {
         File(dir, "readme.txt").writeText("should be ignored")
         val libId = createLibraryWithPath(token, dir.absolutePath)
 
-        val response = app(
-            Request(Method.POST, "/api/libraries/$libId/scan")
-                .header("Cookie", "token=$token"),
-        )
+        val response =
+            app(
+                Request(Method.POST, "/api/libraries/$libId/scan")
+                    .header("Cookie", "token=$token"),
+            )
 
         assertEquals(Status.OK, response.status)
         val result = Json.mapper.readValue(response.bodyString(), ScanResult::class.java)
@@ -89,19 +97,21 @@ class ScanIntegrationTest : IntegrationTestBase() {
         val libId = createLibraryWithPath(token, dir.absolutePath)
 
         // First scan
-        val first = app(
-            Request(Method.POST, "/api/libraries/$libId/scan")
-                .header("Cookie", "token=$token"),
-        )
+        val first =
+            app(
+                Request(Method.POST, "/api/libraries/$libId/scan")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, first.status)
         val firstResult = Json.mapper.readValue(first.bodyString(), ScanResult::class.java)
         assertEquals(1, firstResult.added)
 
         // Second scan — same file must be skipped
-        val second = app(
-            Request(Method.POST, "/api/libraries/$libId/scan")
-                .header("Cookie", "token=$token"),
-        )
+        val second =
+            app(
+                Request(Method.POST, "/api/libraries/$libId/scan")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, second.status)
         val secondResult = Json.mapper.readValue(second.bodyString(), ScanResult::class.java)
         assertEquals(0, secondResult.added)
@@ -115,10 +125,11 @@ class ScanIntegrationTest : IntegrationTestBase() {
         File(dir, "the_great_gatsby.pdf").writeText("fake content")
         val libId = createLibraryWithPath(token, dir.absolutePath)
 
-        val response = app(
-            Request(Method.POST, "/api/libraries/$libId/scan")
-                .header("Cookie", "token=$token"),
-        )
+        val response =
+            app(
+                Request(Method.POST, "/api/libraries/$libId/scan")
+                    .header("Cookie", "token=$token"),
+            )
 
         val result = Json.mapper.readValue(response.bodyString(), ScanResult::class.java)
         assertEquals(1, result.added)
@@ -135,10 +146,11 @@ class ScanIntegrationTest : IntegrationTestBase() {
         File(sub, "nested.epub").writeText("fake content")
         val libId = createLibraryWithPath(token, dir.absolutePath)
 
-        val response = app(
-            Request(Method.POST, "/api/libraries/$libId/scan")
-                .header("Cookie", "token=$token"),
-        )
+        val response =
+            app(
+                Request(Method.POST, "/api/libraries/$libId/scan")
+                    .header("Cookie", "token=$token"),
+            )
 
         val result = Json.mapper.readValue(response.bodyString(), ScanResult::class.java)
         assertEquals(2, result.added)
@@ -154,10 +166,11 @@ class ScanIntegrationTest : IntegrationTestBase() {
         File(dir, "ignore.docx").writeText("not supported")
         val libId = createLibraryWithPath(token, dir.absolutePath)
 
-        val response = app(
-            Request(Method.POST, "/api/libraries/$libId/scan")
-                .header("Cookie", "token=$token"),
-        )
+        val response =
+            app(
+                Request(Method.POST, "/api/libraries/$libId/scan")
+                    .header("Cookie", "token=$token"),
+            )
 
         val result = Json.mapper.readValue(response.bodyString(), ScanResult::class.java)
         assertEquals(6, result.added)
@@ -169,9 +182,10 @@ class ScanIntegrationTest : IntegrationTestBase() {
         val dir = createTempLibraryDir()
         val libId = createLibraryWithPath(token, dir.absolutePath)
 
-        val response = app(
-            Request(Method.POST, "/api/libraries/$libId/scan"),
-        )
+        val response =
+            app(
+                Request(Method.POST, "/api/libraries/$libId/scan"),
+            )
 
         assertEquals(Status.UNAUTHORIZED, response.status)
     }
@@ -181,10 +195,11 @@ class ScanIntegrationTest : IntegrationTestBase() {
         val token = registerAndGetToken("scan")
         val fakeId = "00000000-0000-0000-0000-000000000000"
 
-        val response = app(
-            Request(Method.POST, "/api/libraries/$fakeId/scan")
-                .header("Cookie", "token=$token"),
-        )
+        val response =
+            app(
+                Request(Method.POST, "/api/libraries/$fakeId/scan")
+                    .header("Cookie", "token=$token"),
+            )
 
         assertEquals(Status.OK, response.status)
         val result = Json.mapper.readValue(response.bodyString(), ScanResult::class.java)
@@ -200,10 +215,11 @@ class ScanIntegrationTest : IntegrationTestBase() {
         val libIdA = createLibraryWithPath(tokenA, dir.absolutePath)
 
         // User B tries to scan user A's library
-        val response = app(
-            Request(Method.POST, "/api/libraries/$libIdA/scan")
-                .header("Cookie", "token=$tokenB"),
-        )
+        val response =
+            app(
+                Request(Method.POST, "/api/libraries/$libIdA/scan")
+                    .header("Cookie", "token=$tokenB"),
+            )
 
         // Library not found for user B => empty result (not an error, just 0 added)
         assertEquals(Status.OK, response.status)

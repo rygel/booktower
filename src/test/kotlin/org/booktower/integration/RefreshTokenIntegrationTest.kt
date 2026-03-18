@@ -6,17 +6,19 @@ import org.http4k.core.Method
 import org.http4k.core.Request
 import org.http4k.core.Status
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNotEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Test
 
 class RefreshTokenIntegrationTest : IntegrationTestBase() {
-
     private fun registerAndLoginResponse(prefix: String = "rt"): LoginResponse {
         val u = "${prefix}_${System.nanoTime()}"
-        val r = app(Request(Method.POST, "/auth/register")
-            .header("Content-Type", "application/json")
-            .body("""{"username":"$u","email":"$u@test.com","password":"pass1234"}"""))
+        val r =
+            app(
+                Request(Method.POST, "/auth/register")
+                    .header("Content-Type", "application/json")
+                    .body("""{"username":"$u","email":"$u@test.com","password":"pass1234"}"""),
+            )
         return Json.mapper.readValue(r.bodyString(), LoginResponse::class.java)
     }
 
@@ -32,9 +34,12 @@ class RefreshTokenIntegrationTest : IntegrationTestBase() {
         val login = registerAndLoginResponse()
         val rt = login.refreshToken!!
 
-        val resp = app(Request(Method.POST, "/auth/refresh")
-            .header("Content-Type", "application/json")
-            .body("""{"refreshToken":"$rt"}"""))
+        val resp =
+            app(
+                Request(Method.POST, "/auth/refresh")
+                    .header("Content-Type", "application/json")
+                    .body("""{"refreshToken":"$rt"}"""),
+            )
         assertEquals(Status.OK, resp.status)
         val refreshed = Json.mapper.readValue(resp.bodyString(), LoginResponse::class.java)
         assertNotNull(refreshed.token)
@@ -49,30 +54,41 @@ class RefreshTokenIntegrationTest : IntegrationTestBase() {
         val rt = login.refreshToken!!
 
         // Use it once
-        app(Request(Method.POST, "/auth/refresh")
-            .header("Content-Type", "application/json")
-            .body("""{"refreshToken":"$rt"}"""))
+        app(
+            Request(Method.POST, "/auth/refresh")
+                .header("Content-Type", "application/json")
+                .body("""{"refreshToken":"$rt"}"""),
+        )
 
         // Try to use the old token again
-        val resp2 = app(Request(Method.POST, "/auth/refresh")
-            .header("Content-Type", "application/json")
-            .body("""{"refreshToken":"$rt"}"""))
+        val resp2 =
+            app(
+                Request(Method.POST, "/auth/refresh")
+                    .header("Content-Type", "application/json")
+                    .body("""{"refreshToken":"$rt"}"""),
+            )
         assertEquals(Status.UNAUTHORIZED, resp2.status)
     }
 
     @Test
     fun `POST auth refresh with invalid token returns 401`() {
-        val resp = app(Request(Method.POST, "/auth/refresh")
-            .header("Content-Type", "application/json")
-            .body("""{"refreshToken":"00000000-0000-0000-0000-000000000000"}"""))
+        val resp =
+            app(
+                Request(Method.POST, "/auth/refresh")
+                    .header("Content-Type", "application/json")
+                    .body("""{"refreshToken":"00000000-0000-0000-0000-000000000000"}"""),
+            )
         assertEquals(Status.UNAUTHORIZED, resp.status)
     }
 
     @Test
     fun `POST auth refresh without body returns 400`() {
-        val resp = app(Request(Method.POST, "/auth/refresh")
-            .header("Content-Type", "application/json")
-            .body("{}"))
+        val resp =
+            app(
+                Request(Method.POST, "/auth/refresh")
+                    .header("Content-Type", "application/json")
+                    .body("{}"),
+            )
         assertEquals(Status.BAD_REQUEST, resp.status)
     }
 
@@ -81,15 +97,21 @@ class RefreshTokenIntegrationTest : IntegrationTestBase() {
         val login = registerAndLoginResponse()
         val rt = login.refreshToken!!
 
-        val revoke = app(Request(Method.POST, "/auth/revoke")
-            .header("Content-Type", "application/json")
-            .body("""{"refreshToken":"$rt"}"""))
+        val revoke =
+            app(
+                Request(Method.POST, "/auth/revoke")
+                    .header("Content-Type", "application/json")
+                    .body("""{"refreshToken":"$rt"}"""),
+            )
         assertEquals(Status.NO_CONTENT, revoke.status)
 
         // Token should no longer work
-        val resp = app(Request(Method.POST, "/auth/refresh")
-            .header("Content-Type", "application/json")
-            .body("""{"refreshToken":"$rt"}"""))
+        val resp =
+            app(
+                Request(Method.POST, "/auth/refresh")
+                    .header("Content-Type", "application/json")
+                    .body("""{"refreshToken":"$rt"}"""),
+            )
         assertEquals(Status.UNAUTHORIZED, resp.status)
     }
 
@@ -98,14 +120,20 @@ class RefreshTokenIntegrationTest : IntegrationTestBase() {
         val login = registerAndLoginResponse()
         val rt = login.refreshToken!!
 
-        val refreshResp = app(Request(Method.POST, "/auth/refresh")
-            .header("Content-Type", "application/json")
-            .body("""{"refreshToken":"$rt"}"""))
+        val refreshResp =
+            app(
+                Request(Method.POST, "/auth/refresh")
+                    .header("Content-Type", "application/json")
+                    .body("""{"refreshToken":"$rt"}"""),
+            )
         val newToken = Json.mapper.readValue(refreshResp.bodyString(), LoginResponse::class.java).token
 
         // Use new access token for an authenticated endpoint
-        val apiResp = app(Request(Method.GET, "/api/libraries")
-            .header("Cookie", "token=$newToken"))
+        val apiResp =
+            app(
+                Request(Method.GET, "/api/libraries")
+                    .header("Cookie", "token=$newToken"),
+            )
         assertEquals(Status.OK, apiResp.status)
     }
 }

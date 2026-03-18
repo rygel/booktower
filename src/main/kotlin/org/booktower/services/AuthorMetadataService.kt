@@ -23,11 +23,12 @@ data class AuthorInfo(
 )
 
 open class AuthorMetadataService {
-
-    private val http: HttpClient = HttpClient.newBuilder()
-        .connectTimeout(Duration.ofSeconds(8))
-        .followRedirects(HttpClient.Redirect.NORMAL)
-        .build()
+    private val http: HttpClient =
+        HttpClient
+            .newBuilder()
+            .connectTimeout(Duration.ofSeconds(8))
+            .followRedirects(HttpClient.Redirect.NORMAL)
+            .build()
 
     /**
      * Searches OpenLibrary for an author by name and returns bio + photo.
@@ -42,7 +43,7 @@ open class AuthorMetadataService {
             if (!docs.isArray || docs.size() == 0) return null
             val doc = docs[0]
 
-            val key = doc.get("key")?.asText() ?: return null  // e.g. "OL26320A"
+            val key = doc.get("key")?.asText() ?: return null // e.g. "OL26320A"
             val authorName = doc.get("name")?.asText() ?: name
             val workCount = doc.get("work_count")?.asInt()
             val topWork = doc.get("top_work")?.asText()?.takeIf { it.isNotBlank() }
@@ -88,12 +89,14 @@ open class AuthorMetadataService {
 
     protected open fun get(url: String): String? {
         return try {
-            val req = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .timeout(Duration.ofSeconds(10))
-                .header("User-Agent", "BookTower/1.0 (self-hosted book manager)")
-                .GET()
-                .build()
+            val req =
+                HttpRequest
+                    .newBuilder()
+                    .uri(URI.create(url))
+                    .timeout(Duration.ofSeconds(10))
+                    .header("User-Agent", "BookTower/1.0 (self-hosted book manager)")
+                    .GET()
+                    .build()
             val resp = http.send(req, HttpResponse.BodyHandlers.ofString())
             if (resp.statusCode() != 200) {
                 logger.warn("HTTP ${resp.statusCode()} from $url")

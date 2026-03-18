@@ -12,7 +12,6 @@ import kotlin.test.assertTrue
  */
 @Tag("browser")
 class AuthBrowserTest : BrowserTestBase() {
-
     @Test
     fun `login page renders without errors`() {
         val page = newPage()
@@ -55,7 +54,8 @@ class AuthBrowserTest : BrowserTestBase() {
         val username = "bauth_${System.nanoTime()}"
         val password = "password123"
         app(
-            org.http4k.core.Request(org.http4k.core.Method.POST, "/auth/register")
+            org.http4k.core
+                .Request(org.http4k.core.Method.POST, "/auth/register")
                 .header("Content-Type", "application/json")
                 .body("""{"username":"$username","email":"$username@test.com","password":"$password"}"""),
         )
@@ -80,7 +80,8 @@ class AuthBrowserTest : BrowserTestBase() {
     fun `login with wrong password stays on login page`() {
         val username = "bauth2_${System.nanoTime()}"
         app(
-            org.http4k.core.Request(org.http4k.core.Method.POST, "/auth/register")
+            org.http4k.core
+                .Request(org.http4k.core.Method.POST, "/auth/register")
                 .header("Content-Type", "application/json")
                 .body("""{"username":"$username","email":"$username@test.com","password":"correct123"}"""),
         )
@@ -96,8 +97,11 @@ class AuthBrowserTest : BrowserTestBase() {
         val url = page.url()
         val body = page.content()
         assertTrue(
-            url.contains("/login") || url.contains("/auth") ||
-                body.contains("Invalid") || body.contains("incorrect") || body.contains("error"),
+            url.contains("/login") ||
+                url.contains("/auth") ||
+                body.contains("Invalid") ||
+                body.contains("incorrect") ||
+                body.contains("error"),
             "Should show error or stay on login page after wrong password",
         )
         page.close()

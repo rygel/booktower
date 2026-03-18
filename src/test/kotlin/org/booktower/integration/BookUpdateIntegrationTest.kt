@@ -11,10 +11,12 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class BookUpdateIntegrationTest : IntegrationTestBase() {
-
     private fun updateBook(
-        token: String, bookId: String, title: String,
-        author: String? = null, description: String? = null,
+        token: String,
+        bookId: String,
+        title: String,
+        author: String? = null,
+        description: String? = null,
     ): org.http4k.core.Response {
         val authorJson = if (author == null) "null" else "\"$author\""
         val descJson = if (description == null) "null" else "\"$description\""
@@ -92,10 +94,11 @@ class BookUpdateIntegrationTest : IntegrationTestBase() {
 
         updateBook(token, bookId, "After", author = "Author X", description = "Desc Y")
 
-        val r = app(
-            Request(Method.GET, "/api/books/$bookId")
-                .header("Cookie", "token=$token"),
-        )
+        val r =
+            app(
+                Request(Method.GET, "/api/books/$bookId")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, r.status)
         val book = Json.mapper.readValue(r.bodyString(), BookDto::class.java)
         assertEquals("After", book.title)
@@ -143,10 +146,11 @@ class BookUpdateIntegrationTest : IntegrationTestBase() {
         assertTrue(bookR.bodyString().contains("55"), "progress should survive update")
 
         // Bookmark still there
-        val bmR = app(
-            Request(Method.GET, "/api/bookmarks?bookId=$bookId")
-                .header("Cookie", "token=$token"),
-        )
+        val bmR =
+            app(
+                Request(Method.GET, "/api/bookmarks?bookId=$bookId")
+                    .header("Cookie", "token=$token"),
+            )
         assertTrue(bmR.bodyString().contains("Saved mark"), "bookmark should survive update")
     }
 
@@ -169,12 +173,13 @@ class BookUpdateIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
 
-        val r = app(
-            Request(Method.PUT, "/api/books/$bookId")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"title":"${"A".repeat(256)}","author":null,"description":null}"""),
-        )
+        val r =
+            app(
+                Request(Method.PUT, "/api/books/$bookId")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"title":"${"A".repeat(256)}","author":null,"description":null}"""),
+            )
 
         assertEquals(Status.BAD_REQUEST, r.status)
     }
@@ -185,11 +190,12 @@ class BookUpdateIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
 
-        val r = app(
-            Request(Method.PUT, "/api/books/$bookId")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json"),
-        )
+        val r =
+            app(
+                Request(Method.PUT, "/api/books/$bookId")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json"),
+            )
 
         assertEquals(Status.BAD_REQUEST, r.status)
     }
@@ -198,11 +204,12 @@ class BookUpdateIntegrationTest : IntegrationTestBase() {
 
     @Test
     fun `update without auth returns 401`() {
-        val r = app(
-            Request(Method.PUT, "/api/books/00000000-0000-0000-0000-000000000000")
-                .header("Content-Type", "application/json")
-                .body("""{"title":"x","author":null,"description":null}"""),
-        )
+        val r =
+            app(
+                Request(Method.PUT, "/api/books/00000000-0000-0000-0000-000000000000")
+                    .header("Content-Type", "application/json")
+                    .body("""{"title":"x","author":null,"description":null}"""),
+            )
         assertEquals(Status.UNAUTHORIZED, r.status)
     }
 
@@ -222,12 +229,13 @@ class BookUpdateIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(tokenA)
         val bookId = createBook(tokenA, libId, "A's Book")
 
-        val r = app(
-            Request(Method.PUT, "/api/books/$bookId")
-                .header("Cookie", "token=$tokenB")
-                .header("Content-Type", "application/json")
-                .body("""{"title":"Hijacked","author":null,"description":null}"""),
-        )
+        val r =
+            app(
+                Request(Method.PUT, "/api/books/$bookId")
+                    .header("Cookie", "token=$tokenB")
+                    .header("Content-Type", "application/json")
+                    .body("""{"title":"Hijacked","author":null,"description":null}"""),
+            )
 
         assertEquals(Status.NOT_FOUND, r.status)
 

@@ -1,4 +1,6 @@
 # BookTower Development Startup Script
+# Run again at any time to kill the old server and start fresh.
+# Logs go to data\booktower.log.
 
 param(
     [switch]$SkipBuild,
@@ -8,131 +10,99 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+Set-Location $PSScriptRoot
+
+$PidFile = Join-Path $PSScriptRoot "data\.pid"
+$LogFile = Join-Path $PSScriptRoot "data\booktower.log"
+$Url     = "http://localhost:$Port"
 
 Write-Host "====================================" -ForegroundColor Cyan
 Write-Host "  BOOKTOWER DEVELOPMENT SERVER" -ForegroundColor Cyan
 Write-Host "====================================" -ForegroundColor Cyan
 Write-Host ""
 
-Write-Host "Checking Maven installation..." -ForegroundColor Yellow
-try {
-    $mvnResult = mvn --version 2>&1
-    if ($LASTEXITCODE -eq 0) {
-        Write-Host "Maven installed" -ForegroundColor Green
+# ── Kill previous instance ────────────────────────────────────────────────────
+if (Test-Path $PidFile) {
+    $savedPid = (Get-Content $PidFile -Raw).Trim()
+    if ($savedPid -match '^\d+$') {
+        Write-Host "Stopping previous instance (PID $savedPid)..." -ForegroundColor Yellow
+        taskkill /F /T /PID $savedPid 2>$null | Out-Null
+        Start-Sleep -Seconds 1
     }
-}
-catch {
-    Write-Host "Maven not found. Please install Maven first." -ForegroundColor Red
-    exit 1
-}
-
-Write-Host "Checking Java installation..." -ForegroundColor Yellow
-try {
-    $null = java -version 2>&1
-    Write-Host "Java installed" -ForegroundColor Green
-}
-catch {
-    Write-Host "Java not found. Please install Java 21+ first." -ForegroundColor Red
-    exit 1
+    Remove-Item $PidFile -Force
+} else {
+    Write-Host "No previous instance found" -ForegroundColor Green
 }
 
 Write-Host ""
 
-Write-Host "Stopping any existing BookTower instances..." -ForegroundColor Yellow
+# ── Prerequisites ──────────────────────────────────────────────────────────────
+try { $null = mvn --version 2>&1; if ($LASTEXITCODE -ne 0) { throw } }
+catch { Write-Host "Maven not found. Please install Maven first." -ForegroundColor Red; exit 1 }
 
-try {
-    $processes = Get-Process -Name java -ErrorAction SilentlyContinue | Where-Object { $_.CommandLine -match "BookTower" }
-    
-    if ($processes) {
-        Write-Host "Found $($processes.Count) BookTower instance(s)" -ForegroundColor Red
-        
-        foreach ($process in $processes) {
-            Write-Host "Stopping process (PID: $($process.Id))..." -ForegroundColor Yellow
-            Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
-            Write-Host "Stopped PID: $($process.Id)" -ForegroundColor Green
-        }
-        
-        Start-Sleep -Seconds 3
-        
-        $stillRunning = Get-Process -Name java -ErrorAction SilentlyContinue | Where-Object { $_.CommandLine -match "BookTower" }
-        if ($stillRunning) {
-            Write-Host "Force killing remaining processes..." -ForegroundColor Yellow
-            foreach ($process in $stillRunning) {
-                taskkill /F /PID $process.Id | Out-Null
-                Write-Host "Force killed PID: $($process.Id)" -ForegroundColor Yellow
-            }
-        }
-    } else {
-        Write-Host "No BookTower instances running" -ForegroundColor Green
-    }
-}
-catch {
-    Write-Host "Error checking processes: $_" -ForegroundColor Yellow
-}
+try { $null = java -version 2>&1 }
+catch { Write-Host "Java not found. Please install Java 21+ first." -ForegroundColor Red; exit 1 }
 
-Write-Host ""
-
+# ── Clean ──────────────────────────────────────────────────────────────────────
 if ($Clean) {
     Write-Host "Cleaning project..." -ForegroundColor Yellow
-    mvn clean
-    if ($LASTEXITCODE -eq 0) {
-        Write-Host "Clean complete" -ForegroundColor Green
-    } else {
-        Write-Host "Clean failed!" -ForegroundColor Red
-        exit 1
-    }
+    mvn clean -q
+    if ($LASTEXITCODE -ne 0) { Write-Host "Clean failed!" -ForegroundColor Red; exit 1 }
+    Write-Host "Clean complete" -ForegroundColor Green
     Write-Host ""
 }
 
+# ── Build ──────────────────────────────────────────────────────────────────────
 if (-not $SkipBuild) {
-    Write-Host "Building BookTower..." -ForegroundColor Yellow
-    Write-Host "This may take a few minutes on first run..." -ForegroundColor Gray
-    Write-Host ""
-
-    mvn clean compile -DskipTests
-
-    if ($LASTEXITCODE -eq 0) {
-        Write-Host "Build successful!" -ForegroundColor Green
-    } else {
-        Write-Host "Build failed!" -ForegroundColor Red
-        exit 1
-    }
-
+    Write-Host "Building BookTower..." -ForegroundColor Cyan
+    mvn compile -q -DskipTests
+    if ($LASTEXITCODE -ne 0) { Write-Host "Build failed!" -ForegroundColor Red; exit 1 }
+    Write-Host "Build successful!" -ForegroundColor Green
     Write-Host ""
 }
 
-Write-Host "Creating data directories..." -ForegroundColor Yellow
-$dataDirs = @("data/books", "data/covers", "data/temp")
-foreach ($dir in $dataDirs) {
-    if (-not (Test-Path $dir)) {
-        New-Item -ItemType Directory -Path $dir -Force | Out-Null
-        Write-Host "Created $dir" -ForegroundColor Green
-    }
+# ── Data dirs ──────────────────────────────────────────────────────────────────
+@("data\books", "data\covers", "data\temp") | ForEach-Object {
+    if (-not (Test-Path $_)) { New-Item -ItemType Directory -Path $_ -Force | Out-Null }
 }
 
-Write-Host ""
-Write-Host "====================================" -ForegroundColor Cyan
-Write-Host "  STARTING BOOKTOWER SERVER..." -ForegroundColor Cyan
-Write-Host "====================================" -ForegroundColor Cyan
-Write-Host ""
+# Rotate previous log
+if (Test-Path $LogFile) { Remove-Item $LogFile -Force }
 
-Write-Host "Server will start on: http://localhost:$Port" -ForegroundColor Green
-Write-Host ""
-Write-Host "Available endpoints:" -ForegroundColor Yellow
-Write-Host "  Home: http://localhost:$Port/" -ForegroundColor Cyan
-Write-Host "  Login: http://localhost:$Port/login" -ForegroundColor Cyan
-Write-Host "  Register: http://localhost:$Port/register" -ForegroundColor Cyan
-Write-Host "  Health: http://localhost:$Port/health" -ForegroundColor Cyan
-Write-Host ""
-Write-Host "Press Ctrl+C to stop server" -ForegroundColor Gray
-Write-Host ""
+# ── Start in background (hidden window) ───────────────────────────────────────
+Write-Host "Starting BookTower..." -ForegroundColor Cyan
 
-if ($OpenBrowser) {
-    Write-Host "Opening browser..." -ForegroundColor Yellow
-    Start-Process "http://localhost:$Port"
-    Start-Sleep -Seconds 2
+$proc = Start-Process `
+    -FilePath "cmd.exe" `
+    -ArgumentList "/c mvn exec:java -q >> ""$LogFile"" 2>&1" `
+    -WorkingDirectory $PSScriptRoot `
+    -WindowStyle Hidden `
+    -PassThru
+
+$proc.Id | Out-File -FilePath $PidFile -Encoding ascii -NoNewline
+
+# ── Wait for ready ────────────────────────────────────────────────────────────
+Write-Host "Waiting for server" -ForegroundColor Yellow -NoNewline
+$ready = $false
+for ($i = 0; $i -lt 40; $i++) {
+    Start-Sleep -Milliseconds 800
+    Write-Host "." -NoNewline -ForegroundColor DarkGray
+    try {
+        $r = Invoke-WebRequest -Uri "$Url/health" -UseBasicParsing -TimeoutSec 1 -ErrorAction Stop
+        if ($r.StatusCode -eq 200) { $ready = $true; break }
+    } catch {}
 }
+Write-Host ""
 
-Write-Host "Running: mvn exec:java -Dexec.mainClass=org.booktower.BookTowerAppKt" -ForegroundColor Gray
+if ($ready) {
+    Write-Host ""
+    Write-Host "BookTower is running at $Url" -ForegroundColor Green
+    Write-Host "  Logs: $LogFile" -ForegroundColor Gray
+    Write-Host "  Run this script again to restart." -ForegroundColor Gray
 
-mvn exec:java "-Dexec.mainClass=org.booktower.BookTowerAppKt"
+    if ($OpenBrowser) { Start-Process $Url }
+} else {
+    Write-Host "Server did not respond within 30s." -ForegroundColor Red
+    Write-Host "Check logs: $LogFile" -ForegroundColor Yellow
+    exit 1
+}

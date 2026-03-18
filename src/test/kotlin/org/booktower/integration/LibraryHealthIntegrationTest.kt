@@ -4,15 +4,15 @@ import org.booktower.TestFixture
 import org.booktower.config.Json
 import org.booktower.config.SmtpConfig
 import org.booktower.config.WeblateConfig
-import org.booktower.filters.GlobalErrorFilter
+import org.booktower.filters.globalErrorFilter
 import org.booktower.handlers.AppHandler
 import org.booktower.services.AdminService
 import org.booktower.services.AnalyticsService
 import org.booktower.services.AnnotationService
 import org.booktower.services.ApiTokenService
 import org.booktower.services.AuthService
-import org.booktower.services.BookmarkService
 import org.booktower.services.BookService
+import org.booktower.services.BookmarkService
 import org.booktower.services.ComicService
 import org.booktower.services.EmailService
 import org.booktower.services.EpubMetadataService
@@ -41,7 +41,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class LibraryHealthIntegrationTest {
-
     private val config = TestFixture.config
     private val jdbi = TestFixture.database.getJdbi()
     private val healthService = LibraryHealthService(jdbi)
@@ -66,30 +65,59 @@ class LibraryHealthIntegrationTest {
         val comicService = ComicService()
         val goodreadsImportService = GoodreadsImportService(bookService)
         val seedService = SeedService(bookService, libraryService, config.storage.coversPath, config.storage.booksPath)
-        val appHandler = AppHandler(
-            authService, libraryService, bookService, bookmarkService,
-            userSettingsService, pdfMetadataService, epubMetadataService, adminService, jwtService, config.storage,
-            TestFixture.templateRenderer,
-            WeblateHandler(WeblateConfig("", "", "", false)),
-            analyticsService, annotationService, MetadataFetchService(), magicShelfService,
-            passwordResetService,
-            EmailService(SmtpConfig("", 587, "", "", "", true)),
-            "http://localhost:9999",
-            true,
-            apiTokenService, exportService, comicService, goodreadsImportService, readingSessionService, seedService,
-            null, null, null, null, null, healthService,
-        )
-        return GlobalErrorFilter().then(appHandler.routes())
+        val appHandler =
+            AppHandler(
+                authService,
+                libraryService,
+                bookService,
+                bookmarkService,
+                userSettingsService,
+                pdfMetadataService,
+                epubMetadataService,
+                adminService,
+                jwtService,
+                config.storage,
+                TestFixture.templateRenderer,
+                WeblateHandler(WeblateConfig("", "", "", false)),
+                analyticsService,
+                annotationService,
+                MetadataFetchService(),
+                magicShelfService,
+                passwordResetService,
+                EmailService(SmtpConfig("", 587, "", "", "", true)),
+                "http://localhost:9999",
+                true,
+                apiTokenService,
+                exportService,
+                comicService,
+                goodreadsImportService,
+                readingSessionService,
+                seedService,
+                null,
+                null,
+                null,
+                null,
+                null,
+                healthService,
+            )
+        return globalErrorFilter().then(appHandler.routes())
     }
 
-    private fun registerAndGetToken(app: HttpHandler, prefix: String = "hlth"): String {
+    private fun registerAndGetToken(
+        app: HttpHandler,
+        prefix: String = "hlth",
+    ): String {
         val name = "${prefix}_${System.nanoTime()}"
-        val resp = app(
-            Request(Method.POST, "/auth/register")
-                .header("Content-Type", "application/json")
-                .body("""{"username":"$name","email":"$name@test.com","password":"password123"}"""),
-        )
-        return Json.mapper.readTree(resp.bodyString()).get("token").asText()
+        val resp =
+            app(
+                Request(Method.POST, "/auth/register")
+                    .header("Content-Type", "application/json")
+                    .body("""{"username":"$name","email":"$name@test.com","password":"password123"}"""),
+            )
+        return Json.mapper
+            .readTree(resp.bodyString())
+            .get("token")
+            .asText()
     }
 
     // ── end-to-end tests ─────────────────────────────────────────────────────
@@ -109,15 +137,32 @@ class LibraryHealthIntegrationTest {
     @Test
     fun `health check flags non-existent library path via direct service call`() {
         val userId = java.util.UUID.randomUUID()
-        val now = java.time.Instant.now().toString()
+        val now =
+            java.time.Instant
+                .now()
+                .toString()
         jdbi.useHandle<Exception> { h ->
-            h.createUpdate("INSERT INTO users (id,username,email,password_hash,created_at,updated_at,is_admin) VALUES (?,?,?,?,?,?,0)")
-                .bind(0, userId.toString()).bind(1, "hlthpath_${System.nanoTime()}")
-                .bind(2, "hp_${System.nanoTime()}@t.com").bind(3, "h").bind(4, now).bind(5, now).execute()
-            val libId = java.util.UUID.randomUUID().toString()
-            h.createUpdate("INSERT INTO libraries (id,user_id,name,path,created_at) VALUES (?,?,?,?,?)")
-                .bind(0, libId).bind(1, userId.toString()).bind(2, "BadPath")
-                .bind(3, "/this/path/absolutely/does/not/exist/${System.nanoTime()}").bind(4, now).execute()
+            h
+                .createUpdate("INSERT INTO users (id,username,email,password_hash,created_at,updated_at,is_admin) VALUES (?,?,?,?,?,?,0)")
+                .bind(0, userId.toString())
+                .bind(1, "hlthpath_${System.nanoTime()}")
+                .bind(2, "hp_${System.nanoTime()}@t.com")
+                .bind(3, "h")
+                .bind(4, now)
+                .bind(5, now)
+                .execute()
+            val libId =
+                java.util.UUID
+                    .randomUUID()
+                    .toString()
+            h
+                .createUpdate("INSERT INTO libraries (id,user_id,name,path,created_at) VALUES (?,?,?,?,?)")
+                .bind(0, libId)
+                .bind(1, userId.toString())
+                .bind(2, "BadPath")
+                .bind(3, "/this/path/absolutely/does/not/exist/${System.nanoTime()}")
+                .bind(4, now)
+                .execute()
         }
         val report = healthService.check(userId)
         assertEquals(1, report.libraries.size)
@@ -129,17 +174,24 @@ class LibraryHealthIntegrationTest {
         val app = buildApp()
         val token = registerAndGetToken(app)
 
-        val libResp = app(
-            Request(Method.POST, "/api/libraries")
-                .header("Cookie", "token=$token").header("Content-Type", "application/json")
-                .body("""{"name":"HealthLib","path":"./data/test-hlth"}"""),
-        )
-        val libId = Json.mapper.readTree(libResp.bodyString()).get("id").asText()
+        val libResp =
+            app(
+                Request(Method.POST, "/api/libraries")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"name":"HealthLib","path":"./data/test-hlth"}"""),
+            )
+        val libId =
+            Json.mapper
+                .readTree(libResp.bodyString())
+                .get("id")
+                .asText()
 
         // Create a book pointing at a file that doesn't exist
         app(
             Request(Method.POST, "/api/books")
-                .header("Cookie", "token=$token").header("Content-Type", "application/json")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/json")
                 .body("""{"title":"Ghost Book","author":null,"description":null,"libraryId":"$libId"}"""),
         )
 
@@ -148,8 +200,10 @@ class LibraryHealthIntegrationTest {
         val report = libs.firstOrNull { it.get("libraryId").asText() == libId }
         assertNotNull(report)
         val issues = report!!.get("issues")
-        assertTrue(issues.any { it.get("issue").asText() == "file_missing" },
-            "Expected file_missing issue for book with no file")
+        assertTrue(
+            issues.any { it.get("issue").asText() == "file_missing" },
+            "Expected file_missing issue for book with no file",
+        )
     }
 
     @Test
@@ -157,15 +211,22 @@ class LibraryHealthIntegrationTest {
         val app = buildApp()
         val token = registerAndGetToken(app)
 
-        val libResp = app(
-            Request(Method.POST, "/api/libraries")
-                .header("Cookie", "token=$token").header("Content-Type", "application/json")
-                .body("""{"name":"MetaLib","path":"./data/test-meta"}"""),
-        )
-        val libId = Json.mapper.readTree(libResp.bodyString()).get("id").asText()
+        val libResp =
+            app(
+                Request(Method.POST, "/api/libraries")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"name":"MetaLib","path":"./data/test-meta"}"""),
+            )
+        val libId =
+            Json.mapper
+                .readTree(libResp.bodyString())
+                .get("id")
+                .asText()
         app(
             Request(Method.POST, "/api/books")
-                .header("Cookie", "token=$token").header("Content-Type", "application/json")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/json")
                 .body("""{"title":"No Meta Book","author":null,"description":null,"libraryId":"$libId"}"""),
         )
 
@@ -173,8 +234,10 @@ class LibraryHealthIntegrationTest {
         val libs = Json.mapper.readTree(resp.bodyString()).get("libraries")
         val report = libs.firstOrNull { it.get("libraryId").asText() == libId }!!
         val issues = report.get("issues")
-        assertTrue(issues.any { it.get("issue").asText() == "no_metadata" },
-            "Expected no_metadata issue for book without author/isbn")
+        assertTrue(
+            issues.any { it.get("issue").asText() == "no_metadata" },
+            "Expected no_metadata issue for book without author/isbn",
+        )
     }
 
     @Test
@@ -188,15 +251,35 @@ class LibraryHealthIntegrationTest {
     fun `LibraryHealthService check respects user boundaries`() {
         val userId1 = java.util.UUID.randomUUID()
         val userId2 = java.util.UUID.randomUUID()
-        val now = java.time.Instant.now().toString()
+        val now =
+            java.time.Instant
+                .now()
+                .toString()
         jdbi.useHandle<Exception> { h ->
             for ((uid, uname) in listOf(userId1 to "hlthuser1_${System.nanoTime()}", userId2 to "hlthuser2_${System.nanoTime()}")) {
-                h.createUpdate("INSERT INTO users (id,username,email,password_hash,created_at,updated_at,is_admin) VALUES (?,?,?,?,?,?,0)")
-                    .bind(0, uid.toString()).bind(1, uname).bind(2, "$uname@t.com")
-                    .bind(3, "h").bind(4, now).bind(5, now).execute()
-                val libId = java.util.UUID.randomUUID().toString()
-                h.createUpdate("INSERT INTO libraries (id,user_id,name,path,created_at) VALUES (?,?,?,?,?)")
-                    .bind(0, libId).bind(1, uid.toString()).bind(2, "lib").bind(3, "/tmp/$libId").bind(4, now).execute()
+                h
+                    .createUpdate(
+                        "INSERT INTO users (id,username,email,password_hash,created_at,updated_at,is_admin) VALUES (?,?,?,?,?,?,0)",
+                    )
+                    .bind(0, uid.toString())
+                    .bind(1, uname)
+                    .bind(2, "$uname@t.com")
+                    .bind(3, "h")
+                    .bind(4, now)
+                    .bind(5, now)
+                    .execute()
+                val libId =
+                    java.util.UUID
+                        .randomUUID()
+                        .toString()
+                h
+                    .createUpdate("INSERT INTO libraries (id,user_id,name,path,created_at) VALUES (?,?,?,?,?)")
+                    .bind(0, libId)
+                    .bind(1, uid.toString())
+                    .bind(2, "lib")
+                    .bind(3, "/tmp/$libId")
+                    .bind(4, now)
+                    .execute()
             }
         }
         val report1 = healthService.check(userId1)

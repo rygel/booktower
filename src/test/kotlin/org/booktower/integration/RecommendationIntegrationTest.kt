@@ -4,7 +4,7 @@ import org.booktower.TestFixture
 import org.booktower.config.Json
 import org.booktower.config.SmtpConfig
 import org.booktower.config.WeblateConfig
-import org.booktower.filters.GlobalErrorFilter
+import org.booktower.filters.globalErrorFilter
 import org.booktower.handlers.AppHandler
 import org.booktower.models.LoginResponse
 import org.booktower.services.AdminService
@@ -12,8 +12,8 @@ import org.booktower.services.AnalyticsService
 import org.booktower.services.AnnotationService
 import org.booktower.services.ApiTokenService
 import org.booktower.services.AuthService
-import org.booktower.services.BookmarkService
 import org.booktower.services.BookService
+import org.booktower.services.BookmarkService
 import org.booktower.services.ComicService
 import org.booktower.services.EmailService
 import org.booktower.services.EpubMetadataService
@@ -40,7 +40,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 class RecommendationIntegrationTest {
-
     private val config = TestFixture.config
     private val jdbi = TestFixture.database.getJdbi()
     private val recommendationService = RecommendationService(jdbi)
@@ -72,50 +71,89 @@ class RecommendationIntegrationTest {
         val comicService = ComicService()
         val goodreadsImportService = GoodreadsImportService(bookService)
         val seedService = SeedService(bookService, libraryService, config.storage.coversPath, config.storage.booksPath)
-        val appHandler = AppHandler(
-            authService, libraryService, bookService, bookmarkService,
-            userSettingsService, pdfMetadataService, epubMetadataService, adminService, jwtService, config.storage,
-            TestFixture.templateRenderer,
-            WeblateHandler(WeblateConfig("", "", "", false)),
-            analyticsService, annotationService, MetadataFetchService(), magicShelfService,
-            passwordResetService, EmailService(SmtpConfig("", 587, "", "", "", true)),
-            "http://localhost:9999", true,
-            apiTokenService, exportService, comicService, goodreadsImportService,
-            readingSessionService, seedService,
-            null, null, null, null, null, null, null, recommendationService,
-        )
-        return GlobalErrorFilter().then(appHandler.routes())
+        val appHandler =
+            AppHandler(
+                authService,
+                libraryService,
+                bookService,
+                bookmarkService,
+                userSettingsService,
+                pdfMetadataService,
+                epubMetadataService,
+                adminService,
+                jwtService,
+                config.storage,
+                TestFixture.templateRenderer,
+                WeblateHandler(WeblateConfig("", "", "", false)),
+                analyticsService,
+                annotationService,
+                MetadataFetchService(),
+                magicShelfService,
+                passwordResetService,
+                EmailService(SmtpConfig("", 587, "", "", "", true)),
+                "http://localhost:9999",
+                true,
+                apiTokenService,
+                exportService,
+                comicService,
+                goodreadsImportService,
+                readingSessionService,
+                seedService,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                recommendationService,
+            )
+        return globalErrorFilter().then(appHandler.routes())
     }
 
     private fun registerAndGetToken(prefix: String = "rec"): String {
         val u = "${prefix}_${System.nanoTime()}"
-        val resp = app(
-            Request(Method.POST, "/auth/register")
-                .header("Content-Type", "application/json")
-                .body("""{"username":"$u","email":"$u@test.com","password":"password123"}"""),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/auth/register")
+                    .header("Content-Type", "application/json")
+                    .body("""{"username":"$u","email":"$u@test.com","password":"password123"}"""),
+            )
         return Json.mapper.readValue(resp.bodyString(), LoginResponse::class.java).token
     }
 
     private fun createLibrary(token: String): String {
-        val resp = app(
-            Request(Method.POST, "/api/libraries")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"name":"Lib ${System.nanoTime()}","path":"./data/rec-${System.nanoTime()}"}"""),
-        )
-        return Json.mapper.readTree(resp.bodyString()).get("id").asText()
+        val resp =
+            app(
+                Request(Method.POST, "/api/libraries")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"name":"Lib ${System.nanoTime()}","path":"./data/rec-${System.nanoTime()}"}"""),
+            )
+        return Json.mapper
+            .readTree(resp.bodyString())
+            .get("id")
+            .asText()
     }
 
-    private fun createBook(token: String, libId: String, title: String, author: String? = null): String {
+    private fun createBook(
+        token: String,
+        libId: String,
+        title: String,
+        author: String? = null,
+    ): String {
         val authorJson = if (author != null) """"$author"""" else "null"
-        val resp = app(
-            Request(Method.POST, "/api/books")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"title":"$title","author":$authorJson,"description":null,"libraryId":"$libId"}"""),
-        )
-        return Json.mapper.readTree(resp.bodyString()).get("id").asText()
+        val resp =
+            app(
+                Request(Method.POST, "/api/books")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"title":"$title","author":$authorJson,"description":null,"libraryId":"$libId"}"""),
+            )
+        return Json.mapper
+            .readTree(resp.bodyString())
+            .get("id")
+            .asText()
     }
 
     @Test

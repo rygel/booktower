@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class BookFormatsIntegrationTest : IntegrationTestBase() {
-
     @Test
     fun `GET formats returns empty list for new book`() {
         val token = registerAndGetToken()
@@ -29,12 +28,13 @@ class BookFormatsIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
 
-        val resp = app(
-            Request(Method.POST, "/api/books/$bookId/formats")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"filePath":"/tmp/book.epub","label":"ePub version","isPrimary":false}"""),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/api/books/$bookId/formats")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"filePath":"/tmp/book.epub","label":"ePub version","isPrimary":false}"""),
+            )
         assertEquals(Status.CREATED, resp.status)
         val tree = Json.mapper.readTree(resp.bodyString())
         assertEquals("epub", tree.get("format").asText())
@@ -72,17 +72,23 @@ class BookFormatsIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
 
-        val addResp = app(
-            Request(Method.POST, "/api/books/$bookId/formats")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"filePath":"/tmp/book.pdf","label":"PDF"}"""),
-        )
-        val fileId = Json.mapper.readTree(addResp.bodyString()).get("id").asText()
+        val addResp =
+            app(
+                Request(Method.POST, "/api/books/$bookId/formats")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"filePath":"/tmp/book.pdf","label":"PDF"}"""),
+            )
+        val fileId =
+            Json.mapper
+                .readTree(addResp.bodyString())
+                .get("id")
+                .asText()
 
-        val delResp = app(
-            Request(Method.DELETE, "/api/books/$bookId/formats/$fileId").header("Cookie", "token=$token"),
-        )
+        val delResp =
+            app(
+                Request(Method.DELETE, "/api/books/$bookId/formats/$fileId").header("Cookie", "token=$token"),
+            )
         assertEquals(Status.NO_CONTENT, delResp.status)
 
         val listResp = app(Request(Method.GET, "/api/books/$bookId/formats").header("Cookie", "token=$token"))
@@ -95,10 +101,11 @@ class BookFormatsIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
 
-        val resp = app(
-            Request(Method.DELETE, "/api/books/$bookId/formats/00000000-0000-0000-0000-000000000000")
-                .header("Cookie", "token=$token"),
-        )
+        val resp =
+            app(
+                Request(Method.DELETE, "/api/books/$bookId/formats/00000000-0000-0000-0000-000000000000")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.NOT_FOUND, resp.status)
     }
 

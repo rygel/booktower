@@ -11,15 +11,21 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class SeriesBrowserIntegrationTest : IntegrationTestBase() {
-
-    private fun setSeriesOnBook(token: String, bookId: String, series: String, index: Double?) {
+    private fun setSeriesOnBook(
+        token: String,
+        bookId: String,
+        series: String,
+        index: Double?,
+    ) {
         app(
             Request(Method.PUT, "/api/books/$bookId")
                 .header("Cookie", "token=$token")
                 .header("Content-Type", "application/json")
-                .body(Json.mapper.writeValueAsString(
-                    UpdateBookRequest("Book $bookId", null, null, series, index),
-                )),
+                .body(
+                    Json.mapper.writeValueAsString(
+                        UpdateBookRequest("Book $bookId", null, null, series, index),
+                    ),
+                ),
         )
     }
 
@@ -58,9 +64,10 @@ class SeriesBrowserIntegrationTest : IntegrationTestBase() {
         val bookId = createBook(token, libId, "Dune")
         setSeriesOnBook(token, bookId, "Dune", 1.0)
 
-        val response = app(
-            Request(Method.GET, "/series/Dune").header("Cookie", "token=$token"),
-        )
+        val response =
+            app(
+                Request(Method.GET, "/series/Dune").header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, response.status)
         assertTrue(response.bodyString().contains("Dune"))
     }
@@ -76,11 +83,12 @@ class SeriesBrowserIntegrationTest : IntegrationTestBase() {
         setSeriesOnBook(token, book2, "MySeries", 2.0)
         setSeriesOnBook(token, book3, "MySeries", 3.0)
 
-        val body = app(
-            Request(Method.GET, "/series/MySeries").header("Cookie", "token=$token"),
-        ).bodyString()
+        val body =
+            app(
+                Request(Method.GET, "/series/MySeries").header("Cookie", "token=$token"),
+            ).bodyString()
         assertTrue(body.contains("MySeries"))
-        assertTrue(body.contains("3 "))  // book count in heading
+        assertTrue(body.contains("3 ")) // book count in heading
         // All three books' IDs should appear in the rendered cards
         assertTrue(body.contains(book1))
         assertTrue(body.contains(book2))
@@ -94,9 +102,10 @@ class SeriesBrowserIntegrationTest : IntegrationTestBase() {
         val bookId = createBook(token, libId, "Clash of Kings")
         setSeriesOnBook(token, bookId, "ASOIAF", 2.0)
 
-        val body = app(
-            Request(Method.GET, "/series/ASOIAF").header("Cookie", "token=$token"),
-        ).bodyString()
+        val body =
+            app(
+                Request(Method.GET, "/series/ASOIAF").header("Cookie", "token=$token"),
+            ).bodyString()
         assertTrue(body.contains("#2"))
     }
 
@@ -129,9 +138,10 @@ class SeriesBrowserIntegrationTest : IntegrationTestBase() {
 
         // URL-encode the series name
         val encoded = "A%20Song%20of%20Ice%20and%20Fire"
-        val response = app(
-            Request(Method.GET, "/series/$encoded").header("Cookie", "token=$token"),
-        )
+        val response =
+            app(
+                Request(Method.GET, "/series/$encoded").header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, response.status)
         assertTrue(response.bodyString().contains("A Song of Ice and Fire"))
     }

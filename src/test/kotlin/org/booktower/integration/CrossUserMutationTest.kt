@@ -13,7 +13,6 @@ import kotlin.test.assertEquals
  * this suite covers PUT / progress-update / upload and HTMX mutation endpoints.
  */
 class CrossUserMutationTest : IntegrationTestBase() {
-
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private fun setupBookForUserA(): Triple<String, String, String> {
@@ -32,12 +31,13 @@ class CrossUserMutationTest : IntegrationTestBase() {
         val (_, _, bookId) = setupBookForUserA()
         val b = tokenB()
 
-        val resp = app(
-            Request(Method.PUT, "/api/books/$bookId")
-                .header("Cookie", "token=$b")
-                .header("Content-Type", "application/json")
-                .body("""{"title":"Hijacked","author":null,"description":null}"""),
-        )
+        val resp =
+            app(
+                Request(Method.PUT, "/api/books/$bookId")
+                    .header("Cookie", "token=$b")
+                    .header("Content-Type", "application/json")
+                    .body("""{"title":"Hijacked","author":null,"description":null}"""),
+            )
         assertEquals(Status.NOT_FOUND, resp.status, "User B must get 404 when updating user A's book")
     }
 
@@ -48,12 +48,13 @@ class CrossUserMutationTest : IntegrationTestBase() {
         val (_, _, bookId) = setupBookForUserA()
         val b = tokenB()
 
-        val resp = app(
-            Request(Method.PUT, "/api/books/$bookId/progress")
-                .header("Cookie", "token=$b")
-                .header("Content-Type", "application/json")
-                .body("""{"currentPage":42}"""),
-        )
+        val resp =
+            app(
+                Request(Method.PUT, "/api/books/$bookId/progress")
+                    .header("Cookie", "token=$b")
+                    .header("Content-Type", "application/json")
+                    .body("""{"currentPage":42}"""),
+            )
         assertEquals(Status.NOT_FOUND, resp.status, "User B must get 404 when updating progress on user A's book")
     }
 
@@ -64,12 +65,13 @@ class CrossUserMutationTest : IntegrationTestBase() {
         val (_, _, bookId) = setupBookForUserA()
         val b = tokenB()
 
-        val resp = app(
-            Request(Method.POST, "/api/books/$bookId/upload")
-                .header("Cookie", "token=$b")
-                .header("X-Filename", "evil.pdf")
-                .body("%PDF-1.4 fake content"),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/api/books/$bookId/upload")
+                    .header("Cookie", "token=$b")
+                    .header("X-Filename", "evil.pdf")
+                    .body("%PDF-1.4 fake content"),
+            )
         assertEquals(Status.NOT_FOUND, resp.status, "User B must get 404 when uploading to user A's book")
     }
 
@@ -80,12 +82,13 @@ class CrossUserMutationTest : IntegrationTestBase() {
         val (_, _, bookId) = setupBookForUserA()
         val b = tokenB()
 
-        val resp = app(
-            Request(Method.POST, "/api/books/$bookId/cover")
-                .header("Cookie", "token=$b")
-                .header("X-Filename", "cover.jpg")
-                .body(ByteArray(100) { 0xFF.toByte() }.inputStream(), 100L),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/api/books/$bookId/cover")
+                    .header("Cookie", "token=$b")
+                    .header("X-Filename", "cover.jpg")
+                    .body(ByteArray(100) { 0xFF.toByte() }.inputStream(), 100L),
+            )
         assertEquals(Status.NOT_FOUND, resp.status, "User B must get 404 when uploading cover to user A's book")
     }
 
@@ -109,10 +112,11 @@ class CrossUserMutationTest : IntegrationTestBase() {
         )
 
         // Confirm User A's book page is still accessible and not affected
-        val bookResp = app(
-            Request(Method.GET, "/api/books/$bookId")
-                .header("Cookie", "token=$a"),
-        )
+        val bookResp =
+            app(
+                Request(Method.GET, "/api/books/$bookId")
+                    .header("Cookie", "token=$a"),
+            )
         assertEquals(Status.OK, bookResp.status, "User A's book should still be accessible")
     }
 
@@ -128,10 +132,11 @@ class CrossUserMutationTest : IntegrationTestBase() {
                 .body("rating=1"),
         )
 
-        val bookResp = app(
-            Request(Method.GET, "/api/books/$bookId")
-                .header("Cookie", "token=$a"),
-        )
+        val bookResp =
+            app(
+                Request(Method.GET, "/api/books/$bookId")
+                    .header("Cookie", "token=$a"),
+            )
         assertEquals(Status.OK, bookResp.status)
         val tree = Json.mapper.readTree(bookResp.bodyString())
         // User A's rating should be null (they never rated it)
@@ -150,12 +155,13 @@ class CrossUserMutationTest : IntegrationTestBase() {
         // The bookmark API stores (user_id, book_id) — creating a bookmark for
         // another user's book ID is silently stored for User B, not User A.
         // At minimum, the endpoint must not 500 or 403.
-        val resp = app(
-            Request(Method.POST, "/api/bookmarks")
-                .header("Cookie", "token=$b")
-                .header("Content-Type", "application/json")
-                .body("""{"bookId":"$bookId","page":5,"title":"steal","note":null}"""),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/api/bookmarks")
+                    .header("Cookie", "token=$b")
+                    .header("Content-Type", "application/json")
+                    .body("""{"bookId":"$bookId","page":5,"title":"steal","note":null}"""),
+            )
         // Expect 201 (user B's own bookmark) or validation error — must not 500
         assert(resp.status.code != 500) { "Must not 500 when creating bookmark for another user's book" }
     }
@@ -174,10 +180,11 @@ class CrossUserMutationTest : IntegrationTestBase() {
         )
 
         // User A queries their bookmarks for the same bookId
-        val aResp = app(
-            Request(Method.GET, "/api/bookmarks?bookId=$bookId")
-                .header("Cookie", "token=$a"),
-        )
+        val aResp =
+            app(
+                Request(Method.GET, "/api/bookmarks?bookId=$bookId")
+                    .header("Cookie", "token=$a"),
+            )
         assertEquals(Status.OK, aResp.status)
         val bookmarks = Json.mapper.readTree(aResp.bodyString())
         assert(bookmarks.isArray && bookmarks.size() == 0) {
@@ -190,24 +197,26 @@ class CrossUserMutationTest : IntegrationTestBase() {
     @Test
     fun `PUT progress on nonexistent book returns 404`() {
         val token = registerAndGetToken("cmut_nx")
-        val resp = app(
-            Request(Method.PUT, "/api/books/00000000-0000-0000-0000-000000000000/progress")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"currentPage":1}"""),
-        )
+        val resp =
+            app(
+                Request(Method.PUT, "/api/books/00000000-0000-0000-0000-000000000000/progress")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"currentPage":1}"""),
+            )
         assertEquals(Status.NOT_FOUND, resp.status)
     }
 
     @Test
     fun `PUT update on nonexistent book returns 404`() {
         val token = registerAndGetToken("cmut_nx2")
-        val resp = app(
-            Request(Method.PUT, "/api/books/00000000-0000-0000-0000-000000000000")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"title":"Ghost","author":null,"description":null}"""),
-        )
+        val resp =
+            app(
+                Request(Method.PUT, "/api/books/00000000-0000-0000-0000-000000000000")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"title":"Ghost","author":null,"description":null}"""),
+            )
         assertEquals(Status.NOT_FOUND, resp.status)
     }
 }

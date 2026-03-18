@@ -2,28 +2,34 @@ package org.booktower.integration
 
 import org.http4k.core.Method
 import org.http4k.core.Request
-import org.http4k.core.Status
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class BookMetadataEditIntegrationTest : IntegrationTestBase() {
-
-    private fun editBook(token: String, bookId: String, fields: Map<String, String>): Int {
-        val body = fields.entries.joinToString("&") { (k, v) ->
-            "${k}=${java.net.URLEncoder.encode(v, "UTF-8")}"
-        }
-        val resp = app(
-            Request(Method.POST, "/ui/books/$bookId/meta")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .body(body),
-        )
+    private fun editBook(
+        token: String,
+        bookId: String,
+        fields: Map<String, String>,
+    ): Int {
+        val body =
+            fields.entries.joinToString("&") { (k, v) ->
+                "$k=${java.net.URLEncoder.encode(v, "UTF-8")}"
+            }
+        val resp =
+            app(
+                Request(Method.POST, "/ui/books/$bookId/meta")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body(body),
+            )
         return resp.status.code
     }
 
-    private fun bookJson(token: String, bookId: String): String =
-        app(Request(Method.GET, "/api/books/$bookId").header("Cookie", "token=$token")).bodyString()
+    private fun bookJson(
+        token: String,
+        bookId: String,
+    ): String = app(Request(Method.GET, "/api/books/$bookId").header("Cookie", "token=$token")).bodyString()
 
     // ── ISBN ────────────────────────────────────────────────────────────────────
 
@@ -49,8 +55,10 @@ class BookMetadataEditIntegrationTest : IntegrationTestBase() {
         editBook(token, bookId, mapOf("title" to "Publisher Test", "publisher" to "O'Reilly Media"))
 
         val body = bookJson(token, bookId)
-        assertTrue(body.contains("O'Reilly Media") || body.contains("O\\u2019Reilly") || body.contains("O%27Reilly"),
-            "Publisher should be saved")
+        assertTrue(
+            body.contains("O'Reilly Media") || body.contains("O\\u2019Reilly") || body.contains("O%27Reilly"),
+            "Publisher should be saved",
+        )
     }
 
     @Test
@@ -95,17 +103,21 @@ class BookMetadataEditIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId, "Full Edit Test")
 
-        editBook(token, bookId, mapOf(
-            "title" to "Full Edit Updated",
-            "author" to "Jane Doe",
-            "description" to "A great book",
-            "series" to "My Series",
-            "seriesIndex" to "2",
-            "isbn" to "9780134685991",
-            "publisher" to "Addison-Wesley",
-            "publishedDate" to "2018-07-11",
-            "pageCount" to "464",
-        ))
+        editBook(
+            token,
+            bookId,
+            mapOf(
+                "title" to "Full Edit Updated",
+                "author" to "Jane Doe",
+                "description" to "A great book",
+                "series" to "My Series",
+                "seriesIndex" to "2",
+                "isbn" to "9780134685991",
+                "publisher" to "Addison-Wesley",
+                "publishedDate" to "2018-07-11",
+                "pageCount" to "464",
+            ),
+        )
 
         val body = bookJson(token, bookId)
         assertTrue(body.contains("Full Edit Updated"), "Title should be updated")
@@ -140,7 +152,9 @@ class BookMetadataEditIntegrationTest : IntegrationTestBase() {
         editBook(token, bookId, mapOf("title" to "Clear ISBN Test"))
 
         val body = bookJson(token, bookId)
-        assertTrue(!body.contains("1234567890") || body.contains("\"isbn\":null"),
-            "ISBN should be cleared")
+        assertTrue(
+            !body.contains("1234567890") || body.contains("\"isbn\":null"),
+            "ISBN should be cleared",
+        )
     }
 }

@@ -8,26 +8,38 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 class BrowseModeIntegrationTest : IntegrationTestBase() {
-
     @Test
     fun `GET browse-mode returns default grid for new user`() {
         val token = registerAndGetToken()
         val resp = app(Request(Method.GET, "/api/user/preferences/browse-mode").header("Cookie", "token=$token"))
         assertEquals(Status.OK, resp.status)
-        assertEquals("grid", Json.mapper.readTree(resp.bodyString()).get("browseMode").asText())
+        assertEquals(
+            "grid",
+            Json.mapper
+                .readTree(resp.bodyString())
+                .get("browseMode")
+                .asText(),
+        )
     }
 
     @Test
     fun `PUT sets browse mode to list`() {
         val token = registerAndGetToken()
-        val resp = app(
-            Request(Method.PUT, "/api/user/preferences/browse-mode")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"browseMode":"list"}"""),
-        )
+        val resp =
+            app(
+                Request(Method.PUT, "/api/user/preferences/browse-mode")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"browseMode":"list"}"""),
+            )
         assertEquals(Status.OK, resp.status)
-        assertEquals("list", Json.mapper.readTree(resp.bodyString()).get("browseMode").asText())
+        assertEquals(
+            "list",
+            Json.mapper
+                .readTree(resp.bodyString())
+                .get("browseMode")
+                .asText(),
+        )
     }
 
     @Test
@@ -40,30 +52,38 @@ class BrowseModeIntegrationTest : IntegrationTestBase() {
                 .body("""{"browseMode":"table"}"""),
         )
         val resp = app(Request(Method.GET, "/api/user/preferences/browse-mode").header("Cookie", "token=$token"))
-        assertEquals("table", Json.mapper.readTree(resp.bodyString()).get("browseMode").asText())
+        assertEquals(
+            "table",
+            Json.mapper
+                .readTree(resp.bodyString())
+                .get("browseMode")
+                .asText(),
+        )
     }
 
     @Test
     fun `PUT with invalid mode returns 400`() {
         val token = registerAndGetToken()
-        val resp = app(
-            Request(Method.PUT, "/api/user/preferences/browse-mode")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"browseMode":"tiles"}"""),
-        )
+        val resp =
+            app(
+                Request(Method.PUT, "/api/user/preferences/browse-mode")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"browseMode":"tiles"}"""),
+            )
         assertEquals(Status.BAD_REQUEST, resp.status)
     }
 
     @Test
     fun `PUT with missing browseMode field returns 400`() {
         val token = registerAndGetToken()
-        val resp = app(
-            Request(Method.PUT, "/api/user/preferences/browse-mode")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{}"""),
-        )
+        val resp =
+            app(
+                Request(Method.PUT, "/api/user/preferences/browse-mode")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{}"""),
+            )
         assertEquals(Status.BAD_REQUEST, resp.status)
     }
 
@@ -80,7 +100,13 @@ class BrowseModeIntegrationTest : IntegrationTestBase() {
         )
 
         val resp2 = app(Request(Method.GET, "/api/user/preferences/browse-mode").header("Cookie", "token=$token2"))
-        assertEquals("grid", Json.mapper.readTree(resp2.bodyString()).get("browseMode").asText())
+        assertEquals(
+            "grid",
+            Json.mapper
+                .readTree(resp2.bodyString())
+                .get("browseMode")
+                .asText(),
+        )
     }
 
     @Test

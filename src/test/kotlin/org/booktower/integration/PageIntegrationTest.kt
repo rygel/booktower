@@ -1,31 +1,16 @@
 package org.booktower.integration
 
-import org.booktower.TestFixture
 import org.booktower.config.Json
-import org.booktower.config.TemplateRenderer
-import org.booktower.filters.GlobalErrorFilter
-import org.booktower.handlers.AppHandler
 import org.booktower.models.LoginResponse
-import org.booktower.services.AuthService
-import org.booktower.services.BookmarkService
-import org.booktower.services.PdfMetadataService
-import org.booktower.services.UserSettingsService
-import org.booktower.services.BookService
-import org.booktower.services.JwtService
-import org.booktower.services.LibraryService
-import org.http4k.core.HttpHandler
 import org.http4k.core.Method
 import org.http4k.core.Request
 import org.http4k.core.Status
-import org.http4k.core.then
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class PageIntegrationTest : IntegrationTestBase() {
-
     @Test
     fun `index page returns HTML`() {
         val response = app(Request(Method.GET, "/"))
@@ -45,11 +30,12 @@ class PageIntegrationTest : IntegrationTestBase() {
     @Test
     fun `index page with auth shows authenticated view`() {
         val username = "pageuser_${System.nanoTime()}"
-        val regResponse = app(
-            Request(Method.POST, "/auth/register")
-                .header("Content-Type", "application/json")
-                .body("""{"username":"$username","email":"$username@test.com","password":"password123"}"""),
-        )
+        val regResponse =
+            app(
+                Request(Method.POST, "/auth/register")
+                    .header("Content-Type", "application/json")
+                    .body("""{"username":"$username","email":"$username@test.com","password":"password123"}"""),
+            )
         val token = Json.mapper.readValue(regResponse.bodyString(), LoginResponse::class.java).token
 
         val response = app(Request(Method.GET, "/libraries").header("Cookie", "token=$token"))
@@ -82,11 +68,12 @@ class PageIntegrationTest : IntegrationTestBase() {
     @Test
     fun `authenticated index page shows user libraries`() {
         val username = "libpage_${System.nanoTime()}"
-        val regResponse = app(
-            Request(Method.POST, "/auth/register")
-                .header("Content-Type", "application/json")
-                .body("""{"username":"$username","email":"$username@test.com","password":"password123"}"""),
-        )
+        val regResponse =
+            app(
+                Request(Method.POST, "/auth/register")
+                    .header("Content-Type", "application/json")
+                    .body("""{"username":"$username","email":"$username@test.com","password":"password123"}"""),
+            )
         val token = Json.mapper.readValue(regResponse.bodyString(), LoginResponse::class.java).token
 
         app(
@@ -113,14 +100,17 @@ class PageIntegrationTest : IntegrationTestBase() {
         val token = registerAndGetToken("sortpd")
         val libId = createLibrary(token)
 
-        val response = app(
-            Request(Method.GET, "/libraries/$libId?sort=PUBLISHED_DATE")
-                .header("Cookie", "token=$token"),
-        )
+        val response =
+            app(
+                Request(Method.GET, "/libraries/$libId?sort=PUBLISHED_DATE")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, response.status)
         // The sort dropdown must include the PUBLISHED_DATE option
-        assertTrue(response.bodyString().contains("PUBLISHED_DATE"),
-            "Library page must render the PUBLISHED_DATE sort option in the dropdown")
+        assertTrue(
+            response.bodyString().contains("PUBLISHED_DATE"),
+            "Library page must render the PUBLISHED_DATE sort option in the dropdown",
+        )
     }
 
     @Test
@@ -132,7 +122,10 @@ class PageIntegrationTest : IntegrationTestBase() {
         val book1 = createBook(token, libId, "Older Book")
         val book2 = createBook(token, libId, "Newer Book")
 
-        fun editPublishedDate(bookId: String, date: String) {
+        fun editPublishedDate(
+            bookId: String,
+            date: String,
+        ) {
             app(
                 Request(Method.POST, "/ui/books/$bookId/meta")
                     .header("Cookie", "token=$token")
@@ -143,16 +136,21 @@ class PageIntegrationTest : IntegrationTestBase() {
         editPublishedDate(book1, "1990-01-01")
         editPublishedDate(book2, "2020-06-15")
 
-        val html = app(
-            Request(Method.GET, "/libraries/$libId?sort=PUBLISHED_DATE")
-                .header("Cookie", "token=$token"),
-        ).bodyString()
+        val html =
+            app(
+                Request(Method.GET, "/libraries/$libId?sort=PUBLISHED_DATE")
+                    .header("Cookie", "token=$token"),
+            ).bodyString()
 
         val idxOlder = html.indexOf("Older Book")
         val idxNewer = html.indexOf("Newer Book")
-        assertTrue(idxNewer in 0..Int.MAX_VALUE && idxOlder in 0..Int.MAX_VALUE,
-            "Both books must appear on the library page")
-        assertTrue(idxNewer < idxOlder,
-            "Newer Book (2020) must appear before Older Book (1990) when sorted by PUBLISHED_DATE DESC")
+        assertTrue(
+            idxNewer in 0..Int.MAX_VALUE && idxOlder in 0..Int.MAX_VALUE,
+            "Both books must appear on the library page",
+        )
+        assertTrue(
+            idxNewer < idxOlder,
+            "Newer Book (2020) must appear before Older Book (1990) when sorted by PUBLISHED_DATE DESC",
+        )
     }
 }

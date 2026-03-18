@@ -1,49 +1,36 @@
 package org.booktower.integration
 
-import org.booktower.TestFixture
 import org.booktower.config.Json
-import org.booktower.config.TemplateRenderer
-import org.booktower.filters.GlobalErrorFilter
-import org.booktower.handlers.AppHandler
 import org.booktower.models.LoginResponse
-import org.booktower.services.AuthService
-import org.booktower.services.BookmarkService
-import org.booktower.services.BookService
-import org.booktower.services.JwtService
-import org.booktower.services.LibraryService
-import org.booktower.services.PdfMetadataService
-import org.booktower.services.UserSettingsService
-import org.http4k.core.HttpHandler
 import org.http4k.core.Method
 import org.http4k.core.Request
 import org.http4k.core.Status
-import org.http4k.core.then
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class UserSettingsIntegrationTest : IntegrationTestBase() {
-
     private fun uniqueUser() = "us_${System.nanoTime()}"
 
     private fun registerAndGetToken(): String {
         val username = uniqueUser()
-        val response = app(
-            Request(Method.POST, "/auth/register")
-                .header("Content-Type", "application/json")
-                .body("""{"username":"$username","email":"$username@test.com","password":"password123"}"""),
-        )
+        val response =
+            app(
+                Request(Method.POST, "/auth/register")
+                    .header("Content-Type", "application/json")
+                    .body("""{"username":"$username","email":"$username@test.com","password":"password123"}"""),
+            )
         return Json.mapper.readValue(response.bodyString(), LoginResponse::class.java).token
     }
 
     @Test
     fun `get settings returns empty map for new user`() {
         val token = registerAndGetToken()
-        val response = app(
-            Request(Method.GET, "/api/settings")
-                .header("Cookie", "token=$token"),
-        )
+        val response =
+            app(
+                Request(Method.GET, "/api/settings")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, response.status)
         val settings = Json.mapper.readTree(response.bodyString())
         assertTrue(settings.isObject)
@@ -60,10 +47,11 @@ class UserSettingsIntegrationTest : IntegrationTestBase() {
                 .body("dark"),
         )
 
-        val response = app(
-            Request(Method.GET, "/api/settings")
-                .header("Cookie", "token=$token"),
-        )
+        val response =
+            app(
+                Request(Method.GET, "/api/settings")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, response.status)
         val settings = Json.mapper.readTree(response.bodyString())
         assertEquals("dark", settings.get("theme").asText())
@@ -84,10 +72,11 @@ class UserSettingsIntegrationTest : IntegrationTestBase() {
                 .body("light"),
         )
 
-        val response = app(
-            Request(Method.GET, "/api/settings")
-                .header("Cookie", "token=$token"),
-        )
+        val response =
+            app(
+                Request(Method.GET, "/api/settings")
+                    .header("Cookie", "token=$token"),
+            )
         val settings = Json.mapper.readTree(response.bodyString())
         assertEquals("light", settings.get("theme").asText())
     }
@@ -123,12 +112,13 @@ class UserSettingsIntegrationTest : IntegrationTestBase() {
     fun `set setting with JSON string value works`() {
         val token = registerAndGetToken()
 
-        val response = app(
-            Request(Method.PUT, "/api/settings/font")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("\"serif\""),
-        )
+        val response =
+            app(
+                Request(Method.PUT, "/api/settings/font")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("\"serif\""),
+            )
 
         assertEquals(Status.OK, response.status)
         val body = Json.mapper.readTree(response.bodyString())
@@ -138,10 +128,11 @@ class UserSettingsIntegrationTest : IntegrationTestBase() {
 
     @Test
     fun `set setting without auth returns 401`() {
-        val response = app(
-            Request(Method.PUT, "/api/settings/theme")
-                .body("dark"),
-        )
+        val response =
+            app(
+                Request(Method.PUT, "/api/settings/theme")
+                    .body("dark"),
+            )
         assertEquals(Status.UNAUTHORIZED, response.status)
     }
 
@@ -154,10 +145,11 @@ class UserSettingsIntegrationTest : IntegrationTestBase() {
     @Test
     fun `set setting with blank body stores null value`() {
         val token = registerAndGetToken()
-        val response = app(
-            Request(Method.PUT, "/api/settings/reset-key")
-                .header("Cookie", "token=$token"),
-        )
+        val response =
+            app(
+                Request(Method.PUT, "/api/settings/reset-key")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, response.status)
     }
 
@@ -166,9 +158,10 @@ class UserSettingsIntegrationTest : IntegrationTestBase() {
         val token = registerAndGetToken()
         app(Request(Method.PUT, "/api/settings/theme").header("Cookie", "token=$token").body("dark"))
 
-        val deleteResponse = app(
-            Request(Method.DELETE, "/api/settings/theme").header("Cookie", "token=$token"),
-        )
+        val deleteResponse =
+            app(
+                Request(Method.DELETE, "/api/settings/theme").header("Cookie", "token=$token"),
+            )
         assertEquals(Status.NO_CONTENT, deleteResponse.status)
 
         val getResponse = app(Request(Method.GET, "/api/settings").header("Cookie", "token=$token"))
@@ -179,9 +172,10 @@ class UserSettingsIntegrationTest : IntegrationTestBase() {
     @Test
     fun `delete non-existent setting returns 404`() {
         val token = registerAndGetToken()
-        val response = app(
-            Request(Method.DELETE, "/api/settings/theme").header("Cookie", "token=$token"),
-        )
+        val response =
+            app(
+                Request(Method.DELETE, "/api/settings/theme").header("Cookie", "token=$token"),
+            )
         assertEquals(Status.NOT_FOUND, response.status)
     }
 

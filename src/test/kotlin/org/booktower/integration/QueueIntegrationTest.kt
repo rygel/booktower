@@ -9,8 +9,11 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class QueueIntegrationTest : IntegrationTestBase() {
-
-    private fun setStatus(token: String, bookId: String, status: String) {
+    private fun setStatus(
+        token: String,
+        bookId: String,
+        status: String,
+    ) {
         app(
             Request(Method.POST, "/ui/books/$bookId/status")
                 .header("Cookie", "token=$token")
@@ -29,8 +32,10 @@ class QueueIntegrationTest : IntegrationTestBase() {
     @Test
     fun `queue page requires authentication`() {
         val response = app(Request(Method.GET, "/queue"))
-        assertTrue(response.status.code in listOf(302, 303, 401),
-            "Queue page must redirect unauthenticated users")
+        assertTrue(
+            response.status.code in listOf(302, 303, 401),
+            "Queue page must redirect unauthenticated users",
+        )
     }
 
     @Test
@@ -40,8 +45,10 @@ class QueueIntegrationTest : IntegrationTestBase() {
         createBook(token, libId, "Random Book")
 
         val body = app(Request(Method.GET, "/queue").header("Cookie", "token=$token")).bodyString()
-        assertTrue(body.contains("page.queue.empty.title") || body.contains("reading queue is empty"),
-            "Empty state message must appear when no books are WANT_TO_READ")
+        assertTrue(
+            body.contains("page.queue.empty.title") || body.contains("reading queue is empty"),
+            "Empty state message must appear when no books are WANT_TO_READ",
+        )
     }
 
     @Test
@@ -77,8 +84,10 @@ class QueueIntegrationTest : IntegrationTestBase() {
         setStatus(token, bookId, "WANT_TO_READ")
 
         val body = app(Request(Method.GET, "/queue").header("Cookie", "token=$token")).bodyString()
-        assertTrue(body.contains("action.start.reading") || body.contains("Start Reading"),
-            "Start Reading button must appear for WANT_TO_READ books")
+        assertTrue(
+            body.contains("action.start.reading") || body.contains("Start Reading"),
+            "Start Reading button must appear for WANT_TO_READ books",
+        )
     }
 
     @Test
@@ -105,8 +114,10 @@ class QueueIntegrationTest : IntegrationTestBase() {
         setStatus(tokenA, bookA, "WANT_TO_READ")
 
         val bodyB = app(Request(Method.GET, "/queue").header("Cookie", "token=$tokenB")).bodyString()
-        assertFalse(bodyB.contains("Private Wishlist Book"),
-            "Queue must not show another user's WANT_TO_READ books")
+        assertFalse(
+            bodyB.contains("Private Wishlist Book"),
+            "Queue must not show another user's WANT_TO_READ books",
+        )
     }
 
     @Test

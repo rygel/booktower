@@ -14,22 +14,25 @@ import java.util.UUID
 
 private val logger = LoggerFactory.getLogger("booktower.BookmarkHandler")
 
-class BookmarkHandler(private val bookmarkService: BookmarkService) {
-
+class BookmarkHandler(
+    private val bookmarkService: BookmarkService,
+) {
     fun list(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
-        val bookId = req.query("bookId")
-            ?: return Response(Status.BAD_REQUEST)
-                .header("Content-Type", "application/json")
-                .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "bookId query parameter is required")))
+        val bookId =
+            req.query("bookId")
+                ?: return Response(Status.BAD_REQUEST)
+                    .header("Content-Type", "application/json")
+                    .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "bookId query parameter is required")))
 
-        val parsedBookId = try {
-            UUID.fromString(bookId)
-        } catch (e: IllegalArgumentException) {
-            return Response(Status.BAD_REQUEST)
-                .header("Content-Type", "application/json")
-                .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Invalid book ID format")))
-        }
+        val parsedBookId =
+            try {
+                UUID.fromString(bookId)
+            } catch (e: IllegalArgumentException) {
+                return Response(Status.BAD_REQUEST)
+                    .header("Content-Type", "application/json")
+                    .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Invalid book ID format")))
+            }
 
         val bookmarks = bookmarkService.getBookmarks(userId, parsedBookId)
         return Response(Status.OK)
@@ -47,13 +50,14 @@ class BookmarkHandler(private val bookmarkService: BookmarkService) {
                 .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Request body is required")))
         }
 
-        val createRequest = try {
-            Json.mapper.readValue(requestBody, CreateBookmarkRequest::class.java)
-        } catch (_: Exception) {
-            return Response(Status.BAD_REQUEST)
-                .header("Content-Type", "application/json")
-                .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Invalid JSON body")))
-        }
+        val createRequest =
+            try {
+                Json.mapper.readValue(requestBody, CreateBookmarkRequest::class.java)
+            } catch (_: Exception) {
+                return Response(Status.BAD_REQUEST)
+                    .header("Content-Type", "application/json")
+                    .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Invalid JSON body")))
+            }
 
         val validationError = validate(createRequest)
         if (validationError != null) {
@@ -80,9 +84,14 @@ class BookmarkHandler(private val bookmarkService: BookmarkService) {
 
     fun delete(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
-        val bookmarkId = req.uri.path.split("/").lastOrNull()?.let { id ->
-            try { UUID.fromString(id) } catch (e: IllegalArgumentException) { null }
-        }
+        val bookmarkId =
+            req.uri.path.split("/").lastOrNull()?.let { id ->
+                try {
+                    UUID.fromString(id)
+                } catch (e: IllegalArgumentException) {
+                    null
+                }
+            }
 
         if (bookmarkId == null) {
             return Response(Status.BAD_REQUEST)

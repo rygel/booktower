@@ -8,7 +8,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class HealthIntegrationTest : IntegrationTestBase() {
-
     @Test
     fun `health endpoint returns 200`() {
         val r = app(Request(Method.GET, "/health"))

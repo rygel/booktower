@@ -33,9 +33,10 @@ class AnalyticsServiceTest {
         libraryService = LibraryService(jdbi, pdfMetadataService)
         bookService = BookService(jdbi)
 
-        val result = authService.register(
-            CreateUserRequest("analytics_${System.nanoTime()}", "analytics_${System.nanoTime()}@test.com", "password123"),
-        )
+        val result =
+            authService.register(
+                CreateUserRequest("analytics_${System.nanoTime()}", "analytics_${System.nanoTime()}@test.com", "password123"),
+            )
         userId = jwtService.extractUserId(result.getOrThrow().token)!!
         val libId = libraryService.createLibrary(userId, CreateLibraryRequest("Analytics Lib", "./data/al-${System.nanoTime()}")).id
         val book = bookService.createBook(userId, CreateBookRequest("Analytics Book", "Author", null, libId)).getOrThrow()
@@ -108,7 +109,10 @@ class AnalyticsServiceTest {
     fun `getSummary pagesLast30Days reflects recorded pages on today`() {
         userSettingsService.set(userId, "analytics.enabled", "true")
         analyticsService.recordProgress(userId, bookId, 20)
-        val today = java.time.LocalDate.now().toString()
+        val today =
+            java.time.LocalDate
+                .now()
+                .toString()
         val entry = analyticsService.getSummary(userId).pagesLast30Days.last()
         assertEquals(today, entry.date)
         assertEquals(20, entry.pages)
@@ -116,9 +120,10 @@ class AnalyticsServiceTest {
 
     @Test
     fun `analytics are isolated between users`() {
-        val otherResult = authService.register(
-            CreateUserRequest("anaother_${System.nanoTime()}", "anaother_${System.nanoTime()}@test.com", "password123"),
-        )
+        val otherResult =
+            authService.register(
+                CreateUserRequest("anaother_${System.nanoTime()}", "anaother_${System.nanoTime()}@test.com", "password123"),
+            )
         val otherId = jwtService.extractUserId(otherResult.getOrThrow().token)!!
         userSettingsService.set(userId, "analytics.enabled", "true")
         analyticsService.recordProgress(userId, bookId, 100)

@@ -3,7 +3,6 @@ package org.booktower.services
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.pdmodel.PDPage
 import org.booktower.TestFixture
-import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
@@ -30,7 +29,11 @@ class PdfMetadataServiceTest {
     }
 
     /** Create a minimal valid PDF with optional title/author and a given page count. */
-    private fun makePdf(title: String? = null, author: String? = null, pages: Int = 1): File {
+    private fun makePdf(
+        title: String? = null,
+        author: String? = null,
+        pages: Int = 1,
+    ): File {
         val doc = PDDocument()
         if (title != null) doc.documentInformation.title = title
         if (author != null) doc.documentInformation.author = author
@@ -129,23 +132,49 @@ class PdfMetadataServiceTest {
         val userId = UUID.randomUUID()
 
         jdbi.useHandle<Exception> { h ->
-            h.execute("INSERT INTO users (id, username, email, password_hash, created_at, updated_at, is_admin) VALUES (?,?,?,?,?,?,?)",
-                userId.toString(), "pdf_test_${System.nanoTime()}", "pdf_${System.nanoTime()}@test.com", "hash",
-                "2024-01-01 00:00:00", "2024-01-01 00:00:00", false)
-            h.execute("INSERT INTO libraries (id, user_id, name, path, created_at, updated_at) VALUES (?,?,?,?,?,?)",
-                libId.toString(), userId.toString(), "PDF Lib", "./test", "2024-01-01 00:00:00", "2024-01-01 00:00:00")
-            h.execute("INSERT INTO books (id, library_id, title, file_path, file_size, added_at, updated_at) VALUES (?,?,?,?,?,?,?)",
-                bookId.toString(), libId.toString(), "Pending Book", "", 0, "2024-01-01 00:00:00", "2024-01-01 00:00:00")
+            h.execute(
+                "INSERT INTO users (id, username, email, password_hash, created_at, updated_at, is_admin) VALUES (?,?,?,?,?,?,?)",
+                userId.toString(),
+                "pdf_test_${System.nanoTime()}",
+                "pdf_${System.nanoTime()}@test.com",
+                "hash",
+                "2024-01-01 00:00:00",
+                "2024-01-01 00:00:00",
+                false,
+            )
+            h.execute(
+                "INSERT INTO libraries (id, user_id, name, path, created_at, updated_at) VALUES (?,?,?,?,?,?)",
+                libId.toString(),
+                userId.toString(),
+                "PDF Lib",
+                "./test",
+                "2024-01-01 00:00:00",
+                "2024-01-01 00:00:00",
+            )
+            h.execute(
+                "INSERT INTO books (id, library_id, title, file_path, file_size, added_at, updated_at) VALUES (?,?,?,?,?,?,?)",
+                bookId.toString(),
+                libId.toString(),
+                "Pending Book",
+                "",
+                0,
+                "2024-01-01 00:00:00",
+                "2024-01-01 00:00:00",
+            )
         }
 
         val pdf = makePdf(title = "Extracted Title", author = "PDF Author", pages = 3)
         service.extractAndStore(bookId.toString(), pdf)
 
-        val pageCount = jdbi.withHandle<Int?, Exception> { h ->
-            h.createQuery("SELECT page_count FROM books WHERE id = ?")
-                .bind(0, bookId.toString())
-                .mapTo(java.lang.Integer::class.java).firstOrNull()?.toInt()
-        }
+        val pageCount =
+            jdbi.withHandle<Int?, Exception> { h ->
+                h
+                    .createQuery("SELECT page_count FROM books WHERE id = ?")
+                    .bind(0, bookId.toString())
+                    .mapTo(java.lang.Integer::class.java)
+                    .firstOrNull()
+                    ?.toInt()
+            }
         assertEquals(3, pageCount)
     }
 }

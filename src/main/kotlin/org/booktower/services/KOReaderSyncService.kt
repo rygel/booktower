@@ -8,11 +8,16 @@ import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.util.UUID
 
-private fun parseTs(v: String): Instant = try {
-    Instant.parse(v)
-} catch (_: Exception) {
-    LocalDateTime.parse(v, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss[.SSSSSS][.SSSSS][.SSSS][.SSS][.SS][.S]")).toInstant(ZoneOffset.UTC)
-}
+private fun parseTs(v: String): Instant =
+    try {
+        Instant.parse(v)
+    } catch (_: Exception) {
+        LocalDateTime
+            .parse(
+                v,
+                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss[.SSSSSS][.SSSSS][.SSSS][.SSS][.SS][.S]"),
+            ).toInstant(ZoneOffset.UTC)
+    }
 
 private val kreaderLogger = LoggerFactory.getLogger("booktower.KOReaderSyncService")
 
@@ -32,14 +37,21 @@ class KOReaderSyncService(
     private val jdbi: Jdbi,
     private val bookService: BookService,
 ) {
-
-    fun registerDevice(userId: UUID, deviceName: String?): KOReaderDevice {
+    fun registerDevice(
+        userId: UUID,
+        deviceName: String?,
+    ): KOReaderDevice {
         val token = UUID.randomUUID().toString()
         val now = Instant.now()
         jdbi.useHandle<Exception> { h ->
-            h.createUpdate(
-                "INSERT INTO koreader_devices (token, user_id, device_name, created_at) VALUES (?, ?, ?, ?)",
-            ).bind(0, token).bind(1, userId.toString()).bind(2, deviceName).bind(3, now.toString()).execute()
+            h
+                .createUpdate(
+                    "INSERT INTO koreader_devices (token, user_id, device_name, created_at) VALUES (?, ?, ?, ?)",
+                ).bind(0, token)
+                .bind(1, userId.toString())
+                .bind(2, deviceName)
+                .bind(3, now.toString())
+                .execute()
         }
         kreaderLogger.info("KOReader device registered for user $userId: $deviceName")
         return KOReaderDevice(token = token, userId = userId, deviceName = deviceName, lastSyncAt = null, createdAt = now)
@@ -47,7 +59,8 @@ class KOReaderSyncService(
 
     fun getDevice(token: String): KOReaderDevice? =
         jdbi.withHandle<KOReaderDevice?, Exception> { h ->
-            h.createQuery("SELECT * FROM koreader_devices WHERE token = ?")
+            h
+                .createQuery("SELECT * FROM koreader_devices WHERE token = ?")
                 .bind(0, token)
                 .map { row ->
                     KOReaderDevice(
@@ -62,7 +75,8 @@ class KOReaderSyncService(
 
     fun listDevices(userId: UUID): List<KOReaderDevice> =
         jdbi.withHandle<List<KOReaderDevice>, Exception> { h ->
-            h.createQuery("SELECT * FROM koreader_devices WHERE user_id = ? ORDER BY created_at DESC")
+            h
+                .createQuery("SELECT * FROM koreader_devices WHERE user_id = ? ORDER BY created_at DESC")
                 .bind(0, userId.toString())
                 .map { row ->
                     KOReaderDevice(
@@ -75,11 +89,18 @@ class KOReaderSyncService(
                 }.list()
         }
 
-    fun deleteDevice(userId: UUID, token: String): Boolean {
-        val rows = jdbi.withHandle<Int, Exception> { h ->
-            h.createUpdate("DELETE FROM koreader_devices WHERE token = ? AND user_id = ?")
-                .bind(0, token).bind(1, userId.toString()).execute()
-        }
+    fun deleteDevice(
+        userId: UUID,
+        token: String,
+    ): Boolean {
+        val rows =
+            jdbi.withHandle<Int, Exception> { h ->
+                h
+                    .createUpdate("DELETE FROM koreader_devices WHERE token = ? AND user_id = ?")
+                    .bind(0, token)
+                    .bind(1, userId.toString())
+                    .execute()
+            }
         return rows > 0
     }
 
@@ -96,11 +117,17 @@ class KOReaderSyncService(
         deviceId: String?,
     ): Boolean {
         // Find book by file_hash or id
-        val bookId = jdbi.withHandle<String?, Exception> { h ->
-            h.createQuery("SELECT b.id FROM books b JOIN libraries l ON b.library_id = l.id WHERE l.user_id = ? AND (b.file_hash = ? OR b.id = ?)")
-                .bind(0, userId.toString()).bind(1, document).bind(2, document)
-                .mapTo(String::class.java).firstOrNull()
-        } ?: return false
+        val bookId =
+            jdbi.withHandle<String?, Exception> { h ->
+                h
+                    .createQuery(
+                        "SELECT b.id FROM books b JOIN libraries l ON b.library_id = l.id WHERE l.user_id = ? AND (b.file_hash = ? OR b.id = ?)",
+                    ).bind(0, userId.toString())
+                    .bind(1, document)
+                    .bind(2, document)
+                    .mapTo(String::class.java)
+                    .firstOrNull()
+            } ?: return false
         val bookUuid = runCatching { UUID.fromString(bookId) }.getOrNull() ?: return false
         val book = bookService.getBook(userId, bookUuid) ?: return false
         val page = (percentage * (book.pageCount ?: 1)).toInt().coerceAtLeast(1)
@@ -112,12 +139,21 @@ class KOReaderSyncService(
     /**
      * Retrieves reading progress for a document, returned in KOReader sync format.
      */
-    fun getProgress(userId: UUID, document: String): Map<String, Any?>? {
-        val bookId = jdbi.withHandle<String?, Exception> { h ->
-            h.createQuery("SELECT b.id FROM books b JOIN libraries l ON b.library_id = l.id WHERE l.user_id = ? AND (b.file_hash = ? OR b.id = ?)")
-                .bind(0, userId.toString()).bind(1, document).bind(2, document)
-                .mapTo(String::class.java).firstOrNull()
-        } ?: return null
+    fun getProgress(
+        userId: UUID,
+        document: String,
+    ): Map<String, Any?>? {
+        val bookId =
+            jdbi.withHandle<String?, Exception> { h ->
+                h
+                    .createQuery(
+                        "SELECT b.id FROM books b JOIN libraries l ON b.library_id = l.id WHERE l.user_id = ? AND (b.file_hash = ? OR b.id = ?)",
+                    ).bind(0, userId.toString())
+                    .bind(1, document)
+                    .bind(2, document)
+                    .mapTo(String::class.java)
+                    .firstOrNull()
+            } ?: return null
         val bookUuid = runCatching { UUID.fromString(bookId) }.getOrNull() ?: return null
         val book = bookService.getBook(userId, bookUuid) ?: return null
         val pct = book.progress?.percentage?.div(100.0) ?: 0.0
@@ -134,8 +170,11 @@ class KOReaderSyncService(
 
     fun touchLastSync(token: String) {
         jdbi.useHandle<Exception> { h ->
-            h.createUpdate("UPDATE koreader_devices SET last_sync_at = ? WHERE token = ?")
-                .bind(0, Instant.now().toString()).bind(1, token).execute()
+            h
+                .createUpdate("UPDATE koreader_devices SET last_sync_at = ? WHERE token = ?")
+                .bind(0, Instant.now().toString())
+                .bind(1, token)
+                .execute()
         }
     }
 }
