@@ -119,7 +119,7 @@ class EpubReaderIntegrationTest : IntegrationTestBase() {
         // Extract just the EPUB reader script block (between EPUB_URL and the next @elseif/@endif block marker)
         val epubStart = html.indexOf("EPUB_URL")
         assertTrue(epubStart > 0, "Should contain EPUB_URL constant")
-        val epubBlock = html.substring(epubStart, minOf(epubStart + 6000, html.length))
+        val epubBlock = html.substring(epubStart, minOf(epubStart + 25000, html.length))
         assertTrue(epubBlock.contains("URLSearchParams"), "EPUB reader progress save must use URLSearchParams")
         assertFalse(epubBlock.contains("new FormData()"), "EPUB reader must not use FormData for progress (multipart breaks req.form())")
     }

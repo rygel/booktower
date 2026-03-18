@@ -266,8 +266,12 @@ class AdminIntegrationTest : IntegrationTestBase() {
         assertEquals(Status.OK, response.status)
         val tokens = Json.mapper.readTree(response.bodyString())
         assertTrue(tokens.isArray, "Response should be a JSON array")
-        // Fresh admin with no resets issued — list should be empty
-        assertEquals(0, tokens.size(), "No active tokens for a fresh test user")
+        // Fresh admin with no resets issued — no token should belong to this user.
+        // (Other parallel tests may have active tokens for their own users in the shared DB.)
+        assertFalse(
+            tokens.any { it.get("username")?.asText()?.startsWith("prtoken2_") == true },
+            "No active tokens should exist for the freshly-registered prtoken2 admin user",
+        )
     }
 
     @Test
