@@ -4,6 +4,8 @@ A self-hosted personal digital library manager built with Kotlin, http4k, and HT
 
 ## Features
 
+> [!WARNING] This is a new project and still undfer development. There can be bugs. Test it yourself with a small set of books, before entrusting it to all your library.
+
 - **Library management** — organize books into named libraries with folder-backed storage
 - **Book reader** — in-browser PDF, EPUB, and comic (CBZ/CBR) reader with bookmarks, annotations, and reading progress
 - **Audio book support** — listen to audio books and manage them in the smae application as your ebooks
@@ -18,6 +20,9 @@ A self-hosted personal digital library manager built with Kotlin, http4k, and HT
 - **Data export** — download all reading data as JSON
 - **Auto-scan** — background folder scanning on a configurable interval
 - **Password reset** — self-hosted token-based password reset flow
+
+> [!INFO] This project is developed with the help of AI. However, a human is guiding it and making all critical design decisions. On top of that,
+  an extensive end-to-end test suite is copdevelopd and maintened to keep the quility high and prevent regressions.
 
 ## Quick Start
 
