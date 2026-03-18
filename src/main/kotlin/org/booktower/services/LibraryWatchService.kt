@@ -132,6 +132,7 @@ class LibraryWatchService(
                                 .onFailure { e -> logger.warn("Watcher scan failed for ${ref.libraryId}: ${e.message}") }
                         }
                     }
+
                     ENTRY_DELETE -> {
                         if (ext in SCANNABLE_EXTENSIONS) {
                             logger.info("Watcher detected deleted file: ${file.absolutePath} — marking book missing")

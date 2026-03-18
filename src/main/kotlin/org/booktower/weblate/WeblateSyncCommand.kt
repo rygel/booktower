@@ -29,6 +29,7 @@ object WeblateSyncCommand {
                     println("  $lang: $count translations")
                 }
             }
+
             "push" -> {
                 println("Pushing translations to Weblate...")
                 val results = bridge.pushTranslations()
@@ -36,6 +37,7 @@ object WeblateSyncCommand {
                     println("  $lang: ${if (success) "success" else "failed"}")
                 }
             }
+
             "status" -> {
                 println("Fetching translation status...")
                 bridge.getTranslationStatus()?.let { status ->
@@ -45,6 +47,7 @@ object WeblateSyncCommand {
                     println("  Progress: ${"%.1f".format(status.progressPercent)}%")
                 } ?: println("  Failed to fetch status")
             }
+
             else -> {
                 println("Usage: WeblateSyncCommand <command>")
                 println("Commands:")

@@ -264,7 +264,8 @@ val appModule =
             val jwtService = get<JwtService>()
             val authService = get<AuthService>()
             val userExistsCache =
-                com.github.benmanes.caffeine.cache.Caffeine.newBuilder()
+                com.github.benmanes.caffeine.cache.Caffeine
+                    .newBuilder()
                     .maximumSize(1_000)
                     .expireAfterWrite(30, java.util.concurrent.TimeUnit.SECONDS)
                     .build<java.util.UUID, Boolean>()
