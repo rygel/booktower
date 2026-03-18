@@ -67,8 +67,7 @@ class GoodreadsImportIntegrationTest : IntegrationTestBase() {
         year: String = "",
         shelf: String = "",
         bookshelves: String = "",
-    ) =
-        "1,\"$title\",\"$author\",,,$isbn,,$rating,4.0,\"$publisher\",,${if (pages > 0) pages else ""},$year,,,,\"$bookshelves\",,\"$shelf\",,,,"
+    ) = "1,\"$title\",\"$author\",,,$isbn,,$rating,4.0,\"$publisher\",,${if (pages > 0) pages else ""},$year,,,,\"$bookshelves\",,\"$shelf\",,,,"
 
     // ── Service-level unit tests ──────────────────────────────────────────────
 

@@ -161,8 +161,7 @@ abstract class IntegrationTestBase {
         val duplicateDetectionService = DuplicateDetectionService(jdbi)
         val geoIpService =
             object : GeoIpService() {
-                override fun lookup(ip: String): GeoLocation =
-                    GeoLocation(countryCode = "US", countryName = "United States", city = "Test City")
+                override fun lookup(ip: String): GeoLocation = GeoLocation(countryCode = "US", countryName = "United States", city = "Test City")
             }
         val auditService = org.booktower.services.AuditService(jdbi, geoIpService)
         val oidcService = if (oidcForceOnly) OidcService(OidcConfig(enabled = true, forceOnlyMode = true)) else null
@@ -189,15 +188,33 @@ abstract class IntegrationTestBase {
         val settingsHandler = UserSettingsHandler(userSettingsService)
         val adminHandler =
             AdminHandler(
-                adminService, TestFixture.templateRenderer, passwordResetService, seedService,
-                EmailService(SmtpConfig("", 587, "", "", "", true)), "http://localhost:9999",
-                duplicateDetectionService, auditService, userPermissionsService, libraryAccessService, comicPageHashService,
+                adminService,
+                TestFixture.templateRenderer,
+                passwordResetService,
+                seedService,
+                EmailService(SmtpConfig("", 587, "", "", "", true)),
+                "http://localhost:9999",
+                duplicateDetectionService,
+                auditService,
+                userPermissionsService,
+                libraryAccessService,
+                comicPageHashService,
             )
         val pageHandler =
             PageHandler(
-                jwtService, authService, libraryService, bookService, bookmarkService,
-                userSettingsService, analyticsService, annotationService, metadataFetchService,
-                magicShelfService, TestFixture.templateRenderer, readingSessionService, null,
+                jwtService,
+                authService,
+                libraryService,
+                bookService,
+                bookmarkService,
+                userSettingsService,
+                analyticsService,
+                annotationService,
+                metadataFetchService,
+                magicShelfService,
+                TestFixture.templateRenderer,
+                readingSessionService,
+                null,
             )
         val backgroundTaskHandler = BackgroundTaskHandler(backgroundTaskService)
         val journalHandler = JournalHandler(journalService)
@@ -224,20 +241,47 @@ abstract class IntegrationTestBase {
         val pageRouter = PageRouter(filters, pageHandler, adminHandler, jwtService, TestFixture.templateRenderer, registrationOpen)
         val bookApiRouter =
             BookApiRouter(
-                filters, bookHandler, bulkBookHandler, bookmarkHandler, fileHandler,
-                bookService, comicService, config.storage, magicShelfService,
-                null, null, journalHandler, null, null, null,
-                bookFilesService, comicMetadataService, communityRatingService,
-                bookReviewService, bookNotebookService, duplicateDetectionService,
+                filters,
+                bookHandler,
+                bulkBookHandler,
+                bookmarkHandler,
+                fileHandler,
+                bookService,
+                comicService,
+                config.storage,
+                magicShelfService,
+                null,
+                null,
+                journalHandler,
+                null,
+                null,
+                null,
+                bookFilesService,
+                comicMetadataService,
+                communityRatingService,
+                bookReviewService,
+                bookNotebookService,
+                duplicateDetectionService,
             )
         val libraryApiRouter = LibraryApiRouter(filters, libraryHandler, libraryService, null, null)
         val userApiRouter =
             UserApiRouter(
-                filters, settingsHandler, bookService, userSettingsService,
-                readingStatsService, hardcoverSyncService, opdsCredentialsService,
-                contentRestrictionsService, filterPresetService, telemetryService,
-                null, notificationService, backgroundTaskHandler, apiTokenHandler,
-                exportHandler, goodreadsImportHandler,
+                filters,
+                settingsHandler,
+                bookService,
+                userSettingsService,
+                readingStatsService,
+                hardcoverSyncService,
+                opdsCredentialsService,
+                contentRestrictionsService,
+                filterPresetService,
+                telemetryService,
+                null,
+                notificationService,
+                backgroundTaskHandler,
+                apiTokenHandler,
+                exportHandler,
+                goodreadsImportHandler,
             )
         val adminApiRouter =
             AdminApiRouter(
@@ -279,9 +323,18 @@ abstract class IntegrationTestBase {
         // ── Compose ──────────────────────────────────────────────────────
         val appHandler =
             AppHandler(
-                fileHandler, config.storage, demoMode,
-                authRouter, oidcRouter, pageRouter, bookApiRouter, libraryApiRouter,
-                userApiRouter, adminApiRouter, metadataApiRouter, audiobookApiRouter,
+                fileHandler,
+                config.storage,
+                demoMode,
+                authRouter,
+                oidcRouter,
+                pageRouter,
+                bookApiRouter,
+                libraryApiRouter,
+                userApiRouter,
+                adminApiRouter,
+                metadataApiRouter,
+                audiobookApiRouter,
                 deviceSyncRouter,
             )
         return globalErrorFilter().then(DemoModeFilter(demoMode)).then(appHandler.routes())
@@ -289,8 +342,7 @@ abstract class IntegrationTestBase {
 
     protected open fun createMetadataFetchService(): MetadataFetchService = MetadataFetchService()
 
-    protected open fun createCommunityRatingService(jdbi: org.jdbi.v3.core.Jdbi): org.booktower.services.CommunityRatingService =
-        org.booktower.services.CommunityRatingService(jdbi)
+    protected open fun createCommunityRatingService(jdbi: org.jdbi.v3.core.Jdbi): org.booktower.services.CommunityRatingService = org.booktower.services.CommunityRatingService(jdbi)
 
     protected fun registerAndGetToken(prefix: String = "test"): String {
         val username = "${prefix}_${System.nanoTime()}"
