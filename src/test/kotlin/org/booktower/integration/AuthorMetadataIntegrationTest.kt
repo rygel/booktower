@@ -42,7 +42,7 @@ class AuthorMetadataIntegrationTest {
         object : AuthorMetadataService() {
             override fun fetch(name: String): AuthorInfo? =
                 when {
-                    name.equals("Frank Herbert", ignoreCase = true) ->
+                    name.equals("Frank Herbert", ignoreCase = true) -> {
                         AuthorInfo(
                             name = "Frank Herbert",
                             bio = "American science fiction author best known for Dune.",
@@ -52,8 +52,15 @@ class AuthorMetadataIntegrationTest {
                             workCount = 42,
                             topWork = "Dune",
                         )
-                    name.equals("Unknown Author", ignoreCase = true) -> null
-                    else -> null
+                    }
+
+                    name.equals("Unknown Author", ignoreCase = true) -> {
+                        null
+                    }
+
+                    else -> {
+                        null
+                    }
                 }
         }
 

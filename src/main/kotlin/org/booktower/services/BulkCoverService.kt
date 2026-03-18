@@ -65,11 +65,15 @@ class BulkCoverService(
                         pdfMetadataService.submitAsync(bookId, file)
                         submitted++
                     }
+
                     "epub" -> {
                         epubMetadataService.submitAsync(bookId, file)
                         submitted++
                     }
-                    else -> skipped++
+
+                    else -> {
+                        skipped++
+                    }
                 }
             } catch (e: Exception) {
                 logger.warn("BulkCoverService: failed to submit cover extraction for $bookId: ${e.message}")

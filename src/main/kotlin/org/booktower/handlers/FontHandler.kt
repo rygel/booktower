@@ -50,7 +50,7 @@ class FontHandler(
                 .body("""{"error":"Empty file"}""")
         }
         return when (val result = fontService.uploadFont(userId, originalName, bytes)) {
-            is kotlin.Result<*> ->
+            is kotlin.Result<*> -> {
                 if (result.isSuccess) {
                     val f = result.getOrThrow() as org.booktower.services.UserFont
                     Response(Status.CREATED)
@@ -65,6 +65,7 @@ class FontHandler(
                         .header("Content-Type", "application/json")
                         .body("""{"error":"${result.exceptionOrNull()?.message}"}""")
                 }
+            }
         }
     }
 

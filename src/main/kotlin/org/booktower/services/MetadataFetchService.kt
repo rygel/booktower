@@ -42,11 +42,26 @@ open class MetadataFetchService(
         for (src in sources) {
             val result =
                 when (src) {
-                    "openlibrary" -> fetchFromOpenLibrary(title, author)
-                    "googlebooks" -> fetchFromGoogleBooks(title, author)
-                    "hardcover" -> fetchFromHardcover(title, author)
-                    "comicvine" -> fetchFromComicVine(title, author)
-                    "audible" -> fetchFromAudible(title, author)
+                    "openlibrary" -> {
+                        fetchFromOpenLibrary(title, author)
+                    }
+
+                    "googlebooks" -> {
+                        fetchFromGoogleBooks(title, author)
+                    }
+
+                    "hardcover" -> {
+                        fetchFromHardcover(title, author)
+                    }
+
+                    "comicvine" -> {
+                        fetchFromComicVine(title, author)
+                    }
+
+                    "audible" -> {
+                        fetchFromAudible(title, author)
+                    }
+
                     else -> {
                         logger.warn("Unknown metadata source: $src")
                         null

@@ -86,7 +86,7 @@ class AuthHandler2(
                 onFailure = { error ->
                     logger.warn("Registration failed: ${error.message}")
                     when (error) {
-                        is IllegalArgumentException ->
+                        is IllegalArgumentException -> {
                             Response(Status.CONFLICT)
                                 .header("Content-Type", "application/json")
                                 .body(
@@ -94,11 +94,13 @@ class AuthHandler2(
                                         ErrorResponse("USER_EXISTS", error.message ?: "Username already exists"),
                                     ),
                                 )
+                        }
 
-                        else ->
+                        else -> {
                             Response(Status.INTERNAL_SERVER_ERROR)
                                 .header("Content-Type", "application/json")
                                 .body(Json.mapper.writeValueAsString(ErrorResponse("INTERNAL_ERROR", "An unexpected error occurred")))
+                        }
                     }
                 },
             )
@@ -159,16 +161,18 @@ class AuthHandler2(
                 onFailure = { error ->
                     logger.warn("Login failed: ${error.message}")
                     when (error) {
-                        is IllegalArgumentException ->
+                        is IllegalArgumentException -> {
                             Response(Status.UNAUTHORIZED)
                                 .header("Content-Type", "application/json")
                                 .header("WWW-Authenticate", "Bearer")
                                 .body(Json.mapper.writeValueAsString(ErrorResponse("INVALID_CREDENTIALS", "Invalid username or password")))
+                        }
 
-                        else ->
+                        else -> {
                             Response(Status.INTERNAL_SERVER_ERROR)
                                 .header("Content-Type", "application/json")
                                 .body(Json.mapper.writeValueAsString(ErrorResponse("INTERNAL_ERROR", "An unexpected error occurred")))
+                        }
                     }
                 },
             )
@@ -286,14 +290,17 @@ class AuthHandler2(
                 onFailure = { error ->
                     logger.warn("Password change failed for user $userId: ${error.message}")
                     when (error) {
-                        is IllegalArgumentException ->
+                        is IllegalArgumentException -> {
                             Response(Status.BAD_REQUEST)
                                 .header("Content-Type", "application/json")
                                 .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", error.message ?: "Invalid request")))
-                        else ->
+                        }
+
+                        else -> {
                             Response(Status.INTERNAL_SERVER_ERROR)
                                 .header("Content-Type", "application/json")
                                 .body(Json.mapper.writeValueAsString(ErrorResponse("INTERNAL_ERROR", "An unexpected error occurred")))
+                        }
                     }
                 },
             )
@@ -344,14 +351,17 @@ class AuthHandler2(
                 onFailure = { error ->
                     logger.warn("Email change failed for user $userId: ${error.message}")
                     when (error) {
-                        is IllegalArgumentException ->
+                        is IllegalArgumentException -> {
                             Response(Status.BAD_REQUEST)
                                 .header("Content-Type", "application/json")
                                 .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", error.message ?: "Invalid request")))
-                        else ->
+                        }
+
+                        else -> {
                             Response(Status.INTERNAL_SERVER_ERROR)
                                 .header("Content-Type", "application/json")
                                 .body(Json.mapper.writeValueAsString(ErrorResponse("INTERNAL_ERROR", "An unexpected error occurred")))
+                        }
                     }
                 },
             )
