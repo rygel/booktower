@@ -236,11 +236,12 @@ fi
 echo ""
 echo "Logout"
 
+# Logout returns 303 redirect (to /login) for non-HTMX requests
 LOGOUT_STATUS=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/auth/logout" -H "Cookie: $COOKIE")
-if [ "$LOGOUT_STATUS" = "200" ]; then
-    pass "Logout (200)"
+if [ "$LOGOUT_STATUS" = "303" ] || [ "$LOGOUT_STATUS" = "200" ]; then
+    pass "Logout ($LOGOUT_STATUS)"
 else
-    fail "Logout" "expected 200, got $LOGOUT_STATUS"
+    fail "Logout" "expected 303 or 200, got $LOGOUT_STATUS"
 fi
 
 # ── Summary ──────────────────────────────────────────────────────────────────
