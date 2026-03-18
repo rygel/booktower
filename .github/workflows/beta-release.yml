@@ -1,0 +1,79 @@
+name: Beta Release
+
+on:
+  push:
+    branches: [ develop ]
+
+permissions:
+  contents: write
+
+jobs:
+  beta:
+    name: Beta Release
+    runs-on: ubuntu-latest
+    # Only run after the CI workflow succeeds (tests + quality checks)
+    if: github.ref == 'refs/heads/develop'
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-java@v5
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - uses: actions/cache@v5
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-beta-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-maven-
+
+      - name: Extract version from pom.xml
+        id: version
+        run: |
+          VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Project version: $VERSION"
+
+      - name: Generate beta tag
+        id: tag
+        run: |
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          DATE=$(date -u +%Y%m%d)
+          TAG="v${{ steps.version.outputs.version }}-beta.${DATE}.${SHORT_SHA}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Beta tag: $TAG"
+
+      - name: Build fat JAR
+        run: mvn package -DskipTests -Dflyway.skip=true -q
+
+      - name: Rename fat JAR
+        run: |
+          FAT=$(find target/ -name "booktower-*-fat.jar" | head -1)
+          cp "$FAT" "target/booktower-${{ steps.tag.outputs.tag }}.jar"
+
+      - name: Create beta release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          target_commitish: ${{ github.sha }}
+          name: "BookTower ${{ steps.tag.outputs.tag }}"
+          prerelease: true
+          generate_release_notes: true
+          body: |
+            ## Beta Release
+
+            Automated beta build from `develop` branch.
+
+            **Commit:** ${{ github.sha }}
+            **Version:** ${{ steps.version.outputs.version }}
+
+            > This is a pre-release. For stable releases, see tags without `-beta`.
+
+            ### Quick start
+            ```bash
+            BOOKTOWER_QUICKSTART=true java -jar booktower-${{ steps.tag.outputs.tag }}.jar
+            # Open http://localhost:9999  •  demo / demo1234
+            ```
+          files: |
+            target/booktower-${{ steps.tag.outputs.tag }}.jar
