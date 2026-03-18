@@ -86,9 +86,15 @@
                 </div>
                 <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
                     @if(book.fileSize > 0 || chapters.isNotEmpty())
-                        <a href="/books/${book.id}/read" class="btn-primary" style="display:inline-flex; align-items:center; gap:0.5rem; text-decoration:none;">
-                            <i class="ri-book-open-line"></i> ${i18n.translate("action.read")}
-                        </a>
+                        @if(chapters.isNotEmpty() || listOf("mp3","m4b","m4a","ogg","flac","aac").any { book.filePath?.endsWith(".$it", ignoreCase = true) == true })
+                            <a href="/books/${book.id}/read" class="btn-primary" style="display:inline-flex; align-items:center; gap:0.5rem; text-decoration:none;">
+                                <i class="ri-headphone-line"></i> ${i18n.translate("action.listen")}
+                            </a>
+                        @else
+                            <a href="/books/${book.id}/read" class="btn-primary" style="display:inline-flex; align-items:center; gap:0.5rem; text-decoration:none;">
+                                <i class="ri-book-open-line"></i> ${i18n.translate("action.read")}
+                            </a>
+                        @endif
                     @endif
                     @if(!book.filePath.isNullOrBlank())
                         <a href="/api/books/${book.id}/file" class="btn-primary" style="display:inline-flex; align-items:center; gap:0.5rem; text-decoration:none; background:var(--bt-surface-raised); color:var(--bt-text-dim); border:1px solid var(--bt-border-input);">

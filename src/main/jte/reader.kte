@@ -346,15 +346,12 @@
     <!-- Bookmarks panel (always rendered) -->
     <div id="bm-panel">
         <div id="bm-panel-inner">
-            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.75rem;">
-                <p style="font-size:0.7rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--bt-subtle); font-weight:600; margin:0;">
-                    ${i18n.translate("page.reader.bookmarks")}
-                </p>
-                <button id="btn-add-bookmark" title="${i18n.translate("action.add")}"
-                    style="background:transparent; border:none; cursor:pointer; color:var(--bt-accent-dim); padding:0.1rem 0.25rem; font-size:1rem; line-height:1;">
-                    <i class="ri-bookmark-add-line"></i>
-                </button>
-            </div>
+            <p style="font-size:0.7rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--bt-subtle); font-weight:600; margin:0 0 0.5rem;">
+                ${i18n.translate("page.reader.bookmarks")}
+            </p>
+            <button id="btn-add-bookmark" class="tool-btn" style="width:100%; justify-content:center; margin-bottom:0.75rem; font-size:0.8rem;">
+                <i class="ri-bookmark-add-line"></i> ${i18n.translate("action.bookmark.add")}
+            </button>
             <!-- Inline add-bookmark form (hidden by default) -->
             <div id="bm-add-form" style="display:none; flex-direction:column; gap:0.4rem; margin-bottom:0.75rem;">
                 <input id="bm-add-title" type="text" maxlength="255"
@@ -463,12 +460,24 @@
                     <button class="pref-btn active" data-pref="margins" data-val="normal">${i18n.translate("page.reader.prefs.margins.normal")}</button>
                     <button class="pref-btn" data-pref="margins" data-val="wide">${i18n.translate("page.reader.prefs.margins.wide")}</button>
                 </div>
+                <div style="display:flex; align-items:center; gap:0.375rem; margin-top:0.5rem;">
+                    <input type="number" id="margin-custom-input" min="0" max="12" step="0.5" placeholder="em"
+                           style="width:3.5rem; background:var(--bt-bg); border:1px solid var(--bt-border-input); border-radius:0.375rem; color:var(--bt-text); font-size:0.75rem; padding:0.2rem 0.375rem;">
+                    <span style="font-size:0.75rem; color:var(--bt-muted);">em &mdash; ${i18n.translate("page.reader.prefs.margins.custom")}</span>
+                </div>
             </div>
             <div class="pref-section">
                 <p class="pref-section-label">${i18n.translate("page.reader.prefs.align")}</p>
                 <div class="pref-btn-row">
                     <button class="pref-btn active" data-pref="textAlign" data-val="left">${i18n.translate("page.reader.prefs.align.left")}</button>
                     <button class="pref-btn" data-pref="textAlign" data-val="justify">${i18n.translate("page.reader.prefs.align.justify")}</button>
+                </div>
+            </div>
+            <div class="pref-section">
+                <p class="pref-section-label">${i18n.translate("page.reader.prefs.direction")}</p>
+                <div class="pref-btn-row">
+                    <button class="pref-btn active" data-pref="direction" data-val="ltr">${i18n.translate("page.reader.prefs.direction.ltr")}</button>
+                    <button class="pref-btn" data-pref="direction" data-val="rtl">${i18n.translate("page.reader.prefs.direction.rtl")}</button>
                 </div>
             </div>
             <div class="pref-section">
@@ -539,15 +548,39 @@ var BT_DEVICE = (function() {
 (function() {
     var bmPanel = document.getElementById('bm-panel');
     var bmBtn   = document.getElementById('btn-bookmarks');
+    function openBookmarkPanel() {
+        if (!bmPanel) return;
+        var anPanel = document.getElementById('an-panel');
+        var anBtn   = document.getElementById('btn-annotations');
+        if (anPanel) { anPanel.classList.remove('open'); if (anBtn) anBtn.classList.remove('active'); }
+        var prefsPanel2 = document.getElementById('prefs-panel');
+        var prefsBtn2   = document.getElementById('btn-prefs');
+        if (prefsPanel2) { prefsPanel2.classList.remove('open'); if (prefsBtn2) prefsBtn2.classList.remove('active'); }
+        bmPanel.classList.add('open');
+        if (bmBtn) bmBtn.classList.add('active');
+        // Immediately show the add form so the user can bookmark the current position
+        var addForm2 = document.getElementById('bm-add-form');
+        var titleInp2 = document.getElementById('bm-add-title');
+        if (addForm2) { addForm2.style.display = 'flex'; if (titleInp2) titleInp2.focus(); }
+    }
+
     if (bmBtn && bmPanel) {
         bmBtn.addEventListener('click', function () {
-            var open = bmPanel.classList.toggle('open');
-            bmBtn.classList.toggle('active', open);
-            var anPanel = document.getElementById('an-panel');
-            var anBtn   = document.getElementById('btn-annotations');
-            if (open && anPanel) { anPanel.classList.remove('open'); if (anBtn) anBtn.classList.remove('active'); }
+            var alreadyOpen = bmPanel.classList.contains('open');
+            if (alreadyOpen) {
+                bmPanel.classList.remove('open');
+                bmBtn.classList.remove('active');
+            } else {
+                openBookmarkPanel();
+            }
         });
     }
+
+    // Keyboard shortcut: 'b' to bookmark current position
+    document.addEventListener('keydown', function(e) {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
+        if (e.key === 'b' || e.key === 'B') openBookmarkPanel();
+    });
     // Preferences panel toggle
     var prefsPanel = document.getElementById('prefs-panel');
     var prefsBtn   = document.getElementById('btn-prefs');
@@ -978,7 +1011,7 @@ var BT_DEVICE = (function() {
     let rendition;
     let epubPrefs = {
         theme: 'white', fontSize: 100, fontFamily: '',
-        flow: 'paginated', lineSpacing: '1.6', margins: 'normal', textAlign: 'left'
+        flow: 'paginated', lineSpacing: '1.6', margins: 'normal', textAlign: 'left', direction: 'ltr'
     };
 
     const EPUB_COLORS = {
@@ -986,11 +1019,11 @@ var BT_DEVICE = (function() {
         sepia: { bg: '#faf4e8', fg: '#3b2e1a', link: '#7a5020' },
         dark:  { bg: '#1a1a1a', fg: '#e0e0e0', link: '#78aeed' },
     };
-    const EPUB_MARGIN_MAP = { narrow: '0 0.5em', normal: '0 2em', wide: '0 5em' };
+    const EPUB_MARGIN_MAP = { narrow: '0.5em', normal: '2em', wide: '5em' };
 
     function buildEpubCss() {
         var c   = EPUB_COLORS[epubPrefs.theme] || EPUB_COLORS.white;
-        var mar = EPUB_MARGIN_MAP[epubPrefs.margins] || EPUB_MARGIN_MAP.normal;
+        var mar = (epubPrefs.margins in EPUB_MARGIN_MAP) ? EPUB_MARGIN_MAP[epubPrefs.margins] : (epubPrefs.margins || EPUB_MARGIN_MAP.normal);
         var ff  = epubPrefs.fontFamily ? (epubPrefs.fontFamily + ' !important') : 'inherit';
         return {
             'html,body': {
@@ -998,11 +1031,14 @@ var BT_DEVICE = (function() {
                 'color':      c.fg + ' !important',
             },
             'body': {
+                'box-sizing':   'border-box !important',
+                'width':        '100% !important',
+                'margin':       '0 !important',
+                'padding':      '1em ' + mar + ' !important',
                 'font-family':  ff,
                 'line-height':  epubPrefs.lineSpacing + ' !important',
-                'margin':       mar + ' !important',
-                'padding':      '1em 0 !important',
                 'text-align':   epubPrefs.textAlign + ' !important',
+                'direction':    epubPrefs.direction + ' !important',
             },
             'p,li,blockquote,td': {
                 'color':       c.fg + ' !important',
@@ -1013,8 +1049,7 @@ var BT_DEVICE = (function() {
                 'color': c.link + ' !important',
             },
             'a:hover': {
-                'color':           c.link + ' !important',
-                'text-decoration': 'underline !important',
+                'color': c.link + ' !important',
             },
         };
     }
@@ -1038,7 +1073,7 @@ var BT_DEVICE = (function() {
     var applyEpubFont     = applyEpubStyles;
 
     function updatePrefButtons() {
-        ['theme','flow','lineSpacing','margins','textAlign'].forEach(function(pref) {
+        ['theme','flow','lineSpacing','margins','textAlign','direction'].forEach(function(pref) {
             document.querySelectorAll('[data-pref="' + pref + '"]').forEach(function(b) {
                 b.classList.toggle('active', b.dataset.val === String(epubPrefs[pref]));
             });
@@ -1047,6 +1082,14 @@ var BT_DEVICE = (function() {
         if (fsVal) fsVal.textContent = epubPrefs.fontSize + '%';
         var ffSel = document.getElementById('pref-font-family');
         if (ffSel) ffSel.value = epubPrefs.fontFamily || '';
+        // Sync custom margin input with current value
+        var marginCustomInput = document.getElementById('margin-custom-input');
+        if (marginCustomInput) {
+            var presetEm = EPUB_MARGIN_MAP[epubPrefs.margins];
+            var numStr = presetEm ? presetEm : epubPrefs.margins;
+            var numVal = parseFloat(numStr);
+            if (!isNaN(numVal)) marginCustomInput.value = numVal;
+        }
     }
 
     function saveEpubPrefs() {
@@ -1055,13 +1098,13 @@ var BT_DEVICE = (function() {
             fetch(PREFS_URL, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ theme: epubPrefs.theme, fontSize: epubPrefs.fontSize, fontFamily: epubPrefs.fontFamily, scrollMode: epubPrefs.flow, lineSpacing: epubPrefs.lineSpacing, margins: epubPrefs.margins, textAlign: epubPrefs.textAlign })
+                body: JSON.stringify({ theme: epubPrefs.theme, fontSize: epubPrefs.fontSize, fontFamily: epubPrefs.fontFamily, scrollMode: epubPrefs.flow, lineSpacing: epubPrefs.lineSpacing, margins: epubPrefs.margins, textAlign: epubPrefs.textAlign, direction: epubPrefs.direction })
             }).catch(function() {});
         }, 600);
     }
 
     // Wire pref panel controls
-    ['theme', 'lineSpacing', 'margins', 'textAlign'].forEach(function(pref) {
+    ['theme', 'lineSpacing', 'margins', 'textAlign', 'direction'].forEach(function(pref) {
         document.querySelectorAll('[data-pref="' + pref + '"]').forEach(function(btn) {
             btn.addEventListener('click', function() {
                 epubPrefs[pref] = btn.dataset.val;
@@ -1071,6 +1114,19 @@ var BT_DEVICE = (function() {
             });
         });
     });
+    // Custom margin input
+    var marginCustomInput = document.getElementById('margin-custom-input');
+    if (marginCustomInput) {
+        marginCustomInput.addEventListener('change', function() {
+            var v = parseFloat(this.value);
+            if (!isNaN(v) && v >= 0 && v <= 12) {
+                epubPrefs.margins = v + 'em';
+                applyEpubStyles();
+                updatePrefButtons();
+                saveEpubPrefs();
+            }
+        });
+    }
     document.querySelectorAll('[data-pref="flow"]').forEach(function(btn) {
         btn.addEventListener('click', function() {
             if (btn.dataset.val === epubPrefs.flow) return;
@@ -1191,6 +1247,7 @@ var BT_DEVICE = (function() {
         if (p.lineSpacing) epubPrefs.lineSpacing = p.lineSpacing;
         if (p.margins)     epubPrefs.margins     = p.margins;
         if (p.textAlign)   epubPrefs.textAlign   = p.textAlign;
+        if (p.direction)   epubPrefs.direction   = p.direction;
         fontSize = epubPrefs.fontSize;
         updatePrefButtons();
         initEpub();
@@ -1433,6 +1490,18 @@ var BT_DEVICE = (function() {
         if (e.key === 'ArrowLeft')  { audioEl.currentTime = Math.max(0, audioEl.currentTime - 10); }
         if (e.key === 'ArrowRight') { audioEl.currentTime = Math.min(audioEl.duration || 0, audioEl.currentTime + 30); }
     });
+
+    // ── Bookmark integration ────────────────────────────────────────────────
+    window.getBookmarkPage = function() { return Math.floor(audioEl.currentTime); };
+    window.jumpToPage = function(sec) { audioEl.currentTime = sec; };
+
+    // Re-label existing server-rendered bookmarks as timestamps
+    document.querySelectorAll('#bm-list .bm-item').forEach(function(item) {
+        var pageEl = item.querySelector('.bm-page');
+        if (!pageEl) return;
+        var sec = parseInt(item.getAttribute('onclick').replace(/[^0-9]/g, ''), 10);
+        if (!isNaN(sec)) pageEl.textContent = formatTime(sec);
+    });
 }());
 </script>
 @elseif(readerType == "audio-multi")
@@ -1575,6 +1644,30 @@ var BT_DEVICE = (function() {
         var startCh = CHAPTERS.find(function(c) { return c.trackIndex === initTrack; }) || CHAPTERS[0];
         playChapter(startCh.trackIndex, initOffset, false);
     }
+
+    // ── Bookmark integration ────────────────────────────────────────────────
+    window.getBookmarkPage = function() {
+        return currentTrack * 1000000 + Math.floor(audioEl.currentTime);
+    };
+    window.jumpToPage = function(packed) {
+        var track  = Math.floor(packed / 1000000);
+        var offset = packed % 1000000;
+        var ch = CHAPTERS.find(function(c) { return c.trackIndex === track; }) || CHAPTERS[0];
+        playChapter(ch.trackIndex, offset, false);
+    };
+
+    // Re-label existing server-rendered bookmarks with chapter + timestamp
+    document.querySelectorAll('#bm-list .bm-item').forEach(function(item) {
+        var pageEl = item.querySelector('.bm-page');
+        if (!pageEl) return;
+        var packed = parseInt(item.getAttribute('onclick').replace(/[^0-9]/g, ''), 10);
+        if (isNaN(packed)) return;
+        var track  = Math.floor(packed / 1000000);
+        var sec    = packed % 1000000;
+        var chIdx  = CHAPTERS.findIndex(function(c) { return c.trackIndex === track; });
+        var chNum  = chIdx >= 0 ? chIdx + 1 : track + 1;
+        pageEl.textContent = 'Ch.\u00a0' + chNum + '\u00a0\u00b7\u00a0' + fmt(sec);
+    });
 }());
 </script>
 @elseif(readerType == "comic")

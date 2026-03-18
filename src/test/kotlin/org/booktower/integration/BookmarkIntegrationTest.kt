@@ -269,6 +269,65 @@ class BookmarkIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `save audio bookmark with timestamp page stores and retrieves correctly`() {
+        // For single-file audio books the page value is seconds into the track
+        val token = registerAndGetToken()
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId)
+
+        val response = app(
+            Request(Method.POST, "/api/bookmarks")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/json")
+                .body("""{"bookId":"$bookId","page":90,"title":"Intro done","note":null}"""),
+        )
+
+        assertEquals(Status.CREATED, response.status)
+        val created = Json.mapper.readValue(response.bodyString(), BookmarkDto::class.java)
+        assertEquals(90, created.page)
+
+        val listResponse = app(
+            Request(Method.GET, "/api/bookmarks?bookId=$bookId")
+                .header("Cookie", "token=$token"),
+        )
+        val bookmarks = Json.mapper.readValue(listResponse.bodyString(), Array<BookmarkDto>::class.java)
+        assertEquals(1, bookmarks.size)
+        assertEquals(90, bookmarks[0].page)
+    }
+
+    @Test
+    fun `save multi-chapter audiobook packed page bookmark stores and retrieves correctly`() {
+        // For multi-chapter audiobooks the page value is packed: trackIndex * 1_000_000 + offsetSeconds
+        val token = registerAndGetToken()
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId)
+
+        val packed = 1 * 1_000_000 + 300  // track 1, 300 seconds in
+
+        val response = app(
+            Request(Method.POST, "/api/bookmarks")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/json")
+                .body("""{"bookId":"$bookId","page":$packed,"title":"Chapter 2 start","note":null}"""),
+        )
+
+        assertEquals(Status.CREATED, response.status)
+        val created = Json.mapper.readValue(response.bodyString(), BookmarkDto::class.java)
+        assertEquals(packed, created.page)
+        // Verify packed encoding decodes correctly
+        assertEquals(1, created.page / 1_000_000)
+        assertEquals(300, created.page % 1_000_000)
+
+        val listResponse = app(
+            Request(Method.GET, "/api/bookmarks?bookId=$bookId")
+                .header("Cookie", "token=$token"),
+        )
+        val bookmarks = Json.mapper.readValue(listResponse.bodyString(), Array<BookmarkDto>::class.java)
+        assertEquals(1, bookmarks.size)
+        assertEquals(packed, bookmarks[0].page)
+    }
+
+    @Test
     fun `user B cannot see user A bookmarks`() {
         val tokenA = registerAndGetToken()
         val tokenB = registerAndGetToken()

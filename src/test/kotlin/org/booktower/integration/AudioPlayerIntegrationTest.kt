@@ -171,6 +171,29 @@ class AudioPlayerIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `reader page for single-file audio book includes getBookmarkPage and jumpToPage functions`() {
+        val token = registerAndGetToken("ap_bm")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId, "Single Audio Bookmark Book")
+        uploadFakeAudio(token, bookId, "mp3")
+
+        val body = app(Request(Method.GET, "/books/$bookId/read").header("Cookie", "token=$token")).bodyString()
+        assertTrue(body.contains("getBookmarkPage"), "Reader page must define getBookmarkPage for single-file audio book")
+        assertTrue(body.contains("jumpToPage"), "Reader page must define jumpToPage for single-file audio book")
+    }
+
+    @Test
+    fun `reader page for single-file audio book includes bookmark add button`() {
+        val token = registerAndGetToken("ap_bm2")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId, "Single Audio Bookmark Panel Book")
+        uploadFakeAudio(token, bookId, "mp3")
+
+        val body = app(Request(Method.GET, "/books/$bookId/read").header("Cookie", "token=$token")).bodyString()
+        assertTrue(body.contains("btn-add-bookmark"), "Bookmark add button must be present in single-file audio reader")
+    }
+
+    @Test
     fun `audio stream endpoint requires authentication`() {
         val response = app(Request(Method.GET, "/api/books/00000000-0000-0000-0000-000000000001/audio"))
         assertTrue(response.status.code in listOf(302, 303, 401),
