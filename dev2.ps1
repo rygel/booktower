@@ -1,8 +1,5 @@
-# dev.ps1 – start BookTower in development mode
-#
-# Kills the previous instance, builds, then starts the server in the
-# background so the terminal is immediately free.
-# Logs go to data\booktower.log.  Run again to restart.
+# dev2.ps1 – like dev.ps1 but always kills whatever is on port 9999,
+# even if the PID file is missing or the server was started another way.
 
 Set-Location $PSScriptRoot
 
@@ -11,16 +8,26 @@ $LogFile = Join-Path $PSScriptRoot "data\booktower.log"
 $Url     = "http://localhost:9999"
 
 # ── Kill previous instance ────────────────────────────────────────────────────
+# 1. Try PID file first (covers normal restarts)
 if (Test-Path $PidFile) {
     $savedPid = (Get-Content $PidFile -Raw).Trim()
     if ($savedPid -match '^\d+$') {
         Write-Host "Stopping previous instance (PID $savedPid)..." -ForegroundColor Yellow
-        # /T kills the full process tree (cmd → mvn → java)
         taskkill /F /T /PID $savedPid 2>$null | Out-Null
-        Start-Sleep -Seconds 1
     }
     Remove-Item $PidFile -Force
 }
+
+# 2. Also kill by port — catches anything started outside this script
+$conn = Get-NetTCPConnection -LocalPort 9999 -State Listen -ErrorAction SilentlyContinue
+if ($conn) {
+    $conn | ForEach-Object {
+        Write-Host "Killing process on port 9999 (PID $($_.OwningProcess))..." -ForegroundColor Yellow
+        taskkill /F /T /PID $_.OwningProcess 2>$null | Out-Null
+    }
+}
+
+Start-Sleep -Seconds 1
 
 # ── Build ─────────────────────────────────────────────────────────────────────
 Write-Host "Building..." -ForegroundColor Cyan
@@ -68,7 +75,7 @@ if ($ready) {
     Write-Host "BookTower is running at $Url" -ForegroundColor Green
     Write-Host "  Login: dev / dev12345" -ForegroundColor Yellow
     Write-Host "  Logs:  $LogFile" -ForegroundColor Gray
-    Write-Host "  Stop:  .\stop.ps1  (or just run .\dev.ps1 again to restart)" -ForegroundColor Gray
+    Write-Host "  Stop:  .\stop.ps1  (or just run .\dev2.ps1 again to restart)" -ForegroundColor Gray
 } else {
     Write-Host "Server did not respond within 30s." -ForegroundColor Red
     Write-Host "Check logs: $LogFile" -ForegroundColor Yellow

@@ -26,7 +26,7 @@
         #toolbar .title { flex: 1; font-weight: 600; font-size: 0.875rem; color: var(--bt-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         #reader-body { flex: 1; display: flex; min-height: 0; }
         /* PDF mode */
-        #canvas-wrap { flex: 1; overflow: auto; display: flex; justify-content: center; padding: 1.5rem; background: #1a1a1a; }
+        #canvas-wrap { flex: 1; overflow-y: scroll; overflow-x: auto; display: flex; justify-content: center; padding: 1.5rem; background: #1a1a1a; }
         #page-container { position: relative; display: inline-block; line-height: 0; }
         #pdf-canvas { display: block; box-shadow: 0 4px 32px rgba(0,0,0,0.6); }
         #text-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; overflow: hidden; line-height: 1; pointer-events: auto; }
@@ -88,11 +88,12 @@
         .tool-btn:hover { color: var(--bt-text); border-color: var(--bt-accent-dim); }
         .tool-btn:disabled { opacity: 0.35; cursor: not-allowed; }
         .tool-btn.active { color: var(--bt-accent-dim); border-color: var(--bt-accent-dim); }
-        #page-info { font-size: 0.8rem; color: var(--bt-muted); white-space: nowrap; min-width: 6rem; text-align: center; }
+        #page-info-wrap { display: inline-flex; align-items: center; justify-content: center; width: 7rem; flex-shrink: 0; }
+        #page-info { font-size: 0.8rem; color: var(--bt-muted); white-space: nowrap; text-align: center; }
         #page-info.clickable { cursor: pointer; }
         #page-info.clickable:hover { color: var(--bt-text); }
-        #loc-jump { display: none; width: 7rem; text-align: center; border-radius: 0.375rem; border: 1px solid var(--bt-accent-dim); background: var(--bt-bg); color: var(--bt-text); font-size: 0.75rem; padding: 0.2rem 0.375rem; outline: none; }
-        #zoom-pct { font-size: 0.75rem; color: var(--bt-subtle); min-width: 2.5rem; text-align: center; }
+        #loc-jump { display: none; width: 100%; text-align: center; border-radius: 0.375rem; border: 1px solid var(--bt-accent-dim); background: var(--bt-bg); color: var(--bt-text); font-size: 0.75rem; padding: 0.2rem 0.375rem; outline: none; }
+        #zoom-pct { font-size: 0.75rem; color: var(--bt-subtle); min-width: 2.5rem; text-align: center; user-select: none; }
         .sep { width: 1px; height: 1.5rem; background: var(--bt-border); flex-shrink: 0; }
         /* Annotation popup */
         #annot-popup { display: none; position: fixed; background: var(--bt-surface); border: 1px solid var(--bt-border); border-radius: 0.5rem; padding: 0.75rem; box-shadow: 0 4px 20px rgba(0,0,0,0.35); z-index: 200; min-width: 10rem; }
@@ -138,6 +139,7 @@
     </a>
     <div class="sep"></div>
     <span class="title">${book.title}</span>
+    <span id="save-indicator" style="font-size:0.7rem; color:#34d399; min-width:5rem; text-align:right; white-space:nowrap; visibility:hidden; flex-shrink:0;">${i18n.translate("msg.progress.saved")}</span>
     <div class="sep"></div>
     @if(readerType == "audio-multi")
         <button id="btn-prev-ch" class="tool-btn" title="${i18n.translate("page.reader.audio.prev.chapter")}" disabled>
@@ -153,10 +155,12 @@
         <button id="btn-prev" class="tool-btn" title="${i18n.translate("page.reader.prev")} (←)" disabled>
             <i class="ri-arrow-left-s-line"></i>
         </button>
-        <span id="page-info">—</span>
-        @if(readerType == "epub")
-            <input id="loc-jump" type="number" min="1" placeholder="${i18n.translate("page.reader.loc.jump.placeholder")}" title="${i18n.translate("page.reader.loc.jump")}">
-        @endif
+        <span id="page-info-wrap">
+            <span id="page-info">—</span>
+            @if(readerType == "epub")
+                <input id="loc-jump" type="number" min="1" placeholder="${i18n.translate("page.reader.loc.jump.placeholder")}" title="${i18n.translate("page.reader.loc.jump")}">
+            @endif
+        </span>
         <button id="btn-next" class="tool-btn" title="${i18n.translate("page.reader.next")} (→)" disabled>
             <i class="ri-arrow-right-s-line"></i>
         </button>
@@ -191,7 +195,6 @@
             <i class="ri-settings-3-line"></i>
         </button>
     @endif
-    <span id="save-indicator" style="font-size:0.7rem; color:#34d399; display:none;">${i18n.translate("msg.progress.saved")}</span>
 </div>
 
 <!-- Reader body -->
@@ -440,13 +443,9 @@
                     </optgroup>
                     <optgroup id="custom-fonts-optgroup" label="${i18n.translate("page.reader.prefs.font.my")}"></optgroup>
                 </select>
-                <div id="custom-fonts-list"></div>
-                <div class="font-upload-row">
-                    <button class="font-upload-btn" id="btn-font-upload">
-                        <i class="ri-upload-2-line"></i> ${i18n.translate("page.reader.prefs.font.upload")}
-                    </button>
-                    <input type="file" id="font-file-input" accept=".ttf,.otf,.woff,.woff2" style="display:none">
-                </div>
+                <button class="font-upload-btn" id="btn-open-font-mgmt" style="margin-top:0.5rem;">
+                    <i class="ri-settings-3-line"></i> ${i18n.translate("page.reader.prefs.font.manage")}
+                </button>
             </div>
             <div class="pref-section">
                 <p class="pref-section-label">${i18n.translate("page.reader.prefs.linespacing")}</p>
@@ -632,6 +631,32 @@ var BT_DEVICE = (function() {
     }
 }());
 </script>
+
+@if(readerType == "epub")
+<!-- Font management modal — must be before the EPUB script block so getElementById finds it -->
+<div id="font-mgmt-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); align-items:center; justify-content:center; z-index:200;"
+     onclick="if(event.target===this)this.style.display='none'">
+    <div class="modal-panel" style="padding:1.5rem; width:100%; max-width:26rem; border-radius:0.75rem; border:1px solid var(--bt-border); max-height:80vh; display:flex; flex-direction:column;" onclick="event.stopPropagation()">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.125rem;">
+            <h2 style="font-size:1rem; font-weight:700; color:var(--bt-text); margin:0;">${i18n.translate("page.reader.prefs.font.manage.title")}</h2>
+            <button onclick="document.getElementById('font-mgmt-modal').style.display='none'"
+                    style="background:transparent; border:none; color:var(--bt-muted); cursor:pointer; font-size:1.25rem; line-height:1; padding:0.1rem 0.25rem; border-radius:0.25rem;">
+                <i class="ri-close-line"></i>
+            </button>
+        </div>
+        <div style="overflow-y:auto; flex:1;">
+            <p style="font-size:0.78rem; color:var(--bt-subtle); margin:0 0 0.875rem;">${i18n.translate("page.reader.prefs.font.manage.hint")}</p>
+            <div id="custom-fonts-list" style="margin-bottom:0.75rem;"></div>
+            <div class="font-upload-row">
+                <button class="font-upload-btn" id="btn-font-upload">
+                    <i class="ri-upload-2-line"></i> ${i18n.translate("page.reader.prefs.font.upload")}
+                </button>
+                <input type="file" id="font-file-input" accept=".ttf,.otf,.woff,.woff2" style="display:none">
+            </div>
+        </div>
+    </div>
+</div>
+@endif
 
 @if(readerType == "pdf")
 <script src="/static/vendor/pdf.min.js"></script>
@@ -820,7 +845,7 @@ var BT_DEVICE = (function() {
         const body = new URLSearchParams();
         body.append('currentPage', page);
         fetch(PROG_URL, { method: 'POST', body: body }).then(function (r) {
-            if (r.ok) { saveInd.style.display = 'inline'; setTimeout(function () { saveInd.style.display = 'none'; }, 2000); }
+            if (r.ok) { saveInd.style.visibility = 'visible'; setTimeout(function () { saveInd.style.visibility = 'hidden'; }, 2000); }
         }).catch(function () {});
     }
 
@@ -957,9 +982,9 @@ var BT_DEVICE = (function() {
     };
 
     const EPUB_COLORS = {
-        white: { bg: '#ffffff', fg: '#111111' },
-        sepia: { bg: '#faf4e8', fg: '#3b2e1a' },
-        dark:  { bg: '#1a1a1a', fg: '#e0e0e0' },
+        white: { bg: '#ffffff', fg: '#111111', link: '#1a5fb4' },
+        sepia: { bg: '#faf4e8', fg: '#3b2e1a', link: '#7a5020' },
+        dark:  { bg: '#1a1a1a', fg: '#e0e0e0', link: '#78aeed' },
     };
     const EPUB_MARGIN_MAP = { narrow: '0 0.5em', normal: '0 2em', wide: '0 5em' };
 
@@ -983,6 +1008,13 @@ var BT_DEVICE = (function() {
                 'color':       c.fg + ' !important',
                 'line-height': epubPrefs.lineSpacing + ' !important',
                 'text-align':  epubPrefs.textAlign + ' !important',
+            },
+            'a': {
+                'color': c.link + ' !important',
+            },
+            'a:hover': {
+                'color':           c.link + ' !important',
+                'text-decoration': 'underline !important',
             },
         };
     }
@@ -1073,6 +1105,14 @@ var BT_DEVICE = (function() {
     var customFontsList    = document.getElementById('custom-fonts-list');
     var fontFileInput      = document.getElementById('font-file-input');
     var btnFontUpload      = document.getElementById('btn-font-upload');
+    var btnOpenFontMgmt    = document.getElementById('btn-open-font-mgmt');
+    var fontMgmtModal      = document.getElementById('font-mgmt-modal');
+
+    if (btnOpenFontMgmt && fontMgmtModal) {
+        btnOpenFontMgmt.addEventListener('click', function() {
+            fontMgmtModal.style.display = 'flex';
+        });
+    }
 
     function registerFontFace(font) {
         var style = document.createElement('style');
@@ -1179,7 +1219,7 @@ var BT_DEVICE = (function() {
             function showLocInput() {
                 if (!locReady) return;
                 pageInfo.style.display = 'none';
-                if (locJump) { locJump.style.display = ''; locJump.value = ''; locJump.focus(); }
+                if (locJump) { locJump.style.display = 'block'; locJump.value = ''; locJump.focus(); }
             }
             function hideLocInput() {
                 if (locJump) locJump.style.display = 'none';
@@ -1304,8 +1344,8 @@ var BT_DEVICE = (function() {
             body.append('currentPage', pct);
             fetch(PROG_URL, { method: 'POST', body: body }).then(function (r) {
                 if (r.ok) {
-                    saveInd.style.display = 'inline';
-                    setTimeout(function () { saveInd.style.display = 'none'; }, 2000);
+                    saveInd.style.visibility = 'visible';
+                    setTimeout(function () { saveInd.style.visibility = 'hidden'; }, 2000);
                 }
             }).catch(function () {});
         }, 1500);
@@ -1505,7 +1545,7 @@ var BT_DEVICE = (function() {
         var body = new URLSearchParams();
         body.append('currentPage', packed);
         fetch(PROG_URL, { method: 'POST', body: body }).then(function(r) {
-            if (r.ok && saveInd) { saveInd.style.display = 'inline'; setTimeout(function() { saveInd.style.display = 'none'; }, 2000); }
+            if (r.ok && saveInd) { saveInd.style.visibility = 'visible'; setTimeout(function() { saveInd.style.visibility = 'hidden'; }, 2000); }
         }).catch(function() {});
     }
 
@@ -1668,7 +1708,7 @@ var BT_DEVICE = (function() {
             var body = new URLSearchParams();
             body.append('currentPage', page);
             fetch(PROG_URL, { method: 'POST', body: body }).then(function(r) {
-                if (r.ok && saveInd) { saveInd.style.display = 'inline'; setTimeout(function() { saveInd.style.display = 'none'; }, 2000); }
+                if (r.ok && saveInd) { saveInd.style.visibility = 'visible'; setTimeout(function() { saveInd.style.visibility = 'hidden'; }, 2000); }
             }).catch(function() {});
         }, 1200);
     }
@@ -1757,6 +1797,7 @@ var BT_DEVICE = (function() {
 }());
 </script>
 @endif
+
 
 </body>
 </html>
