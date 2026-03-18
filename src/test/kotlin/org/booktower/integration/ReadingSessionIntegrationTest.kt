@@ -53,6 +53,10 @@ class ReadingSessionIntegrationTest : IntegrationTestBase() {
                 .body("currentPage=20&totalPages=200"),
         )
 
+        // Small delay so both sessions get distinct session_at timestamps even
+        // on Windows, where the system clock has ~15 ms resolution.
+        Thread.sleep(50)
+
         app(
             Request(Method.POST, "/ui/books/$bookId/progress")
                 .header("Cookie", "token=$token")
