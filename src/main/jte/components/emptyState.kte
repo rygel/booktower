@@ -1,0 +1,12 @@
+@import gg.jte.Content
+@param icon: String
+@param message: String
+@param action: Content? = null
+
+<div style="text-align:center; padding:5rem 0;">
+    <i class="${icon}" style="font-size:4rem; display:block; margin-bottom:1rem; color:var(--bt-border);"></i>
+    <p style="font-size:1.125rem; font-weight:500; color:var(--bt-subtle);">${message}</p>
+    @if(action != null)
+        ${action}
+    @endif
+</div>
