@@ -50,7 +50,7 @@
         <!-- Code Quality Plugin Versions -->
         <detekt.version>1.23.8</detekt.version>
         <jacoco.version>0.8.14</jacoco.version>
-        <spotbugs.plugin.version>4.9.3.0</spotbugs.plugin.version>
+        <spotbugs.plugin.version>4.9.8</spotbugs.plugin.version>
         <spotbugs.version>4.9.3</spotbugs.version>
         <checkstyle.version>3.6.0</checkstyle.version>
         <pmd.version>3.28.0</pmd.version>
