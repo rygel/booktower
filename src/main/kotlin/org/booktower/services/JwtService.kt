@@ -22,7 +22,8 @@ class JwtService(
 
     /** Cache verified JWT claims for 60 seconds to avoid re-verifying the same token on rapid requests. */
     private val claimsCache =
-        Caffeine.newBuilder()
+        Caffeine
+            .newBuilder()
             .maximumSize(2_000)
             .expireAfterWrite(60, TimeUnit.SECONDS)
             .build<String, Pair<UUID, Boolean>>()
