@@ -54,7 +54,7 @@
                 @if(username != null)
                 <button id="notif-btn" onclick="toggleNotifPanel()"
                         style="position:relative; background:transparent; border:none; cursor:pointer; color:var(--bt-muted); font-size:1.1rem; padding:0.25rem; display:flex; align-items:center;"
-                        title="Notifications">
+                        title="${i18n.translate("label.notifications")}">
                     <i class="ri-notification-3-line"></i>
                     <span id="notif-badge"
                           style="display:none; position:absolute; top:-2px; right:-4px; background:var(--bt-danger); color:#fff; font-size:0.6rem; font-weight:700; min-width:1rem; height:1rem; border-radius:0.5rem; line-height:1rem; text-align:center; padding:0 0.2rem;"></span>
@@ -182,8 +182,8 @@
                 background:var(--bt-surface); border:1px solid var(--bt-border); border-radius:0.625rem;
                 box-shadow:0 8px 24px rgba(0,0,0,0.25); z-index:1000;">
         <div style="display:flex; align-items:center; justify-content:space-between; padding:0.75rem 1rem; border-bottom:1px solid var(--bt-border);">
-            <span style="font-size:0.8rem; font-weight:600; color:var(--bt-text);">Notifications</span>
-            <button onclick="markAllRead()" style="font-size:0.7rem; color:var(--bt-accent-dim); background:none; border:none; cursor:pointer;">Mark all read</button>
+            <span style="font-size:0.8rem; font-weight:600; color:var(--bt-text);">${i18n.translate("label.notifications")}</span>
+            <button onclick="markAllRead()" style="font-size:0.7rem; color:var(--bt-accent-dim); background:none; border:none; cursor:pointer;">${i18n.translate("action.mark.all.read")}</button>
         </div>
         <div id="notif-list" style="padding:0.5rem;"></div>
     </div>
@@ -238,6 +238,11 @@
 
     @if(username != null)
     <script>
+    var __i18n_no_notifications = '${i18n.translate("label.no.notifications")}';
+    var __i18n_new_notification = '${i18n.translate("label.new.notification")}';
+    var __i18n_new_notifications = '${i18n.translate("label.new.notifications")}';
+    </script>
+    <script>
     (function () {
         var POLL_INTERVAL = 30000;
         var knownCount = 0;
@@ -290,7 +295,7 @@
             var list = document.getElementById('notif-list');
             if (!list) return;
             if (items.length === 0) {
-                list.innerHTML = '<p style="font-size:0.78rem;color:var(--bt-muted);text-align:center;padding:1rem;">No new notifications</p>';
+                list.innerHTML = '<p style="font-size:0.78rem;color:var(--bt-muted);text-align:center;padding:1rem;">' + __i18n_no_notifications + '</p>';
                 return;
             }
             list.innerHTML = items.map(function (n) {
@@ -315,7 +320,7 @@
                 .then(function () {
                     setBadge(0);
                     var list = document.getElementById('notif-list');
-                    if (list) list.innerHTML = '<p style="font-size:0.78rem;color:var(--bt-muted);text-align:center;padding:1rem;">No new notifications</p>';
+                    if (list) list.innerHTML = '<p style="font-size:0.78rem;color:var(--bt-muted);text-align:center;padding:1rem;">' + __i18n_no_notifications + '</p>';
                 })
                 .catch(function () {});
         };
@@ -325,7 +330,7 @@
             try {
                 var n = JSON.parse(data);
                 setBadge(knownCount + 1);
-                showToast(n.title || 'New notification', 'info');
+                showToast(n.title || ('1 ' + __i18n_new_notification), 'info');
             } catch (e) {}
         }
 
@@ -339,7 +344,7 @@
                         if (d.count > knownCount) {
                             var delta = d.count - knownCount;
                             setBadge(d.count);
-                            showToast(delta === 1 ? '1 new notification' : delta + ' new notifications', 'info');
+                            showToast(delta === 1 ? '1 ' + __i18n_new_notification : delta + ' ' + __i18n_new_notifications, 'info');
                         } else {
                             setBadge(d.count);
                         }

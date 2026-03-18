@@ -18,11 +18,7 @@
 <div style="padding:2rem;">
 
     <!-- Breadcrumb -->
-    <nav style="font-size:0.8rem; color:var(--bt-subtle); margin-bottom:1.5rem; display:flex; align-items:center; gap:0.375rem;">
-        <a href="/libraries" style="color:var(--bt-accent-dim); text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${i18n.translate("nav.libraries")}</a>
-        <i class="ri-arrow-right-s-line"></i>
-        <span style="color:var(--bt-text-dim); font-weight:500;">${shelf.name}</span>
-    </nav>
+    @template.components.breadcrumb(items = listOf(i18n.translate("nav.libraries") to "/libraries", shelf.name to null))
 
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.75rem; flex-wrap:wrap; gap:1rem;">
         <div>
@@ -53,11 +49,9 @@
     </div>
 
     @if(books.isEmpty())
-        <div style="text-align:center; padding:5rem 0;">
-            <i class="ri-sparkling-line" style="font-size:4rem; display:block; margin-bottom:1rem; color:var(--bt-border);"></i>
-            <p style="font-size:1.125rem; font-weight:500; color:var(--bt-subtle);">${i18n.translate("page.shelf.empty.title")}</p>
+        @template.components.emptyState(icon = "ri-sparkling-line", message = i18n.translate("page.shelf.empty.title"), action = @`
             <p style="font-size:0.875rem; margin-top:0.375rem; color:var(--bt-faint);">${i18n.translate("page.shelf.empty.hint")}</p>
-        </div>
+        `)
     @endif
 
 </div>
