@@ -6,7 +6,7 @@
 
     <groupId>org.booktower</groupId>
     <artifactId>booktower</artifactId>
-    <version>0.5.1</version>
+    <version>0.5.2</version>
     <packaging>jar</packaging>
 
     <properties>
