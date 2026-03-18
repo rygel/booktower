@@ -21,7 +21,7 @@
 
         <!-- Maven Plugin Versions -->
         <kotlin-maven-plugin.version>${kotlin.version}</kotlin-maven-plugin.version>
-        <maven-compiler-plugin.version>3.14.0</maven-compiler-plugin.version>
+        <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
         <maven-clean-plugin.version>3.2.0</maven-clean-plugin.version>
         <maven-install-plugin.version>3.1.2</maven-install-plugin.version>
         <maven-site-plugin.version>3.21.0</maven-site-plugin.version>
