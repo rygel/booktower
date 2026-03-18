@@ -32,7 +32,9 @@ private val LIBRIVOX_SEED_BOOKS = listOf(
     SeedAudioBook(
         title = "Alice's Adventures in Wonderland",
         author = "Lewis Carroll",
-        description = "A young girl named Alice falls through a rabbit hole into a surreal fantasy world populated by peculiar creatures. One of the most beloved works of English literature, rich with wordplay, logic, and whimsy.",
+        description = "A young girl named Alice falls through a rabbit hole into a surreal fantasy world " +
+            "populated by peculiar creatures. One of the most beloved works of English literature, " +
+            "rich with wordplay, logic, and whimsy.",
         librivoxId = 200,
         tags = listOf("classic", "fantasy", "audiobook"),
     ),
@@ -494,79 +496,65 @@ class SeedService(
 
     private fun downloadLibrivoxChapters(userId: UUID, bookId: UUID, librivoxId: Int, title: String) {
         try {
-            // Use the RSS feed — the audiofiles JSON API is no longer functional
-            val rssUrl = "https://librivox.org/rss/$librivoxId"
-            val conn = java.net.URI(rssUrl).toURL().openConnection() as java.net.HttpURLConnection
-            conn.connectTimeout = 15_000
-            conn.readTimeout = 15_000
+            val conn = java.net.URI("https://librivox.org/rss/$librivoxId").toURL()
+                .openConnection() as java.net.HttpURLConnection
+            conn.connectTimeout = 15_000; conn.readTimeout = 15_000
             conn.setRequestProperty("User-Agent", "BookTower/1.0 librivox-seed")
             if (conn.responseCode != 200) {
                 logger.warn("LibriVox RSS returned ${conn.responseCode} for '$title' (id=$librivoxId)")
                 return
             }
 
-            // Parse RSS with the standard JDK XML parser
-            val dbf = javax.xml.parsers.DocumentBuilderFactory.newInstance().also {
-                it.setFeature("http://apache.org/xml/features/disallow-doctype-decl", false)
-                it.isNamespaceAware = true
-            }
-            val doc = conn.inputStream.use { dbf.newDocumentBuilder().parse(it) }
-            val items = doc.getElementsByTagName("item")
-            if (items.length == 0) {
-                logger.warn("No items in LibriVox RSS for '$title' (id=$librivoxId)")
-                return
-            }
+            val dbf = javax.xml.parsers.DocumentBuilderFactory.newInstance()
+                .also { it.setFeature("http://apache.org/xml/features/disallow-doctype-decl", false); it.isNamespaceAware = true }
+            val items = conn.inputStream.use { dbf.newDocumentBuilder().parse(it) }.getElementsByTagName("item")
+            if (items.length == 0) { logger.warn("No items in LibriVox RSS for '$title'"); return }
 
-            val booksDir = File(booksPath)
-            if (!booksDir.exists()) booksDir.mkdirs()
-
+            val booksDir = File(booksPath).also { it.mkdirs() }
             var downloaded = 0
             for (idx in 0 until items.length) {
-                val item = items.item(idx) as org.w3c.dom.Element
-                val enclosures = item.getElementsByTagName("enclosure")
-                val listenUrl = if (enclosures.length > 0)
-                    (enclosures.item(0) as org.w3c.dom.Element).getAttribute("url").takeIf { it.isNotBlank() }
-                    else null
-                if (listenUrl == null) continue
-
-                val chapterTitle = item.getElementsByTagName("title").item(0)
-                    ?.textContent?.trim()?.takeIf { it.isNotBlank() }
-                val durationSec = parseDuration(
-                    item.getElementsByTagNameNS("http://www.itunes.com/dtds/podcast-1.0.dtd", "duration")
-                        .item(0)?.textContent
-                )
-
-                val destFile = File(booksDir, "$bookId-${idx.toString().padStart(4, '0')}.mp3")
-                if (destFile.exists()) continue // already downloaded
-
-                try {
-                    val mp3Conn = java.net.URI(listenUrl).toURL().openConnection() as java.net.HttpURLConnection
-                    mp3Conn.connectTimeout = 30_000
-                    mp3Conn.readTimeout = 180_000
-                    mp3Conn.setRequestProperty("User-Agent", "BookTower/1.0 librivox-seed")
-                    mp3Conn.instanceFollowRedirects = true
-                    if (mp3Conn.responseCode != 200) {
-                        logger.warn("Chapter $idx download failed for '$title': HTTP ${mp3Conn.responseCode}")
-                        continue
-                    }
-                    mp3Conn.inputStream.use { input -> destFile.outputStream().use { input.copyTo(it) } }
-                    bookService.addBookFile(
-                        userId, bookId, idx, chapterTitle,
-                        destFile.absolutePath, destFile.length(), durationSec,
-                    )
+                if (downloadChapter(userId, bookId, items.item(idx) as org.w3c.dom.Element, booksDir, idx, title))
                     downloaded++
-                    logger.debug("Downloaded ch $idx of '$title' (${destFile.length()} bytes)")
-                } catch (e: Exception) {
-                    logger.warn("Chapter $idx download error for '$title': ${e.message}")
-                }
             }
-
             if (downloaded > 0) {
                 bookService.updateBookFileAggregateSize(bookId)
                 logger.info("LibriVox download complete for '$title': $downloaded/${items.length} chapters")
             }
         } catch (e: Exception) {
             logger.warn("LibriVox download failed for '$title' (id=$librivoxId): ${e.message}")
+        }
+    }
+
+    private fun downloadChapter(
+        userId: UUID, bookId: UUID, item: org.w3c.dom.Element,
+        booksDir: File, idx: Int, title: String,
+    ): Boolean {
+        val listenUrl = item.getElementsByTagName("enclosure")
+            .takeIf { it.length > 0 }
+            ?.let { (it.item(0) as org.w3c.dom.Element).getAttribute("url").takeIf { u -> u.isNotBlank() } }
+            ?: return false
+        val chapterTitle = item.getElementsByTagName("title").item(0)?.textContent?.trim()?.takeIf { it.isNotBlank() }
+        val durationSec = parseDuration(
+            item.getElementsByTagNameNS("http://www.itunes.com/dtds/podcast-1.0.dtd", "duration").item(0)?.textContent
+        )
+        val destFile = File(booksDir, "$bookId-${idx.toString().padStart(4, '0')}.mp3")
+        if (destFile.exists()) return false
+        return try {
+            val mp3Conn = java.net.URI(listenUrl).toURL().openConnection() as java.net.HttpURLConnection
+            mp3Conn.connectTimeout = 30_000; mp3Conn.readTimeout = 180_000
+            mp3Conn.setRequestProperty("User-Agent", "BookTower/1.0 librivox-seed")
+            mp3Conn.instanceFollowRedirects = true
+            if (mp3Conn.responseCode != 200) {
+                logger.warn("Chapter $idx download failed for '$title': HTTP ${mp3Conn.responseCode}")
+                return false
+            }
+            mp3Conn.inputStream.use { input -> destFile.outputStream().use { input.copyTo(it) } }
+            bookService.addBookFile(userId, bookId, idx, chapterTitle, destFile.absolutePath, destFile.length(), durationSec)
+            logger.debug("Downloaded ch $idx of '$title' (${destFile.length()} bytes)")
+            true
+        } catch (e: Exception) {
+            logger.warn("Chapter $idx download error for '$title': ${e.message}")
+            false
         }
     }
 
@@ -608,23 +596,19 @@ class SeedService(
     private fun fetchCover(userId: UUID, bookId: UUID, bookIdStr: String, title: String, author: String) {
         try {
             val query = java.net.URLEncoder.encode("$title $author", "UTF-8")
-            val searchUrl = URL("https://openlibrary.org/search.json?q=$query&limit=1&fields=cover_i")
-            val searchConn = searchUrl.openConnection().apply {
-                connectTimeout = 5_000
-                readTimeout = 8_000
-            }
-            val json: JsonNode = searchConn.getInputStream().use { Json.mapper.readTree(it) }
+            val searchUrl = java.net.URI("https://openlibrary.org/search.json?q=$query&limit=1&fields=cover_i").toURL()
+            val json: JsonNode = searchUrl.openConnection().apply {
+                connectTimeout = 5_000; readTimeout = 8_000
+            }.getInputStream().use { Json.mapper.readTree(it) }
 
-            val docs = json.get("docs") ?: return
-            if (!docs.isArray || docs.size() == 0) return
-            val coverId = docs.get(0).get("cover_i")?.asLong()?.takeIf { it > 0 } ?: return
+            val coverId = json.get("docs")
+                ?.takeIf { it.isArray && it.size() > 0 }
+                ?.get(0)?.get("cover_i")?.asLong()?.takeIf { it > 0 }
+                ?: return
 
-            val coverUrl = URL("https://covers.openlibrary.org/b/id/$coverId-L.jpg")
-            val coverConn = coverUrl.openConnection().apply {
-                connectTimeout = 5_000
-                readTimeout = 10_000
-            }
-            val bytes = coverConn.getInputStream().use { it.readBytes() }
+            val bytes = java.net.URI("https://covers.openlibrary.org/b/id/$coverId-L.jpg").toURL()
+                .openConnection().apply { connectTimeout = 5_000; readTimeout = 10_000 }
+                .getInputStream().use { it.readBytes() }
             if (bytes.size < 2_000) return // placeholder / error image
 
             val coversDir = File(coversPath)
