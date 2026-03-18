@@ -5,7 +5,7 @@ A self-hosted personal digital library manager built with Kotlin, http4k, and HT
 ## Features
 
 > [!WARNING]
-> This is a new project and still undfer development. There can be bugs. Test it yourself with a small set of books, before entrusting it to all your library.
+> This is a new project and still under development. There can be bugs. Test it yourself with a small set of books, before entrusting it to all your library.
 
 - **Library management** — organize books into named libraries with folder-backed storage
 - **Book reader** — in-browser PDF, EPUB, and comic (CBZ/CBR) reader with bookmarks, annotations, and reading progress
