@@ -6,7 +6,6 @@ import org.http4k.core.Request
 import org.http4k.core.Status
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 
 /**
  * Verifies that the ON DELETE CASCADE constraints in the schema actually fire
@@ -14,59 +13,81 @@ import kotlin.test.assertTrue
  * removes its bookmarks, reading progress, and annotations.
  */
 class CascadeDeletionIntegrationTest : IntegrationTestBase() {
-
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    private fun createBookmark(token: String, bookId: String, page: Int = 1): String {
-        val resp = app(
-            Request(Method.POST, "/api/bookmarks")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"bookId":"$bookId","page":$page,"title":"test mark","note":null}"""),
-        )
+    private fun createBookmark(
+        token: String,
+        bookId: String,
+        page: Int = 1,
+    ): String {
+        val resp =
+            app(
+                Request(Method.POST, "/api/bookmarks")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"bookId":"$bookId","page":$page,"title":"test mark","note":null}"""),
+            )
         assertEquals(Status.CREATED, resp.status, "createBookmark failed: ${resp.bodyString()}")
-        return Json.mapper.readTree(resp.bodyString()).get("id").asText()
+        return Json.mapper
+            .readTree(resp.bodyString())
+            .get("id")
+            .asText()
     }
 
-    private fun setProgress(token: String, bookId: String, page: Int = 5) {
-        val resp = app(
-            Request(Method.PUT, "/api/books/$bookId/progress")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"currentPage":$page}"""),
-        )
+    private fun setProgress(
+        token: String,
+        bookId: String,
+        page: Int = 5,
+    ) {
+        val resp =
+            app(
+                Request(Method.PUT, "/api/books/$bookId/progress")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"currentPage":$page}"""),
+            )
         assertEquals(Status.OK, resp.status, "setProgress failed: ${resp.bodyString()}")
     }
 
-    private fun getBookmarks(token: String, bookId: String): Int {
-        val resp = app(
-            Request(Method.GET, "/api/bookmarks?bookId=$bookId")
-                .header("Cookie", "token=$token"),
-        )
+    private fun getBookmarks(
+        token: String,
+        bookId: String,
+    ): Int {
+        val resp =
+            app(
+                Request(Method.GET, "/api/bookmarks?bookId=$bookId")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, resp.status)
         return Json.mapper.readTree(resp.bodyString()).size()
     }
 
-    private fun getBook(token: String, bookId: String): Status {
-        return app(
+    private fun getBook(
+        token: String,
+        bookId: String,
+    ): Status =
+        app(
             Request(Method.GET, "/api/books/$bookId")
                 .header("Cookie", "token=$token"),
         ).status
-    }
 
-    private fun deleteLibrary(token: String, libId: String): Status {
-        return app(
+    private fun deleteLibrary(
+        token: String,
+        libId: String,
+    ): Status =
+        app(
             Request(Method.DELETE, "/api/libraries/$libId")
                 .header("Cookie", "token=$token"),
         ).status
-    }
 
-    private fun deleteBook(token: String, bookId: String): Status {
-        return app(
+    private fun deleteBook(
+        token: String,
+        bookId: String,
+    ): Status =
+        app(
             Request(Method.DELETE, "/api/books/$bookId")
                 .header("Cookie", "token=$token"),
         ).status
-    }
 
     // ── Delete library cascades ───────────────────────────────────────────────
 
@@ -90,10 +111,11 @@ class CascadeDeletionIntegrationTest : IntegrationTestBase() {
 
         assertEquals(Status.OK, deleteLibrary(token, libId))
 
-        val resp = app(
-            Request(Method.GET, "/api/books")
-                .header("Cookie", "token=$token"),
-        )
+        val resp =
+            app(
+                Request(Method.GET, "/api/books")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, resp.status)
         val tree = Json.mapper.readTree(resp.bodyString())
         assertEquals(0, tree.get("total").asInt(), "No books should remain after library deletion")
@@ -224,7 +246,11 @@ class CascadeDeletionIntegrationTest : IntegrationTestBase() {
 
     // ── Delete book cascades to chapters ─────────────────────────────────────
 
-    private fun uploadMinimalChapter(token: String, bookId: String, trackIndex: Int) {
+    private fun uploadMinimalChapter(
+        token: String,
+        bookId: String,
+        trackIndex: Int,
+    ) {
         val mp3 = byteArrayOf(0xFF.toByte(), 0xFB.toByte(), 0x90.toByte(), 0x00.toByte()) + ByteArray(416)
         app(
             Request(Method.POST, "/api/books/$bookId/chapters")
@@ -236,11 +262,15 @@ class CascadeDeletionIntegrationTest : IntegrationTestBase() {
         )
     }
 
-    private fun listChapters(token: String, bookId: String): Int {
-        val resp = app(
-            Request(Method.GET, "/api/books/$bookId/chapters")
-                .header("Cookie", "token=$token"),
-        )
+    private fun listChapters(
+        token: String,
+        bookId: String,
+    ): Int {
+        val resp =
+            app(
+                Request(Method.GET, "/api/books/$bookId/chapters")
+                    .header("Cookie", "token=$token"),
+            )
         return if (resp.status == Status.OK) Json.mapper.readTree(resp.bodyString()).size() else 0
     }
 

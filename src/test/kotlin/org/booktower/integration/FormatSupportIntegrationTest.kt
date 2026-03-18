@@ -5,13 +5,11 @@ import org.http4k.core.Method
 import org.http4k.core.Request
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import java.io.File
 import java.nio.file.Files
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class FormatSupportIntegrationTest : IntegrationTestBase() {
-
     private lateinit var token: String
 
     @BeforeEach
@@ -76,10 +74,11 @@ class FormatSupportIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId, "Format Test $ext")
         // Upload a tiny placeholder file with the given extension
-        val content = when (ext) {
-            "fb2" -> minimalFb2Bytes()
-            else -> byteArrayOf(0x50, 0x4B, 0x03, 0x04) // PK header (not a real file, just extension matters)
-        }
+        val content =
+            when (ext) {
+                "fb2" -> minimalFb2Bytes()
+                else -> byteArrayOf(0x50, 0x4B, 0x03, 0x04) // PK header (not a real file, just extension matters)
+            }
         app(
             Request(Method.POST, "/api/books/$bookId/upload")
                 .header("Cookie", "token=$token")
@@ -87,10 +86,11 @@ class FormatSupportIntegrationTest : IntegrationTestBase() {
                 .header("Content-Type", "application/octet-stream")
                 .body(org.http4k.core.Body(java.io.ByteArrayInputStream(content), content.size.toLong())),
         )
-        val resp = app(
-            Request(Method.GET, "/books/$bookId/read")
-                .header("Cookie", "token=$token"),
-        )
+        val resp =
+            app(
+                Request(Method.GET, "/books/$bookId/read")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(200, resp.status.code, "Reader page should return 200 for .$ext")
         return resp.bodyString()
     }
@@ -104,13 +104,19 @@ class FormatSupportIntegrationTest : IntegrationTestBase() {
     @Test
     fun `reader page uses kindle mode for MOBI files`() {
         val body = readerPageBody("mobi")
-        assertTrue(body.contains("kindle-wrap") || body.contains("kindle.download") || body.contains("Download to read"), "Kindle download UI should be present")
+        assertTrue(
+            body.contains("kindle-wrap") || body.contains("kindle.download") || body.contains("Download to read"),
+            "Kindle download UI should be present",
+        )
     }
 
     @Test
     fun `reader page uses kindle mode for AZW3 files`() {
         val body = readerPageBody("azw3")
-        assertTrue(body.contains("kindle-wrap") || body.contains("kindle.download") || body.contains("Download to read"), "Kindle download UI should be present")
+        assertTrue(
+            body.contains("kindle-wrap") || body.contains("kindle.download") || body.contains("Download to read"),
+            "Kindle download UI should be present",
+        )
     }
 
     // ── Integration: /api/books/{id}/read-content for FB2 ────────────────────
@@ -127,10 +133,11 @@ class FormatSupportIntegrationTest : IntegrationTestBase() {
                 .header("Content-Type", "application/octet-stream")
                 .body(org.http4k.core.Body(java.io.ByteArrayInputStream(fb2bytes), fb2bytes.size.toLong())),
         )
-        val resp = app(
-            Request(Method.GET, "/api/books/$bookId/read-content")
-                .header("Cookie", "token=$token"),
-        )
+        val resp =
+            app(
+                Request(Method.GET, "/api/books/$bookId/read-content")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(200, resp.status.code)
         assertTrue(resp.header("Content-Type")?.contains("text/html") == true, "Should return HTML")
         assertTrue(resp.bodyString().contains("Minimal"), "Should contain book title")
@@ -148,16 +155,18 @@ class FormatSupportIntegrationTest : IntegrationTestBase() {
                 .header("Content-Type", "application/octet-stream")
                 .body(org.http4k.core.Body(java.io.ByteArrayInputStream(epubBytes), epubBytes.size.toLong())),
         )
-        val resp = app(
-            Request(Method.GET, "/api/books/$bookId/read-content")
-                .header("Cookie", "token=$token"),
-        )
+        val resp =
+            app(
+                Request(Method.GET, "/api/books/$bookId/read-content")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(422, resp.status.code)
     }
 
     @Test
     fun `read-content returns 422 for MOBI when Calibre is not installed`() {
-        org.junit.jupiter.api.Assumptions.assumeFalse(calibreAvailable(), "Calibre is installed — skipping no-Calibre fallback test")
+        org.junit.jupiter.api.Assumptions
+            .assumeFalse(calibreAvailable(), "Calibre is installed — skipping no-Calibre fallback test")
         val libId = createLibrary(token)
         val bookId = createBook(token, libId, "MOBI Test")
         val mobiBytes = byteArrayOf(0x4D, 0x4F, 0x42, 0x49)
@@ -168,16 +177,18 @@ class FormatSupportIntegrationTest : IntegrationTestBase() {
                 .header("Content-Type", "application/octet-stream")
                 .body(org.http4k.core.Body(java.io.ByteArrayInputStream(mobiBytes), mobiBytes.size.toLong())),
         )
-        val resp = app(
-            Request(Method.GET, "/api/books/$bookId/read-content")
-                .header("Cookie", "token=$token"),
-        )
+        val resp =
+            app(
+                Request(Method.GET, "/api/books/$bookId/read-content")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(422, resp.status.code)
     }
 
     @Test
     fun `read-content returns 422 for AZW3 when Calibre is not installed`() {
-        org.junit.jupiter.api.Assumptions.assumeFalse(calibreAvailable(), "Calibre is installed — skipping no-Calibre fallback test")
+        org.junit.jupiter.api.Assumptions
+            .assumeFalse(calibreAvailable(), "Calibre is installed — skipping no-Calibre fallback test")
         val libId = createLibrary(token)
         val bookId = createBook(token, libId, "AZW3 Test")
         val azw3Bytes = byteArrayOf(0x41, 0x5A, 0x57, 0x33)
@@ -188,10 +199,11 @@ class FormatSupportIntegrationTest : IntegrationTestBase() {
                 .header("Content-Type", "application/octet-stream")
                 .body(org.http4k.core.Body(java.io.ByteArrayInputStream(azw3Bytes), azw3Bytes.size.toLong())),
         )
-        val resp = app(
-            Request(Method.GET, "/api/books/$bookId/read-content")
-                .header("Cookie", "token=$token"),
-        )
+        val resp =
+            app(
+                Request(Method.GET, "/api/books/$bookId/read-content")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(422, resp.status.code)
     }
 
@@ -199,23 +211,27 @@ class FormatSupportIntegrationTest : IntegrationTestBase() {
     fun `kindle reader page contains Calibre conversion UI elements`() {
         // Page should include both the converting spinner and download fallback markup
         val body = readerPageBody("mobi")
-        assertTrue(body.contains("kindle-converting") || body.contains("kindle-download"),
-            "Kindle reader should include Calibre conversion UI")
+        assertTrue(
+            body.contains("kindle-converting") || body.contains("kindle-download"),
+            "Kindle reader should include Calibre conversion UI",
+        )
         assertTrue(body.contains("read-content"), "Page should reference read-content endpoint for Calibre probe")
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    private fun minimalFb2Bytes(): ByteArray = """<?xml version="1.0" encoding="utf-8"?>
+    private fun minimalFb2Bytes(): ByteArray =
+        """<?xml version="1.0" encoding="utf-8"?>
 <FictionBook xmlns="http://www.gribuser.ru/xml/fictionbook/2.0">
   <description><title-info><book-title>Minimal</book-title></title-info></description>
   <body><section><p>Test content.</p></section></body>
 </FictionBook>""".toByteArray(Charsets.UTF_8)
 
-    private fun calibreAvailable(): Boolean = try {
-        val proc = ProcessBuilder("ebook-convert", "--version").redirectErrorStream(true).start()
-        proc.waitFor(5, java.util.concurrent.TimeUnit.SECONDS) && proc.exitValue() == 0
-    } catch (_: Exception) {
-        false
-    }
+    private fun calibreAvailable(): Boolean =
+        try {
+            val proc = ProcessBuilder("ebook-convert", "--version").redirectErrorStream(true).start()
+            proc.waitFor(5, java.util.concurrent.TimeUnit.SECONDS) && proc.exitValue() == 0
+        } catch (_: Exception) {
+            false
+        }
 }

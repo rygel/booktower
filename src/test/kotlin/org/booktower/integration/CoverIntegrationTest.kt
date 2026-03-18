@@ -13,7 +13,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class CoverIntegrationTest : IntegrationTestBase() {
-
     private fun minimalPdfBytes(): ByteArray {
         val doc = PDDocument()
         doc.addPage(PDPage())
@@ -86,10 +85,11 @@ class CoverIntegrationTest : IntegrationTestBase() {
         )
         Thread.sleep(2000)
 
-        val bookResponse = app(
-            Request(Method.GET, "/api/books/$bookId")
-                .header("Cookie", "token=$token"),
-        )
+        val bookResponse =
+            app(
+                Request(Method.GET, "/api/books/$bookId")
+                    .header("Cookie", "token=$token"),
+            )
         val body = bookResponse.bodyString()
         // coverUrl should start with /covers/ after extraction
         assertTrue(body.contains("/covers/") || !body.contains("coverUrl"), "coverUrl should point to /covers/")

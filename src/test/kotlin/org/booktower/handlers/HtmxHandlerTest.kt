@@ -1,24 +1,24 @@
 package org.booktower.handlers
 
 import org.booktower.TestFixture
+import org.booktower.config.SmtpConfig
 import org.booktower.config.WeblateConfig
 import org.booktower.services.AdminService
 import org.booktower.services.AnalyticsService
 import org.booktower.services.AnnotationService
 import org.booktower.services.AuthService
-import org.booktower.services.MetadataFetchService
+import org.booktower.services.BookService
 import org.booktower.services.BookmarkService
+import org.booktower.services.EmailService
 import org.booktower.services.EpubMetadataService
 import org.booktower.services.GoodreadsImportService
-import org.booktower.services.ReadingSessionService
-import org.booktower.config.SmtpConfig
-import org.booktower.services.EmailService
-import org.booktower.services.SeedService
-import org.booktower.services.PdfMetadataService
-import org.booktower.services.UserSettingsService
-import org.booktower.services.BookService
 import org.booktower.services.JwtService
 import org.booktower.services.LibraryService
+import org.booktower.services.MetadataFetchService
+import org.booktower.services.PdfMetadataService
+import org.booktower.services.ReadingSessionService
+import org.booktower.services.SeedService
+import org.booktower.services.UserSettingsService
 import org.booktower.weblate.WeblateHandler
 import org.http4k.core.Method
 import org.http4k.core.Request
@@ -51,28 +51,45 @@ class HtmxHandlerTest {
         val metadataFetchService = MetadataFetchService()
         val weblateHandler = WeblateHandler(WeblateConfig("", "", "", false))
         val epubMetadataService = EpubMetadataService(jdbi, config.storage.coversPath)
-        appHandler = AppHandler(
-            authService, libraryService, bookService, bookmarkService,
-            userSettingsService, pdfMetadataService, epubMetadataService, adminService, jwtService,
-            config.storage, TestFixture.templateRenderer, weblateHandler, analyticsService, annotationService, metadataFetchService,
-            org.booktower.services.MagicShelfService(jdbi, bookService),
-            org.booktower.services.PasswordResetService(jdbi),
-            EmailService(SmtpConfig("", 587, "", "", "", true)),
-            "http://localhost:9999",
-            true,
-            org.booktower.services.ApiTokenService(jdbi),
-            org.booktower.services.ExportService(jdbi),
-            org.booktower.services.ComicService(),
-            GoodreadsImportService(bookService),
-            readingSessionService,
-            SeedService(bookService, libraryService, config.storage.coversPath, config.storage.booksPath),
-        )
+        appHandler =
+            AppHandler(
+                authService,
+                libraryService,
+                bookService,
+                bookmarkService,
+                userSettingsService,
+                pdfMetadataService,
+                epubMetadataService,
+                adminService,
+                jwtService,
+                config.storage,
+                TestFixture.templateRenderer,
+                weblateHandler,
+                analyticsService,
+                annotationService,
+                metadataFetchService,
+                org.booktower.services.MagicShelfService(jdbi, bookService),
+                org.booktower.services.PasswordResetService(jdbi),
+                EmailService(SmtpConfig("", 587, "", "", "", true)),
+                "http://localhost:9999",
+                true,
+                org.booktower.services.ApiTokenService(jdbi),
+                org.booktower.services.ExportService(jdbi),
+                org.booktower.services.ComicService(),
+                GoodreadsImportService(bookService),
+                readingSessionService,
+                SeedService(bookService, libraryService, config.storage.coversPath, config.storage.booksPath),
+            )
     }
 
     @Test
     fun `set theme returns 200 OK with style element`() {
-        val response = appHandler.routes()(Request(Method.POST, "/preferences/theme").body("theme=dark")
-            .header("Content-Type", "application/x-www-form-urlencoded"))
+        val response =
+            appHandler.routes()(
+                Request(Method.POST, "/preferences/theme")
+                    .body("theme=dark")
+                    .header("Content-Type", "application/x-www-form-urlencoded"),
+            )
         assertEquals(Status.OK, response.status)
         assertTrue(response.bodyString().contains("<style"))
         assertTrue(response.bodyString().contains("theme-style"))
@@ -80,8 +97,12 @@ class HtmxHandlerTest {
 
     @Test
     fun `set theme sets app_theme cookie`() {
-        val response = appHandler.routes()(Request(Method.POST, "/preferences/theme").body("theme=dracula")
-            .header("Content-Type", "application/x-www-form-urlencoded"))
+        val response =
+            appHandler.routes()(
+                Request(Method.POST, "/preferences/theme")
+                    .body("theme=dracula")
+                    .header("Content-Type", "application/x-www-form-urlencoded"),
+            )
         assertEquals(Status.OK, response.status)
         val setCookie = response.header("Set-Cookie")
         assertNotNull(setCookie)
@@ -91,47 +112,70 @@ class HtmxHandlerTest {
 
     @Test
     fun `set theme response body contains data-theme attribute`() {
-        val response = appHandler.routes()(Request(Method.POST, "/preferences/theme").body("theme=nord")
-            .header("Content-Type", "application/x-www-form-urlencoded"))
+        val response =
+            appHandler.routes()(
+                Request(Method.POST, "/preferences/theme")
+                    .body("theme=nord")
+                    .header("Content-Type", "application/x-www-form-urlencoded"),
+            )
         assertEquals(Status.OK, response.status)
         assertTrue(response.bodyString().contains("nord"))
     }
 
     @Test
     fun `set theme with invalid theme defaults to catppuccin-mocha`() {
-        val response = appHandler.routes()(Request(Method.POST, "/preferences/theme").body("theme=nonexistent-theme")
-            .header("Content-Type", "application/x-www-form-urlencoded"))
+        val response =
+            appHandler.routes()(
+                Request(Method.POST, "/preferences/theme")
+                    .body("theme=nonexistent-theme")
+                    .header("Content-Type", "application/x-www-form-urlencoded"),
+            )
         assertEquals(Status.OK, response.status)
         assertTrue(response.bodyString().contains("catppuccin-mocha"))
     }
 
     @Test
     fun `set theme with no body defaults to catppuccin-mocha`() {
-        val response = appHandler.routes()(Request(Method.POST, "/preferences/theme")
-            .header("Content-Type", "application/x-www-form-urlencoded"))
+        val response =
+            appHandler.routes()(
+                Request(Method.POST, "/preferences/theme")
+                    .header("Content-Type", "application/x-www-form-urlencoded"),
+            )
         assertEquals(Status.OK, response.status)
         assertTrue(response.bodyString().contains("catppuccin-mocha"))
     }
 
     @Test
     fun `set theme to light`() {
-        val response = appHandler.routes()(Request(Method.POST, "/preferences/theme").body("theme=light")
-            .header("Content-Type", "application/x-www-form-urlencoded"))
+        val response =
+            appHandler.routes()(
+                Request(Method.POST, "/preferences/theme")
+                    .body("theme=light")
+                    .header("Content-Type", "application/x-www-form-urlencoded"),
+            )
         assertEquals(Status.OK, response.status)
         assertTrue(response.bodyString().contains("light"))
     }
 
     @Test
     fun `set language returns 200 OK`() {
-        val response = appHandler.routes()(Request(Method.POST, "/preferences/lang").body("lang=en")
-            .header("Content-Type", "application/x-www-form-urlencoded"))
+        val response =
+            appHandler.routes()(
+                Request(Method.POST, "/preferences/lang")
+                    .body("lang=en")
+                    .header("Content-Type", "application/x-www-form-urlencoded"),
+            )
         assertEquals(Status.OK, response.status)
     }
 
     @Test
     fun `set language sets app_lang cookie`() {
-        val response = appHandler.routes()(Request(Method.POST, "/preferences/lang").body("lang=fr")
-            .header("Content-Type", "application/x-www-form-urlencoded"))
+        val response =
+            appHandler.routes()(
+                Request(Method.POST, "/preferences/lang")
+                    .body("lang=fr")
+                    .header("Content-Type", "application/x-www-form-urlencoded"),
+            )
         assertEquals(Status.OK, response.status)
         val setCookie = response.header("Set-Cookie")
         assertNotNull(setCookie)
@@ -141,16 +185,24 @@ class HtmxHandlerTest {
 
     @Test
     fun `set language sends HX-Refresh to reload page`() {
-        val response = appHandler.routes()(Request(Method.POST, "/preferences/lang").body("lang=de")
-            .header("Content-Type", "application/x-www-form-urlencoded"))
+        val response =
+            appHandler.routes()(
+                Request(Method.POST, "/preferences/lang")
+                    .body("lang=de")
+                    .header("Content-Type", "application/x-www-form-urlencoded"),
+            )
         assertEquals(Status.OK, response.status)
         assertEquals("true", response.header("HX-Refresh"))
     }
 
     @Test
     fun `set language with invalid language defaults to en`() {
-        val response = appHandler.routes()(Request(Method.POST, "/preferences/lang").body("lang=xx")
-            .header("Content-Type", "application/x-www-form-urlencoded"))
+        val response =
+            appHandler.routes()(
+                Request(Method.POST, "/preferences/lang")
+                    .body("lang=xx")
+                    .header("Content-Type", "application/x-www-form-urlencoded"),
+            )
         assertEquals(Status.OK, response.status)
         val setCookie = response.header("Set-Cookie")
         assertNotNull(setCookie)
@@ -159,30 +211,46 @@ class HtmxHandlerTest {
 
     @Test
     fun `set theme returns no HX-Trigger`() {
-        val response = appHandler.routes()(Request(Method.POST, "/preferences/theme").body("theme=dark")
-            .header("Content-Type", "application/x-www-form-urlencoded"))
+        val response =
+            appHandler.routes()(
+                Request(Method.POST, "/preferences/theme")
+                    .body("theme=dark")
+                    .header("Content-Type", "application/x-www-form-urlencoded"),
+            )
         assertNull(response.header("HX-Trigger"))
     }
 
     @Test
     fun `set theme returns HTML content type`() {
-        val response = appHandler.routes()(Request(Method.POST, "/preferences/theme").body("theme=dracula")
-            .header("Content-Type", "application/x-www-form-urlencoded"))
+        val response =
+            appHandler.routes()(
+                Request(Method.POST, "/preferences/theme")
+                    .body("theme=dracula")
+                    .header("Content-Type", "application/x-www-form-urlencoded"),
+            )
         assertTrue(response.header("Content-Type")?.contains("text/html") == true)
     }
 
     @Test
     fun `set catppuccin-mocha theme`() {
-        val response = appHandler.routes()(Request(Method.POST, "/preferences/theme").body("theme=catppuccin-mocha")
-            .header("Content-Type", "application/x-www-form-urlencoded"))
+        val response =
+            appHandler.routes()(
+                Request(Method.POST, "/preferences/theme")
+                    .body("theme=catppuccin-mocha")
+                    .header("Content-Type", "application/x-www-form-urlencoded"),
+            )
         assertEquals(Status.OK, response.status)
         assertTrue(response.bodyString().contains("catppuccin-mocha"))
     }
 
     @Test
     fun `set language to german`() {
-        val response = appHandler.routes()(Request(Method.POST, "/preferences/lang").body("lang=de")
-            .header("Content-Type", "application/x-www-form-urlencoded"))
+        val response =
+            appHandler.routes()(
+                Request(Method.POST, "/preferences/lang")
+                    .body("lang=de")
+                    .header("Content-Type", "application/x-www-form-urlencoded"),
+            )
         assertEquals(Status.OK, response.status)
         val setCookie = response.header("Set-Cookie")
         assertNotNull(setCookie)

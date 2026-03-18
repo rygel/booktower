@@ -4,7 +4,7 @@ import org.booktower.TestFixture
 import org.booktower.config.Json
 import org.booktower.config.SmtpConfig
 import org.booktower.config.WeblateConfig
-import org.booktower.filters.GlobalErrorFilter
+import org.booktower.filters.globalErrorFilter
 import org.booktower.handlers.AppHandler
 import org.booktower.services.AdminService
 import org.booktower.services.AnalyticsService
@@ -12,8 +12,8 @@ import org.booktower.services.AnnotationService
 import org.booktower.services.ApiTokenService
 import org.booktower.services.AuditService
 import org.booktower.services.AuthService
-import org.booktower.services.BookmarkService
 import org.booktower.services.BookService
+import org.booktower.services.BookmarkService
 import org.booktower.services.ComicService
 import org.booktower.services.EmailService
 import org.booktower.services.EpubMetadataService
@@ -38,7 +38,6 @@ import org.junit.jupiter.api.Test
 import kotlin.test.assertTrue
 
 class AuditIntegrationTest {
-
     private val config = TestFixture.config
     private val jdbi = TestFixture.database.getJdbi()
     private val auditService = AuditService(jdbi)
@@ -63,20 +62,39 @@ class AuditIntegrationTest {
         val comicService = ComicService()
         val goodreadsImportService = GoodreadsImportService(bookService)
         val seedService = SeedService(bookService, libraryService, config.storage.coversPath, config.storage.booksPath)
-        val appHandler = AppHandler(
-            authService, libraryService, bookService, bookmarkService,
-            userSettingsService, pdfMetadataService, epubMetadataService, adminService, jwtService, config.storage,
-            TestFixture.templateRenderer,
-            WeblateHandler(WeblateConfig("", "", "", false)),
-            analyticsService, annotationService, MetadataFetchService(), magicShelfService,
-            passwordResetService,
-            EmailService(SmtpConfig("", 587, "", "", "", true)),
-            "http://localhost:9999",
-            true,
-            apiTokenService, exportService, comicService, goodreadsImportService, readingSessionService, seedService,
-            null, null, auditService,
-        )
-        return GlobalErrorFilter().then(appHandler.routes())
+        val appHandler =
+            AppHandler(
+                authService,
+                libraryService,
+                bookService,
+                bookmarkService,
+                userSettingsService,
+                pdfMetadataService,
+                epubMetadataService,
+                adminService,
+                jwtService,
+                config.storage,
+                TestFixture.templateRenderer,
+                WeblateHandler(WeblateConfig("", "", "", false)),
+                analyticsService,
+                annotationService,
+                MetadataFetchService(),
+                magicShelfService,
+                passwordResetService,
+                EmailService(SmtpConfig("", 587, "", "", "", true)),
+                "http://localhost:9999",
+                true,
+                apiTokenService,
+                exportService,
+                comicService,
+                goodreadsImportService,
+                readingSessionService,
+                seedService,
+                null,
+                null,
+                auditService,
+            )
+        return globalErrorFilter().then(appHandler.routes())
     }
 
     @Test
@@ -97,8 +115,10 @@ class AuditIntegrationTest {
         )
 
         val entries = auditService.listRecent(50)
-        assertTrue(entries.any { it.action == "user.login" && it.actorName == username },
-            "Expected user.login audit entry for $username")
+        assertTrue(
+            entries.any { it.action == "user.login" && it.actorName == username },
+            "Expected user.login audit entry for $username",
+        )
     }
 
     @Test
@@ -112,37 +132,53 @@ class AuditIntegrationTest {
         )
 
         val entries = auditService.listRecent(50)
-        assertTrue(entries.any { it.action == "user.register" && it.actorName == username },
-            "Expected user.register audit entry for $username")
+        assertTrue(
+            entries.any { it.action == "user.register" && it.actorName == username },
+            "Expected user.register audit entry for $username",
+        )
     }
 
     @Test
     fun `GET api admin audit requires admin token`() {
         val app = buildAppWithAudit()
         val username = "auditauth_${System.nanoTime()}"
-        val resp = app(
-            Request(Method.POST, "/auth/register")
-                .header("Content-Type", "application/json")
-                .body("""{"username":"$username","email":"$username@test.com","password":"password123"}"""),
-        )
-        val token = Json.mapper.readTree(resp.bodyString()).get("token").asText()
-        val auditResp = app(
-            Request(Method.GET, "/api/admin/audit").header("Cookie", "token=$token"),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/auth/register")
+                    .header("Content-Type", "application/json")
+                    .body("""{"username":"$username","email":"$username@test.com","password":"password123"}"""),
+            )
+        val token =
+            Json.mapper
+                .readTree(resp.bodyString())
+                .get("token")
+                .asText()
+        val auditResp =
+            app(
+                Request(Method.GET, "/api/admin/audit").header("Cookie", "token=$token"),
+            )
         assertEquals(Status.FORBIDDEN, auditResp.status)
     }
 
     @Test
     fun `AuditService listRecent returns entries in descending order`() {
-        val now = java.time.Instant.now().toString()
+        val now =
+            java.time.Instant
+                .now()
+                .toString()
         val userId = java.util.UUID.randomUUID()
         // Insert user first
         jdbi.useHandle<Exception> { h ->
-            h.createUpdate("INSERT INTO users (id, username, email, password_hash, created_at, updated_at, is_admin) VALUES (?,?,?,?,?,?,0)")
-                .bind(0, userId.toString())
+            h
+                .createUpdate(
+                    "INSERT INTO users (id, username, email, password_hash, created_at, updated_at, is_admin) VALUES (?,?,?,?,?,?,0)",
+                ).bind(0, userId.toString())
                 .bind(1, "auditorder_${System.nanoTime()}")
                 .bind(2, "ao_${System.nanoTime()}@test.com")
-                .bind(3, "hash").bind(4, now).bind(5, now).execute()
+                .bind(3, "hash")
+                .bind(4, now)
+                .bind(5, now)
+                .execute()
         }
         auditService.record(userId, "testuser", "test.action.1")
         Thread.sleep(10)

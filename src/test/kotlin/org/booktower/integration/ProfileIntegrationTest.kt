@@ -8,7 +8,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class ProfileIntegrationTest : IntegrationTestBase() {
-
     @Test
     fun `profile page renders for authenticated user`() {
         val token = registerAndGetToken("prof1")
@@ -28,8 +27,10 @@ class ProfileIntegrationTest : IntegrationTestBase() {
     fun `profile page shows account information section`() {
         val token = registerAndGetToken("prof2")
         val body = app(Request(Method.GET, "/profile").header("Cookie", "token=$token")).bodyString()
-        assertTrue(body.contains("Account Information") || body.contains("account.info"),
-            "Profile should show account information section")
+        assertTrue(
+            body.contains("Account Information") || body.contains("account.info"),
+            "Profile should show account information section",
+        )
     }
 
     @Test
@@ -52,7 +53,11 @@ class ProfileIntegrationTest : IntegrationTestBase() {
     fun `profile page shows member since date`() {
         val token = registerAndGetToken("prof5")
         val body = app(Request(Method.GET, "/profile").header("Cookie", "token=$token")).bodyString()
-        val currentYear = java.time.Year.now().value.toString()
+        val currentYear =
+            java.time.Year
+                .now()
+                .value
+                .toString()
         assertTrue(body.contains(currentYear), "Profile should show member since date containing current year")
     }
 
@@ -60,7 +65,9 @@ class ProfileIntegrationTest : IntegrationTestBase() {
     fun `profile page shows change password section`() {
         val token = registerAndGetToken("prof6")
         val body = app(Request(Method.GET, "/profile").header("Cookie", "token=$token")).bodyString()
-        assertTrue(body.contains("currentPassword") || body.contains("change-password") || body.contains("Change Password"),
-            "Profile should still show change password section")
+        assertTrue(
+            body.contains("currentPassword") || body.contains("change-password") || body.contains("Change Password"),
+            "Profile should still show change password section",
+        )
     }
 }

@@ -39,23 +39,24 @@ data class UpdateEmailProviderRequest(
     val isDefault: Boolean? = null,
 )
 
-class EmailProviderService(private val jdbi: Jdbi) {
-
+class EmailProviderService(
+    private val jdbi: Jdbi,
+) {
     fun list(): List<EmailProviderDto> =
         jdbi.withHandle<List<EmailProviderDto>, Exception> { h ->
-            h.createQuery(
-                "SELECT id, name, host, port, username, from_address, use_tls, is_default, created_at, updated_at FROM email_providers ORDER BY is_default DESC, name",
-            )
-                .map { row -> mapRow(row) }
+            h
+                .createQuery(
+                    "SELECT id, name, host, port, username, from_address, use_tls, is_default, created_at, updated_at FROM email_providers ORDER BY is_default DESC, name",
+                ).map { row -> mapRow(row) }
                 .list()
         }
 
     fun get(id: String): EmailProviderDto? =
         jdbi.withHandle<EmailProviderDto?, Exception> { h ->
-            h.createQuery(
-                "SELECT id, name, host, port, username, from_address, use_tls, is_default, created_at, updated_at FROM email_providers WHERE id = ?",
-            )
-                .bind(0, id)
+            h
+                .createQuery(
+                    "SELECT id, name, host, port, username, from_address, use_tls, is_default, created_at, updated_at FROM email_providers WHERE id = ?",
+                ).bind(0, id)
                 .map { row -> mapRow(row) }
                 .firstOrNull()
         }
@@ -73,10 +74,10 @@ class EmailProviderService(private val jdbi: Jdbi) {
             if (request.isDefault) {
                 h.createUpdate("UPDATE email_providers SET is_default = FALSE").execute()
             }
-            h.createUpdate(
-                "INSERT INTO email_providers (id, name, host, port, username, password, from_address, use_tls, is_default, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            )
-                .bind(0, id)
+            h
+                .createUpdate(
+                    "INSERT INTO email_providers (id, name, host, port, username, password, from_address, use_tls, is_default, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                ).bind(0, id)
                 .bind(1, request.name)
                 .bind(2, request.host)
                 .bind(3, request.port)
@@ -91,14 +92,23 @@ class EmailProviderService(private val jdbi: Jdbi) {
         }
 
         return EmailProviderDto(
-            id = id, name = request.name, host = request.host, port = request.port,
-            username = request.username, fromAddress = request.fromAddress,
-            useTls = request.useTls, isDefault = request.isDefault,
-            createdAt = now, updatedAt = now,
+            id = id,
+            name = request.name,
+            host = request.host,
+            port = request.port,
+            username = request.username,
+            fromAddress = request.fromAddress,
+            useTls = request.useTls,
+            isDefault = request.isDefault,
+            createdAt = now,
+            updatedAt = now,
         )
     }
 
-    fun update(id: String, request: UpdateEmailProviderRequest): EmailProviderDto? {
+    fun update(
+        id: String,
+        request: UpdateEmailProviderRequest,
+    ): EmailProviderDto? {
         val existing = get(id) ?: return null
         val now = Instant.now().toString()
 
@@ -108,15 +118,40 @@ class EmailProviderService(private val jdbi: Jdbi) {
             }
             val sets = mutableListOf<String>()
             val bindings = mutableListOf<Any?>()
-            request.name?.let { sets += "name = ?"; bindings += it }
-            request.host?.let { sets += "host = ?"; bindings += it }
-            request.port?.let { sets += "port = ?"; bindings += it }
-            request.username?.let { sets += "username = ?"; bindings += it }
-            request.password?.let { sets += "password = ?"; bindings += it }
-            request.fromAddress?.let { sets += "from_address = ?"; bindings += it }
-            request.useTls?.let { sets += "use_tls = ?"; bindings += it }
-            request.isDefault?.let { sets += "is_default = ?"; bindings += it }
-            sets += "updated_at = ?"; bindings += now
+            request.name?.let {
+                sets += "name = ?"
+                bindings += it
+            }
+            request.host?.let {
+                sets += "host = ?"
+                bindings += it
+            }
+            request.port?.let {
+                sets += "port = ?"
+                bindings += it
+            }
+            request.username?.let {
+                sets += "username = ?"
+                bindings += it
+            }
+            request.password?.let {
+                sets += "password = ?"
+                bindings += it
+            }
+            request.fromAddress?.let {
+                sets += "from_address = ?"
+                bindings += it
+            }
+            request.useTls?.let {
+                sets += "use_tls = ?"
+                bindings += it
+            }
+            request.isDefault?.let {
+                sets += "is_default = ?"
+                bindings += it
+            }
+            sets += "updated_at = ?"
+            bindings += now
             bindings += id
 
             val stmt = h.createUpdate("UPDATE email_providers SET ${sets.joinToString(", ")} WHERE id = ?")
@@ -128,9 +163,10 @@ class EmailProviderService(private val jdbi: Jdbi) {
     }
 
     fun delete(id: String): Boolean {
-        val rows = jdbi.withHandle<Int, Exception> { h ->
-            h.createUpdate("DELETE FROM email_providers WHERE id = ?").bind(0, id).execute()
-        }
+        val rows =
+            jdbi.withHandle<Int, Exception> { h ->
+                h.createUpdate("DELETE FROM email_providers WHERE id = ?").bind(0, id).execute()
+            }
         return rows > 0
     }
 
@@ -139,22 +175,26 @@ class EmailProviderService(private val jdbi: Jdbi) {
         if (get(id) == null) return false
         jdbi.useHandle<Exception> { h ->
             h.createUpdate("UPDATE email_providers SET is_default = FALSE").execute()
-            h.createUpdate("UPDATE email_providers SET is_default = TRUE, updated_at = ? WHERE id = ?")
-                .bind(0, Instant.now().toString()).bind(1, id).execute()
+            h
+                .createUpdate("UPDATE email_providers SET is_default = TRUE, updated_at = ? WHERE id = ?")
+                .bind(0, Instant.now().toString())
+                .bind(1, id)
+                .execute()
         }
         return true
     }
 
-    private fun mapRow(row: org.jdbi.v3.core.result.RowView) = EmailProviderDto(
-        id = row.getColumn("id", String::class.java),
-        name = row.getColumn("name", String::class.java),
-        host = row.getColumn("host", String::class.java),
-        port = (row.getColumn("port", java.lang.Integer::class.java) as? Int) ?: 587,
-        username = row.getColumn("username", String::class.java),
-        fromAddress = row.getColumn("from_address", String::class.java),
-        useTls = row.getColumn("use_tls", java.lang.Boolean::class.java) == true,
-        isDefault = row.getColumn("is_default", java.lang.Boolean::class.java) == true,
-        createdAt = row.getColumn("created_at", String::class.java),
-        updatedAt = row.getColumn("updated_at", String::class.java),
-    )
+    private fun mapRow(row: org.jdbi.v3.core.result.RowView) =
+        EmailProviderDto(
+            id = row.getColumn("id", String::class.java),
+            name = row.getColumn("name", String::class.java),
+            host = row.getColumn("host", String::class.java),
+            port = (row.getColumn("port", java.lang.Integer::class.java) as? Int) ?: 587,
+            username = row.getColumn("username", String::class.java),
+            fromAddress = row.getColumn("from_address", String::class.java),
+            useTls = row.getColumn("use_tls", java.lang.Boolean::class.java) == true,
+            isDefault = row.getColumn("is_default", java.lang.Boolean::class.java) == true,
+            createdAt = row.getColumn("created_at", String::class.java),
+            updatedAt = row.getColumn("updated_at", String::class.java),
+        )
 }

@@ -11,15 +11,20 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class AuthorBrowserIntegrationTest : IntegrationTestBase() {
-
-    private fun setAuthor(token: String, bookId: String, author: String) {
+    private fun setAuthor(
+        token: String,
+        bookId: String,
+        author: String,
+    ) {
         app(
             Request(Method.PUT, "/api/books/$bookId")
                 .header("Cookie", "token=$token")
                 .header("Content-Type", "application/json")
-                .body(Json.mapper.writeValueAsString(
-                    UpdateBookRequest("Book $bookId", author, null),
-                )),
+                .body(
+                    Json.mapper.writeValueAsString(
+                        UpdateBookRequest("Book $bookId", author, null),
+                    ),
+                ),
         )
     }
 
@@ -58,9 +63,10 @@ class AuthorBrowserIntegrationTest : IntegrationTestBase() {
         val bookId = createBook(token, libId, "Foundation")
         setAuthor(token, bookId, "Isaac Asimov")
 
-        val response = app(
-            Request(Method.GET, "/authors/Isaac%20Asimov").header("Cookie", "token=$token"),
-        )
+        val response =
+            app(
+                Request(Method.GET, "/authors/Isaac%20Asimov").header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, response.status)
         assertTrue(response.bodyString().contains("Isaac Asimov"))
     }
@@ -76,9 +82,10 @@ class AuthorBrowserIntegrationTest : IntegrationTestBase() {
         setAuthor(token, b2, "Author Alpha")
         setAuthor(token, b3, "Author Beta")
 
-        val body = app(
-            Request(Method.GET, "/authors/Author%20Alpha").header("Cookie", "token=$token"),
-        ).bodyString()
+        val body =
+            app(
+                Request(Method.GET, "/authors/Author%20Alpha").header("Cookie", "token=$token"),
+            ).bodyString()
         assertTrue(body.contains(b1))
         assertTrue(body.contains(b2))
         assertFalse(body.contains(b3))
@@ -129,14 +136,19 @@ class AuthorBrowserIntegrationTest : IntegrationTestBase() {
         val bookId = createBook(token, libId, "The Hobbit")
         setAuthor(token, bookId, "J.R.R. Tolkien")
 
-        val response = app(
-            Request(Method.GET, "/authors/J.R.R.%20Tolkien").header("Cookie", "token=$token"),
-        )
+        val response =
+            app(
+                Request(Method.GET, "/authors/J.R.R.%20Tolkien").header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, response.status)
         assertTrue(response.bodyString().contains("J.R.R. Tolkien"))
     }
 
-    private fun setStatus(token: String, bookId: String, status: String) {
+    private fun setStatus(
+        token: String,
+        bookId: String,
+        status: String,
+    ) {
         app(
             Request(Method.POST, "/ui/books/$bookId/status")
                 .header("Cookie", "token=$token")
@@ -155,10 +167,14 @@ class AuthorBrowserIntegrationTest : IntegrationTestBase() {
 
         val body = app(Request(Method.GET, "/authors").header("Cookie", "token=$token")).bodyString()
         assertTrue(body.contains("Active Author"), "Author must appear in list")
-        assertTrue(body.contains("author-status-counts"),
-            "Status counts container must appear on author card when a book is READING")
-        assertTrue(body.contains("ri-book-open-line"),
-            "Reading icon must appear on author card when a book is READING")
+        assertTrue(
+            body.contains("author-status-counts"),
+            "Status counts container must appear on author card when a book is READING",
+        )
+        assertTrue(
+            body.contains("ri-book-open-line"),
+            "Reading icon must appear on author card when a book is READING",
+        )
     }
 
     @Test
@@ -171,8 +187,10 @@ class AuthorBrowserIntegrationTest : IntegrationTestBase() {
 
         val body = app(Request(Method.GET, "/authors").header("Cookie", "token=$token")).bodyString()
         assertTrue(body.contains("Done Author"), "Author must appear in list")
-        assertTrue(body.contains("author-status-counts"),
-            "Status counts container must appear on author card when a book is FINISHED")
+        assertTrue(
+            body.contains("author-status-counts"),
+            "Status counts container must appear on author card when a book is FINISHED",
+        )
     }
 
     @Test
@@ -184,7 +202,9 @@ class AuthorBrowserIntegrationTest : IntegrationTestBase() {
 
         val body = app(Request(Method.GET, "/authors").header("Cookie", "token=$token")).bodyString()
         assertTrue(body.contains("Plain Author"), "Author must appear in list")
-        assertFalse(body.contains("author-status-counts"),
-            "Status counts container must not appear when no books have a status")
+        assertFalse(
+            body.contains("author-status-counts"),
+            "Status counts container must not appear when no books have a status",
+        )
     }
 }

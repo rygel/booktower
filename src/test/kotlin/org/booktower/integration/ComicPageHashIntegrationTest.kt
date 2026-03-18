@@ -14,7 +14,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class ComicPageHashIntegrationTest : IntegrationTestBase() {
-
     private val jdbi = TestFixture.database.getJdbi()
     private val service = ComicPageHashService(jdbi, ComicService())
 
@@ -97,10 +96,16 @@ class ComicPageHashIntegrationTest : IntegrationTestBase() {
         val sharedHash = 0x1234567890ABCDEFL
 
         jdbi.useHandle<Exception> { h ->
-            h.createUpdate("INSERT INTO comic_page_hashes (book_id, page_index, phash) VALUES (?, 0, ?)")
-                .bind(0, book1).bind(1, sharedHash).execute()
-            h.createUpdate("INSERT INTO comic_page_hashes (book_id, page_index, phash) VALUES (?, 0, ?)")
-                .bind(0, book2).bind(1, sharedHash).execute()
+            h
+                .createUpdate("INSERT INTO comic_page_hashes (book_id, page_index, phash) VALUES (?, 0, ?)")
+                .bind(0, book1)
+                .bind(1, sharedHash)
+                .execute()
+            h
+                .createUpdate("INSERT INTO comic_page_hashes (book_id, page_index, phash) VALUES (?, 0, ?)")
+                .bind(0, book2)
+                .bind(1, sharedHash)
+                .execute()
         }
 
         val groups = service.findDuplicatePages(UUID.fromString(userId))
@@ -117,10 +122,16 @@ class ComicPageHashIntegrationTest : IntegrationTestBase() {
         val book2 = insertComic(libraryId)
 
         jdbi.useHandle<Exception> { h ->
-            h.createUpdate("INSERT INTO comic_page_hashes (book_id, page_index, phash) VALUES (?, 0, ?)")
-                .bind(0, book1).bind(1, 0x111L).execute()
-            h.createUpdate("INSERT INTO comic_page_hashes (book_id, page_index, phash) VALUES (?, 0, ?)")
-                .bind(0, book2).bind(1, 0x222L).execute()
+            h
+                .createUpdate("INSERT INTO comic_page_hashes (book_id, page_index, phash) VALUES (?, 0, ?)")
+                .bind(0, book1)
+                .bind(1, 0x111L)
+                .execute()
+            h
+                .createUpdate("INSERT INTO comic_page_hashes (book_id, page_index, phash) VALUES (?, 0, ?)")
+                .bind(0, book2)
+                .bind(1, 0x222L)
+                .execute()
         }
 
         val groups = service.findDuplicatePages(UUID.fromString(userId))
@@ -136,10 +147,16 @@ class ComicPageHashIntegrationTest : IntegrationTestBase() {
         val sharedHash = 0xDEADBEEFL
 
         jdbi.useHandle<Exception> { h ->
-            h.createUpdate("INSERT INTO comic_page_hashes (book_id, page_index, phash) VALUES (?, 0, ?)")
-                .bind(0, book1).bind(1, sharedHash).execute()
-            h.createUpdate("INSERT INTO comic_page_hashes (book_id, page_index, phash) VALUES (?, 0, ?)")
-                .bind(0, book2).bind(1, sharedHash).execute()
+            h
+                .createUpdate("INSERT INTO comic_page_hashes (book_id, page_index, phash) VALUES (?, 0, ?)")
+                .bind(0, book1)
+                .bind(1, sharedHash)
+                .execute()
+            h
+                .createUpdate("INSERT INTO comic_page_hashes (book_id, page_index, phash) VALUES (?, 0, ?)")
+                .bind(0, book2)
+                .bind(1, sharedHash)
+                .execute()
         }
 
         val groups = service.findDuplicatePages(UUID.fromString(user1))
@@ -151,33 +168,58 @@ class ComicPageHashIntegrationTest : IntegrationTestBase() {
     private fun createUserAndLibrary(): Pair<String, String> {
         val userId = UUID.randomUUID().toString()
         val libId = UUID.randomUUID().toString()
-        val now = java.time.Instant.now().toString()
+        val now =
+            java.time.Instant
+                .now()
+                .toString()
         jdbi.useHandle<Exception> { h ->
-            h.createUpdate(
-                "INSERT INTO users (id, username, email, password_hash, created_at, updated_at) VALUES (?, ?, ?, 'x', ?, ?)",
-            ).bind(0, userId).bind(1, "u_${userId.take(8)}").bind(2, "e_${userId.take(8)}@x.com")
-                .bind(3, now).bind(4, now).execute()
-            h.createUpdate(
-                "INSERT INTO libraries (id, user_id, name, path, created_at, updated_at) VALUES (?, ?, ?, '/tmp', ?, ?)",
-            ).bind(0, libId).bind(1, userId).bind(2, "L_${libId.take(8)}")
-                .bind(3, now).bind(4, now).execute()
+            h
+                .createUpdate(
+                    "INSERT INTO users (id, username, email, password_hash, created_at, updated_at) VALUES (?, ?, ?, 'x', ?, ?)",
+                ).bind(0, userId)
+                .bind(1, "u_${userId.take(8)}")
+                .bind(2, "e_${userId.take(8)}@x.com")
+                .bind(3, now)
+                .bind(4, now)
+                .execute()
+            h
+                .createUpdate(
+                    "INSERT INTO libraries (id, user_id, name, path, created_at, updated_at) VALUES (?, ?, ?, '/tmp', ?, ?)",
+                ).bind(0, libId)
+                .bind(1, userId)
+                .bind(2, "L_${libId.take(8)}")
+                .bind(3, now)
+                .bind(4, now)
+                .execute()
         }
         return userId to libId
     }
 
     private fun insertComic(libraryId: String): String {
         val id = UUID.randomUUID().toString()
-        val now = java.time.Instant.now().toString()
+        val now =
+            java.time.Instant
+                .now()
+                .toString()
         jdbi.useHandle<Exception> { h ->
-            h.createUpdate(
-                "INSERT INTO books (id, title, library_id, file_path, file_size, added_at) VALUES (?, ?, ?, ?, 0, ?)",
-            ).bind(0, id).bind(1, "Comic_${id.take(8)}").bind(2, libraryId)
-                .bind(3, "/tmp/$id.cbz").bind(4, now).execute()
+            h
+                .createUpdate(
+                    "INSERT INTO books (id, title, library_id, file_path, file_size, added_at) VALUES (?, ?, ?, ?, 0, ?)",
+                ).bind(0, id)
+                .bind(1, "Comic_${id.take(8)}")
+                .bind(2, libraryId)
+                .bind(3, "/tmp/$id.cbz")
+                .bind(4, now)
+                .execute()
         }
         return id
     }
 
-    private fun solidColorJpeg(color: Color, width: Int, height: Int): ByteArray {
+    private fun solidColorJpeg(
+        color: Color,
+        width: Int,
+        height: Int,
+    ): ByteArray {
         val img = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
         val g = img.createGraphics()
         g.color = color
@@ -189,10 +231,15 @@ class ComicPageHashIntegrationTest : IntegrationTestBase() {
     }
 
     /** Black-and-white checkerboard — high-frequency content. */
-    private fun checkerboardJpeg(width: Int, height: Int): ByteArray {
+    private fun checkerboardJpeg(
+        width: Int,
+        height: Int,
+    ): ByteArray {
         val img = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
-        for (y in 0 until height) for (x in 0 until width) {
-            img.setRGB(x, y, if ((x / 8 + y / 8) % 2 == 0) 0xFFFFFF else 0x000000)
+        for (y in 0 until height) {
+            for (x in 0 until width) {
+                img.setRGB(x, y, if ((x / 8 + y / 8) % 2 == 0) 0xFFFFFF else 0x000000)
+            }
         }
         val out = ByteArrayOutputStream()
         ImageIO.write(img, "jpeg", out)
@@ -200,11 +247,16 @@ class ComicPageHashIntegrationTest : IntegrationTestBase() {
     }
 
     /** Left-to-right black→white gradient — low-frequency content. */
-    private fun gradientJpeg(width: Int, height: Int): ByteArray {
+    private fun gradientJpeg(
+        width: Int,
+        height: Int,
+    ): ByteArray {
         val img = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
-        for (y in 0 until height) for (x in 0 until width) {
-            val v = (x * 255 / (width - 1))
-            img.setRGB(x, y, (v shl 16) or (v shl 8) or v)
+        for (y in 0 until height) {
+            for (x in 0 until width) {
+                val v = (x * 255 / (width - 1))
+                img.setRGB(x, y, (v shl 16) or (v shl 8) or v)
+            }
         }
         val out = ByteArrayOutputStream()
         ImageIO.write(img, "jpeg", out)

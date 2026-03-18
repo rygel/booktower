@@ -14,7 +14,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class EpubReaderIntegrationTest : IntegrationTestBase() {
-
     @Test
     fun `reader page requires authentication`() {
         val token = registerAndGetToken("er1")
@@ -41,8 +40,11 @@ class EpubReaderIntegrationTest : IntegrationTestBase() {
     fun `reader page returns 404 for nonexistent book`() {
         val token = registerAndGetToken("er3")
 
-        val response = app(Request(Method.GET, "/books/00000000-0000-0000-0000-000000000000/read")
-            .header("Cookie", "token=$token"))
+        val response =
+            app(
+                Request(Method.GET, "/books/00000000-0000-0000-0000-000000000000/read")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.NOT_FOUND, response.status)
     }
 
@@ -130,12 +132,13 @@ class EpubReaderIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
 
-        val resp = app(
-            Request(Method.POST, "/ui/books/$bookId/progress")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .body("currentPage=55"),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/ui/books/$bookId/progress")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("currentPage=55"),
+            )
         assertEquals(Status.OK, resp.status)
     }
 
@@ -167,19 +170,27 @@ class EpubReaderIntegrationTest : IntegrationTestBase() {
 
             zip.setMethod(ZipOutputStream.DEFLATED)
             zip.putNextEntry(ZipEntry("META-INF/container.xml"))
-            zip.write("""<?xml version="1.0"?><container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles><rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/></rootfiles></container>""".toByteArray())
+            zip.write(
+                """<?xml version="1.0"?><container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles><rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/></rootfiles></container>""".toByteArray(),
+            )
             zip.closeEntry()
 
             zip.putNextEntry(ZipEntry("OEBPS/content.opf"))
-            zip.write("""<?xml version="1.0"?><package xmlns="http://www.idpf.org/2007/opf" version="2.0" unique-identifier="id"><metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>Test</dc:title><dc:identifier id="id">t1</dc:identifier></metadata><manifest><item id="c1" href="c1.xhtml" media-type="application/xhtml+xml"/><item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/></manifest><spine toc="ncx"><itemref idref="c1"/></spine></package>""".toByteArray())
+            zip.write(
+                """<?xml version="1.0"?><package xmlns="http://www.idpf.org/2007/opf" version="2.0" unique-identifier="id"><metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>Test</dc:title><dc:identifier id="id">t1</dc:identifier></metadata><manifest><item id="c1" href="c1.xhtml" media-type="application/xhtml+xml"/><item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/></manifest><spine toc="ncx"><itemref idref="c1"/></spine></package>""".toByteArray(),
+            )
             zip.closeEntry()
 
             zip.putNextEntry(ZipEntry("OEBPS/c1.xhtml"))
-            zip.write("""<?xml version="1.0"?><html xmlns="http://www.w3.org/1999/xhtml"><head><title>C1</title></head><body><p>Test</p></body></html>""".toByteArray())
+            zip.write(
+                """<?xml version="1.0"?><html xmlns="http://www.w3.org/1999/xhtml"><head><title>C1</title></head><body><p>Test</p></body></html>""".toByteArray(),
+            )
             zip.closeEntry()
 
             zip.putNextEntry(ZipEntry("OEBPS/toc.ncx"))
-            zip.write("""<?xml version="1.0"?><ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1"><head><meta name="dtb:uid" content="t1"/></head><docTitle><text>Test</text></docTitle><navMap><navPoint id="n1" playOrder="1"><navLabel><text>C1</text></navLabel><content src="c1.xhtml"/></navPoint></navMap></ncx>""".toByteArray())
+            zip.write(
+                """<?xml version="1.0"?><ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1"><head><meta name="dtb:uid" content="t1"/></head><docTitle><text>Test</text></docTitle><navMap><navPoint id="n1" playOrder="1"><navLabel><text>C1</text></navLabel><content src="c1.xhtml"/></navPoint></navMap></ncx>""".toByteArray(),
+            )
             zip.closeEntry()
         }
         return baos.toByteArray()

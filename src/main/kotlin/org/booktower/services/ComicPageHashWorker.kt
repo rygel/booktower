@@ -19,12 +19,13 @@ class ComicPageHashWorker(
     val throttleMs: Long = 500,
     val pollIntervalMs: Long = 15_000,
 ) {
-    private val executor = Executors.newSingleThreadExecutor { r ->
-        Thread(r, "comic-hasher").also {
-            it.isDaemon = true
-            it.priority = Thread.MIN_PRIORITY
+    private val executor =
+        Executors.newSingleThreadExecutor { r ->
+            Thread(r, "comic-hasher").also {
+                it.isDaemon = true
+                it.priority = Thread.MIN_PRIORITY
+            }
         }
-    }
 
     @Volatile private var running = false
 
@@ -57,11 +58,12 @@ class ComicPageHashWorker(
 
         val counts = service.countByStatus()
         val systemUser = java.util.UUID.fromString("00000000-0000-0000-0000-000000000000")
-        val taskId = backgroundTaskService.start(
-            systemUser,
-            "comic.page.hash",
-            "Hashing pages for ${counts["pending"] ?: 0} comic book(s)",
-        )
+        val taskId =
+            backgroundTaskService.start(
+                systemUser,
+                "comic.page.hash",
+                "Hashing pages for ${counts["pending"] ?: 0} comic book(s)",
+            )
 
         for (book in pending) {
             if (!running) break

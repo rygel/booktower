@@ -9,36 +9,38 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class BulkOperationsIntegrationTest : IntegrationTestBase() {
-
     @Test
     fun `bulk delete requires auth`() {
-        val resp = app(
-            Request(Method.POST, "/api/books/bulk/delete")
-                .header("Content-Type", "application/json")
-                .body("""{"bookIds":[]}"""),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/api/books/bulk/delete")
+                    .header("Content-Type", "application/json")
+                    .body("""{"bookIds":[]}"""),
+            )
         assertEquals(Status.UNAUTHORIZED, resp.status)
     }
 
     @Test
     fun `bulk move requires auth`() {
-        val resp = app(
-            Request(Method.POST, "/api/books/bulk/move")
-                .header("Content-Type", "application/json")
-                .body("""{"bookIds":[],"targetLibraryId":"00000000-0000-0000-0000-000000000000"}"""),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/api/books/bulk/move")
+                    .header("Content-Type", "application/json")
+                    .body("""{"bookIds":[],"targetLibraryId":"00000000-0000-0000-0000-000000000000"}"""),
+            )
         assertEquals(Status.UNAUTHORIZED, resp.status)
     }
 
     @Test
     fun `bulk delete returns 400 for empty bookIds`() {
         val token = registerAndGetToken("bulk")
-        val resp = app(
-            Request(Method.POST, "/api/books/bulk/delete")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"bookIds":[]}"""),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/api/books/bulk/delete")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"bookIds":[]}"""),
+            )
         assertEquals(Status.BAD_REQUEST, resp.status)
     }
 
@@ -49,12 +51,13 @@ class BulkOperationsIntegrationTest : IntegrationTestBase() {
         val book1 = createBook(token, libId, "Bulk Delete 1")
         val book2 = createBook(token, libId, "Bulk Delete 2")
 
-        val resp = app(
-            Request(Method.POST, "/api/books/bulk/delete")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"bookIds":["$book1","$book2"]}"""),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/api/books/bulk/delete")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"bookIds":["$book1","$book2"]}"""),
+            )
         assertEquals(Status.OK, resp.status)
         val body = Json.mapper.readTree(resp.bodyString())
         assertEquals(2, body.get("deleted").asInt())
@@ -67,12 +70,13 @@ class BulkOperationsIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token1)
         val bookId = createBook(token1, libId, "Other User Book")
 
-        val resp = app(
-            Request(Method.POST, "/api/books/bulk/delete")
-                .header("Cookie", "token=$token2")
-                .header("Content-Type", "application/json")
-                .body("""{"bookIds":["$bookId"]}"""),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/api/books/bulk/delete")
+                    .header("Cookie", "token=$token2")
+                    .header("Content-Type", "application/json")
+                    .body("""{"bookIds":["$bookId"]}"""),
+            )
         assertEquals(Status.OK, resp.status)
         val body = Json.mapper.readTree(resp.bodyString())
         // Count should be 0 — user2 doesn't own the book
@@ -87,12 +91,13 @@ class BulkOperationsIntegrationTest : IntegrationTestBase() {
         val book1 = createBook(token, lib1, "Move Me 1")
         val book2 = createBook(token, lib1, "Move Me 2")
 
-        val resp = app(
-            Request(Method.POST, "/api/books/bulk/move")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"bookIds":["$book1","$book2"],"targetLibraryId":"$lib2"}"""),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/api/books/bulk/move")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"bookIds":["$book1","$book2"],"targetLibraryId":"$lib2"}"""),
+            )
         assertEquals(Status.OK, resp.status)
         val body = Json.mapper.readTree(resp.bodyString())
         assertEquals(2, body.get("moved").asInt())
@@ -104,12 +109,13 @@ class BulkOperationsIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
 
-        val resp = app(
-            Request(Method.POST, "/api/books/bulk/move")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"bookIds":["$bookId"],"targetLibraryId":"00000000-0000-0000-0000-000000000000"}"""),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/api/books/bulk/move")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"bookIds":["$bookId"],"targetLibraryId":"00000000-0000-0000-0000-000000000000"}"""),
+            )
         assertEquals(Status.OK, resp.status)
         val body = Json.mapper.readTree(resp.bodyString())
         assertEquals(0, body.get("moved").asInt())
@@ -122,12 +128,13 @@ class BulkOperationsIntegrationTest : IntegrationTestBase() {
         val book1 = createBook(token, libId, "Tag Me 1")
         val book2 = createBook(token, libId, "Tag Me 2")
 
-        val resp = app(
-            Request(Method.POST, "/api/books/bulk/tag")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"bookIds":["$book1","$book2"],"tags":["sci-fi","classic"]}"""),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/api/books/bulk/tag")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"bookIds":["$book1","$book2"],"tags":["sci-fi","classic"]}"""),
+            )
         assertEquals(Status.OK, resp.status)
         val body = Json.mapper.readTree(resp.bodyString())
         assertEquals(2, body.get("updated").asInt())
@@ -148,12 +155,13 @@ class BulkOperationsIntegrationTest : IntegrationTestBase() {
         )
 
         // Clear them
-        val resp = app(
-            Request(Method.POST, "/api/books/bulk/tag")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"bookIds":["$bookId"],"tags":[]}"""),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/api/books/bulk/tag")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"bookIds":["$bookId"],"tags":[]}"""),
+            )
         assertEquals(Status.OK, resp.status)
         val body = Json.mapper.readTree(resp.bodyString())
         assertEquals(1, body.get("updated").asInt())
@@ -166,12 +174,13 @@ class BulkOperationsIntegrationTest : IntegrationTestBase() {
         val book1 = createBook(token, libId, "Status 1")
         val book2 = createBook(token, libId, "Status 2")
 
-        val resp = app(
-            Request(Method.POST, "/api/books/bulk/status")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"bookIds":["$book1","$book2"],"status":"READING"}"""),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/api/books/bulk/status")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"bookIds":["$book1","$book2"],"status":"READING"}"""),
+            )
         assertEquals(Status.OK, resp.status)
         val body = Json.mapper.readTree(resp.bodyString())
         assertEquals(2, body.get("updated").asInt())
@@ -183,12 +192,13 @@ class BulkOperationsIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId, "Clear Status")
 
-        val resp = app(
-            Request(Method.POST, "/api/books/bulk/status")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"bookIds":["$bookId"],"status":"NONE"}"""),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/api/books/bulk/status")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"bookIds":["$bookId"],"status":"NONE"}"""),
+            )
         assertEquals(Status.OK, resp.status)
         val body = Json.mapper.readTree(resp.bodyString())
         assertEquals(1, body.get("updated").asInt())
@@ -197,31 +207,36 @@ class BulkOperationsIntegrationTest : IntegrationTestBase() {
     @Test
     fun `bulk move returns 400 for invalid targetLibraryId`() {
         val token = registerAndGetToken("bulk")
-        val resp = app(
-            Request(Method.POST, "/api/books/bulk/move")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"bookIds":["00000000-0000-0000-0000-000000000001"],"targetLibraryId":"not-a-uuid"}"""),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/api/books/bulk/move")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"bookIds":["00000000-0000-0000-0000-000000000001"],"targetLibraryId":"not-a-uuid"}"""),
+            )
         assertEquals(Status.BAD_REQUEST, resp.status)
     }
 
     @Test
     fun `ScanScheduleService start does not throw with interval 0`() {
         // Interval 0 = disabled; start() should be a no-op
-        val service = org.booktower.services.ScanScheduleService(
-            org.booktower.TestFixture.database.getJdbi(),
-            org.booktower.services.LibraryService(
-                org.booktower.TestFixture.database.getJdbi(),
-                org.booktower.services.PdfMetadataService(
-                    org.booktower.TestFixture.database.getJdbi(),
-                    org.booktower.TestFixture.config.storage.coversPath,
+        val service =
+            org.booktower.services.ScanScheduleService(
+                org.booktower.TestFixture.database
+                    .getJdbi(),
+                org.booktower.services.LibraryService(
+                    org.booktower.TestFixture.database
+                        .getJdbi(),
+                    org.booktower.services.PdfMetadataService(
+                        org.booktower.TestFixture.database
+                            .getJdbi(),
+                        org.booktower.TestFixture.config.storage.coversPath,
+                    ),
                 ),
-            ),
-            0L,
-        )
+                0L,
+            )
         service.start() // should not throw
-        service.stop()  // safe to call even when disabled
+        service.stop() // safe to call even when disabled
         assertTrue(true)
     }
 }

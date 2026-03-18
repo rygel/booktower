@@ -15,7 +15,6 @@ import kotlin.test.assertTrue
  * round-trips are covered by MetadataFetchService unit tests (or manual QA).
  */
 class MetadataFetchIntegrationTest : IntegrationTestBase() {
-
     @Test
     fun `fetch metadata requires auth`() {
         val token = registerAndGetToken()
@@ -31,10 +30,11 @@ class MetadataFetchIntegrationTest : IntegrationTestBase() {
         val token = registerAndGetToken()
         val fakeId = "00000000-0000-0000-0000-000000000000"
 
-        val resp = app(
-            Request(Method.POST, "/ui/books/$fakeId/fetch-metadata")
-                .header("Cookie", "token=$token"),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/ui/books/$fakeId/fetch-metadata")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.NOT_FOUND, resp.status)
     }
 
@@ -45,10 +45,11 @@ class MetadataFetchIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(ownerToken)
         val bookId = createBook(ownerToken, libId, "Private Book")
 
-        val resp = app(
-            Request(Method.POST, "/ui/books/$bookId/fetch-metadata")
-                .header("Cookie", "token=$otherToken"),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/ui/books/$bookId/fetch-metadata")
+                    .header("Cookie", "token=$otherToken"),
+            )
         assertEquals(Status.NOT_FOUND, resp.status)
     }
 
@@ -56,10 +57,11 @@ class MetadataFetchIntegrationTest : IntegrationTestBase() {
     fun `fetch metadata returns 400 for malformed book id`() {
         val token = registerAndGetToken()
 
-        val resp = app(
-            Request(Method.POST, "/ui/books/not-a-uuid/fetch-metadata")
-                .header("Cookie", "token=$token"),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/ui/books/not-a-uuid/fetch-metadata")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.BAD_REQUEST, resp.status)
     }
 
@@ -73,10 +75,11 @@ class MetadataFetchIntegrationTest : IntegrationTestBase() {
         // (the MetadataFetchService catches all exceptions and returns null).
         val bookId = createBook(token, libId, "xyzzy_no_match_${System.nanoTime()}")
 
-        val resp = app(
-            Request(Method.POST, "/ui/books/$bookId/fetch-metadata")
-                .header("Cookie", "token=$token"),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/ui/books/$bookId/fetch-metadata")
+                    .header("Cookie", "token=$token"),
+            )
         // Either 200 (not found / network error) or redirect (HX-Redirect on success).
         // Both are acceptable — the route is wired and auth passes.
         assertTrue(

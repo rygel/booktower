@@ -31,9 +31,10 @@ class AnnotationServiceTest {
         bookService = BookService(jdbi)
         annotationService = AnnotationService(jdbi)
 
-        val result = authService.register(
-            CreateUserRequest("ann_${System.nanoTime()}", "ann_${System.nanoTime()}@test.com", "password123"),
-        )
+        val result =
+            authService.register(
+                CreateUserRequest("ann_${System.nanoTime()}", "ann_${System.nanoTime()}@test.com", "password123"),
+            )
         userId = jwtService.extractUserId(result.getOrThrow().token)!!
         val libId = libraryService.createLibrary(userId, CreateLibraryRequest("Ann Lib", "./data/ann-${System.nanoTime()}")).id
         val book = bookService.createBook(userId, CreateBookRequest("Annotation Book", "Author", null, libId)).getOrThrow()
@@ -91,9 +92,10 @@ class AnnotationServiceTest {
     @Test
     fun `deleteAnnotation does not delete another user's annotation`() {
         val ann = annotationService.createAnnotation(userId, bookId, 3, "mine", "green")
-        val otherResult = authService.register(
-            CreateUserRequest("annother_${System.nanoTime()}", "annother_${System.nanoTime()}@test.com", "password123"),
-        )
+        val otherResult =
+            authService.register(
+                CreateUserRequest("annother_${System.nanoTime()}", "annother_${System.nanoTime()}@test.com", "password123"),
+            )
         val otherId = jwtService.extractUserId(otherResult.getOrThrow().token)!!
         val deleted = annotationService.deleteAnnotation(otherId, UUID.fromString(ann.id))
         assertFalse(deleted)
@@ -117,9 +119,10 @@ class AnnotationServiceTest {
     @Test
     fun `annotations are isolated between users`() {
         annotationService.createAnnotation(userId, bookId, 1, "user1 note", "yellow")
-        val otherResult = authService.register(
-            CreateUserRequest("anniso_${System.nanoTime()}", "anniso_${System.nanoTime()}@test.com", "password123"),
-        )
+        val otherResult =
+            authService.register(
+                CreateUserRequest("anniso_${System.nanoTime()}", "anniso_${System.nanoTime()}@test.com", "password123"),
+            )
         val otherId = jwtService.extractUserId(otherResult.getOrThrow().token)!!
         assertTrue(annotationService.getAnnotations(otherId, bookId).isEmpty())
     }

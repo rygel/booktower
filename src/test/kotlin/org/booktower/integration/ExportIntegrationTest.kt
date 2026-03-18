@@ -13,7 +13,6 @@ import kotlin.test.assertTrue
  * Integration tests for GET /api/export — user data JSON export.
  */
 class ExportIntegrationTest : IntegrationTestBase() {
-
     @Test
     fun `export returns 401 when unauthenticated`() {
         val resp = app(Request(Method.GET, "/api/export"))
@@ -24,10 +23,11 @@ class ExportIntegrationTest : IntegrationTestBase() {
     fun `export returns valid JSON with user structure`() {
         val token = registerAndGetToken("export_basic")
 
-        val resp = app(
-            Request(Method.GET, "/api/export")
-                .header("Cookie", "token=$token"),
-        )
+        val resp =
+            app(
+                Request(Method.GET, "/api/export")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, resp.status)
         val body = Json.mapper.readTree(resp.bodyString())
         assertNotNull(body.get("username"), "Should have username")
@@ -43,10 +43,11 @@ class ExportIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         createBook(token, libId, "My Exported Book")
 
-        val resp = app(
-            Request(Method.GET, "/api/export")
-                .header("Cookie", "token=$token"),
-        )
+        val resp =
+            app(
+                Request(Method.GET, "/api/export")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, resp.status)
         val body = Json.mapper.readTree(resp.bodyString())
         val libraries = body.get("libraries")
@@ -70,10 +71,11 @@ class ExportIntegrationTest : IntegrationTestBase() {
                 .body("""{"bookId":"$bookId","page":42,"title":"My Mark","note":null}"""),
         )
 
-        val resp = app(
-            Request(Method.GET, "/api/export")
-                .header("Cookie", "token=$token"),
-        )
+        val resp =
+            app(
+                Request(Method.GET, "/api/export")
+                    .header("Cookie", "token=$token"),
+            )
         val body = Json.mapper.readTree(resp.bodyString())
         val books = body.get("libraries")[0].get("books")
         val bookmarks = books[0].get("bookmarks")
@@ -87,10 +89,11 @@ class ExportIntegrationTest : IntegrationTestBase() {
     fun `export content-disposition header set for download`() {
         val token = registerAndGetToken("export_dl")
 
-        val resp = app(
-            Request(Method.GET, "/api/export")
-                .header("Cookie", "token=$token"),
-        )
+        val resp =
+            app(
+                Request(Method.GET, "/api/export")
+                    .header("Cookie", "token=$token"),
+            )
         val disposition = resp.header("Content-Disposition") ?: ""
         assertTrue(disposition.contains("attachment"), "Should be a download attachment")
         assertTrue(disposition.contains(".json"), "Filename should end with .json")
@@ -107,10 +110,11 @@ class ExportIntegrationTest : IntegrationTestBase() {
         val libB = createLibrary(tokenB)
         createBook(tokenB, libB, "User B Private Book")
 
-        val exportA = app(
-            Request(Method.GET, "/api/export")
-                .header("Cookie", "token=$tokenA"),
-        )
+        val exportA =
+            app(
+                Request(Method.GET, "/api/export")
+                    .header("Cookie", "token=$tokenA"),
+            )
         val bodyA = exportA.bodyString()
         assertTrue(bodyA.contains("User A Secret Book"), "User A's export should have their book")
         assertTrue(!bodyA.contains("User B Private Book"), "User A's export must not contain User B's book")

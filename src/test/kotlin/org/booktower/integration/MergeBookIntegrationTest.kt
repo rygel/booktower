@@ -8,7 +8,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class MergeBookIntegrationTest : IntegrationTestBase() {
-
     @Test
     fun `merge source into target returns 200 and source is deleted`() {
         val token = registerAndGetToken("merge")
@@ -16,28 +15,31 @@ class MergeBookIntegrationTest : IntegrationTestBase() {
         val targetId = createBook(token, libId, "Target Book")
         val sourceId = createBook(token, libId, "Source Book")
 
-        val response = app(
-            Request(Method.POST, "/api/books/$targetId/merge")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"sourceId":"$sourceId"}""")
-        )
+        val response =
+            app(
+                Request(Method.POST, "/api/books/$targetId/merge")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"sourceId":"$sourceId"}"""),
+            )
         assertEquals(200, response.status.code)
         val body = Json.mapper.readTree(response.bodyString())
         assertTrue(body.get("merged").asBoolean())
 
         // Source should be gone
-        val sourceGet = app(
-            Request(Method.GET, "/api/books/$sourceId")
-                .header("Cookie", "token=$token")
-        )
+        val sourceGet =
+            app(
+                Request(Method.GET, "/api/books/$sourceId")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(404, sourceGet.status.code)
 
         // Target should still exist
-        val targetGet = app(
-            Request(Method.GET, "/api/books/$targetId")
-                .header("Cookie", "token=$token")
-        )
+        val targetGet =
+            app(
+                Request(Method.GET, "/api/books/$targetId")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(200, targetGet.status.code)
     }
 
@@ -47,12 +49,13 @@ class MergeBookIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val targetId = createBook(token, libId)
 
-        val response = app(
-            Request(Method.POST, "/api/books/$targetId/merge")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"sourceId":"not-a-uuid"}""")
-        )
+        val response =
+            app(
+                Request(Method.POST, "/api/books/$targetId/merge")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"sourceId":"not-a-uuid"}"""),
+            )
         assertEquals(400, response.status.code)
     }
 
@@ -61,14 +64,18 @@ class MergeBookIntegrationTest : IntegrationTestBase() {
         val token = registerAndGetToken("merge3")
         val libId = createLibrary(token)
         val targetId = createBook(token, libId)
-        val fakeId = java.util.UUID.randomUUID().toString()
+        val fakeId =
+            java.util.UUID
+                .randomUUID()
+                .toString()
 
-        val response = app(
-            Request(Method.POST, "/api/books/$targetId/merge")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"sourceId":"$fakeId"}""")
-        )
+        val response =
+            app(
+                Request(Method.POST, "/api/books/$targetId/merge")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"sourceId":"$fakeId"}"""),
+            )
         assertEquals(404, response.status.code)
     }
 
@@ -78,12 +85,13 @@ class MergeBookIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
 
-        val response = app(
-            Request(Method.POST, "/api/books/$bookId/merge")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"sourceId":"$bookId"}""")
-        )
+        val response =
+            app(
+                Request(Method.POST, "/api/books/$bookId/merge")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"sourceId":"$bookId"}"""),
+            )
         assertEquals(404, response.status.code)
     }
 
@@ -94,11 +102,12 @@ class MergeBookIntegrationTest : IntegrationTestBase() {
         val targetId = createBook(token, libId)
         val sourceId = createBook(token, libId)
 
-        val response = app(
-            Request(Method.POST, "/api/books/$targetId/merge")
-                .header("Content-Type", "application/json")
-                .body("""{"sourceId":"$sourceId"}""")
-        )
+        val response =
+            app(
+                Request(Method.POST, "/api/books/$targetId/merge")
+                    .header("Content-Type", "application/json")
+                    .body("""{"sourceId":"$sourceId"}"""),
+            )
         assertEquals(401, response.status.code)
     }
 
@@ -112,12 +121,13 @@ class MergeBookIntegrationTest : IntegrationTestBase() {
         val otherBook = createBook(otherToken, otherLib)
 
         // Other user tries to merge owner's book into their own book
-        val response = app(
-            Request(Method.POST, "/api/books/$otherBook/merge")
-                .header("Cookie", "token=$otherToken")
-                .header("Content-Type", "application/json")
-                .body("""{"sourceId":"$ownerBook"}""")
-        )
+        val response =
+            app(
+                Request(Method.POST, "/api/books/$otherBook/merge")
+                    .header("Cookie", "token=$otherToken")
+                    .header("Content-Type", "application/json")
+                    .body("""{"sourceId":"$ownerBook"}"""),
+            )
         // ownerBook doesn't belong to otherToken, so returns 404
         assertEquals(404, response.status.code)
     }
@@ -130,18 +140,21 @@ class MergeBookIntegrationTest : IntegrationTestBase() {
         val sourceId = createBook(token, libId, "Source")
 
         // Add a tag to source via the UI form endpoint
-        app(Request(Method.POST, "/ui/books/$sourceId/tags")
-            .header("Cookie", "token=$token")
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .body("tags=unique-source-tag"))
+        app(
+            Request(Method.POST, "/ui/books/$sourceId/tags")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .body("tags=unique-source-tag"),
+        )
 
         // Merge
-        val mergeResponse = app(
-            Request(Method.POST, "/api/books/$targetId/merge")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"sourceId":"$sourceId"}""")
-        )
+        val mergeResponse =
+            app(
+                Request(Method.POST, "/api/books/$targetId/merge")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"sourceId":"$sourceId"}"""),
+            )
         assertEquals(200, mergeResponse.status.code)
 
         // Target should have the tag

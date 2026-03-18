@@ -11,8 +11,8 @@ val AGE_RATING_ORDER = listOf("G", "PG", "PG-13", "R", "NC-17", "X")
 
 data class ContentRestrictions(
     val userId: String,
-    val maxAgeRating: String?,       // null = unrestricted
-    val blockedTags: List<String>,   // tags whose books are always hidden
+    val maxAgeRating: String?,
+    val blockedTags: List<String>,
 )
 
 class ContentRestrictionsService(
@@ -35,14 +35,20 @@ class ContentRestrictionsService(
         )
     }
 
-    fun setMaxAgeRating(userId: UUID, maxRating: String?) {
+    fun setMaxAgeRating(
+        userId: UUID,
+        maxRating: String?,
+    ) {
         if (maxRating != null) {
             require(maxRating in AGE_RATING_ORDER) { "Unknown age rating: $maxRating. Valid: ${AGE_RATING_ORDER.joinToString()}" }
         }
         userSettingsService.set(userId, KEY_MAX_AGE_RATING, maxRating ?: "")
     }
 
-    fun setBlockedTags(userId: UUID, tags: List<String>) {
+    fun setBlockedTags(
+        userId: UUID,
+        tags: List<String>,
+    ) {
         userSettingsService.set(userId, KEY_BLOCKED_TAGS, tags.joinToString(","))
     }
 
@@ -50,13 +56,16 @@ class ContentRestrictionsService(
      * Returns true if a book with [bookAgeRating] is allowed for [userId].
      * Books without an age rating are always permitted (null = unrated = allowed).
      */
-    fun isAllowed(userId: UUID, bookAgeRating: String?): Boolean {
+    fun isAllowed(
+        userId: UUID,
+        bookAgeRating: String?,
+    ): Boolean {
         if (bookAgeRating == null) return true
         val restrictions = get(userId)
-        val maxRating = restrictions.maxAgeRating ?: return true   // no restriction
+        val maxRating = restrictions.maxAgeRating ?: return true // no restriction
         val maxIdx = AGE_RATING_ORDER.indexOf(maxRating)
         val bookIdx = AGE_RATING_ORDER.indexOf(bookAgeRating)
-        if (bookIdx < 0) return true  // unknown rating = allow
+        if (bookIdx < 0) return true // unknown rating = allow
         return bookIdx <= maxIdx
     }
 }

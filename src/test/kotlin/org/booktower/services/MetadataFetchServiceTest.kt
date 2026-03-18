@@ -12,11 +12,14 @@ import kotlin.test.assertNull
  * that callers get correctly shaped results and null-handling is correct.
  */
 class MetadataFetchServiceTest {
-
     /** Returns a pre-configured result instead of calling Open Library. */
     private fun stubService(result: FetchedMetadata?): MetadataFetchService =
         object : MetadataFetchService() {
-            override fun fetchMetadata(title: String, author: String?, source: String?): FetchedMetadata? = result
+            override fun fetchMetadata(
+                title: String,
+                author: String?,
+                source: String?,
+            ): FetchedMetadata? = result
         }
 
     @Test
@@ -27,15 +30,16 @@ class MetadataFetchServiceTest {
 
     @Test
     fun `fetchMetadata returns metadata when stub provides a result`() {
-        val metadata = FetchedMetadata(
-            title = "Dune",
-            author = "Frank Herbert",
-            description = "A sci-fi classic.",
-            isbn = "9780441013593",
-            publisher = "Ace Books",
-            publishedDate = "1965",
-            openLibraryCoverId = 12345L,
-        )
+        val metadata =
+            FetchedMetadata(
+                title = "Dune",
+                author = "Frank Herbert",
+                description = "A sci-fi classic.",
+                isbn = "9780441013593",
+                publisher = "Ace Books",
+                publishedDate = "1965",
+                openLibraryCoverId = 12345L,
+            )
         val service = stubService(metadata)
         val result = service.fetchMetadata("Dune", "Frank Herbert")
         assertNotNull(result)
@@ -50,15 +54,16 @@ class MetadataFetchServiceTest {
 
     @Test
     fun `fetchMetadata handles null author gracefully`() {
-        val metadata = FetchedMetadata(
-            title = "Unknown Author Book",
-            author = null,
-            description = null,
-            isbn = null,
-            publisher = null,
-            publishedDate = null,
-            openLibraryCoverId = null,
-        )
+        val metadata =
+            FetchedMetadata(
+                title = "Unknown Author Book",
+                author = null,
+                description = null,
+                isbn = null,
+                publisher = null,
+                publishedDate = null,
+                openLibraryCoverId = null,
+            )
         val service = stubService(metadata)
         val result = service.fetchMetadata("Unknown Author Book", null)
         assertNotNull(result)
@@ -68,15 +73,16 @@ class MetadataFetchServiceTest {
 
     @Test
     fun `fetchMetadata handles partial metadata`() {
-        val metadata = FetchedMetadata(
-            title = "Partial",
-            author = "Some Author",
-            description = null,
-            isbn = null,
-            publisher = null,
-            publishedDate = "2000",
-            openLibraryCoverId = null,
-        )
+        val metadata =
+            FetchedMetadata(
+                title = "Partial",
+                author = "Some Author",
+                description = null,
+                isbn = null,
+                publisher = null,
+                publishedDate = "2000",
+                openLibraryCoverId = null,
+            )
         val service = stubService(metadata)
         val result = service.fetchMetadata("Partial", "Some Author")
         assertNotNull(result)
@@ -102,12 +108,17 @@ class MetadataFetchServiceTest {
     fun `MetadataFetchService can be subclassed for dependency injection`() {
         // Verifies the open class / open method contract works as expected.
         var called = false
-        val service = object : MetadataFetchService() {
-            override fun fetchMetadata(title: String, author: String?, source: String?): FetchedMetadata? {
-                called = true
-                return null
+        val service =
+            object : MetadataFetchService() {
+                override fun fetchMetadata(
+                    title: String,
+                    author: String?,
+                    source: String?,
+                ): FetchedMetadata? {
+                    called = true
+                    return null
+                }
             }
-        }
         service.fetchMetadata("Any Title", null)
         assertEquals(true, called)
     }

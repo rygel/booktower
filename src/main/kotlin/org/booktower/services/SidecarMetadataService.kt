@@ -15,7 +15,6 @@ private val logger = LoggerFactory.getLogger("booktower.SidecarMetadataService")
  * NFO is a simple XML-like format used by some media managers.
  */
 object SidecarMetadataService {
-
     /**
      * Looks for a sidecar file next to [bookFilePath] and parses it.
      * Returns null if no sidecar exists or parsing fails.
@@ -26,20 +25,22 @@ object SidecarMetadataService {
         val base = bookFile.nameWithoutExtension
 
         // Priority: same-name .opf, then same-name .nfo, then any metadata.opf in the same dir
-        val candidates = listOf(
-            File(dir, "$base.opf"),
-            File(dir, "$base.nfo"),
-            File(dir, "metadata.opf"),
-            File(dir, "book.nfo"),
-        )
+        val candidates =
+            listOf(
+                File(dir, "$base.opf"),
+                File(dir, "$base.nfo"),
+                File(dir, "metadata.opf"),
+                File(dir, "book.nfo"),
+            )
 
         for (sidecar in candidates) {
             if (sidecar.exists() && sidecar.isFile) {
-                val result = when (sidecar.extension.lowercase()) {
-                    "opf" -> parseOpf(sidecar)
-                    "nfo" -> parseNfo(sidecar)
-                    else -> null
-                }
+                val result =
+                    when (sidecar.extension.lowercase()) {
+                        "opf" -> parseOpf(sidecar)
+                        "nfo" -> parseNfo(sidecar)
+                        else -> null
+                    }
                 if (result != null) {
                     logger.info("Loaded sidecar metadata from ${sidecar.name} for $bookFilePath")
                     return result
@@ -53,18 +54,36 @@ object SidecarMetadataService {
 
     internal fun parseOpf(file: File): FetchedMetadata? {
         return try {
-            val doc = DocumentBuilderFactory.newInstance().also { it.isNamespaceAware = true }
-                .newDocumentBuilder().parse(file)
+            val doc =
+                DocumentBuilderFactory
+                    .newInstance()
+                    .also { it.isNamespaceAware = true }
+                    .newDocumentBuilder()
+                    .parse(file)
             doc.documentElement.normalize()
 
             fun tag(name: String): String? {
                 val nodes = doc.getElementsByTagNameNS("*", name)
-                return if (nodes.length > 0) nodes.item(0).textContent?.trim()?.takeIf { it.isNotBlank() } else null
+                return if (nodes.length > 0) {
+                    nodes
+                        .item(0)
+                        .textContent
+                        ?.trim()
+                        ?.takeIf { it.isNotBlank() }
+                } else {
+                    null
+                }
             }
 
             fun tags(name: String): List<String> {
                 val nodes = doc.getElementsByTagNameNS("*", name)
-                return (0 until nodes.length).mapNotNull { nodes.item(it).textContent?.trim()?.takeIf { s -> s.isNotBlank() } }
+                return (0 until nodes.length).mapNotNull {
+                    nodes
+                        .item(it)
+                        .textContent
+                        ?.trim()
+                        ?.takeIf { s -> s.isNotBlank() }
+                }
             }
 
             // Series info lives in meta elements: <meta name="calibre:series" content="..."/>
@@ -105,13 +124,24 @@ object SidecarMetadataService {
 
     internal fun parseNfo(file: File): FetchedMetadata? {
         return try {
-            val doc = DocumentBuilderFactory.newInstance()
-                .newDocumentBuilder().parse(file)
+            val doc =
+                DocumentBuilderFactory
+                    .newInstance()
+                    .newDocumentBuilder()
+                    .parse(file)
             doc.documentElement.normalize()
 
             fun tag(name: String): String? {
                 val nodes = doc.getElementsByTagName(name)
-                return if (nodes.length > 0) nodes.item(0).textContent?.trim()?.takeIf { it.isNotBlank() } else null
+                return if (nodes.length > 0) {
+                    nodes
+                        .item(0)
+                        .textContent
+                        ?.trim()
+                        ?.takeIf { it.isNotBlank() }
+                } else {
+                    null
+                }
             }
 
             FetchedMetadata(

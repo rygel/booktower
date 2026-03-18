@@ -16,14 +16,15 @@ import java.time.Instant
 import java.util.Base64
 import java.util.UUID
 
-private val OPDS_CONTENT_TYPES = mapOf(
-    "pdf"  to "application/pdf",
-    "epub" to "application/epub+zip",
-    "mobi" to "application/x-mobipocket-ebook",
-    "cbz"  to "application/vnd.comicbook+zip",
-    "cbr"  to "application/vnd.comicbook-rar",
-    "fb2"  to "application/x-fictionbook+xml",
-)
+private val OPDS_CONTENT_TYPES =
+    mapOf(
+        "pdf" to "application/pdf",
+        "epub" to "application/epub+zip",
+        "mobi" to "application/x-mobipocket-ebook",
+        "cbz" to "application/vnd.comicbook+zip",
+        "cbr" to "application/vnd.comicbook-rar",
+        "fb2" to "application/x-fictionbook+xml",
+    )
 
 /**
  * OPDS Catalog 1.2 handler.
@@ -46,7 +47,6 @@ class OpdsHandler(
     private val apiTokenService: ApiTokenService,
     private val opdsCredentialsService: OpdsCredentialsService? = null,
 ) {
-
     // ── Authentication ────────────────────────────────────────────────────────
 
     /**
@@ -89,8 +89,9 @@ class OpdsHandler(
         val libraries = libraryService.getLibraries(userId)
         val updated = Instant.now().toString()
 
-        val entries = libraries.joinToString("\n") { lib ->
-            """  <entry>
+        val entries =
+            libraries.joinToString("\n") { lib ->
+                """  <entry>
     <id>urn:booktower:library:${lib.id}</id>
     <title>${x(lib.name)}</title>
     <updated>$updated</updated>
@@ -99,19 +100,20 @@ class OpdsHandler(
           href="/opds/catalog/${lib.id}"
           type="application/atom+xml;profile=opds-catalog;kind=acquisition"/>
   </entry>"""
-        }
+            }
 
         return opdsResponse(
             contentType = "application/atom+xml;profile=opds-catalog;kind=navigation",
-            body = navigationFeed(
-                id = "urn:booktower:catalog",
-                title = "BookTower",
-                selfHref = "/opds/catalog",
-                selfKind = "navigation",
-                updated = updated,
-                extraLinks = "",
-                entries = entries,
-            ),
+            body =
+                navigationFeed(
+                    id = "urn:booktower:catalog",
+                    title = "BookTower",
+                    selfHref = "/opds/catalog",
+                    selfKind = "navigation",
+                    updated = updated,
+                    extraLinks = "",
+                    entries = entries,
+                ),
         )
     }
 
@@ -120,19 +122,27 @@ class OpdsHandler(
     /** GET /opds/catalog/{libraryId} */
     fun library(req: Request): Response {
         val userId = authenticate(req) ?: return unauthorized()
-        val libIdStr = req.uri.path.split("/").filter { it.isNotBlank() }.lastOrNull()
-            ?: return Response(Status.NOT_FOUND)
-        val libId = try { UUID.fromString(libIdStr) } catch (_: Exception) {
-            return Response(Status.NOT_FOUND)
-        }
+        val libIdStr =
+            req.uri.path
+                .split("/")
+                .filter { it.isNotBlank() }
+                .lastOrNull()
+                ?: return Response(Status.NOT_FOUND)
+        val libId =
+            try {
+                UUID.fromString(libIdStr)
+            } catch (_: Exception) {
+                return Response(Status.NOT_FOUND)
+            }
         val library = libraryService.getLibrary(userId, libId) ?: return Response(Status.NOT_FOUND)
         val books = bookService.getBooks(userId, libId.toString(), 1, 100).getBooks()
         val updated = Instant.now().toString()
 
-        val entries = books.joinToString("\n") { book ->
-            val chapters = bookService.getBookFiles(userId, UUID.fromString(book.id))
-            bookEntry(book, updated, chapters)
-        }
+        val entries =
+            books.joinToString("\n") { book ->
+                val chapters = bookService.getBookFiles(userId, UUID.fromString(book.id))
+                bookEntry(book, updated, chapters)
+            }
 
         val upLink = """  <link rel="up"
         href="/opds/catalog"
@@ -140,15 +150,16 @@ class OpdsHandler(
 
         return opdsResponse(
             contentType = "application/atom+xml;profile=opds-catalog;kind=acquisition",
-            body = navigationFeed(
-                id = "urn:booktower:library:${library.id}",
-                title = library.name,
-                selfHref = "/opds/catalog/${library.id}",
-                selfKind = "acquisition",
-                updated = updated,
-                extraLinks = upLink,
-                entries = entries,
-            ),
+            body =
+                navigationFeed(
+                    id = "urn:booktower:library:${library.id}",
+                    title = library.name,
+                    selfHref = "/opds/catalog/${library.id}",
+                    selfKind = "acquisition",
+                    updated = updated,
+                    extraLinks = upLink,
+                    entries = entries,
+                ),
         )
     }
 
@@ -158,25 +169,29 @@ class OpdsHandler(
     fun streamChapter(req: Request): Response {
         val userId = authenticate(req) ?: return unauthorized()
         val pathParts = req.uri.path.split("/")
-        val trackIndex = pathParts.lastOrNull()?.toIntOrNull()
-            ?: return Response(Status.NOT_FOUND)
-        val bookId = try {
-            UUID.fromString(pathParts.dropLast(2).lastOrNull() ?: return Response(Status.NOT_FOUND))
-        } catch (_: Exception) {
-            return Response(Status.NOT_FOUND)
-        }
+        val trackIndex =
+            pathParts.lastOrNull()?.toIntOrNull()
+                ?: return Response(Status.NOT_FOUND)
+        val bookId =
+            try {
+                UUID.fromString(pathParts.dropLast(2).lastOrNull() ?: return Response(Status.NOT_FOUND))
+            } catch (_: Exception) {
+                return Response(Status.NOT_FOUND)
+            }
 
-        val filePath = bookService.getBookFilePath(userId, bookId, trackIndex)
-            ?: return Response(Status.NOT_FOUND)
+        val filePath =
+            bookService.getBookFilePath(userId, bookId, trackIndex)
+                ?: return Response(Status.NOT_FOUND)
         val file = File(filePath)
         if (!file.exists() || !file.isFile) return Response(Status.NOT_FOUND)
 
-        val contentType = when (file.extension.lowercase()) {
-            "m4a", "m4b", "aac" -> "audio/mp4"
-            "ogg" -> "audio/ogg"
-            "flac" -> "audio/flac"
-            else -> "audio/mpeg"
-        }
+        val contentType =
+            when (file.extension.lowercase()) {
+                "m4a", "m4b", "aac" -> "audio/mp4"
+                "ogg" -> "audio/ogg"
+                "flac" -> "audio/flac"
+                else -> "audio/mpeg"
+            }
         return Response(Status.OK)
             .header("Content-Type", contentType)
             .header("Content-Length", file.length().toString())
@@ -189,13 +204,21 @@ class OpdsHandler(
     /** GET /opds/books/{id}/file */
     fun download(req: Request): Response {
         val userId = authenticate(req) ?: return unauthorized()
-        val bookIdStr = req.uri.path.split("/").dropLast(1).lastOrNull()
-            ?: return Response(Status.NOT_FOUND)
-        val bookId = try { UUID.fromString(bookIdStr) } catch (_: Exception) {
-            return Response(Status.NOT_FOUND)
-        }
-        val filePath = bookService.getBookFilePath(userId, bookId)
-            ?: return Response(Status.NOT_FOUND)
+        val bookIdStr =
+            req.uri.path
+                .split("/")
+                .dropLast(1)
+                .lastOrNull()
+                ?: return Response(Status.NOT_FOUND)
+        val bookId =
+            try {
+                UUID.fromString(bookIdStr)
+            } catch (_: Exception) {
+                return Response(Status.NOT_FOUND)
+            }
+        val filePath =
+            bookService.getBookFilePath(userId, bookId)
+                ?: return Response(Status.NOT_FOUND)
         if (filePath.isBlank()) return Response(Status.NOT_FOUND)
 
         val file = File(filePath)
@@ -213,7 +236,11 @@ class OpdsHandler(
 
     // ── XML helpers ───────────────────────────────────────────────────────────
 
-    private fun bookEntry(book: BookDto, updated: String, chapters: List<BookFileDto> = emptyList()): String {
+    private fun bookEntry(
+        book: BookDto,
+        updated: String,
+        chapters: List<BookFileDto> = emptyList(),
+    ): String {
         val sb = StringBuilder()
         sb.append("  <entry>\n")
         sb.append("    <id>urn:uuid:${book.id}</id>\n")
@@ -247,12 +274,13 @@ class OpdsHandler(
         for (ch in chapters.sortedBy { it.trackIndex }) {
             val chTitle = x(ch.title ?: "Chapter ${ch.trackIndex + 1}")
             val ext = ch.filePath?.substringAfterLast('.', "")?.lowercase() ?: ""
-            val mimeType = when (ext) {
-                "m4a", "m4b", "aac" -> "audio/mp4"
-                "ogg" -> "audio/ogg"
-                "flac" -> "audio/flac"
-                else -> "audio/mpeg"
-            }
+            val mimeType =
+                when (ext) {
+                    "m4a", "m4b", "aac" -> "audio/mp4"
+                    "ogg" -> "audio/ogg"
+                    "flac" -> "audio/flac"
+                    else -> "audio/mpeg"
+                }
             sb.append("    <link rel=\"http://opds-spec.org/acquisition\"\n")
             sb.append("          href=\"/opds/books/${book.id}/chapters/${ch.trackIndex}\"\n")
             sb.append("          type=\"$mimeType\"\n")
@@ -270,40 +298,45 @@ class OpdsHandler(
         updated: String,
         extraLinks: String,
         entries: String,
-    ): String = buildString {
-        appendLine("""<?xml version="1.0" encoding="UTF-8"?>""")
-        appendLine("""<feed xmlns="http://www.w3.org/2005/Atom"""")
-        appendLine("""      xmlns:opds="http://opds-spec.org/2010/catalog"""")
-        appendLine("""      xmlns:dc="http://purl.org/dc/terms/">""")
-        appendLine("  <id>$id</id>")
-        appendLine("  <title>${x(title)}</title>")
-        appendLine("  <updated>$updated</updated>")
-        appendLine("  <author><name>BookTower</name></author>")
-        appendLine("""  <link rel="self"""")
-        appendLine("""        href="$selfHref"""")
-        appendLine("""        type="application/atom+xml;profile=opds-catalog;kind=$selfKind"/>""")
-        appendLine("""  <link rel="start"""")
-        appendLine("""        href="/opds/catalog"""")
-        appendLine("""        type="application/atom+xml;profile=opds-catalog;kind=navigation"/>""")
-        if (extraLinks.isNotBlank()) {
-            appendLine(extraLinks)
+    ): String =
+        buildString {
+            appendLine("""<?xml version="1.0" encoding="UTF-8"?>""")
+            appendLine("""<feed xmlns="http://www.w3.org/2005/Atom"""")
+            appendLine("""      xmlns:opds="http://opds-spec.org/2010/catalog"""")
+            appendLine("""      xmlns:dc="http://purl.org/dc/terms/">""")
+            appendLine("  <id>$id</id>")
+            appendLine("  <title>${x(title)}</title>")
+            appendLine("  <updated>$updated</updated>")
+            appendLine("  <author><name>BookTower</name></author>")
+            appendLine("""  <link rel="self"""")
+            appendLine("""        href="$selfHref"""")
+            appendLine("""        type="application/atom+xml;profile=opds-catalog;kind=$selfKind"/>""")
+            appendLine("""  <link rel="start"""")
+            appendLine("""        href="/opds/catalog"""")
+            appendLine("""        type="application/atom+xml;profile=opds-catalog;kind=navigation"/>""")
+            if (extraLinks.isNotBlank()) {
+                appendLine(extraLinks)
+            }
+            if (entries.isNotBlank()) {
+                appendLine(entries)
+            }
+            append("</feed>")
         }
-        if (entries.isNotBlank()) {
-            appendLine(entries)
-        }
-        append("</feed>")
-    }
 
-    private fun opdsResponse(contentType: String, body: String): Response =
+    private fun opdsResponse(
+        contentType: String,
+        body: String,
+    ): Response =
         Response(Status.OK)
             .header("Content-Type", "$contentType; charset=utf-8")
             .body(body)
 
     /** XML-escape a string value. */
-    private fun x(s: String): String = s
-        .replace("&", "&amp;")
-        .replace("<", "&lt;")
-        .replace(">", "&gt;")
-        .replace("\"", "&quot;")
-        .replace("'", "&apos;")
+    private fun x(s: String): String =
+        s
+            .replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace("\"", "&quot;")
+            .replace("'", "&apos;")
 }

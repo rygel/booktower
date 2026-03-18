@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class BulkCoverIntegrationTest : IntegrationTestBase() {
-
     @Test
     fun `POST regenerate returns result with counts`() {
         val token = registerAndGetToken()
@@ -36,9 +35,10 @@ class BulkCoverIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         createBook(token, libId)
 
-        val resp = app(
-            Request(Method.POST, "/api/covers/regenerate?libraryId=$libId").header("Cookie", "token=$token"),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/api/covers/regenerate?libraryId=$libId").header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, resp.status)
         val tree = Json.mapper.readTree(resp.bodyString())
         // book has no file_path set so it's skipped

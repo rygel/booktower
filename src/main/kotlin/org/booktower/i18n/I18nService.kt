@@ -4,7 +4,9 @@ import org.slf4j.LoggerFactory
 import java.text.MessageFormat
 import java.util.*
 
-class I18nService(private val bundleName: String) {
+class I18nService(
+    private val bundleName: String,
+) {
     private val logger = LoggerFactory.getLogger(I18nService::class.java)
     private var locale = Locale.getDefault()
     private var bundle = ResourceBundle.getBundle(bundleName, locale)
@@ -17,8 +19,8 @@ class I18nService(private val bundleName: String) {
     fun translate(
         key: String,
         vararg args: Any,
-    ): String {
-        return try {
+    ): String =
+        try {
             val message = bundle.getString(key)
             if (args.isEmpty()) {
                 message
@@ -29,7 +31,6 @@ class I18nService(private val bundleName: String) {
             logger.warn("Missing translation key: {} for locale: {}. Error: {}", key, locale, e.message)
             key
         }
-    }
 
     companion object {
         fun create(bundleName: String): I18nService = I18nService(bundleName)

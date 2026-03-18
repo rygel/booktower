@@ -26,7 +26,6 @@ class AuditService(
     private val jdbi: Jdbi,
     private val geoIpService: GeoIpService? = null,
 ) {
-
     fun record(
         actorId: UUID,
         actorName: String,
@@ -40,11 +39,11 @@ class AuditService(
         val id = UUID.randomUUID().toString()
         try {
             jdbi.useHandle<Exception> { h ->
-                h.createUpdate(
-                    """INSERT INTO audit_log (id, actor_id, actor_name, action, target_type, target_id, detail, ip_address, country_code, country_name, city, occurred_at)
+                h
+                    .createUpdate(
+                        """INSERT INTO audit_log (id, actor_id, actor_name, action, target_type, target_id, detail, ip_address, country_code, country_name, city, occurred_at)
                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                )
-                    .bind(0, id)
+                    ).bind(0, id)
                     .bind(1, actorId.toString())
                     .bind(2, actorName)
                     .bind(3, action)
@@ -63,13 +62,13 @@ class AuditService(
         }
     }
 
-    fun listRecent(limit: Int = 200): List<AuditEntry> {
-        return jdbi.withHandle<List<AuditEntry>, Exception> { h ->
-            h.createQuery(
-                """SELECT id, actor_id, actor_name, action, target_type, target_id, detail, ip_address, country_code, country_name, city, occurred_at
+    fun listRecent(limit: Int = 200): List<AuditEntry> =
+        jdbi.withHandle<List<AuditEntry>, Exception> { h ->
+            h
+                .createQuery(
+                    """SELECT id, actor_id, actor_name, action, target_type, target_id, detail, ip_address, country_code, country_name, city, occurred_at
                    FROM audit_log ORDER BY occurred_at DESC LIMIT ?""",
-            )
-                .bind(0, limit)
+                ).bind(0, limit)
                 .map { row ->
                     AuditEntry(
                         id = row.getColumn("id", String::class.java),
@@ -85,18 +84,19 @@ class AuditService(
                         city = row.getColumn("city", String::class.java),
                         occurredAt = row.getColumn("occurred_at", String::class.java) ?: "",
                     )
-                }
-                .list()
+                }.list()
         }
-    }
 
-    fun listForUser(userId: UUID, limit: Int = 200): List<AuditEntry> {
-        return jdbi.withHandle<List<AuditEntry>, Exception> { h ->
-            h.createQuery(
-                """SELECT id, actor_id, actor_name, action, target_type, target_id, detail, ip_address, country_code, country_name, city, occurred_at
+    fun listForUser(
+        userId: UUID,
+        limit: Int = 200,
+    ): List<AuditEntry> =
+        jdbi.withHandle<List<AuditEntry>, Exception> { h ->
+            h
+                .createQuery(
+                    """SELECT id, actor_id, actor_name, action, target_type, target_id, detail, ip_address, country_code, country_name, city, occurred_at
                    FROM audit_log WHERE actor_id = ? ORDER BY occurred_at DESC LIMIT ?""",
-            )
-                .bind(0, userId.toString())
+                ).bind(0, userId.toString())
                 .bind(1, limit)
                 .map { row ->
                     AuditEntry(
@@ -113,8 +113,6 @@ class AuditService(
                         city = row.getColumn("city", String::class.java),
                         occurredAt = row.getColumn("occurred_at", String::class.java) ?: "",
                     )
-                }
-                .list()
+                }.list()
         }
-    }
 }

@@ -11,18 +11,28 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class MetadataProposalIntegrationTest : IntegrationTestBase() {
+    private val stubMeta =
+        FetchedMetadata(
+            title = "Proposed Title",
+            author = "Proposed Author",
+            description = "Proposed desc",
+            isbn = "9780000000099",
+            publisher = "Pub",
+            publishedDate = "2020",
+            source = "openlibrary",
+        )
 
-    private val stubMeta = FetchedMetadata(
-        title = "Proposed Title", author = "Proposed Author",
-        description = "Proposed desc", isbn = "9780000000099",
-        publisher = "Pub", publishedDate = "2020", source = "openlibrary",
-    )
-
-    override fun createMetadataFetchService() = object : MetadataFetchService() {
-        override fun fetchMetadata(title: String, author: String?, source: String?) = stubMeta
-    }
+    override fun createMetadataFetchService() =
+        object : MetadataFetchService() {
+            override fun fetchMetadata(
+                title: String,
+                author: String?,
+                source: String?,
+            ) = stubMeta
+        }
 
     private fun proposeUrl(bookId: String) = "/api/books/$bookId/metadata/propose"
+
     private fun proposalsUrl(bookId: String) = "/api/books/$bookId/metadata/proposals"
 
     @Test
@@ -31,12 +41,13 @@ class MetadataProposalIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
 
-        val resp = app(
-            Request(Method.POST, proposeUrl(bookId))
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"source":"openlibrary"}"""),
-        )
+        val resp =
+            app(
+                Request(Method.POST, proposeUrl(bookId))
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"source":"openlibrary"}"""),
+            )
         assertEquals(Status.CREATED, resp.status)
         val tree = Json.mapper.readTree(resp.bodyString())
         assertEquals("PENDING", tree.get("status").asText())
@@ -50,10 +61,18 @@ class MetadataProposalIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
 
-        app(Request(Method.POST, proposeUrl(bookId)).header("Cookie", "token=$token")
-            .header("Content-Type", "application/json").body("{}"))
-        app(Request(Method.POST, proposeUrl(bookId)).header("Cookie", "token=$token")
-            .header("Content-Type", "application/json").body("{}"))
+        app(
+            Request(Method.POST, proposeUrl(bookId))
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/json")
+                .body("{}"),
+        )
+        app(
+            Request(Method.POST, proposeUrl(bookId))
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/json")
+                .body("{}"),
+        )
 
         val resp = app(Request(Method.GET, proposalsUrl(bookId)).header("Cookie", "token=$token"))
         assertEquals(Status.OK, resp.status)
@@ -68,14 +87,24 @@ class MetadataProposalIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId, "Original Title")
 
-        val propResp = app(Request(Method.POST, proposeUrl(bookId)).header("Cookie", "token=$token")
-            .header("Content-Type", "application/json").body("{}"))
-        val proposalId = Json.mapper.readTree(propResp.bodyString()).get("id").asText()
+        val propResp =
+            app(
+                Request(Method.POST, proposeUrl(bookId))
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("{}"),
+            )
+        val proposalId =
+            Json.mapper
+                .readTree(propResp.bodyString())
+                .get("id")
+                .asText()
 
-        val applyResp = app(
-            Request(Method.POST, "/api/books/$bookId/metadata/proposals/$proposalId/apply")
-                .header("Cookie", "token=$token"),
-        )
+        val applyResp =
+            app(
+                Request(Method.POST, "/api/books/$bookId/metadata/proposals/$proposalId/apply")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, applyResp.status)
         val book = Json.mapper.readTree(applyResp.bodyString())
         assertEquals("Proposed Title", book.get("title").asText())
@@ -88,12 +117,23 @@ class MetadataProposalIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
 
-        val propResp = app(Request(Method.POST, proposeUrl(bookId)).header("Cookie", "token=$token")
-            .header("Content-Type", "application/json").body("{}"))
-        val proposalId = Json.mapper.readTree(propResp.bodyString()).get("id").asText()
+        val propResp =
+            app(
+                Request(Method.POST, proposeUrl(bookId))
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("{}"),
+            )
+        val proposalId =
+            Json.mapper
+                .readTree(propResp.bodyString())
+                .get("id")
+                .asText()
 
-        app(Request(Method.POST, "/api/books/$bookId/metadata/proposals/$proposalId/apply")
-            .header("Cookie", "token=$token"))
+        app(
+            Request(Method.POST, "/api/books/$bookId/metadata/proposals/$proposalId/apply")
+                .header("Cookie", "token=$token"),
+        )
 
         val listResp = app(Request(Method.GET, proposalsUrl(bookId)).header("Cookie", "token=$token"))
         val arr = Json.mapper.readTree(listResp.bodyString())
@@ -106,14 +146,24 @@ class MetadataProposalIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
 
-        val propResp = app(Request(Method.POST, proposeUrl(bookId)).header("Cookie", "token=$token")
-            .header("Content-Type", "application/json").body("{}"))
-        val proposalId = Json.mapper.readTree(propResp.bodyString()).get("id").asText()
+        val propResp =
+            app(
+                Request(Method.POST, proposeUrl(bookId))
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("{}"),
+            )
+        val proposalId =
+            Json.mapper
+                .readTree(propResp.bodyString())
+                .get("id")
+                .asText()
 
-        val delResp = app(
-            Request(Method.DELETE, "/api/books/$bookId/metadata/proposals/$proposalId")
-                .header("Cookie", "token=$token"),
-        )
+        val delResp =
+            app(
+                Request(Method.DELETE, "/api/books/$bookId/metadata/proposals/$proposalId")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.NO_CONTENT, delResp.status)
 
         val listResp = app(Request(Method.GET, proposalsUrl(bookId)).header("Cookie", "token=$token"))
@@ -127,15 +177,25 @@ class MetadataProposalIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token1)
         val bookId = createBook(token1, libId)
 
-        val propResp = app(Request(Method.POST, proposeUrl(bookId)).header("Cookie", "token=$token1")
-            .header("Content-Type", "application/json").body("{}"))
-        val proposalId = Json.mapper.readTree(propResp.bodyString()).get("id").asText()
+        val propResp =
+            app(
+                Request(Method.POST, proposeUrl(bookId))
+                    .header("Cookie", "token=$token1")
+                    .header("Content-Type", "application/json")
+                    .body("{}"),
+            )
+        val proposalId =
+            Json.mapper
+                .readTree(propResp.bodyString())
+                .get("id")
+                .asText()
 
         // user2 tries to apply user1's proposal
-        val applyResp = app(
-            Request(Method.POST, "/api/books/$bookId/metadata/proposals/$proposalId/apply")
-                .header("Cookie", "token=$token2"),
-        )
+        val applyResp =
+            app(
+                Request(Method.POST, "/api/books/$bookId/metadata/proposals/$proposalId/apply")
+                    .header("Cookie", "token=$token2"),
+            )
         // book doesn't belong to user2 so not found
         assertTrue(applyResp.status.code >= 400)
     }

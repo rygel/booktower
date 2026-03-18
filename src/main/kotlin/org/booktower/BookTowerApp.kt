@@ -3,22 +3,22 @@ package org.booktower
 import org.booktower.config.AppConfig
 import org.booktower.config.Database
 import org.booktower.config.appModule
-import org.booktower.filters.CsrfFilter
-import org.booktower.filters.GlobalErrorFilter
-import org.booktower.filters.RequestLoggingFilter
-import org.booktower.filters.StaticCacheFilter
+import org.booktower.filters.csrfFilter
+import org.booktower.filters.globalErrorFilter
+import org.booktower.filters.requestLoggingFilter
+import org.booktower.filters.staticCacheFilter
 import org.booktower.handlers.AppHandler
 import org.booktower.models.CreateLibraryRequest
 import org.booktower.models.CreateUserRequest
 import org.booktower.services.AuthService
-import org.booktower.services.JwtService
-import org.booktower.services.LibraryService
-import org.booktower.services.EpubMetadataService
-import org.booktower.services.PdfMetadataService
 import org.booktower.services.ComicPageHashWorker
+import org.booktower.services.EpubMetadataService
 import org.booktower.services.FtsIndexWorker
 import org.booktower.services.FtsService
+import org.booktower.services.JwtService
+import org.booktower.services.LibraryService
 import org.booktower.services.LibraryWatchService
+import org.booktower.services.PdfMetadataService
 import org.booktower.services.ScanScheduleService
 import org.http4k.core.Method
 import org.http4k.core.Response
@@ -59,14 +59,16 @@ fun main() {
     val comicPageHashWorker = koin.get<ComicPageHashWorker>()
     comicPageHashWorker.start()
 
-    Runtime.getRuntime().addShutdownHook(Thread {
-        logger.info("Shutting down BookTower...")
-        pdfMetadataService.shutdown()
-        epubMetadataService.shutdown()
-        database.close()
-        ftsIndexWorker.stop()
-        comicPageHashWorker.stop()
-    })
+    Runtime.getRuntime().addShutdownHook(
+        Thread {
+            logger.info("Shutting down BookTower...")
+            pdfMetadataService.shutdown()
+            epubMetadataService.shutdown()
+            database.close()
+            ftsIndexWorker.stop()
+            comicPageHashWorker.stop()
+        },
+    )
 
     val isProduction = System.getenv("BOOKTOWER_ENV")?.lowercase() == "production"
     val isQuickstart = System.getenv("BOOKTOWER_QUICKSTART")?.lowercase() == "true"
@@ -86,9 +88,10 @@ fun main() {
         val authService = koin.get<AuthService>()
         val jwtService = koin.get<JwtService>()
         val libraryService = koin.get<LibraryService>()
-        val result = authService.register(
-            CreateUserRequest("demo", "demo@booktower.local", "demo1234"),
-        )
+        val result =
+            authService.register(
+                CreateUserRequest("demo", "demo@booktower.local", "demo1234"),
+            )
         if (result.isSuccess) {
             val userId = jwtService.extractUserId(result.getOrThrow().token)!!
             libraryService.createLibrary(userId, CreateLibraryRequest("My Library", "${config.storage.booksPath}/demo"))
@@ -104,16 +107,18 @@ fun main() {
         }
     }
 
-    val app = routes(
-        "/health" bind Method.GET to { Response(OK).body("OK") },
-        appHandler.routes(),
-    )
+    val app =
+        routes(
+            "/health" bind Method.GET to { Response(OK).body("OK") },
+            appHandler.routes(),
+        )
 
-    val filteredApp = GlobalErrorFilter()
-        .then(RequestLoggingFilter())
-        .then(CsrfFilter(config.csrf.allowedHosts))
-        .then(StaticCacheFilter())
-        .then(app)
+    val filteredApp =
+        globalErrorFilter()
+            .then(requestLoggingFilter())
+            .then(csrfFilter(config.csrf.allowedHosts))
+            .then(staticCacheFilter())
+            .then(app)
 
     logger.info("Starting server on http://${config.host}:${config.port}")
 

@@ -3,7 +3,6 @@ package org.booktower.integration
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.pdmodel.PDPage
 import org.booktower.config.Json
-import org.booktower.models.LibraryDto
 import org.http4k.core.Method
 import org.http4k.core.Request
 import org.http4k.core.Status
@@ -16,28 +15,38 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class OpdsIntegrationTest : IntegrationTestBase() {
-
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    private fun basicAuth(username: String, password: String): String =
-        "Basic " + Base64.getEncoder().encodeToString("$username:$password".toByteArray())
+    private fun basicAuth(
+        username: String,
+        password: String,
+    ): String = "Basic " + Base64.getEncoder().encodeToString("$username:$password".toByteArray())
 
     /** Registers a user and returns (token, username, password). */
     private fun registerUser(prefix: String): Triple<String, String, String> {
         val username = "${prefix}_${System.nanoTime()}"
         val password = "password123"
-        val response = app(
-            Request(Method.POST, "/auth/register")
-                .header("Content-Type", "application/json")
-                .body("""{"username":"$username","email":"$username@test.com","password":"$password"}"""),
-        )
-        val token = Json.mapper.readTree(response.bodyString()).get("token").asText()
+        val response =
+            app(
+                Request(Method.POST, "/auth/register")
+                    .header("Content-Type", "application/json")
+                    .body("""{"username":"$username","email":"$username@test.com","password":"$password"}"""),
+            )
+        val token =
+            Json.mapper
+                .readTree(response.bodyString())
+                .get("token")
+                .asText()
         return Triple(token, username, password)
     }
 
     private fun minimalPdf(): ByteArray {
         val doc = PDDocument().also { it.addPage(PDPage()) }
-        return ByteArrayOutputStream().also { doc.save(it); doc.close() }.toByteArray()
+        return ByteArrayOutputStream()
+            .also {
+                doc.save(it)
+                doc.close()
+            }.toByteArray()
     }
 
     // ── Authentication ────────────────────────────────────────────────────────
@@ -53,10 +62,11 @@ class OpdsIntegrationTest : IntegrationTestBase() {
     @Test
     fun `catalog with wrong password returns 401`() {
         val (_, username, _) = registerUser("opds_auth1")
-        val resp = app(
-            Request(Method.GET, "/opds/catalog")
-                .header("Authorization", basicAuth(username, "wrongpassword")),
-        )
+        val resp =
+            app(
+                Request(Method.GET, "/opds/catalog")
+                    .header("Authorization", basicAuth(username, "wrongpassword")),
+            )
         assertEquals(Status.UNAUTHORIZED, resp.status)
     }
 
@@ -82,10 +92,11 @@ class OpdsIntegrationTest : IntegrationTestBase() {
                 .header("Content-Type", "application/json")
                 .body("""{"username":"$username","email":"$email","password":"$password"}"""),
         )
-        val resp = app(
-            Request(Method.GET, "/opds/catalog")
-                .header("Authorization", basicAuth(email, password)),
-        )
+        val resp =
+            app(
+                Request(Method.GET, "/opds/catalog")
+                    .header("Authorization", basicAuth(email, password)),
+            )
         assertEquals(Status.OK, resp.status)
     }
 
@@ -94,10 +105,11 @@ class OpdsIntegrationTest : IntegrationTestBase() {
     @Test
     fun `catalog returns 200 with opds content-type`() {
         val (token, username, password) = registerUser("opds_ct")
-        val resp = app(
-            Request(Method.GET, "/opds/catalog")
-                .header("Authorization", basicAuth(username, password)),
-        )
+        val resp =
+            app(
+                Request(Method.GET, "/opds/catalog")
+                    .header("Authorization", basicAuth(username, password)),
+            )
         assertEquals(Status.OK, resp.status)
         assertTrue(resp.header("Content-Type")?.contains("application/atom+xml") == true)
         assertTrue(resp.header("Content-Type")?.contains("opds-catalog") == true)
@@ -106,10 +118,11 @@ class OpdsIntegrationTest : IntegrationTestBase() {
     @Test
     fun `catalog returns valid atom xml with feed root element`() {
         val (_, username, password) = registerUser("opds_xml")
-        val resp = app(
-            Request(Method.GET, "/opds/catalog")
-                .header("Authorization", basicAuth(username, password)),
-        )
+        val resp =
+            app(
+                Request(Method.GET, "/opds/catalog")
+                    .header("Authorization", basicAuth(username, password)),
+            )
         val body = resp.bodyString()
         assertTrue(body.contains("<feed"), "Should contain Atom <feed> element")
         assertTrue(body.contains("xmlns=\"http://www.w3.org/2005/Atom\""), "Should have Atom namespace")
@@ -122,10 +135,11 @@ class OpdsIntegrationTest : IntegrationTestBase() {
         createLibrary(token, "SciFi Shelf")
         createLibrary(token, "Fantasy Shelf")
 
-        val resp = app(
-            Request(Method.GET, "/opds/catalog")
-                .header("Authorization", basicAuth(username, password)),
-        )
+        val resp =
+            app(
+                Request(Method.GET, "/opds/catalog")
+                    .header("Authorization", basicAuth(username, password)),
+            )
         val body = resp.bodyString()
         assertTrue(body.contains("SciFi Shelf"), "Should contain first library name")
         assertTrue(body.contains("Fantasy Shelf"), "Should contain second library name")
@@ -136,10 +150,11 @@ class OpdsIntegrationTest : IntegrationTestBase() {
         val (token, username, password) = registerUser("opds_links")
         val libId = createLibrary(token, "My Shelf")
 
-        val resp = app(
-            Request(Method.GET, "/opds/catalog")
-                .header("Authorization", basicAuth(username, password)),
-        )
+        val resp =
+            app(
+                Request(Method.GET, "/opds/catalog")
+                    .header("Authorization", basicAuth(username, password)),
+            )
         val body = resp.bodyString()
         assertTrue(body.contains("/opds/catalog/$libId"), "Entry should link to library feed")
         assertTrue(body.contains("subsection"), "Link should have rel=subsection")
@@ -152,10 +167,11 @@ class OpdsIntegrationTest : IntegrationTestBase() {
         createLibrary(token1, "User1 Library")
         createLibrary(token2, "User2 Library")
 
-        val resp = app(
-            Request(Method.GET, "/opds/catalog")
-                .header("Authorization", basicAuth(u1, p1)),
-        )
+        val resp =
+            app(
+                Request(Method.GET, "/opds/catalog")
+                    .header("Authorization", basicAuth(u1, p1)),
+            )
         val body = resp.bodyString()
         assertTrue(body.contains("User1 Library"), "Should see own library")
         assertFalse(body.contains("User2 Library"), "Should not see other user's library")
@@ -164,10 +180,11 @@ class OpdsIntegrationTest : IntegrationTestBase() {
     @Test
     fun `catalog with no libraries returns empty feed`() {
         val (_, username, password) = registerUser("opds_empty")
-        val resp = app(
-            Request(Method.GET, "/opds/catalog")
-                .header("Authorization", basicAuth(username, password)),
-        )
+        val resp =
+            app(
+                Request(Method.GET, "/opds/catalog")
+                    .header("Authorization", basicAuth(username, password)),
+            )
         assertEquals(Status.OK, resp.status)
         // Valid feed, just no <entry> elements
         assertTrue(resp.bodyString().contains("<feed"))
@@ -180,10 +197,11 @@ class OpdsIntegrationTest : IntegrationTestBase() {
         val (token, username, password) = registerUser("opds_lib1")
         val libId = createLibrary(token)
 
-        val resp = app(
-            Request(Method.GET, "/opds/catalog/$libId")
-                .header("Authorization", basicAuth(username, password)),
-        )
+        val resp =
+            app(
+                Request(Method.GET, "/opds/catalog/$libId")
+                    .header("Authorization", basicAuth(username, password)),
+            )
         assertEquals(Status.OK, resp.status)
         assertTrue(resp.header("Content-Type")?.contains("acquisition") == true)
     }
@@ -195,10 +213,11 @@ class OpdsIntegrationTest : IntegrationTestBase() {
         createBook(token, libId, "The Hitchhiker's Guide")
         createBook(token, libId, "Dune")
 
-        val resp = app(
-            Request(Method.GET, "/opds/catalog/$libId")
-                .header("Authorization", basicAuth(username, password)),
-        )
+        val resp =
+            app(
+                Request(Method.GET, "/opds/catalog/$libId")
+                    .header("Authorization", basicAuth(username, password)),
+            )
         val body = resp.bodyString()
         assertTrue(body.contains("The Hitchhiker&#39;s Guide") || body.contains("Hitchhiker"), "Should contain first book")
         assertTrue(body.contains("Dune"), "Should contain second book")
@@ -219,10 +238,11 @@ class OpdsIntegrationTest : IntegrationTestBase() {
                 .body(ByteArrayInputStream(minimalPdf())),
         )
 
-        val resp = app(
-            Request(Method.GET, "/opds/catalog/$libId")
-                .header("Authorization", basicAuth(username, password)),
-        )
+        val resp =
+            app(
+                Request(Method.GET, "/opds/catalog/$libId")
+                    .header("Authorization", basicAuth(username, password)),
+            )
         val body = resp.bodyString()
         assertTrue(body.contains("/opds/books/$bookId/file"), "Entry should have acquisition link")
         assertTrue(body.contains("http://opds-spec.org/acquisition"), "Should have correct rel")
@@ -233,10 +253,11 @@ class OpdsIntegrationTest : IntegrationTestBase() {
         val (token, username, password) = registerUser("opds_up")
         val libId = createLibrary(token)
 
-        val resp = app(
-            Request(Method.GET, "/opds/catalog/$libId")
-                .header("Authorization", basicAuth(username, password)),
-        )
+        val resp =
+            app(
+                Request(Method.GET, "/opds/catalog/$libId")
+                    .header("Authorization", basicAuth(username, password)),
+            )
         val body = resp.bodyString()
         assertTrue(body.contains("rel=\"up\""), "Should have up link")
         assertTrue(body.contains("/opds/catalog"), "Up link should point to catalog")
@@ -245,10 +266,11 @@ class OpdsIntegrationTest : IntegrationTestBase() {
     @Test
     fun `library feed returns 404 for nonexistent library`() {
         val (_, username, password) = registerUser("opds_404")
-        val resp = app(
-            Request(Method.GET, "/opds/catalog/00000000-0000-0000-0000-000000000000")
-                .header("Authorization", basicAuth(username, password)),
-        )
+        val resp =
+            app(
+                Request(Method.GET, "/opds/catalog/00000000-0000-0000-0000-000000000000")
+                    .header("Authorization", basicAuth(username, password)),
+            )
         assertEquals(Status.NOT_FOUND, resp.status)
     }
 
@@ -259,20 +281,22 @@ class OpdsIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token1)
 
         // User 2 tries to fetch user 1's library feed
-        val resp = app(
-            Request(Method.GET, "/opds/catalog/$libId")
-                .header("Authorization", basicAuth(u2, p2)),
-        )
+        val resp =
+            app(
+                Request(Method.GET, "/opds/catalog/$libId")
+                    .header("Authorization", basicAuth(u2, p2)),
+            )
         assertEquals(Status.NOT_FOUND, resp.status)
     }
 
     @Test
     fun `library feed returns 404 for malformed library id`() {
         val (_, username, password) = registerUser("opds_malformed")
-        val resp = app(
-            Request(Method.GET, "/opds/catalog/not-a-uuid")
-                .header("Authorization", basicAuth(username, password)),
-        )
+        val resp =
+            app(
+                Request(Method.GET, "/opds/catalog/not-a-uuid")
+                    .header("Authorization", basicAuth(username, password)),
+            )
         assertEquals(Status.NOT_FOUND, resp.status)
     }
 
@@ -293,10 +317,11 @@ class OpdsIntegrationTest : IntegrationTestBase() {
                 .body(ByteArrayInputStream(pdfBytes)),
         )
 
-        val resp = app(
-            Request(Method.GET, "/opds/books/$bookId/file")
-                .header("Authorization", basicAuth(username, password)),
-        )
+        val resp =
+            app(
+                Request(Method.GET, "/opds/books/$bookId/file")
+                    .header("Authorization", basicAuth(username, password)),
+            )
         assertEquals(Status.OK, resp.status)
         assertTrue(resp.header("Content-Type")?.contains("pdf") == true)
         assertTrue(resp.bodyString().isNotEmpty())
@@ -308,20 +333,22 @@ class OpdsIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
 
-        val resp = app(
-            Request(Method.GET, "/opds/books/$bookId/file")
-                .header("Authorization", basicAuth(username, password)),
-        )
+        val resp =
+            app(
+                Request(Method.GET, "/opds/books/$bookId/file")
+                    .header("Authorization", basicAuth(username, password)),
+            )
         assertEquals(Status.NOT_FOUND, resp.status)
     }
 
     @Test
     fun `file download returns 404 for nonexistent book`() {
         val (_, username, password) = registerUser("opds_fakebook")
-        val resp = app(
-            Request(Method.GET, "/opds/books/00000000-0000-0000-0000-000000000000/file")
-                .header("Authorization", basicAuth(username, password)),
-        )
+        val resp =
+            app(
+                Request(Method.GET, "/opds/books/00000000-0000-0000-0000-000000000000/file")
+                    .header("Authorization", basicAuth(username, password)),
+            )
         assertEquals(Status.NOT_FOUND, resp.status)
     }
 
@@ -340,10 +367,11 @@ class OpdsIntegrationTest : IntegrationTestBase() {
         )
 
         // User 2 tries to download user 1's file
-        val resp = app(
-            Request(Method.GET, "/opds/books/$bookId/file")
-                .header("Authorization", basicAuth(u2, p2)),
-        )
+        val resp =
+            app(
+                Request(Method.GET, "/opds/books/$bookId/file")
+                    .header("Authorization", basicAuth(u2, p2)),
+            )
         assertEquals(Status.NOT_FOUND, resp.status)
     }
 
@@ -354,10 +382,11 @@ class OpdsIntegrationTest : IntegrationTestBase() {
         val (token, username, password) = registerUser("opds_escape")
         createLibrary(token, "Books & More <Sci-Fi>")
 
-        val resp = app(
-            Request(Method.GET, "/opds/catalog")
-                .header("Authorization", basicAuth(username, password)),
-        )
+        val resp =
+            app(
+                Request(Method.GET, "/opds/catalog")
+                    .header("Authorization", basicAuth(username, password)),
+            )
         val body = resp.bodyString()
         assertTrue(body.contains("&amp;"), "& should be escaped as &amp;")
         assertTrue(body.contains("&lt;"), "< should be escaped as &lt;")
@@ -370,20 +399,24 @@ class OpdsIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         createBook(token, libId, "Alice & Bob's <Adventure>")
 
-        val resp = app(
-            Request(Method.GET, "/opds/catalog/$libId")
-                .header("Authorization", basicAuth(username, password)),
-        )
+        val resp =
+            app(
+                Request(Method.GET, "/opds/catalog/$libId")
+                    .header("Authorization", basicAuth(username, password)),
+            )
         val body = resp.bodyString()
         assertTrue(body.contains("&amp;") || body.contains("&lt;"), "Special chars should be escaped")
     }
 
     // ── Audiobook (chapter-only) books ────────────────────────────────────────
 
-    private fun minimalMp3() =
-        byteArrayOf(0xFF.toByte(), 0xFB.toByte(), 0x90.toByte(), 0x00.toByte()) + ByteArray(416)
+    private fun minimalMp3() = byteArrayOf(0xFF.toByte(), 0xFB.toByte(), 0x90.toByte(), 0x00.toByte()) + ByteArray(416)
 
-    private fun uploadChapter(token: String, bookId: String, trackIndex: Int) {
+    private fun uploadChapter(
+        token: String,
+        bookId: String,
+        trackIndex: Int,
+    ) {
         val mp3 = minimalMp3()
         app(
             Request(Method.POST, "/api/books/$bookId/chapters")
@@ -412,10 +445,11 @@ class OpdsIntegrationTest : IntegrationTestBase() {
                 .body(mp3.inputStream(), mp3.size.toLong()),
         )
 
-        val resp = app(
-            Request(Method.GET, "/opds/catalog/$libId")
-                .header("Authorization", basicAuth(username, password)),
-        )
+        val resp =
+            app(
+                Request(Method.GET, "/opds/catalog/$libId")
+                    .header("Authorization", basicAuth(username, password)),
+            )
         val body = resp.bodyString()
         assertFalse(
             body.contains("/opds/books/$bookId/file"),
@@ -431,10 +465,11 @@ class OpdsIntegrationTest : IntegrationTestBase() {
         uploadChapter(token, bookId, 0)
         uploadChapter(token, bookId, 1)
 
-        val resp = app(
-            Request(Method.GET, "/opds/catalog/$libId")
-                .header("Authorization", basicAuth(username, password)),
-        )
+        val resp =
+            app(
+                Request(Method.GET, "/opds/catalog/$libId")
+                    .header("Authorization", basicAuth(username, password)),
+            )
         val body = resp.bodyString()
         assertTrue(body.contains("/opds/books/$bookId/chapters/0"), "Should have chapter 0 acquisition link")
         assertTrue(body.contains("/opds/books/$bookId/chapters/1"), "Should have chapter 1 acquisition link")
@@ -448,10 +483,11 @@ class OpdsIntegrationTest : IntegrationTestBase() {
         val bookId = createBook(token, libId)
         uploadChapter(token, bookId, 0)
 
-        val resp = app(
-            Request(Method.GET, "/opds/books/$bookId/chapters/0")
-                .header("Authorization", basicAuth(username, password)),
-        )
+        val resp =
+            app(
+                Request(Method.GET, "/opds/books/$bookId/chapters/0")
+                    .header("Authorization", basicAuth(username, password)),
+            )
         assertEquals(Status.OK, resp.status)
         assertTrue(resp.header("Content-Type")?.contains("audio/") == true)
         assertTrue(resp.header("Accept-Ranges") == "bytes")
@@ -463,10 +499,11 @@ class OpdsIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
 
-        val resp = app(
-            Request(Method.GET, "/opds/books/$bookId/chapters/99")
-                .header("Authorization", basicAuth(username, password)),
-        )
+        val resp =
+            app(
+                Request(Method.GET, "/opds/books/$bookId/chapters/99")
+                    .header("Authorization", basicAuth(username, password)),
+            )
         assertEquals(Status.NOT_FOUND, resp.status)
     }
 
@@ -484,10 +521,11 @@ class OpdsIntegrationTest : IntegrationTestBase() {
         val bookId = createBook(tokenA, libId)
         uploadChapter(tokenA, bookId, 0)
 
-        val resp = app(
-            Request(Method.GET, "/opds/books/$bookId/chapters/0")
-                .header("Authorization", basicAuth(uB, pB)),
-        )
+        val resp =
+            app(
+                Request(Method.GET, "/opds/books/$bookId/chapters/0")
+                    .header("Authorization", basicAuth(uB, pB)),
+            )
         assertEquals(Status.NOT_FOUND, resp.status)
     }
 
@@ -507,10 +545,11 @@ class OpdsIntegrationTest : IntegrationTestBase() {
                 .body(fakeBytes.inputStream(), fakeBytes.size.toLong()),
         )
 
-        val resp = app(
-            Request(Method.GET, "/opds/catalog/$libId")
-                .header("Authorization", basicAuth(username, password)),
-        )
+        val resp =
+            app(
+                Request(Method.GET, "/opds/catalog/$libId")
+                    .header("Authorization", basicAuth(username, password)),
+            )
         val body = resp.bodyString()
         assertTrue(body.contains("audio/mp4"), "M4B chapter link should use audio/mp4 MIME type")
         assertFalse(body.contains("audio/mpeg"), "M4B chapter must not use audio/mpeg MIME type")
@@ -531,10 +570,11 @@ class OpdsIntegrationTest : IntegrationTestBase() {
                 .body(fakeBytes.inputStream(), fakeBytes.size.toLong()),
         )
 
-        val resp = app(
-            Request(Method.GET, "/opds/catalog/$libId")
-                .header("Authorization", basicAuth(username, password)),
-        )
+        val resp =
+            app(
+                Request(Method.GET, "/opds/catalog/$libId")
+                    .header("Authorization", basicAuth(username, password)),
+            )
         val body = resp.bodyString()
         assertTrue(body.contains("audio/ogg"), "OGG chapter link should use audio/ogg MIME type")
     }
@@ -552,10 +592,11 @@ class OpdsIntegrationTest : IntegrationTestBase() {
                 .body(ByteArrayInputStream(minimalPdf())),
         )
 
-        val resp = app(
-            Request(Method.GET, "/opds/catalog/$libId")
-                .header("Authorization", basicAuth(username, password)),
-        )
+        val resp =
+            app(
+                Request(Method.GET, "/opds/catalog/$libId")
+                    .header("Authorization", basicAuth(username, password)),
+            )
         assertTrue(
             resp.bodyString().contains("/opds/books/$bookId/file"),
             "Single-file book must still have acquisition link",

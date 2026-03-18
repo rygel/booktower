@@ -2,11 +2,12 @@ package org.booktower.services
 
 import org.jdbi.v3.core.Jdbi
 import java.time.LocalDate
-import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
 import java.util.UUID
 
-data class ReadingHeatmapEntry(val date: String, val pagesRead: Int)
+data class ReadingHeatmapEntry(
+    val date: String,
+    val pagesRead: Int,
+)
 
 data class ReadingStats(
     val totalPagesRead: Long,
@@ -20,45 +21,64 @@ data class ReadingStats(
     val pagesByCategory: Map<String, Long>,
 )
 
-class ReadingStatsService(private val jdbi: Jdbi) {
-
-    fun getStats(userId: UUID, days: Int = 365): ReadingStats {
+class ReadingStatsService(
+    private val jdbi: Jdbi,
+) {
+    fun getStats(
+        userId: UUID,
+        days: Int = 365,
+    ): ReadingStats {
         val since = LocalDate.now().minusDays(days.toLong())
         val sinceStr = since.toString()
 
         // Total pages read (all time)
-        val totalPages = jdbi.withHandle<Long, Exception> { h ->
-            h.createQuery("SELECT COALESCE(SUM(pages_read), 0) FROM reading_sessions WHERE user_id = ?")
-                .bind(0, userId.toString()).mapTo(Long::class.java).firstOrNull() ?: 0L
-        }
+        val totalPages =
+            jdbi.withHandle<Long, Exception> { h ->
+                h
+                    .createQuery("SELECT COALESCE(SUM(pages_read), 0) FROM reading_sessions WHERE user_id = ?")
+                    .bind(0, userId.toString())
+                    .mapTo(Long::class.java)
+                    .firstOrNull() ?: 0L
+            }
 
         // Total books finished
-        val totalFinished = jdbi.withHandle<Int, Exception> { h ->
-            h.createQuery("SELECT COUNT(*) FROM book_status WHERE user_id = ? AND status = 'FINISHED'")
-                .bind(0, userId.toString()).mapTo(Int::class.java).firstOrNull() ?: 0
-        }
+        val totalFinished =
+            jdbi.withHandle<Int, Exception> { h ->
+                h
+                    .createQuery("SELECT COUNT(*) FROM book_status WHERE user_id = ? AND status = 'FINISHED'")
+                    .bind(0, userId.toString())
+                    .mapTo(Int::class.java)
+                    .firstOrNull() ?: 0
+            }
 
         // Total sessions
-        val totalSessions = jdbi.withHandle<Int, Exception> { h ->
-            h.createQuery("SELECT COUNT(*) FROM reading_sessions WHERE user_id = ?")
-                .bind(0, userId.toString()).mapTo(Int::class.java).firstOrNull() ?: 0
-        }
+        val totalSessions =
+            jdbi.withHandle<Int, Exception> { h ->
+                h
+                    .createQuery("SELECT COUNT(*) FROM reading_sessions WHERE user_id = ?")
+                    .bind(0, userId.toString())
+                    .mapTo(Int::class.java)
+                    .firstOrNull() ?: 0
+            }
 
         // Daily heatmap: pages per day for last `days`
-        val dailyRows = jdbi.withHandle<List<Pair<String, Int>>, Exception> { h ->
-            h.createQuery(
-                """SELECT SUBSTR(session_at, 1, 10) AS read_day, SUM(pages_read) AS total
+        val dailyRows =
+            jdbi.withHandle<List<Pair<String, Int>>, Exception> { h ->
+                h
+                    .createQuery(
+                        """SELECT SUBSTR(session_at, 1, 10) AS read_day, SUM(pages_read) AS total
                    FROM reading_sessions
                    WHERE user_id = ? AND session_at >= ?
                    GROUP BY SUBSTR(session_at, 1, 10)
-                   ORDER BY read_day"""
-            ).bind(0, userId.toString()).bind(1, sinceStr)
-                .map { row ->
-                    val day = row.getColumn("read_day", String::class.java)
-                    val total = row.getColumn("total", java.lang.Long::class.java)?.toInt() ?: 0
-                    Pair(day, total)
-                }.list()
-        }
+                   ORDER BY read_day""",
+                    ).bind(0, userId.toString())
+                    .bind(1, sinceStr)
+                    .map { row ->
+                        val day = row.getColumn("read_day", String::class.java)
+                        val total = row.getColumn("total", java.lang.Long::class.java)?.toInt() ?: 0
+                        Pair(day, total)
+                    }.list()
+            }
 
         val heatmap = dailyRows.map { ReadingHeatmapEntry(it.first, it.second) }
         val dailyMap = dailyRows.toMap()
@@ -72,40 +92,46 @@ class ReadingStatsService(private val jdbi: Jdbi) {
         val avgPerDay = if (activeDays > 0) totalRecentPages.toDouble() / days else 0.0
 
         // Pages by tag
-        val pagesByTag = jdbi.withHandle<Map<String, Long>, Exception> { h ->
-            h.createQuery(
-                """SELECT bt.tag, SUM(rs.pages_read) AS total
+        val pagesByTag =
+            jdbi.withHandle<Map<String, Long>, Exception> { h ->
+                h
+                    .createQuery(
+                        """SELECT bt.tag, SUM(rs.pages_read) AS total
                    FROM reading_sessions rs
                    JOIN book_tags bt ON bt.book_id = rs.book_id AND bt.user_id = rs.user_id
                    WHERE rs.user_id = ?
                    GROUP BY bt.tag
-                   ORDER BY total DESC"""
-            ).bind(0, userId.toString())
-                .map { row ->
-                    Pair(
-                        row.getColumn("tag", String::class.java),
-                        (row.getColumn("total", java.lang.Long::class.java) ?: 0L) as Long,
-                    )
-                }.list().toMap()
-        }
+                   ORDER BY total DESC""",
+                    ).bind(0, userId.toString())
+                    .map { row ->
+                        Pair(
+                            row.getColumn("tag", String::class.java),
+                            (row.getColumn("total", java.lang.Long::class.java) ?: 0L) as Long,
+                        )
+                    }.list()
+                    .toMap()
+            }
 
         // Pages by category
-        val pagesByCategory = jdbi.withHandle<Map<String, Long>, Exception> { h ->
-            h.createQuery(
-                """SELECT bc.category, SUM(rs.pages_read) AS total
+        val pagesByCategory =
+            jdbi.withHandle<Map<String, Long>, Exception> { h ->
+                h
+                    .createQuery(
+                        """SELECT bc.category, SUM(rs.pages_read) AS total
                    FROM reading_sessions rs
                    JOIN book_categories bc ON bc.book_id = rs.book_id AND bc.user_id = rs.user_id
                    WHERE rs.user_id = ?
                    GROUP BY bc.category
-                   ORDER BY total DESC"""
-            ).bind(0, userId.toString())
-                .map { row ->
-                    Pair(
-                        row.getColumn("category", String::class.java),
-                        (row.getColumn("total", java.lang.Long::class.java) ?: 0L) as Long,
-                    )
-                }.list().toMap()
-        }
+                   ORDER BY total DESC""",
+                    ).bind(0, userId.toString())
+                    .map { row ->
+                        Pair(
+                            row.getColumn("category", String::class.java),
+                            (row.getColumn("total", java.lang.Long::class.java) ?: 0L) as Long,
+                        )
+                    }.list()
+                    .toMap()
+            }
 
         return ReadingStats(
             totalPagesRead = totalPages,

@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Test
 
 class VersionIntegrationTest : IntegrationTestBase() {
-
     @Test
     fun `GET api version returns 200 with version fields`() {
         val resp = app(Request(Method.GET, "/api/version"))

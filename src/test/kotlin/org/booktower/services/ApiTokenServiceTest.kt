@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Test
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -24,9 +23,10 @@ class ApiTokenServiceTest {
         authService = AuthService(jdbi, jwtService)
         apiTokenService = ApiTokenService(jdbi)
 
-        val result = authService.register(
-            CreateUserRequest("apitoken_${System.nanoTime()}", "apitoken_${System.nanoTime()}@test.com", "password123"),
-        )
+        val result =
+            authService.register(
+                CreateUserRequest("apitoken_${System.nanoTime()}", "apitoken_${System.nanoTime()}@test.com", "password123"),
+            )
         userId = jwtService.extractUserId(result.getOrThrow().token)!!
     }
 
@@ -48,9 +48,10 @@ class ApiTokenServiceTest {
 
     @Test
     fun `listTokens returns empty for user with no tokens`() {
-        val otherResult = authService.register(
-            CreateUserRequest("notoken_${System.nanoTime()}", "notoken_${System.nanoTime()}@test.com", "password123"),
-        )
+        val otherResult =
+            authService.register(
+                CreateUserRequest("notoken_${System.nanoTime()}", "notoken_${System.nanoTime()}@test.com", "password123"),
+            )
         val otherId = jwtService.extractUserId(otherResult.getOrThrow().token)!!
         val tokens = apiTokenService.listTokens(otherId)
         assertTrue(tokens.isEmpty())
@@ -79,9 +80,10 @@ class ApiTokenServiceTest {
 
     @Test
     fun `revokeToken returns false for non-owned token`() {
-        val otherResult = authService.register(
-            CreateUserRequest("revother_${System.nanoTime()}", "revother_${System.nanoTime()}@test.com", "password123"),
-        )
+        val otherResult =
+            authService.register(
+                CreateUserRequest("revother_${System.nanoTime()}", "revother_${System.nanoTime()}@test.com", "password123"),
+            )
         val otherId = jwtService.extractUserId(otherResult.getOrThrow().token)!!
         val response = apiTokenService.createToken(userId, "Not Yours")
         val tokenId = UUID.fromString(response.id)
@@ -90,9 +92,10 @@ class ApiTokenServiceTest {
 
     @Test
     fun `listTokens does not return another user's tokens`() {
-        val otherResult = authService.register(
-            CreateUserRequest("isolate_${System.nanoTime()}", "isolate_${System.nanoTime()}@test.com", "password123"),
-        )
+        val otherResult =
+            authService.register(
+                CreateUserRequest("isolate_${System.nanoTime()}", "isolate_${System.nanoTime()}@test.com", "password123"),
+            )
         val otherId = jwtService.extractUserId(otherResult.getOrThrow().token)!!
         apiTokenService.createToken(userId, "Owner Token")
         val tokens = apiTokenService.listTokens(otherId)

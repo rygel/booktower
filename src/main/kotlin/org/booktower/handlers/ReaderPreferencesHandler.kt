@@ -8,15 +8,17 @@ import org.http4k.core.Response
 import org.http4k.core.Status
 import org.http4k.routing.path
 
-class ReaderPreferencesHandler(private val readerPreferencesService: ReaderPreferencesService) {
-
+class ReaderPreferencesHandler(
+    private val readerPreferencesService: ReaderPreferencesService,
+) {
     /** GET /api/reader-preferences/{format} — retrieve saved preferences for a format. */
     fun get(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
         val format = req.path("format") ?: return Response(Status.BAD_REQUEST)
         val device = req.query("device")
         val prefs = readerPreferencesService.get(userId, format, device)
-        return Response(Status.OK).header("Content-Type", "application/json")
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
             .body(Json.mapper.writeValueAsString(prefs))
     }
 
@@ -25,13 +27,16 @@ class ReaderPreferencesHandler(private val readerPreferencesService: ReaderPrefe
         val userId = AuthenticatedUser.from(req)
         val format = req.path("format") ?: return Response(Status.BAD_REQUEST)
         val device = req.query("device")
-        val body = runCatching {
-            @Suppress("UNCHECKED_CAST")
-            Json.mapper.readValue(req.bodyString(), Map::class.java) as Map<String, Any?>
-        }.getOrNull() ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json")
-            .body("""{"error":"Invalid JSON"}""")
+        val body =
+            runCatching {
+                @Suppress("UNCHECKED_CAST")
+                Json.mapper.readValue(req.bodyString(), Map::class.java) as Map<String, Any?>
+            }.getOrNull() ?: return Response(Status.BAD_REQUEST)
+                .header("Content-Type", "application/json")
+                .body("""{"error":"Invalid JSON"}""")
         val saved = readerPreferencesService.set(userId, format, body, device)
-        return Response(Status.OK).header("Content-Type", "application/json")
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
             .body(Json.mapper.writeValueAsString(saved))
     }
 
@@ -40,13 +45,16 @@ class ReaderPreferencesHandler(private val readerPreferencesService: ReaderPrefe
         val userId = AuthenticatedUser.from(req)
         val format = req.path("format") ?: return Response(Status.BAD_REQUEST)
         val device = req.query("device")
-        val body = runCatching {
-            @Suppress("UNCHECKED_CAST")
-            Json.mapper.readValue(req.bodyString(), Map::class.java) as Map<String, Any?>
-        }.getOrNull() ?: return Response(Status.BAD_REQUEST).header("Content-Type", "application/json")
-            .body("""{"error":"Invalid JSON"}""")
+        val body =
+            runCatching {
+                @Suppress("UNCHECKED_CAST")
+                Json.mapper.readValue(req.bodyString(), Map::class.java) as Map<String, Any?>
+            }.getOrNull() ?: return Response(Status.BAD_REQUEST)
+                .header("Content-Type", "application/json")
+                .body("""{"error":"Invalid JSON"}""")
         val merged = readerPreferencesService.merge(userId, format, body, device)
-        return Response(Status.OK).header("Content-Type", "application/json")
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
             .body(Json.mapper.writeValueAsString(merged))
     }
 

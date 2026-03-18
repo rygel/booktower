@@ -11,13 +11,21 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class PublicShelfIntegrationTest : IntegrationTestBase() {
-
-    private fun createShelf(token: String, name: String = "My Shelf"): String {
-        val resp = app(Request(Method.POST, "/api/shelves")
-            .header("Cookie", "token=$token")
-            .header("Content-Type", "application/json")
-            .body("""{"name":"$name","ruleType":"STATUS","ruleValue":"FINISHED"}"""))
-        return Json.mapper.readTree(resp.bodyString()).get("id").asText()
+    private fun createShelf(
+        token: String,
+        name: String = "My Shelf",
+    ): String {
+        val resp =
+            app(
+                Request(Method.POST, "/api/shelves")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"name":"$name","ruleType":"STATUS","ruleValue":"FINISHED"}"""),
+            )
+        return Json.mapper
+            .readTree(resp.bodyString())
+            .get("id")
+            .asText()
     }
 
     @Test
@@ -42,8 +50,11 @@ class PublicShelfIntegrationTest : IntegrationTestBase() {
     fun `POST share generates share token`() {
         val token = registerAndGetToken()
         val shelfId = createShelf(token)
-        val resp = app(Request(Method.POST, "/api/shelves/$shelfId/share")
-            .header("Cookie", "token=$token"))
+        val resp =
+            app(
+                Request(Method.POST, "/api/shelves/$shelfId/share")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, resp.status)
         val body = Json.mapper.readTree(resp.bodyString())
         assertTrue(body.get("isPublic").asBoolean())
@@ -55,9 +66,16 @@ class PublicShelfIntegrationTest : IntegrationTestBase() {
     fun `GET public shelf without auth returns 200`() {
         val token = registerAndGetToken()
         val shelfId = createShelf(token)
-        val shareResp = app(Request(Method.POST, "/api/shelves/$shelfId/share")
-            .header("Cookie", "token=$token"))
-        val shareToken = Json.mapper.readTree(shareResp.bodyString()).get("shareToken").asText()
+        val shareResp =
+            app(
+                Request(Method.POST, "/api/shelves/$shelfId/share")
+                    .header("Cookie", "token=$token"),
+            )
+        val shareToken =
+            Json.mapper
+                .readTree(shareResp.bodyString())
+                .get("shareToken")
+                .asText()
 
         val publicResp = app(Request(Method.GET, "/public/shelf/$shareToken"))
         assertEquals(Status.OK, publicResp.status)
@@ -72,15 +90,20 @@ class PublicShelfIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId, "Finished Book")
         // Mark book as FINISHED
-        app(Request(Method.POST, "/api/books/$bookId/status")
-            .header("Cookie", "token=$token")
-            .header("Content-Type", "application/json")
-            .body("""{"status":"FINISHED"}"""))
+        app(
+            Request(Method.POST, "/api/books/$bookId/status")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/json")
+                .body("""{"status":"FINISHED"}"""),
+        )
 
         val shelfId = createShelf(token, "Finished Books")
-        val shareToken = Json.mapper.readTree(
-            app(Request(Method.POST, "/api/shelves/$shelfId/share").header("Cookie", "token=$token")).bodyString()
-        ).get("shareToken").asText()
+        val shareToken =
+            Json.mapper
+                .readTree(
+                    app(Request(Method.POST, "/api/shelves/$shelfId/share").header("Cookie", "token=$token")).bodyString(),
+                ).get("shareToken")
+                .asText()
 
         val resp = app(Request(Method.GET, "/public/shelf/$shareToken"))
         assertEquals(Status.OK, resp.status)
@@ -98,12 +121,18 @@ class PublicShelfIntegrationTest : IntegrationTestBase() {
     fun `DELETE share unshares the shelf`() {
         val token = registerAndGetToken()
         val shelfId = createShelf(token)
-        val shareToken = Json.mapper.readTree(
-            app(Request(Method.POST, "/api/shelves/$shelfId/share").header("Cookie", "token=$token")).bodyString()
-        ).get("shareToken").asText()
+        val shareToken =
+            Json.mapper
+                .readTree(
+                    app(Request(Method.POST, "/api/shelves/$shelfId/share").header("Cookie", "token=$token")).bodyString(),
+                ).get("shareToken")
+                .asText()
 
-        val deleteResp = app(Request(Method.DELETE, "/api/shelves/$shelfId/share")
-            .header("Cookie", "token=$token"))
+        val deleteResp =
+            app(
+                Request(Method.DELETE, "/api/shelves/$shelfId/share")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.NO_CONTENT, deleteResp.status)
 
         val publicResp = app(Request(Method.GET, "/public/shelf/$shareToken"))
@@ -117,8 +146,11 @@ class PublicShelfIntegrationTest : IntegrationTestBase() {
         val shelfId = createShelf(token1)
 
         // user2 tries to share user1's shelf — should fail (404)
-        val resp = app(Request(Method.POST, "/api/shelves/$shelfId/share")
-            .header("Cookie", "token=$token2"))
+        val resp =
+            app(
+                Request(Method.POST, "/api/shelves/$shelfId/share")
+                    .header("Cookie", "token=$token2"),
+            )
         assertEquals(Status.NOT_FOUND, resp.status)
     }
 }
