@@ -8,7 +8,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class SortPreferenceIntegrationTest : IntegrationTestBase() {
-
     @Test
     fun `library page defaults to TITLE sort with no preference set`() {
         val token = registerAndGetToken("sortpref1")

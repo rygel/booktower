@@ -1,56 +1,46 @@
 package org.booktower.integration
 
-import org.booktower.TestFixture
 import org.booktower.config.Json
-import org.booktower.config.TemplateRenderer
-import org.booktower.filters.GlobalErrorFilter
-import org.booktower.handlers.AppHandler
 import org.booktower.models.BookDto
 import org.booktower.models.BookListDto
 import org.booktower.models.LibraryDto
 import org.booktower.models.LoginResponse
-import org.booktower.services.AuthService
-import org.booktower.services.BookmarkService
-import org.booktower.services.PdfMetadataService
-import org.booktower.services.UserSettingsService
-import org.booktower.services.BookService
-import org.booktower.services.JwtService
-import org.booktower.services.LibraryService
-import org.http4k.core.HttpHandler
 import org.http4k.core.Method
 import org.http4k.core.Request
 import org.http4k.core.Status
-import org.http4k.core.then
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class BookIntegrationTest : IntegrationTestBase() {
-
     private fun registerAndGetToken(): String {
         val username = "user_${System.nanoTime()}"
-        val response = app(
-            Request(Method.POST, "/auth/register")
-                .header("Content-Type", "application/json")
-                .body("""{"username":"$username","email":"$username@test.com","password":"password123"}"""),
-        )
+        val response =
+            app(
+                Request(Method.POST, "/auth/register")
+                    .header("Content-Type", "application/json")
+                    .body("""{"username":"$username","email":"$username@test.com","password":"password123"}"""),
+            )
         return Json.mapper.readValue(response.bodyString(), LoginResponse::class.java).token
     }
 
     private fun createLibrary(token: String): String {
-        val response = app(
-            Request(Method.POST, "/api/libraries")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"name":"Test Lib","path":"./data/test-book-${System.nanoTime()}"}"""),
-        )
+        val response =
+            app(
+                Request(Method.POST, "/api/libraries")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"name":"Test Lib","path":"./data/test-book-${System.nanoTime()}"}"""),
+            )
         return Json.mapper.readValue(response.bodyString(), LibraryDto::class.java).id
     }
 
-    private fun authedRequest(method: Method, uri: String, token: String): Request =
-        Request(method, uri).header("Cookie", "token=$token")
+    private fun authedRequest(
+        method: Method,
+        uri: String,
+        token: String,
+    ): Request = Request(method, uri).header("Cookie", "token=$token")
 
     @Test
     fun `list books without auth returns 401`() {
@@ -62,11 +52,12 @@ class BookIntegrationTest : IntegrationTestBase() {
         val token = registerAndGetToken()
         val libraryId = createLibrary(token)
 
-        val response = app(
-            authedRequest(Method.POST, "/api/books", token)
-                .header("Content-Type", "application/json")
-                .body("""{"title":"Test Book","author":"Author","description":"A book","libraryId":"$libraryId"}"""),
-        )
+        val response =
+            app(
+                authedRequest(Method.POST, "/api/books", token)
+                    .header("Content-Type", "application/json")
+                    .body("""{"title":"Test Book","author":"Author","description":"A book","libraryId":"$libraryId"}"""),
+            )
 
         assertEquals(Status.CREATED, response.status)
         val book = Json.mapper.readValue(response.bodyString(), BookDto::class.java)
@@ -78,11 +69,12 @@ class BookIntegrationTest : IntegrationTestBase() {
 
     @Test
     fun `create book without auth returns 401`() {
-        val response = app(
-            Request(Method.POST, "/api/books")
-                .header("Content-Type", "application/json")
-                .body("""{"title":"x","author":null,"description":null,"libraryId":"some-id"}"""),
-        )
+        val response =
+            app(
+                Request(Method.POST, "/api/books")
+                    .header("Content-Type", "application/json")
+                    .body("""{"title":"x","author":null,"description":null,"libraryId":"some-id"}"""),
+            )
         assertEquals(Status.UNAUTHORIZED, response.status)
     }
 
@@ -91,11 +83,12 @@ class BookIntegrationTest : IntegrationTestBase() {
         val token = registerAndGetToken()
         val libraryId = createLibrary(token)
 
-        val response = app(
-            authedRequest(Method.POST, "/api/books", token)
-                .header("Content-Type", "application/json")
-                .body("""{"title":"","author":null,"description":null,"libraryId":"$libraryId"}"""),
-        )
+        val response =
+            app(
+                authedRequest(Method.POST, "/api/books", token)
+                    .header("Content-Type", "application/json")
+                    .body("""{"title":"","author":null,"description":null,"libraryId":"$libraryId"}"""),
+            )
         assertEquals(Status.BAD_REQUEST, response.status)
     }
 
@@ -103,11 +96,12 @@ class BookIntegrationTest : IntegrationTestBase() {
     fun `create book with invalid libraryId returns 400`() {
         val token = registerAndGetToken()
 
-        val response = app(
-            authedRequest(Method.POST, "/api/books", token)
-                .header("Content-Type", "application/json")
-                .body("""{"title":"Book","author":null,"description":null,"libraryId":"not-a-uuid"}"""),
-        )
+        val response =
+            app(
+                authedRequest(Method.POST, "/api/books", token)
+                    .header("Content-Type", "application/json")
+                    .body("""{"title":"Book","author":null,"description":null,"libraryId":"not-a-uuid"}"""),
+            )
         assertEquals(Status.BAD_REQUEST, response.status)
     }
 
@@ -115,11 +109,12 @@ class BookIntegrationTest : IntegrationTestBase() {
     fun `create book with non-existent library returns 400`() {
         val token = registerAndGetToken()
 
-        val response = app(
-            authedRequest(Method.POST, "/api/books", token)
-                .header("Content-Type", "application/json")
-                .body("""{"title":"Book","author":null,"description":null,"libraryId":"00000000-0000-0000-0000-000000000000"}"""),
-        )
+        val response =
+            app(
+                authedRequest(Method.POST, "/api/books", token)
+                    .header("Content-Type", "application/json")
+                    .body("""{"title":"Book","author":null,"description":null,"libraryId":"00000000-0000-0000-0000-000000000000"}"""),
+            )
         assertEquals(Status.BAD_REQUEST, response.status)
     }
 
@@ -147,11 +142,12 @@ class BookIntegrationTest : IntegrationTestBase() {
         val token = registerAndGetToken()
         val libraryId = createLibrary(token)
 
-        val createResponse = app(
-            authedRequest(Method.POST, "/api/books", token)
-                .header("Content-Type", "application/json")
-                .body("""{"title":"Fetchable","author":"Auth","description":null,"libraryId":"$libraryId"}"""),
-        )
+        val createResponse =
+            app(
+                authedRequest(Method.POST, "/api/books", token)
+                    .header("Content-Type", "application/json")
+                    .body("""{"title":"Fetchable","author":"Auth","description":null,"libraryId":"$libraryId"}"""),
+            )
         val bookId = Json.mapper.readValue(createResponse.bodyString(), BookDto::class.java).id
 
         val response = app(authedRequest(Method.GET, "/api/books/$bookId", token))
@@ -228,11 +224,12 @@ class BookIntegrationTest : IntegrationTestBase() {
         val token = registerAndGetToken()
         val libraryId = createLibrary(token)
 
-        val response = app(
-            authedRequest(Method.POST, "/api/books", token)
-                .header("Content-Type", "application/json")
-                .body("""{"title":"Minimal Book","author":null,"description":null,"libraryId":"$libraryId"}"""),
-        )
+        val response =
+            app(
+                authedRequest(Method.POST, "/api/books", token)
+                    .header("Content-Type", "application/json")
+                    .body("""{"title":"Minimal Book","author":null,"description":null,"libraryId":"$libraryId"}"""),
+            )
 
         assertEquals(Status.CREATED, response.status)
         val book = Json.mapper.readValue(response.bodyString(), BookDto::class.java)

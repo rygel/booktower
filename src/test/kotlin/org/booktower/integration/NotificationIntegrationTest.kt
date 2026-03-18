@@ -10,14 +10,21 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class NotificationIntegrationTest : IntegrationTestBase() {
-
     /** Publish a notification directly via the service (bypasses HTTP for setup). */
-    private fun publishDirect(token: String, type: String = "info", title: String = "Test"): String {
+    private fun publishDirect(
+        token: String,
+        type: String = "info",
+        title: String = "Test",
+    ): String {
         // We need the userId from the token — easier to call the service via the test JDBI
-        val jdbi = org.booktower.TestFixture.database.getJdbi()
+        val jdbi =
+            org.booktower.TestFixture.database
+                .getJdbi()
         val svc = NotificationService(jdbi)
         // Decode userId from JWT
-        val jwt = com.auth0.jwt.JWT.decode(token)
+        val jwt =
+            com.auth0.jwt.JWT
+                .decode(token)
         val userId = java.util.UUID.fromString(jwt.subject)
         return svc.publish(userId, type, title).id
     }
@@ -78,7 +85,11 @@ class NotificationIntegrationTest : IntegrationTestBase() {
 
         val resp = app(Request(Method.POST, "/api/notifications/read-all").header("Cookie", "token=$token"))
         assertEquals(Status.OK, resp.status)
-        val marked = Json.mapper.readTree(resp.bodyString()).get("marked").asInt()
+        val marked =
+            Json.mapper
+                .readTree(resp.bodyString())
+                .get("marked")
+                .asInt()
         assertEquals(2, marked)
 
         val unread = app(Request(Method.GET, "/api/notifications?unread=true").header("Cookie", "token=$token"))
@@ -123,7 +134,13 @@ class NotificationIntegrationTest : IntegrationTestBase() {
         val token = registerAndGetToken()
         val resp = app(Request(Method.GET, "/api/notifications/count").header("Cookie", "token=$token"))
         assertEquals(Status.OK, resp.status)
-        assertEquals(0, Json.mapper.readTree(resp.bodyString()).get("count").asInt())
+        assertEquals(
+            0,
+            Json.mapper
+                .readTree(resp.bodyString())
+                .get("count")
+                .asInt(),
+        )
     }
 
     @Test
@@ -134,7 +151,13 @@ class NotificationIntegrationTest : IntegrationTestBase() {
 
         val resp = app(Request(Method.GET, "/api/notifications/count").header("Cookie", "token=$token"))
         assertEquals(Status.OK, resp.status)
-        assertEquals(2, Json.mapper.readTree(resp.bodyString()).get("count").asInt())
+        assertEquals(
+            2,
+            Json.mapper
+                .readTree(resp.bodyString())
+                .get("count")
+                .asInt(),
+        )
     }
 
     @Test
@@ -145,7 +168,13 @@ class NotificationIntegrationTest : IntegrationTestBase() {
         app(Request(Method.POST, "/api/notifications/read-all").header("Cookie", "token=$token"))
 
         val resp = app(Request(Method.GET, "/api/notifications/count").header("Cookie", "token=$token"))
-        assertEquals(0, Json.mapper.readTree(resp.bodyString()).get("count").asInt())
+        assertEquals(
+            0,
+            Json.mapper
+                .readTree(resp.bodyString())
+                .get("count")
+                .asInt(),
+        )
     }
 
     @Test

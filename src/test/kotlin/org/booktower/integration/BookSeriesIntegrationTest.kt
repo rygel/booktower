@@ -6,7 +6,6 @@ import org.http4k.core.Request
 import org.http4k.core.Status
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNull
 
 /**
  * Integration tests for book series fields (series + seriesIndex).
@@ -14,25 +13,28 @@ import kotlin.test.assertNull
  * UpdateBookRequest / BookDto / BookService.updateBook.
  */
 class BookSeriesIntegrationTest : IntegrationTestBase() {
-
     @Test
     fun `update book with series and seriesIndex persists correctly`() {
         val token = registerAndGetToken("series_update")
         val libId = createLibrary(token)
         val bookId = createBook(token, libId, "The Fellowship of the Ring")
 
-        val putResp = app(
-            Request(Method.PUT, "/api/books/$bookId")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"title":"The Fellowship of the Ring","author":"Tolkien","description":null,"series":"Lord of the Rings","seriesIndex":1.0}"""),
-        )
+        val putResp =
+            app(
+                Request(Method.PUT, "/api/books/$bookId")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body(
+                        """{"title":"The Fellowship of the Ring","author":"Tolkien","description":null,"series":"Lord of the Rings","seriesIndex":1.0}""",
+                    ),
+            )
         assertEquals(Status.OK, putResp.status)
 
-        val getResp = app(
-            Request(Method.GET, "/api/books/$bookId")
-                .header("Cookie", "token=$token"),
-        )
+        val getResp =
+            app(
+                Request(Method.GET, "/api/books/$bookId")
+                    .header("Cookie", "token=$token"),
+            )
         val body = Json.mapper.readTree(getResp.bodyString())
         assertEquals("Lord of the Rings", body.get("series")?.asText())
         assertEquals(1.0, body.get("seriesIndex")?.asDouble())
@@ -60,10 +62,11 @@ class BookSeriesIntegrationTest : IntegrationTestBase() {
                 .body("""{"title":"Dune","author":"Herbert","description":null,"series":null,"seriesIndex":null}"""),
         )
 
-        val getResp = app(
-            Request(Method.GET, "/api/books/$bookId")
-                .header("Cookie", "token=$token"),
-        )
+        val getResp =
+            app(
+                Request(Method.GET, "/api/books/$bookId")
+                    .header("Cookie", "token=$token"),
+            )
         val body = Json.mapper.readTree(getResp.bodyString())
         val series = body.get("series")
         val seriesIsNull = series == null || series.isNull
@@ -76,10 +79,11 @@ class BookSeriesIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId, "Standalone Novel")
 
-        val getResp = app(
-            Request(Method.GET, "/api/books/$bookId")
-                .header("Cookie", "token=$token"),
-        )
+        val getResp =
+            app(
+                Request(Method.GET, "/api/books/$bookId")
+                    .header("Cookie", "token=$token"),
+            )
         val body = Json.mapper.readTree(getResp.bodyString())
         val series = body.get("series")
         val seriesIsNull = series == null || series.isNull
@@ -99,10 +103,11 @@ class BookSeriesIntegrationTest : IntegrationTestBase() {
                 .body("""{"title":"Interlude Story","author":null,"description":null,"series":"Epic Series","seriesIndex":1.5}"""),
         )
 
-        val getResp = app(
-            Request(Method.GET, "/api/books/$bookId")
-                .header("Cookie", "token=$token"),
-        )
+        val getResp =
+            app(
+                Request(Method.GET, "/api/books/$bookId")
+                    .header("Cookie", "token=$token"),
+            )
         val body = Json.mapper.readTree(getResp.bodyString())
         assertEquals(1.5, body.get("seriesIndex")?.asDouble())
     }

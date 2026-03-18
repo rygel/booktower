@@ -27,38 +27,45 @@ class RateLimitFilter(
 
     private val buckets = ConcurrentHashMap<String, ArrayDeque<Long>>()
 
-    override fun invoke(next: HttpHandler): HttpHandler = { request ->
-        val ip = request.header("X-Forwarded-For")?.split(",")?.firstOrNull()?.trim()
-            ?: request.source?.address
+    override fun invoke(next: HttpHandler): HttpHandler =
+        { request ->
+            val ip =
+                request
+                    .header("X-Forwarded-For")
+                    ?.split(",")
+                    ?.firstOrNull()
+                    ?.trim()
+                    ?: request.source?.address
 
-        if (ip == null || ip == "127.0.0.1" || ip == "::1" || ip == "0:0:0:0:0:0:0:1") {
-            next(request)
-        } else {
-            val now = System.currentTimeMillis()
-            val windowMs = windowSeconds * MS_PER_SECOND
-            val bucket = buckets.getOrPut(ip) { ArrayDeque() }
-
-            val allowed = synchronized(bucket) {
-                while (bucket.isNotEmpty() && bucket.peekFirst() < now - windowMs) {
-                    bucket.pollFirst()
-                }
-                if (bucket.size < maxRequests) {
-                    bucket.addLast(now)
-                    true
-                } else {
-                    false
-                }
-            }
-
-            if (allowed) {
+            if (ip == null || ip == "127.0.0.1" || ip == "::1" || ip == "0:0:0:0:0:0:0:1") {
                 next(request)
             } else {
-                logger.warn("Rate limit exceeded for IP $ip")
-                Response(Status.TOO_MANY_REQUESTS)
-                    .header("Content-Type", "application/json")
-                    .header("Retry-After", windowSeconds.toString())
-                    .body("""{"error":"TOO_MANY_REQUESTS","message":"Too many requests. Please try again later."}""")
+                val now = System.currentTimeMillis()
+                val windowMs = windowSeconds * MS_PER_SECOND
+                val bucket = buckets.getOrPut(ip) { ArrayDeque() }
+
+                val allowed =
+                    synchronized(bucket) {
+                        while (bucket.isNotEmpty() && bucket.peekFirst() < now - windowMs) {
+                            bucket.pollFirst()
+                        }
+                        if (bucket.size < maxRequests) {
+                            bucket.addLast(now)
+                            true
+                        } else {
+                            false
+                        }
+                    }
+
+                if (allowed) {
+                    next(request)
+                } else {
+                    logger.warn("Rate limit exceeded for IP $ip")
+                    Response(Status.TOO_MANY_REQUESTS)
+                        .header("Content-Type", "application/json")
+                        .header("Retry-After", windowSeconds.toString())
+                        .body("""{"error":"TOO_MANY_REQUESTS","message":"Too many requests. Please try again later."}""")
+                }
             }
         }
-    }
 }

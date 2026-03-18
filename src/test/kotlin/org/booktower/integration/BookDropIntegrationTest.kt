@@ -4,7 +4,7 @@ import org.booktower.TestFixture
 import org.booktower.config.Json
 import org.booktower.config.SmtpConfig
 import org.booktower.config.WeblateConfig
-import org.booktower.filters.GlobalErrorFilter
+import org.booktower.filters.globalErrorFilter
 import org.booktower.handlers.AppHandler
 import org.booktower.models.LoginResponse
 import org.booktower.services.AdminService
@@ -13,8 +13,8 @@ import org.booktower.services.AnnotationService
 import org.booktower.services.ApiTokenService
 import org.booktower.services.AuthService
 import org.booktower.services.BookDropService
-import org.booktower.services.BookmarkService
 import org.booktower.services.BookService
+import org.booktower.services.BookmarkService
 import org.booktower.services.ComicService
 import org.booktower.services.EmailService
 import org.booktower.services.EpubMetadataService
@@ -43,7 +43,6 @@ import java.io.File
 import java.nio.file.Path
 
 class BookDropIntegrationTest {
-
     @TempDir
     lateinit var tmp: Path
 
@@ -76,40 +75,74 @@ class BookDropIntegrationTest {
         val goodreadsImportService = GoodreadsImportService(bookService)
         val seedService = SeedService(bookService, libraryService, config.storage.coversPath, config.storage.booksPath)
         bookDropService = BookDropService(bookService, dropDir.absolutePath)
-        val appHandler = AppHandler(
-            authService, libraryService, bookService, bookmarkService,
-            userSettingsService, pdfMetadataService, epubMetadataService, adminService, jwtService, config.storage,
-            TestFixture.templateRenderer,
-            WeblateHandler(WeblateConfig("", "", "", false)),
-            analyticsService, annotationService, MetadataFetchService(), magicShelfService,
-            passwordResetService, EmailService(SmtpConfig("", 587, "", "", "", false)),
-            "http://localhost:9999", true,
-            apiTokenService, exportService, comicService, goodreadsImportService,
-            readingSessionService, seedService,
-            null, null, null, null, null, null, null, null, null, null, bookDropService,
-        )
-        app = GlobalErrorFilter().then(appHandler.routes())
+        val appHandler =
+            AppHandler(
+                authService,
+                libraryService,
+                bookService,
+                bookmarkService,
+                userSettingsService,
+                pdfMetadataService,
+                epubMetadataService,
+                adminService,
+                jwtService,
+                config.storage,
+                TestFixture.templateRenderer,
+                WeblateHandler(WeblateConfig("", "", "", false)),
+                analyticsService,
+                annotationService,
+                MetadataFetchService(),
+                magicShelfService,
+                passwordResetService,
+                EmailService(SmtpConfig("", 587, "", "", "", false)),
+                "http://localhost:9999",
+                true,
+                apiTokenService,
+                exportService,
+                comicService,
+                goodreadsImportService,
+                readingSessionService,
+                seedService,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                bookDropService,
+            )
+        app = globalErrorFilter().then(appHandler.routes())
     }
 
     private fun registerAndGetToken(prefix: String = "drop"): String {
         val u = "${prefix}_${System.nanoTime()}"
-        val resp = app(
-            Request(Method.POST, "/auth/register")
-                .header("Content-Type", "application/json")
-                .body("""{"username":"$u","email":"$u@test.com","password":"password123"}"""),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/auth/register")
+                    .header("Content-Type", "application/json")
+                    .body("""{"username":"$u","email":"$u@test.com","password":"password123"}"""),
+            )
         return Json.mapper.readValue(resp.bodyString(), LoginResponse::class.java).token
     }
 
     private fun createLibrary(token: String): Pair<String, String> {
         val libDir = tmp.resolve("lib_${System.nanoTime()}").toFile().also { it.mkdirs() }
-        val resp = app(
-            Request(Method.POST, "/api/libraries")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"name":"DropLib","path":"${libDir.absolutePath.replace("\\", "\\\\")}"}"""),
-        )
-        val libId = Json.mapper.readTree(resp.bodyString()).get("id").asText()
+        val resp =
+            app(
+                Request(Method.POST, "/api/libraries")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"name":"DropLib","path":"${libDir.absolutePath.replace("\\", "\\\\")}"}"""),
+            )
+        val libId =
+            Json.mapper
+                .readTree(resp.bodyString())
+                .get("id")
+                .asText()
         return libId to libDir.absolutePath
     }
 
@@ -118,7 +151,13 @@ class BookDropIntegrationTest {
         val token = registerAndGetToken()
         val resp = app(Request(Method.GET, "/api/bookdrop").header("Cookie", "token=$token"))
         assertEquals(Status.OK, resp.status)
-        assertEquals(0, Json.mapper.readTree(resp.bodyString()).get("files").size())
+        assertEquals(
+            0,
+            Json.mapper
+                .readTree(resp.bodyString())
+                .get("files")
+                .size(),
+        )
     }
 
     @Test
@@ -141,14 +180,19 @@ class BookDropIntegrationTest {
         val token = registerAndGetToken()
         val (libId, _) = createLibrary(token)
 
-        val resp = app(
-            Request(Method.POST, "/api/bookdrop/Hyperion.epub/import")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"libraryId":"$libId"}"""),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/api/bookdrop/Hyperion.epub/import")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"libraryId":"$libId"}"""),
+            )
         assertEquals(Status.CREATED, resp.status)
-        val bookId = Json.mapper.readTree(resp.bodyString()).get("bookId").asText()
+        val bookId =
+            Json.mapper
+                .readTree(resp.bodyString())
+                .get("bookId")
+                .asText()
         assert(bookId.isNotBlank()) { "bookId should be returned" }
         // Source file should be gone from drop folder
         assert(!epubFile.exists()) { "File should be moved out of drop folder" }
@@ -159,10 +203,11 @@ class BookDropIntegrationTest {
         File(dropDir, "Discard.epub").writeText("to discard")
 
         val token = registerAndGetToken()
-        val resp = app(
-            Request(Method.DELETE, "/api/bookdrop/Discard.epub")
-                .header("Cookie", "token=$token"),
-        )
+        val resp =
+            app(
+                Request(Method.DELETE, "/api/bookdrop/Discard.epub")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.NO_CONTENT, resp.status)
         assert(!File(dropDir, "Discard.epub").exists()) { "File should be deleted" }
     }
@@ -170,10 +215,11 @@ class BookDropIntegrationTest {
     @Test
     fun `DELETE api bookdrop filename returns 404 when file does not exist`() {
         val token = registerAndGetToken()
-        val resp = app(
-            Request(Method.DELETE, "/api/bookdrop/nonexistent.epub")
-                .header("Cookie", "token=$token"),
-        )
+        val resp =
+            app(
+                Request(Method.DELETE, "/api/bookdrop/nonexistent.epub")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.NOT_FOUND, resp.status)
     }
 

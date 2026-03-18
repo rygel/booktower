@@ -4,7 +4,7 @@ import org.booktower.TestFixture
 import org.booktower.config.Json
 import org.booktower.config.SmtpConfig
 import org.booktower.config.WeblateConfig
-import org.booktower.filters.GlobalErrorFilter
+import org.booktower.filters.globalErrorFilter
 import org.booktower.handlers.AppHandler
 import org.booktower.models.LoginResponse
 import org.booktower.services.AdminService
@@ -12,8 +12,8 @@ import org.booktower.services.AnalyticsService
 import org.booktower.services.AnnotationService
 import org.booktower.services.ApiTokenService
 import org.booktower.services.AuthService
-import org.booktower.services.BookmarkService
 import org.booktower.services.BookService
+import org.booktower.services.BookmarkService
 import org.booktower.services.ComicService
 import org.booktower.services.EmailService
 import org.booktower.services.EpubMetadataService
@@ -42,7 +42,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 class KomgaApiIntegrationTest {
-
     private val config = TestFixture.config
     private val jdbi = TestFixture.database.getJdbi()
 
@@ -70,41 +69,94 @@ class KomgaApiIntegrationTest {
         val goodreadsImportService = GoodreadsImportService(bookService)
         val seedService = SeedService(bookService, libraryService, config.storage.coversPath, config.storage.booksPath)
         val komgaApiService = KomgaApiService(jdbi, bookService, libraryService, "http://localhost:9999")
-        val appHandler = AppHandler(
-            authService, libraryService, bookService, bookmarkService,
-            userSettingsService, pdfMetadataService, epubMetadataService, adminService, jwtService, config.storage,
-            TestFixture.templateRenderer,
-            WeblateHandler(WeblateConfig("", "", "", false)),
-            analyticsService, annotationService, MetadataFetchService(), magicShelfService,
-            passwordResetService, EmailService(SmtpConfig("", 587, "", "", "", false)),
-            "http://localhost:9999", true,
-            apiTokenService, exportService, comicService, goodreadsImportService,
-            readingSessionService, seedService,
-            null, null, null, null, null, null, null, null, null, null, null, null,
-            null, null, komgaApiService,
-        )
-        app = GlobalErrorFilter().then(appHandler.routes())
+        val appHandler =
+            AppHandler(
+                authService,
+                libraryService,
+                bookService,
+                bookmarkService,
+                userSettingsService,
+                pdfMetadataService,
+                epubMetadataService,
+                adminService,
+                jwtService,
+                config.storage,
+                TestFixture.templateRenderer,
+                WeblateHandler(WeblateConfig("", "", "", false)),
+                analyticsService,
+                annotationService,
+                MetadataFetchService(),
+                magicShelfService,
+                passwordResetService,
+                EmailService(SmtpConfig("", 587, "", "", "", false)),
+                "http://localhost:9999",
+                true,
+                apiTokenService,
+                exportService,
+                comicService,
+                goodreadsImportService,
+                readingSessionService,
+                seedService,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                komgaApiService,
+            )
+        app = globalErrorFilter().then(appHandler.routes())
     }
 
     private fun registerAndToken(): String {
         val u = "komga_${System.nanoTime()}"
-        val r = app(Request(Method.POST, "/auth/register").header("Content-Type", "application/json")
-            .body("""{"username":"$u","email":"$u@test.com","password":"pass1234"}"""))
+        val r =
+            app(
+                Request(Method.POST, "/auth/register")
+                    .header("Content-Type", "application/json")
+                    .body("""{"username":"$u","email":"$u@test.com","password":"pass1234"}"""),
+            )
         return Json.mapper.readValue(r.bodyString(), LoginResponse::class.java).token
     }
 
     private fun createLibrary(token: String): String {
-        val r = app(Request(Method.POST, "/api/libraries")
-            .header("Cookie", "token=$token").header("Content-Type", "application/json")
-            .body("""{"name":"Lib ${System.nanoTime()}","path":"./data/test-${System.nanoTime()}"}"""))
-        return Json.mapper.readTree(r.bodyString()).get("id").asText()
+        val r =
+            app(
+                Request(Method.POST, "/api/libraries")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"name":"Lib ${System.nanoTime()}","path":"./data/test-${System.nanoTime()}"}"""),
+            )
+        return Json.mapper
+            .readTree(r.bodyString())
+            .get("id")
+            .asText()
     }
 
-    private fun createBook(token: String, libId: String, title: String = "Book ${System.nanoTime()}"): String {
-        val r = app(Request(Method.POST, "/api/books")
-            .header("Cookie", "token=$token").header("Content-Type", "application/json")
-            .body("""{"title":"$title","author":"Author A","libraryId":"$libId"}"""))
-        return Json.mapper.readTree(r.bodyString()).get("id").asText()
+    private fun createBook(
+        token: String,
+        libId: String,
+        title: String = "Book ${System.nanoTime()}",
+    ): String {
+        val r =
+            app(
+                Request(Method.POST, "/api/books")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"title":"$title","author":"Author A","libraryId":"$libId"}"""),
+            )
+        return Json.mapper
+            .readTree(r.bodyString())
+            .get("id")
+            .asText()
     }
 
     @Test
@@ -170,9 +222,12 @@ class KomgaApiIntegrationTest {
         val libId = createLibrary(token)
         // Create books with series metadata via PUT
         val bookId = createBook(token, libId, "Foundation")
-        app(Request(Method.PUT, "/api/books/$bookId")
-            .header("Cookie", "token=$token").header("Content-Type", "application/json")
-            .body("""{"title":"Foundation","author":"Isaac Asimov","series":"Foundation","seriesIndex":1.0}"""))
+        app(
+            Request(Method.PUT, "/api/books/$bookId")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/json")
+                .body("""{"title":"Foundation","author":"Isaac Asimov","series":"Foundation","seriesIndex":1.0}"""),
+        )
         val resp = app(Request(Method.GET, "/api/v1/series").header("Cookie", "token=$token"))
         assertEquals(Status.OK, resp.status)
         val tree = Json.mapper.readTree(resp.bodyString())

@@ -1,19 +1,41 @@
-# dev.ps1 - start BookTower in development mode
+# dev.ps1 – start BookTower in development mode
 #
-# JTE templates reload automatically on every request (DirectoryCodeResolver).
-# Kotlin/Java source changes require a restart - Ctrl+C then run this again.
+# Kills any instance already running on port 9999, builds, then starts
+# the server in the foreground so output is visible immediately.
+# Press Ctrl+C to stop. Run from a second terminal to restart.
 
 Set-Location $PSScriptRoot
 
-Write-Host 'Building BookTower...' -ForegroundColor Cyan
+$Port = 9999
+$Url  = "http://localhost:$Port"
+
+# ── Kill any existing instance on the port ────────────────────────────────────
+$conn = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
+if ($conn) {
+    $conn | ForEach-Object {
+        Write-Host "Stopping existing instance (PID $($_.OwningProcess))..." -ForegroundColor Yellow
+        taskkill /F /T /PID $_.OwningProcess 2>$null | Out-Null
+    }
+    Start-Sleep -Seconds 1
+}
+
+# ── Build ─────────────────────────────────────────────────────────────────────
+Write-Host "Building..." -ForegroundColor Cyan
 mvn compile -q
-if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "Build failed." -ForegroundColor Red
+    exit 1
+}
 
-Write-Host ''
-Write-Host 'Starting BookTower on http://localhost:9999' -ForegroundColor Green
-Write-Host '  Dev login -> username: dev  password: dev12345' -ForegroundColor Yellow
-Write-Host '  JTE templates hot-reload on every request (no restart needed)' -ForegroundColor Yellow
-Write-Host '  Press Ctrl+C to stop'
-Write-Host ''
+# ── Ensure data dirs exist ────────────────────────────────────────────────────
+@("data\books", "data\covers") | ForEach-Object {
+    if (-not (Test-Path $_)) { New-Item -ItemType Directory -Path $_ -Force | Out-Null }
+}
 
-mvn exec:java -q
+# ── Start server (foreground — output visible immediately) ────────────────────
+Write-Host ""
+Write-Host "Starting BookTower at $Url" -ForegroundColor Green
+Write-Host "Press Ctrl+C to stop." -ForegroundColor Gray
+Write-Host ""
+
+mvn exec:java "-Dexec.mainClass=org.booktower.BookTowerAppKt"

@@ -10,10 +10,16 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class ListeningStatsIntegrationTest : IntegrationTestBase() {
-
-    private fun listenBody(startPos: Int, endPos: Int, totalSec: Int? = null): String =
-        if (totalSec != null) """{"startPosSec":$startPos,"endPosSec":$endPos,"totalSec":$totalSec}"""
-        else """{"startPosSec":$startPos,"endPosSec":$endPos}"""
+    private fun listenBody(
+        startPos: Int,
+        endPos: Int,
+        totalSec: Int? = null,
+    ): String =
+        if (totalSec != null) {
+            """{"startPosSec":$startPos,"endPosSec":$endPos,"totalSec":$totalSec}"""
+        } else {
+            """{"startPosSec":$startPos,"endPosSec":$endPos}"""
+        }
 
     @Test
     fun `GET listening stats returns valid structure for new user`() {
@@ -48,17 +54,19 @@ class ListeningStatsIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
 
-        val postResp = app(
-            Request(Method.POST, "/api/books/$bookId/listen")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body(listenBody(0, 3600, 7200)),
-        )
+        val postResp =
+            app(
+                Request(Method.POST, "/api/books/$bookId/listen")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body(listenBody(0, 3600, 7200)),
+            )
         assertEquals(Status.NO_CONTENT, postResp.status)
 
-        val stats = Json.mapper.readTree(
-            app(Request(Method.GET, "/api/stats/listening").header("Cookie", "token=$token")).bodyString(),
-        )
+        val stats =
+            Json.mapper.readTree(
+                app(Request(Method.GET, "/api/stats/listening").header("Cookie", "token=$token")).bodyString(),
+            )
         assertTrue((stats.get("totalSecondsListened")?.asLong() ?: 0L) >= 3600L)
         assertTrue((stats.get("totalSessions")?.asInt() ?: 0) >= 1)
     }
@@ -69,12 +77,13 @@ class ListeningStatsIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
 
-        val putResp = app(
-            Request(Method.PUT, "/api/books/$bookId/listen-progress")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"positionSec":1800,"totalSec":7200}"""),
-        )
+        val putResp =
+            app(
+                Request(Method.PUT, "/api/books/$bookId/listen-progress")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"positionSec":1800,"totalSec":7200}"""),
+            )
         assertEquals(Status.NO_CONTENT, putResp.status)
 
         val getResp = app(Request(Method.GET, "/api/books/$bookId/listen-progress").header("Cookie", "token=$token"))
@@ -107,9 +116,10 @@ class ListeningStatsIntegrationTest : IntegrationTestBase() {
                 .body(listenBody(0, 2700, 5400)),
         )
 
-        val progress = Json.mapper.readTree(
-            app(Request(Method.GET, "/api/books/$bookId/listen-progress").header("Cookie", "token=$token")).bodyString(),
-        )
+        val progress =
+            Json.mapper.readTree(
+                app(Request(Method.GET, "/api/books/$bookId/listen-progress").header("Cookie", "token=$token")).bodyString(),
+            )
         assertEquals(2700, progress.get("positionSec")?.asInt())
         assertEquals(5400, progress.get("totalSec")?.asInt())
     }

@@ -13,23 +13,25 @@ import kotlin.test.assertTrue
 
 class JwtServiceTest {
     private lateinit var jwtService: JwtService
-    private val testUser = User(
-        id = UUID.randomUUID(),
-        username = "testuser",
-        email = "test@example.com",
-        passwordHash = "hash",
-        createdAt = Instant.now(),
-        updatedAt = Instant.now(),
-        isAdmin = false,
-    )
+    private val testUser =
+        User(
+            id = UUID.randomUUID(),
+            username = "testuser",
+            email = "test@example.com",
+            passwordHash = "hash",
+            createdAt = Instant.now(),
+            updatedAt = Instant.now(),
+            isAdmin = false,
+        )
 
     @BeforeEach
     fun setup() {
-        val config = SecurityConfig(
-            jwtSecret = "test-secret-key-not-for-production",
-            jwtIssuer = "booktower",
-            sessionTimeout = 86400,
-        )
+        val config =
+            SecurityConfig(
+                jwtSecret = "test-secret-key-not-for-production",
+                jwtIssuer = "booktower",
+                sessionTimeout = 86400,
+            )
         jwtService = JwtService(config)
     }
 
@@ -77,11 +79,12 @@ class JwtServiceTest {
 
     @Test
     fun `token from different secret is rejected`() {
-        val otherConfig = SecurityConfig(
-            jwtSecret = "different-secret",
-            jwtIssuer = "booktower",
-            sessionTimeout = 86400,
-        )
+        val otherConfig =
+            SecurityConfig(
+                jwtSecret = "different-secret",
+                jwtIssuer = "booktower",
+                sessionTimeout = 86400,
+            )
         val otherService = JwtService(otherConfig)
         val token = otherService.generateToken(testUser)
         val decoded = jwtService.verifyToken(token)

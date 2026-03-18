@@ -8,19 +8,27 @@ import org.jdbi.v3.core.Jdbi
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
-import kotlin.test.assertNull
 
 class CommunityRatingIntegrationTest : IntegrationTestBase() {
-
     /** Override to inject a fake service that returns a known result without HTTP calls */
-    override fun createCommunityRatingService(jdbi: Jdbi) = object : org.booktower.services.CommunityRatingService(jdbi) {
-        override fun fetchFromGoogleBooks(googleBooksId: String?, isbn: String?, title: String?): CommunityRatingDto? {
-            return if (!isbn.isNullOrBlank() || !googleBooksId.isNullOrBlank() || !title.isNullOrBlank())
-                CommunityRatingDto(rating = 4.2, count = 1500, source = "googlebooks", fetchedAt = null)
-            else null
+    override fun createCommunityRatingService(jdbi: Jdbi) =
+        object : org.booktower.services.CommunityRatingService(jdbi) {
+            override fun fetchFromGoogleBooks(
+                googleBooksId: String?,
+                isbn: String?,
+                title: String?,
+            ): CommunityRatingDto? =
+                if (!isbn.isNullOrBlank() || !googleBooksId.isNullOrBlank() || !title.isNullOrBlank()) {
+                    CommunityRatingDto(rating = 4.2, count = 1500, source = "googlebooks", fetchedAt = null)
+                } else {
+                    null
+                }
+
+            override fun fetchFromOpenLibrary(
+                openLibraryId: String?,
+                isbn: String?,
+            ): CommunityRatingDto? = null
         }
-        override fun fetchFromOpenLibrary(openLibraryId: String?, isbn: String?): CommunityRatingDto? = null
-    }
 
     @Test
     fun `fetch community rating stores and returns result`() {
@@ -28,10 +36,11 @@ class CommunityRatingIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId, "The Great Gatsby")
 
-        val response = app(
-            Request(Method.POST, "/api/books/$bookId/community-rating/fetch")
-                .header("Cookie", "token=$token")
-        )
+        val response =
+            app(
+                Request(Method.POST, "/api/books/$bookId/community-rating/fetch")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(200, response.status.code)
         val body = Json.mapper.readTree(response.bodyString())
         assertEquals(4.2, body.get("rating").asDouble(), 0.01)
@@ -49,10 +58,11 @@ class CommunityRatingIntegrationTest : IntegrationTestBase() {
         app(Request(Method.POST, "/api/books/$bookId/community-rating/fetch").header("Cookie", "token=$token"))
 
         // Then get stored
-        val response = app(
-            Request(Method.GET, "/api/books/$bookId/community-rating")
-                .header("Cookie", "token=$token")
-        )
+        val response =
+            app(
+                Request(Method.GET, "/api/books/$bookId/community-rating")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(200, response.status.code)
         val body = Json.mapper.readTree(response.bodyString())
         assertEquals(4.2, body.get("rating").asDouble(), 0.01)
@@ -65,10 +75,11 @@ class CommunityRatingIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId, "Unfetched Book")
 
-        val response = app(
-            Request(Method.GET, "/api/books/$bookId/community-rating")
-                .header("Cookie", "token=$token")
-        )
+        val response =
+            app(
+                Request(Method.GET, "/api/books/$bookId/community-rating")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(200, response.status.code)
         val body = Json.mapper.readTree(response.bodyString())
         // rating should be null (never fetched)
@@ -106,12 +117,16 @@ class CommunityRatingIntegrationTest : IntegrationTestBase() {
     @Test
     fun `fetch for nonexistent book returns 404`() {
         val token = registerAndGetToken("cr6")
-        val fakeId = java.util.UUID.randomUUID().toString()
+        val fakeId =
+            java.util.UUID
+                .randomUUID()
+                .toString()
 
-        val response = app(
-            Request(Method.POST, "/api/books/$fakeId/community-rating/fetch")
-                .header("Cookie", "token=$token")
-        )
+        val response =
+            app(
+                Request(Method.POST, "/api/books/$fakeId/community-rating/fetch")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(404, response.status.code)
     }
 }

@@ -8,7 +8,6 @@ import org.http4k.core.Request
 import org.http4k.core.Status
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 /**
@@ -17,20 +16,24 @@ import kotlin.test.assertTrue
  * to the book and appears on the book detail page.
  */
 class MetadataFetchSuccessIntegrationTest : IntegrationTestBase() {
-
     private val mapper = ObjectMapper()
 
-    override fun createMetadataFetchService() = object : MetadataFetchService() {
-        override fun fetchMetadata(title: String, author: String?, source: String?) = FetchedMetadata(
-            title = "The Fetched Title",
-            author = "Fetched Author Name",
-            description = "A wonderful description fetched from Open Library.",
-            isbn = "9780123456789",
-            publisher = "Stub Publisher Co.",
-            publishedDate = "1984-05-20",
-            openLibraryCoverId = null,
-        )
-    }
+    override fun createMetadataFetchService() =
+        object : MetadataFetchService() {
+            override fun fetchMetadata(
+                title: String,
+                author: String?,
+                source: String?,
+            ) = FetchedMetadata(
+                title = "The Fetched Title",
+                author = "Fetched Author Name",
+                description = "A wonderful description fetched from Open Library.",
+                isbn = "9780123456789",
+                publisher = "Stub Publisher Co.",
+                publishedDate = "1984-05-20",
+                openLibraryCoverId = null,
+            )
+        }
 
     @Test
     fun `fetch metadata applies all fetched fields to the book`() {
@@ -38,20 +41,24 @@ class MetadataFetchSuccessIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId, "Original Title")
 
-        val resp = app(
-            Request(Method.POST, "/ui/books/$bookId/fetch-metadata")
-                .header("Cookie", "token=$token"),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/ui/books/$bookId/fetch-metadata")
+                    .header("Cookie", "token=$token"),
+            )
         // Handler redirects via HX-Redirect on success
         assertEquals(Status.OK, resp.status)
-        assertTrue(resp.header("HX-Redirect")?.contains("/books/$bookId") == true,
-            "Should redirect back to book page on success")
+        assertTrue(
+            resp.header("HX-Redirect")?.contains("/books/$bookId") == true,
+            "Should redirect back to book page on success",
+        )
 
         // Verify the data was actually persisted — read via API
-        val bookResp = app(
-            Request(Method.GET, "/api/books/$bookId")
-                .header("Cookie", "token=$token"),
-        )
+        val bookResp =
+            app(
+                Request(Method.GET, "/api/books/$bookId")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, bookResp.status)
         val body = bookResp.bodyString()
         assertTrue(body.contains("The Fetched Title"), "title should be updated")
@@ -70,10 +77,11 @@ class MetadataFetchSuccessIntegrationTest : IntegrationTestBase() {
                 .header("Cookie", "token=$token"),
         )
 
-        val bookResp = app(
-            Request(Method.GET, "/api/books/$bookId")
-                .header("Cookie", "token=$token"),
-        )
+        val bookResp =
+            app(
+                Request(Method.GET, "/api/books/$bookId")
+                    .header("Cookie", "token=$token"),
+            )
         val body = bookResp.bodyString()
         assertTrue(body.contains("9780123456789"), "isbn should be stored")
         assertTrue(body.contains("Stub Publisher Co."), "publisher should be stored")
@@ -91,10 +99,11 @@ class MetadataFetchSuccessIntegrationTest : IntegrationTestBase() {
                 .header("Cookie", "token=$token"),
         )
 
-        val pageResp = app(
-            Request(Method.GET, "/books/$bookId")
-                .header("Cookie", "token=$token"),
-        )
+        val pageResp =
+            app(
+                Request(Method.GET, "/books/$bookId")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, pageResp.status)
         val html = pageResp.bodyString()
         assertTrue(html.contains("The Fetched Title"), "title should render in HTML")
@@ -123,10 +132,11 @@ class MetadataFetchSuccessIntegrationTest : IntegrationTestBase() {
                 .header("Cookie", "token=$token"),
         )
 
-        val bookResp = app(
-            Request(Method.GET, "/api/books/$bookId")
-                .header("Cookie", "token=$token"),
-        )
+        val bookResp =
+            app(
+                Request(Method.GET, "/api/books/$bookId")
+                    .header("Cookie", "token=$token"),
+            )
         val body = bookResp.bodyString()
         // Status should survive the metadata fetch
         assertTrue(body.contains("READING"), "read status should survive metadata fetch")
@@ -141,12 +151,15 @@ class MetadataFetchSuccessIntegrationTest : IntegrationTestBase() {
         // Create a book with no author (null by default in createBook)
         val bookId = createBook(token, libId, "Authorless Book")
 
-        val resp = app(
-            Request(Method.POST, "/ui/books/$bookId/fetch-metadata")
-                .header("Cookie", "token=$token"),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/ui/books/$bookId/fetch-metadata")
+                    .header("Cookie", "token=$token"),
+            )
         // Should not crash even when author is null in the request to fetchMetadata
-        assertTrue(resp.status.successful || resp.status == Status.OK,
-            "Fetch with null author should not error: ${resp.status}")
+        assertTrue(
+            resp.status.successful || resp.status == Status.OK,
+            "Fetch with null author should not error: ${resp.status}",
+        )
     }
 }

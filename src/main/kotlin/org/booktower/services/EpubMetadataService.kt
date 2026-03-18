@@ -23,17 +23,26 @@ data class EpubMetadata(
     val coverPath: String?,
 )
 
-class EpubMetadataService(private val jdbi: Jdbi, private val coversPath: String) {
+class EpubMetadataService(
+    private val jdbi: Jdbi,
+    private val coversPath: String,
+) {
+    private val executor: ExecutorService =
+        Executors.newSingleThreadExecutor { r ->
+            Thread(r, "epub-metadata").also { it.isDaemon = true }
+        }
 
-    private val executor: ExecutorService = Executors.newSingleThreadExecutor { r ->
-        Thread(r, "epub-metadata").also { it.isDaemon = true }
-    }
-
-    fun submitAsync(bookId: String, epubFile: File) {
+    fun submitAsync(
+        bookId: String,
+        epubFile: File,
+    ) {
         executor.submit { extractAndStore(bookId, epubFile) }
     }
 
-    fun extractAndStore(bookId: String, epubFile: File): EpubMetadata {
+    fun extractAndStore(
+        bookId: String,
+        epubFile: File,
+    ): EpubMetadata {
         return try {
             ZipFile(epubFile).use { zip ->
                 val opfPath = findOpfPath(zip)
@@ -49,11 +58,12 @@ class EpubMetadataService(private val jdbi: Jdbi, private val coversPath: String
                     return@use EpubMetadata(null, null, null, null)
                 }
 
-                val factory = DocumentBuilderFactory.newInstance().also {
-                    it.isNamespaceAware = true
-                    it.isValidating = false
-                    it.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false)
-                }
+                val factory =
+                    DocumentBuilderFactory.newInstance().also {
+                        it.isNamespaceAware = true
+                        it.isValidating = false
+                        it.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false)
+                    }
                 val doc = factory.newDocumentBuilder().parse(zip.getInputStream(opfEntry))
 
                 val title = dcText(doc, "title")
@@ -98,12 +108,20 @@ class EpubMetadataService(private val jdbi: Jdbi, private val coversPath: String
             }
         }
         // Fallback: any .opf entry in the ZIP
-        return zip.entries().asSequence()
-            .firstOrNull { it.name.endsWith(".opf", ignoreCase = true) }?.name
+        return zip
+            .entries()
+            .asSequence()
+            .firstOrNull { it.name.endsWith(".opf", ignoreCase = true) }
+            ?.name
     }
 
     /** Extract cover image bytes from the EPUB and save to coversPath. Returns filename or null. */
-    private fun extractCover(zip: ZipFile, doc: Document, opfDir: String, bookId: String): String? {
+    private fun extractCover(
+        zip: ZipFile,
+        doc: Document,
+        opfDir: String,
+        bookId: String,
+    ): String? {
         val coverHref = findCoverHref(doc) ?: return null
 
         // Resolve href relative to the OPF directory
@@ -112,9 +130,12 @@ class EpubMetadataService(private val jdbi: Jdbi, private val coversPath: String
 
         return try {
             val coversDir = File(coversPath)
-            if (!coversDir.exists()) coversDir.mkdirs()
-            val ext = coverHref.substringAfterLast('.', "jpg").lowercase()
-                .let { if (it in setOf("jpg", "jpeg", "png", "webp", "gif")) it else "jpg" }
+            if (!coversDir.exists() && !coversDir.mkdirs()) logger.warn("Could not create directory: ${coversDir.absolutePath}")
+            val ext =
+                coverHref
+                    .substringAfterLast('.', "jpg")
+                    .lowercase()
+                    .let { if (it in setOf("jpg", "jpeg", "png", "webp", "gif")) it else "jpg" }
             val coverFile = File(coversDir, "$bookId.$ext")
             zip.getInputStream(coverEntry).use { input ->
                 coverFile.outputStream().use { output -> input.copyTo(output) }
@@ -176,27 +197,37 @@ class EpubMetadataService(private val jdbi: Jdbi, private val coversPath: String
     }
 
     /** Read a Dublin Core element by local name, trying NS then qualified name then local name. */
-    private fun dcText(doc: Document, localName: String): String? {
+    private fun dcText(
+        doc: Document,
+        localName: String,
+    ): String? {
         var nodes = doc.getElementsByTagNameNS(DC_NS, localName)
         if (nodes.length == 0) nodes = doc.getElementsByTagName("dc:$localName")
         if (nodes.length == 0) nodes = doc.getElementsByTagName(localName)
-        return nodes.item(0)?.textContent?.trim()?.takeIf { it.isNotBlank() }
+        return nodes
+            .item(0)
+            ?.textContent
+            ?.trim()
+            ?.takeIf { it.isNotBlank() }
     }
 
     /** Strip HTML tags from description text (some EPUBs include markup). */
-    private fun stripHtml(text: String): String =
-        text.replace(Regex("<[^>]+>"), " ").replace(Regex("\\s+"), " ").trim()
+    private fun stripHtml(text: String): String = text.replace(Regex("<[^>]+>"), " ").replace(Regex("\\s+"), " ").trim()
 
-    private fun persistMetadata(bookId: String, metadata: EpubMetadata) {
+    private fun persistMetadata(
+        bookId: String,
+        metadata: EpubMetadata,
+    ) {
         val now = Instant.now().toString()
         jdbi.useHandle<Exception> { handle ->
-            val setClauses = buildList {
-                add("updated_at = ?")
-                if (metadata.title != null) add("title = ?")
-                if (metadata.author != null) add("author = ?")
-                if (metadata.description != null) add("description = ?")
-                if (metadata.coverPath != null) add("cover_path = ?")
-            }
+            val setClauses =
+                buildList {
+                    add("updated_at = ?")
+                    if (metadata.title != null) add("title = ?")
+                    if (metadata.author != null) add("author = ?")
+                    if (metadata.description != null) add("description = ?")
+                    if (metadata.coverPath != null) add("cover_path = ?")
+                }
             val sql = "UPDATE books SET ${setClauses.joinToString(", ")} WHERE id = ?"
             val update = handle.createUpdate(sql)
             var idx = 0

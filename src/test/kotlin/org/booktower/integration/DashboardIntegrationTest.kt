@@ -9,7 +9,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class DashboardIntegrationTest : IntegrationTestBase() {
-
     @Test
     fun `GET root without auth shows landing page`() {
         val response = app(Request(Method.GET, "/"))
@@ -50,8 +49,10 @@ class DashboardIntegrationTest : IntegrationTestBase() {
     fun `dashboard shows empty state when no libraries`() {
         val token = registerAndGetToken("dash4")
         val body = app(Request(Method.GET, "/").header("Cookie", "token=$token")).bodyString()
-        assertTrue(body.contains("page.libraries.new") || body.contains("New Library"),
-            "Empty state should have CTA to create library")
+        assertTrue(
+            body.contains("page.libraries.new") || body.contains("New Library"),
+            "Empty state should have CTA to create library",
+        )
     }
 
     @Test
@@ -61,10 +62,12 @@ class DashboardIntegrationTest : IntegrationTestBase() {
         val bookId = createBook(token, libId, "My Reading Book")
 
         // Record reading progress
-        app(Request(Method.POST, "/ui/books/$bookId/progress")
-            .header("Cookie", "token=$token")
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .body("currentPage=42"))
+        app(
+            Request(Method.POST, "/ui/books/$bookId/progress")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .body("currentPage=42"),
+        )
 
         val body = app(Request(Method.GET, "/").header("Cookie", "token=$token")).bodyString()
         assertTrue(body.contains("My Reading Book"), "Dashboard should show book in Continue Reading")
@@ -80,8 +83,10 @@ class DashboardIntegrationTest : IntegrationTestBase() {
         // "Unread Book" has no progress, so it should not appear in Continue Reading
         // (it may appear in libraries section, but not "Continue Reading" heading)
         // We can verify the continue reading section only shows books with progress
-        assertFalse(body.contains("page.dashboard.continue.reading"),
-            "Continue Reading heading should not appear as literal key")
+        assertFalse(
+            body.contains("page.dashboard.continue.reading"),
+            "Continue Reading heading should not appear as literal key",
+        )
     }
 
     @Test
@@ -94,16 +99,22 @@ class DashboardIntegrationTest : IntegrationTestBase() {
     @Test
     fun `dashboard reflects theme from cookie`() {
         val token = registerAndGetToken("dash8")
-        val body = app(Request(Method.GET, "/")
-            .header("Cookie", "token=$token; app_theme=dracula")).bodyString()
+        val body =
+            app(
+                Request(Method.GET, "/")
+                    .header("Cookie", "token=$token; app_theme=dracula"),
+            ).bodyString()
         assertTrue(body.contains("data-theme=\"dracula\""))
     }
 
     @Test
     fun `dashboard title is translated in German`() {
         val token = registerAndGetToken("dash9")
-        val body = app(Request(Method.GET, "/")
-            .header("Cookie", "token=$token; app_lang=de")).bodyString()
+        val body =
+            app(
+                Request(Method.GET, "/")
+                    .header("Cookie", "token=$token; app_lang=de"),
+            ).bodyString()
         assertTrue(body.contains("Startseite"), "Dashboard title should be in German")
     }
 
@@ -133,10 +144,14 @@ class DashboardIntegrationTest : IntegrationTestBase() {
         createLibrary(token)
 
         val body = app(Request(Method.GET, "/").header("Cookie", "token=$token")).bodyString()
-        assertFalse(body.contains("page.dashboard.recently.added"),
-            "Recently Added heading should not render as raw i18n key")
-        assertFalse(body.contains("Recently Added"),
-            "Recently Added section should not appear when there are no books")
+        assertFalse(
+            body.contains("page.dashboard.recently.added"),
+            "Recently Added heading should not render as raw i18n key",
+        )
+        assertFalse(
+            body.contains("Recently Added"),
+            "Recently Added section should not appear when there are no books",
+        )
     }
 
     @Test
@@ -183,10 +198,12 @@ class DashboardIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId, "Active Book")
 
-        app(Request(Method.POST, "/ui/books/$bookId/status")
-            .header("Cookie", "token=$token")
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .body("status=READING"))
+        app(
+            Request(Method.POST, "/ui/books/$bookId/status")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .body("status=READING"),
+        )
 
         val body = app(Request(Method.GET, "/").header("Cookie", "token=$token")).bodyString()
         assertTrue(body.contains(">1<"), "In-progress stat should show 1 after marking a book READING")
@@ -199,10 +216,12 @@ class DashboardIntegrationTest : IntegrationTestBase() {
         val bookId = createBook(token, libId, "Progress Only Book")
 
         // record reading progress but do NOT set status
-        app(Request(Method.POST, "/ui/books/$bookId/progress")
-            .header("Cookie", "token=$token")
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .body("currentPage=10"))
+        app(
+            Request(Method.POST, "/ui/books/$bookId/progress")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .body("currentPage=10"),
+        )
 
         val body = app(Request(Method.GET, "/").header("Cookie", "token=$token")).bodyString()
         // In-progress stat should still be 0 — no READING status set
@@ -215,10 +234,12 @@ class DashboardIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId, "Done Book")
 
-        app(Request(Method.POST, "/ui/books/$bookId/status")
-            .header("Cookie", "token=$token")
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .body("status=FINISHED"))
+        app(
+            Request(Method.POST, "/ui/books/$bookId/status")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .body("status=FINISHED"),
+        )
 
         val body = app(Request(Method.GET, "/").header("Cookie", "token=$token")).bodyString()
         assertTrue(body.contains(">0<"), "In-progress stat should not count FINISHED books")
@@ -232,15 +253,19 @@ class DashboardIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId, "Finished Book")
 
-        app(Request(Method.POST, "/ui/books/$bookId/status")
-            .header("Cookie", "token=$token")
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .body("status=FINISHED"))
+        app(
+            Request(Method.POST, "/ui/books/$bookId/status")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .body("status=FINISHED"),
+        )
 
         val body = app(Request(Method.GET, "/").header("Cookie", "token=$token")).bodyString()
         assertTrue(body.contains("Finished Book"), "Dashboard must show the finished book in Recently Finished")
-        assertTrue(body.contains("ri-checkbox-circle-line"),
-            "Recently Finished section must use the checkbox-circle icon")
+        assertTrue(
+            body.contains("ri-checkbox-circle-line"),
+            "Recently Finished section must use the checkbox-circle icon",
+        )
     }
 
     @Test
@@ -250,10 +275,14 @@ class DashboardIntegrationTest : IntegrationTestBase() {
         createBook(token, libId, "Unfinished Book")
 
         val body = app(Request(Method.GET, "/").header("Cookie", "token=$token")).bodyString()
-        assertFalse(body.contains("page.dashboard.recently.finished"),
-            "Recently Finished heading must not render as raw i18n key")
-        assertFalse(body.contains("Recently Finished"),
-            "Recently Finished section must not appear when no books are finished")
+        assertFalse(
+            body.contains("page.dashboard.recently.finished"),
+            "Recently Finished heading must not render as raw i18n key",
+        )
+        assertFalse(
+            body.contains("Recently Finished"),
+            "Recently Finished section must not appear when no books are finished",
+        )
     }
 
     @Test
@@ -263,15 +292,19 @@ class DashboardIntegrationTest : IntegrationTestBase() {
         val book1 = createBook(token, libId, "First Finished")
         val book2 = createBook(token, libId, "Second Finished")
 
-        app(Request(Method.POST, "/ui/books/$book1/status")
-            .header("Cookie", "token=$token")
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .body("status=FINISHED"))
+        app(
+            Request(Method.POST, "/ui/books/$book1/status")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .body("status=FINISHED"),
+        )
         Thread.sleep(10)
-        app(Request(Method.POST, "/ui/books/$book2/status")
-            .header("Cookie", "token=$token")
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .body("status=FINISHED"))
+        app(
+            Request(Method.POST, "/ui/books/$book2/status")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .body("status=FINISHED"),
+        )
 
         val body = app(Request(Method.GET, "/").header("Cookie", "token=$token")).bodyString()
         val pos1 = body.indexOf("First Finished")
@@ -286,17 +319,23 @@ class DashboardIntegrationTest : IntegrationTestBase() {
         val book1 = createBook(token, libId, "Reading Book")
         val book2 = createBook(token, libId, "Want Book")
 
-        app(Request(Method.POST, "/ui/books/$book1/status")
-            .header("Cookie", "token=$token")
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .body("status=READING"))
-        app(Request(Method.POST, "/ui/books/$book2/status")
-            .header("Cookie", "token=$token")
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .body("status=WANT_TO_READ"))
+        app(
+            Request(Method.POST, "/ui/books/$book1/status")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .body("status=READING"),
+        )
+        app(
+            Request(Method.POST, "/ui/books/$book2/status")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .body("status=WANT_TO_READ"),
+        )
 
         val body = app(Request(Method.GET, "/").header("Cookie", "token=$token")).bodyString()
-        assertFalse(body.contains("Recently Finished"),
-            "Recently Finished section must not appear when no books have FINISHED status")
+        assertFalse(
+            body.contains("Recently Finished"),
+            "Recently Finished section must not appear when no books have FINISHED status",
+        )
     }
 }

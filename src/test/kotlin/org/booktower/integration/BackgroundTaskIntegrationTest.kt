@@ -4,17 +4,16 @@ import org.booktower.TestFixture
 import org.booktower.config.Json
 import org.booktower.config.SmtpConfig
 import org.booktower.config.WeblateConfig
-import org.booktower.filters.GlobalErrorFilter
+import org.booktower.filters.globalErrorFilter
 import org.booktower.handlers.AppHandler
 import org.booktower.services.AdminService
 import org.booktower.services.AnalyticsService
 import org.booktower.services.AnnotationService
 import org.booktower.services.ApiTokenService
-import org.booktower.services.AuditService
 import org.booktower.services.AuthService
 import org.booktower.services.BackgroundTaskService
-import org.booktower.services.BookmarkService
 import org.booktower.services.BookService
+import org.booktower.services.BookmarkService
 import org.booktower.services.ComicService
 import org.booktower.services.EmailService
 import org.booktower.services.EpubMetadataService
@@ -28,7 +27,6 @@ import org.booktower.services.PasswordResetService
 import org.booktower.services.PdfMetadataService
 import org.booktower.services.ReadingSessionService
 import org.booktower.services.SeedService
-import org.booktower.services.TaskStatus
 import org.booktower.services.UserSettingsService
 import org.booktower.weblate.WeblateHandler
 import org.http4k.core.Method
@@ -42,7 +40,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class BackgroundTaskIntegrationTest {
-
     private val config = TestFixture.config
     private val jdbi = TestFixture.database.getJdbi()
     private val taskService = BackgroundTaskService()
@@ -67,20 +64,40 @@ class BackgroundTaskIntegrationTest {
         val comicService = ComicService()
         val goodreadsImportService = GoodreadsImportService(bookService)
         val seedService = SeedService(bookService, libraryService, config.storage.coversPath, config.storage.booksPath)
-        val appHandler = AppHandler(
-            authService, libraryService, bookService, bookmarkService,
-            userSettingsService, pdfMetadataService, epubMetadataService, adminService, jwtService, config.storage,
-            TestFixture.templateRenderer,
-            WeblateHandler(WeblateConfig("", "", "", false)),
-            analyticsService, annotationService, MetadataFetchService(), magicShelfService,
-            passwordResetService,
-            EmailService(SmtpConfig("", 587, "", "", "", true)),
-            "http://localhost:9999",
-            true,
-            apiTokenService, exportService, comicService, goodreadsImportService, readingSessionService, seedService,
-            null, null, null, taskService,
-        )
-        return GlobalErrorFilter().then(appHandler.routes())
+        val appHandler =
+            AppHandler(
+                authService,
+                libraryService,
+                bookService,
+                bookmarkService,
+                userSettingsService,
+                pdfMetadataService,
+                epubMetadataService,
+                adminService,
+                jwtService,
+                config.storage,
+                TestFixture.templateRenderer,
+                WeblateHandler(WeblateConfig("", "", "", false)),
+                analyticsService,
+                annotationService,
+                MetadataFetchService(),
+                magicShelfService,
+                passwordResetService,
+                EmailService(SmtpConfig("", 587, "", "", "", true)),
+                "http://localhost:9999",
+                true,
+                apiTokenService,
+                exportService,
+                comicService,
+                goodreadsImportService,
+                readingSessionService,
+                seedService,
+                null,
+                null,
+                null,
+                taskService,
+            )
+        return globalErrorFilter().then(appHandler.routes())
     }
 
     @Test
@@ -175,19 +192,35 @@ class BackgroundTaskIntegrationTest {
 
     private fun registerToken(app: org.http4k.core.HttpHandler): String {
         val name = "bgtask_${System.nanoTime()}"
-        val resp = app(
-            Request(Method.POST, "/auth/register")
-                .header("Content-Type", "application/json")
-                .body("""{"username":"$name","email":"$name@test.com","password":"password123"}"""),
-        )
-        return Json.mapper.readTree(resp.bodyString()).get("token").asText()
+        val resp =
+            app(
+                Request(Method.POST, "/auth/register")
+                    .header("Content-Type", "application/json")
+                    .body("""{"username":"$name","email":"$name@test.com","password":"password123"}"""),
+            )
+        return Json.mapper
+            .readTree(resp.bodyString())
+            .get("token")
+            .asText()
     }
 
-    private fun extractUserId(app: org.http4k.core.HttpHandler, token: String): UUID {
+    private fun extractUserId(
+        app: org.http4k.core.HttpHandler,
+        token: String,
+    ): UUID {
         // Decode from JWT payload (base64 middle section)
         val payload = token.split(".").getOrNull(1) ?: error("Invalid token")
-        val decoded = String(java.util.Base64.getUrlDecoder().decode(padding(payload)))
-        val sub = Json.mapper.readTree(decoded).get("sub").asText()
+        val decoded =
+            String(
+                java.util.Base64
+                    .getUrlDecoder()
+                    .decode(padding(payload)),
+            )
+        val sub =
+            Json.mapper
+                .readTree(decoded)
+                .get("sub")
+                .asText()
         return UUID.fromString(sub)
     }
 

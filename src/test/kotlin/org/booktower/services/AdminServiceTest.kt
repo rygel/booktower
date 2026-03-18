@@ -25,9 +25,10 @@ class AdminServiceTest {
     }
 
     private fun registerUser(prefix: String = "admin"): UUID {
-        val result = authService.register(
-            CreateUserRequest("${prefix}_${System.nanoTime()}", "${prefix}_${System.nanoTime()}@test.com", "password123"),
-        )
+        val result =
+            authService.register(
+                CreateUserRequest("${prefix}_${System.nanoTime()}", "${prefix}_${System.nanoTime()}@test.com", "password123"),
+            )
         return jwtService.extractUserId(result.getOrThrow().token)!!
     }
 

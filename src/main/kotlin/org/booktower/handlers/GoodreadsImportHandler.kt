@@ -15,11 +15,13 @@ class GoodreadsImportHandler(
     /** POST /api/import/goodreads?libraryId=UUID — body is raw Goodreads CSV */
     fun import(req: Request): Response {
         val token = req.cookie("token")?.value ?: req.header("Authorization")?.removePrefix("Bearer ")
-        val userId = token?.let { jwtService.extractUserId(it) }
-            ?: return Response(Status.UNAUTHORIZED)
+        val userId =
+            token?.let { jwtService.extractUserId(it) }
+                ?: return Response(Status.UNAUTHORIZED)
 
-        val libraryId = req.query("libraryId")?.takeIf { it.isNotBlank() }
-            ?: return Response(Status.BAD_REQUEST).body("{\"error\":\"libraryId is required\"}")
+        val libraryId =
+            req.query("libraryId")?.takeIf { it.isNotBlank() }
+                ?: return Response(Status.BAD_REQUEST).body("{\"error\":\"libraryId is required\"}")
 
         val result = importService.import(userId, libraryId, req.body.stream)
         return Response(Status.OK)

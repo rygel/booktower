@@ -5,7 +5,6 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
 
 class FilenameMetadataServiceTest {
-
     private fun parse(name: String) = FilenameMetadataService.parse(name)
 
     @Test

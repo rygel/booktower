@@ -2,7 +2,6 @@ package org.booktower.services
 
 import org.booktower.TestFixture
 import org.booktower.models.CreateLibraryRequest
-import org.booktower.services.PdfMetadataService
 import org.booktower.models.CreateUserRequest
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -28,7 +27,10 @@ class LibraryServiceTest {
         val pdfMetadataService = PdfMetadataService(jdbi, config.storage.coversPath)
         libraryService = LibraryService(jdbi, pdfMetadataService)
 
-        val result = authService.register(CreateUserRequest("libuser_${System.nanoTime()}", "lib_${System.nanoTime()}@test.com", "password123"))
+        val result =
+            authService.register(
+                CreateUserRequest("libuser_${System.nanoTime()}", "lib_${System.nanoTime()}@test.com", "password123"),
+            )
         userId = jwtService.extractUserId(result.getOrThrow().token)!!
     }
 
@@ -81,7 +83,10 @@ class LibraryServiceTest {
     @Test
     fun `libraries are isolated per user`() {
         libraryService.createLibrary(userId, CreateLibraryRequest("UserA Lib", "./data/test-ua-${System.nanoTime()}"))
-        val otherResult = authService.register(CreateUserRequest("other_${System.nanoTime()}", "other_${System.nanoTime()}@test.com", "password123"))
+        val otherResult =
+            authService.register(
+                CreateUserRequest("other_${System.nanoTime()}", "other_${System.nanoTime()}@test.com", "password123"),
+            )
         val otherUserId = jwtService.extractUserId(otherResult.getOrThrow().token)!!
         assertTrue(libraryService.getLibraries(otherUserId).isEmpty())
     }

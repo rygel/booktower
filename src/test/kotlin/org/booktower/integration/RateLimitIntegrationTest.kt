@@ -20,8 +20,10 @@ import kotlin.test.assertTrue
  * the 11th request from the same IP within a window should receive 429.
  */
 class RateLimitIntegrationTest : IntegrationTestBase() {
-
-    private fun registerRequest(username: String, ip: String): org.http4k.core.Response =
+    private fun registerRequest(
+        username: String,
+        ip: String,
+    ): org.http4k.core.Response =
         app(
             Request(Method.POST, "/auth/register")
                 .header("Content-Type", "application/json")
@@ -111,10 +113,11 @@ class RateLimitIntegrationTest : IntegrationTestBase() {
 
         // Send many requests to a non-rate-limited endpoint
         repeat(20) {
-            val r = app(
-                Request(Method.GET, "/health")
-                    .header("X-Forwarded-For", ip),
-            )
+            val r =
+                app(
+                    Request(Method.GET, "/health")
+                        .header("X-Forwarded-For", ip),
+                )
             assertEquals(Status.OK, r.status, "health endpoint should never be rate limited")
         }
     }

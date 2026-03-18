@@ -10,22 +10,23 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class EmailServiceTest {
-
     companion object {
         @JvmField
         @RegisterExtension
-        val greenMail: GreenMailExtension = GreenMailExtension(ServerSetupTest.SMTP)
-            .withConfiguration(GreenMailConfiguration.aConfig().withUser("test@booktower.local", "testpass"))
+        val greenMail: GreenMailExtension =
+            GreenMailExtension(ServerSetupTest.SMTP)
+                .withConfiguration(GreenMailConfiguration.aConfig().withUser("test@booktower.local", "testpass"))
     }
 
-    private fun smtpConfig() = SmtpConfig(
-        host = "localhost",
-        port = ServerSetupTest.SMTP.port,
-        username = "test@booktower.local",
-        password = "testpass",
-        from = "noreply@booktower.local",
-        tls = false,
-    )
+    private fun smtpConfig() =
+        SmtpConfig(
+            host = "localhost",
+            port = ServerSetupTest.SMTP.port,
+            username = "test@booktower.local",
+            password = "testpass",
+            from = "noreply@booktower.local",
+            tls = false,
+        )
 
     @Test
     fun `sendPasswordReset delivers email to recipient`() {

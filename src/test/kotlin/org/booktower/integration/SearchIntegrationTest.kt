@@ -1,60 +1,54 @@
 package org.booktower.integration
 
-import org.booktower.TestFixture
 import org.booktower.config.Json
-import org.booktower.config.TemplateRenderer
-import org.booktower.filters.GlobalErrorFilter
-import org.booktower.handlers.AppHandler
 import org.booktower.models.BookListDto
 import org.booktower.models.LibraryDto
 import org.booktower.models.LoginResponse
-import org.booktower.services.AuthService
-import org.booktower.services.BookmarkService
-import org.booktower.services.BookService
-import org.booktower.services.JwtService
-import org.booktower.services.LibraryService
-import org.booktower.services.PdfMetadataService
-import org.booktower.services.UserSettingsService
-import org.http4k.core.HttpHandler
 import org.http4k.core.Method
 import org.http4k.core.Request
 import org.http4k.core.Status
-import org.http4k.core.then
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class SearchIntegrationTest : IntegrationTestBase() {
-
     private fun uniqueUser() = "srch_${System.nanoTime()}"
 
     private fun registerAndGetToken(): String {
         val username = uniqueUser()
-        val response = app(
-            Request(Method.POST, "/auth/register")
-                .header("Content-Type", "application/json")
-                .body("""{"username":"$username","email":"$username@test.com","password":"password123"}"""),
-        )
+        val response =
+            app(
+                Request(Method.POST, "/auth/register")
+                    .header("Content-Type", "application/json")
+                    .body("""{"username":"$username","email":"$username@test.com","password":"password123"}"""),
+            )
         return Json.mapper.readValue(response.bodyString(), LoginResponse::class.java).token
     }
 
     private fun createLibrary(token: String): String {
-        val response = app(
-            Request(Method.POST, "/api/libraries")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"name":"Search Lib","path":"./data/test-srch-${System.nanoTime()}"}"""),
-        )
+        val response =
+            app(
+                Request(Method.POST, "/api/libraries")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"name":"Search Lib","path":"./data/test-srch-${System.nanoTime()}"}"""),
+            )
         return Json.mapper.readValue(response.bodyString(), LibraryDto::class.java).id
     }
 
-    private fun addBook(token: String, libId: String, title: String, author: String?) {
+    private fun addBook(
+        token: String,
+        libId: String,
+        title: String,
+        author: String?,
+    ) {
         app(
             Request(Method.POST, "/api/books")
                 .header("Cookie", "token=$token")
                 .header("Content-Type", "application/json")
-                .body("""{"title":"$title","author":${if (author != null) "\"$author\"" else "null"},"description":null,"libraryId":"$libId"}"""),
+                .body(
+                    """{"title":"$title","author":${if (author != null) "\"$author\"" else "null"},"description":null,"libraryId":"$libId"}""",
+                ),
         )
     }
 
@@ -65,10 +59,11 @@ class SearchIntegrationTest : IntegrationTestBase() {
         addBook(token, libId, "The Pragmatic Programmer", "Dave Thomas")
         addBook(token, libId, "Clean Code", "Robert Martin")
 
-        val response = app(
-            Request(Method.GET, "/api/search?q=Pragmatic")
-                .header("Cookie", "token=$token"),
-        )
+        val response =
+            app(
+                Request(Method.GET, "/api/search?q=Pragmatic")
+                    .header("Cookie", "token=$token"),
+            )
 
         assertEquals(Status.OK, response.status)
         val results = Json.mapper.readValue(response.bodyString(), BookListDto::class.java)
@@ -83,10 +78,11 @@ class SearchIntegrationTest : IntegrationTestBase() {
         addBook(token, libId, "Clean Code", "Robert Martin")
         addBook(token, libId, "The Hobbit", "Tolkien")
 
-        val response = app(
-            Request(Method.GET, "/api/search?q=Martin")
-                .header("Cookie", "token=$token"),
-        )
+        val response =
+            app(
+                Request(Method.GET, "/api/search?q=Martin")
+                    .header("Cookie", "token=$token"),
+            )
 
         assertEquals(Status.OK, response.status)
         val results = Json.mapper.readValue(response.bodyString(), BookListDto::class.java)
@@ -100,10 +96,11 @@ class SearchIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         addBook(token, libId, "Design Patterns", "Gang of Four")
 
-        val response = app(
-            Request(Method.GET, "/api/search?q=design+patterns")
-                .header("Cookie", "token=$token"),
-        )
+        val response =
+            app(
+                Request(Method.GET, "/api/search?q=design+patterns")
+                    .header("Cookie", "token=$token"),
+            )
 
         assertEquals(Status.OK, response.status)
         val results = Json.mapper.readValue(response.bodyString(), BookListDto::class.java)
@@ -116,10 +113,11 @@ class SearchIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         addBook(token, libId, "Known Book", "Known Author")
 
-        val response = app(
-            Request(Method.GET, "/api/search?q=xyznotfoundxyz")
-                .header("Cookie", "token=$token"),
-        )
+        val response =
+            app(
+                Request(Method.GET, "/api/search?q=xyznotfoundxyz")
+                    .header("Cookie", "token=$token"),
+            )
 
         assertEquals(Status.OK, response.status)
         val results = Json.mapper.readValue(response.bodyString(), BookListDto::class.java)
@@ -130,10 +128,11 @@ class SearchIntegrationTest : IntegrationTestBase() {
     @Test
     fun `search without q parameter returns 400`() {
         val token = registerAndGetToken()
-        val response = app(
-            Request(Method.GET, "/api/search")
-                .header("Cookie", "token=$token"),
-        )
+        val response =
+            app(
+                Request(Method.GET, "/api/search")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.BAD_REQUEST, response.status)
     }
 
@@ -150,10 +149,11 @@ class SearchIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(tokenA)
         addBook(tokenA, libId, "Secret Book Alpha", null)
 
-        val response = app(
-            Request(Method.GET, "/api/search?q=Secret+Book+Alpha")
-                .header("Cookie", "token=$tokenB"),
-        )
+        val response =
+            app(
+                Request(Method.GET, "/api/search?q=Secret+Book+Alpha")
+                    .header("Cookie", "token=$tokenB"),
+            )
 
         assertEquals(Status.OK, response.status)
         val results = Json.mapper.readValue(response.bodyString(), BookListDto::class.java)
@@ -166,10 +166,11 @@ class SearchIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         repeat(5) { i -> addBook(token, libId, "Kotlin Book $i", "Author") }
 
-        val response = app(
-            Request(Method.GET, "/api/search?q=Kotlin+Book&page=1&pageSize=3")
-                .header("Cookie", "token=$token"),
-        )
+        val response =
+            app(
+                Request(Method.GET, "/api/search?q=Kotlin+Book&page=1&pageSize=3")
+                    .header("Cookie", "token=$token"),
+            )
 
         assertEquals(Status.OK, response.status)
         val results = Json.mapper.readValue(response.bodyString(), BookListDto::class.java)
@@ -185,10 +186,11 @@ class SearchIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         repeat(5) { i -> addBook(token, libId, "PagedBook $i", "Author") }
 
-        val response = app(
-            Request(Method.GET, "/api/search?q=PagedBook&page=2&pageSize=3")
-                .header("Cookie", "token=$token"),
-        )
+        val response =
+            app(
+                Request(Method.GET, "/api/search?q=PagedBook&page=2&pageSize=3")
+                    .header("Cookie", "token=$token"),
+            )
 
         assertEquals(Status.OK, response.status)
         val results = Json.mapper.readValue(response.bodyString(), BookListDto::class.java)
@@ -198,7 +200,11 @@ class SearchIntegrationTest : IntegrationTestBase() {
 
     // ── Search page filters ────────────────────────────────────────────────────
 
-    private fun setStatus(token: String, bookId: String, status: String) {
+    private fun setStatus(
+        token: String,
+        bookId: String,
+        status: String,
+    ) {
         app(
             Request(Method.POST, "/ui/books/$bookId/status")
                 .header("Cookie", "token=$token")
@@ -207,7 +213,11 @@ class SearchIntegrationTest : IntegrationTestBase() {
         )
     }
 
-    private fun setRating(token: String, bookId: String, rating: Int) {
+    private fun setRating(
+        token: String,
+        bookId: String,
+        rating: Int,
+    ) {
         app(
             Request(Method.POST, "/ui/books/$bookId/rating")
                 .header("Cookie", "token=$token")
@@ -220,8 +230,10 @@ class SearchIntegrationTest : IntegrationTestBase() {
     fun `search page renders status and rating filter dropdowns`() {
         val token = registerAndGetToken("sf1")
         val html = app(Request(Method.GET, "/search?q=test").header("Cookie", "token=$token")).bodyString()
-        assertTrue(html.contains("filter.all.ratings") || html.contains("All ratings"),
-            "Rating filter dropdown must appear on search page")
+        assertTrue(
+            html.contains("filter.all.ratings") || html.contains("All ratings"),
+            "Rating filter dropdown must appear on search page",
+        )
     }
 
     @Test
@@ -233,14 +245,17 @@ class SearchIntegrationTest : IntegrationTestBase() {
         setStatus(token, bookReading, "READING")
         setStatus(token, bookFinished, "FINISHED")
 
-        val html = app(
-            Request(Method.GET, "/search?q=SF&status=READING")
-                .header("Cookie", "token=$token"),
-        ).bodyString()
+        val html =
+            app(
+                Request(Method.GET, "/search?q=SF&status=READING")
+                    .header("Cookie", "token=$token"),
+            ).bodyString()
 
         assertTrue(html.contains("Currently Reading SF"), "READING book must appear in filtered results")
-        assertTrue(!html.contains("Already Finished SF"),
-            "FINISHED book must not appear when filter is READING")
+        assertTrue(
+            !html.contains("Already Finished SF"),
+            "FINISHED book must not appear when filter is READING",
+        )
     }
 
     @Test
@@ -252,14 +267,17 @@ class SearchIntegrationTest : IntegrationTestBase() {
         setRating(token, highRated, 5)
         setRating(token, lowRated, 2)
 
-        val html = app(
-            Request(Method.GET, "/search?q=SF&rating=4")
-                .header("Cookie", "token=$token"),
-        ).bodyString()
+        val html =
+            app(
+                Request(Method.GET, "/search?q=SF&rating=4")
+                    .header("Cookie", "token=$token"),
+            ).bodyString()
 
         assertTrue(html.contains("Excellent Book SF"), "5-star book must appear when filtering rating >= 4")
-        assertTrue(!html.contains("Mediocre Book SF"),
-            "2-star book must not appear when filtering rating >= 4")
+        assertTrue(
+            !html.contains("Mediocre Book SF"),
+            "2-star book must not appear when filtering rating >= 4",
+        )
     }
 
     @Test
@@ -268,10 +286,11 @@ class SearchIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         createBook(token, libId, "Any Book SF")
 
-        val html = app(
-            Request(Method.GET, "/search?q=SF&status=FINISHED&rating=3")
-                .header("Cookie", "token=$token"),
-        ).bodyString()
+        val html =
+            app(
+                Request(Method.GET, "/search?q=SF&status=FINISHED&rating=3")
+                    .header("Cookie", "token=$token"),
+            ).bodyString()
 
         assertTrue(html.contains("FINISHED"), "FINISHED must be selected in status dropdown")
         assertTrue(html.contains("rating"), "Rating filter must be present in the form")

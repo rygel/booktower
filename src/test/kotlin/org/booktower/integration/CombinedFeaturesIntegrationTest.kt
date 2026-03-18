@@ -3,7 +3,6 @@ package org.booktower.integration
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.pdmodel.PDPage
 import org.booktower.config.Json
-import org.booktower.models.BookDto
 import org.booktower.models.BookmarkDto
 import org.booktower.models.ReadingProgressDto
 import org.http4k.core.Method
@@ -21,13 +20,19 @@ import kotlin.test.assertTrue
  * and don't interfere with each other. Also covers cascading deletion behaviour.
  */
 class CombinedFeaturesIntegrationTest : IntegrationTestBase() {
-
     private fun minimalPdf(): ByteArray {
         val doc = PDDocument().also { it.addPage(PDPage()) }
-        return ByteArrayOutputStream().also { doc.save(it); doc.close() }.toByteArray()
+        return ByteArrayOutputStream()
+            .also {
+                doc.save(it)
+                doc.close()
+            }.toByteArray()
     }
 
-    private fun uploadPdf(token: String, bookId: String) {
+    private fun uploadPdf(
+        token: String,
+        bookId: String,
+    ) {
         app(
             Request(Method.POST, "/api/books/$bookId/upload")
                 .header("Cookie", "token=$token")
@@ -37,17 +42,27 @@ class CombinedFeaturesIntegrationTest : IntegrationTestBase() {
         )
     }
 
-    private fun addBookmark(token: String, bookId: String, page: Int, title: String = "Mark"): String {
-        val r = app(
-            Request(Method.POST, "/api/bookmarks")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"bookId":"$bookId","page":$page,"title":"$title","note":null}"""),
-        )
+    private fun addBookmark(
+        token: String,
+        bookId: String,
+        page: Int,
+        title: String = "Mark",
+    ): String {
+        val r =
+            app(
+                Request(Method.POST, "/api/bookmarks")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"bookId":"$bookId","page":$page,"title":"$title","note":null}"""),
+            )
         return Json.mapper.readValue(r.bodyString(), BookmarkDto::class.java).id
     }
 
-    private fun setProgress(token: String, bookId: String, page: Int) {
+    private fun setProgress(
+        token: String,
+        bookId: String,
+        page: Int,
+    ) {
         app(
             Request(Method.PUT, "/api/books/$bookId/progress")
                 .header("Cookie", "token=$token")
@@ -68,17 +83,19 @@ class CombinedFeaturesIntegrationTest : IntegrationTestBase() {
         val bmId = addBookmark(token, bookId, 10, "Chapter 1")
 
         // Progress is correct
-        val prog = app(
-            Request(Method.GET, "/api/books/$bookId")
-                .header("Cookie", "token=$token"),
-        )
+        val prog =
+            app(
+                Request(Method.GET, "/api/books/$bookId")
+                    .header("Cookie", "token=$token"),
+            )
         assertTrue(prog.bodyString().contains("42"), "progress page should be 42")
 
         // Bookmark still there
-        val bm = app(
-            Request(Method.GET, "/api/bookmarks?bookId=$bookId")
-                .header("Cookie", "token=$token"),
-        )
+        val bm =
+            app(
+                Request(Method.GET, "/api/bookmarks?bookId=$bookId")
+                    .header("Cookie", "token=$token"),
+            )
         assertTrue(bm.bodyString().contains(bmId))
     }
 
@@ -92,10 +109,11 @@ class CombinedFeaturesIntegrationTest : IntegrationTestBase() {
         setProgress(token, bookId, 10)
         setProgress(token, bookId, 50) // overwrite progress
 
-        val bm = app(
-            Request(Method.GET, "/api/bookmarks?bookId=$bookId")
-                .header("Cookie", "token=$token"),
-        )
+        val bm =
+            app(
+                Request(Method.GET, "/api/bookmarks?bookId=$bookId")
+                    .header("Cookie", "token=$token"),
+            )
         assertTrue(bm.bodyString().contains(bmId), "bookmark should survive progress updates")
     }
 
@@ -110,10 +128,11 @@ class CombinedFeaturesIntegrationTest : IntegrationTestBase() {
 
         app(Request(Method.DELETE, "/api/bookmarks/$bmId").header("Cookie", "token=$token"))
 
-        val book = app(
-            Request(Method.GET, "/api/books/$bookId")
-                .header("Cookie", "token=$token"),
-        )
+        val book =
+            app(
+                Request(Method.GET, "/api/books/$bookId")
+                    .header("Cookie", "token=$token"),
+            )
         assertTrue(book.bodyString().contains("77"), "progress should survive bookmark deletion")
     }
 
@@ -130,17 +149,19 @@ class CombinedFeaturesIntegrationTest : IntegrationTestBase() {
 
         uploadPdf(token, bookId)
 
-        val book = app(
-            Request(Method.GET, "/api/books/$bookId")
-                .header("Cookie", "token=$token"),
-        )
+        val book =
+            app(
+                Request(Method.GET, "/api/books/$bookId")
+                    .header("Cookie", "token=$token"),
+            )
         val body = book.bodyString()
         assertTrue(body.contains("30"), "progress should survive file upload")
 
-        val bm = app(
-            Request(Method.GET, "/api/bookmarks?bookId=$bookId")
-                .header("Cookie", "token=$token"),
-        )
+        val bm =
+            app(
+                Request(Method.GET, "/api/bookmarks?bookId=$bookId")
+                    .header("Cookie", "token=$token"),
+            )
         assertTrue(bm.bodyString().contains(bmId), "bookmarks should survive file upload")
     }
 
@@ -154,20 +175,22 @@ class CombinedFeaturesIntegrationTest : IntegrationTestBase() {
         uploadPdf(token, bookId)
 
         // Second upload to same book
-        val r2 = app(
-            Request(Method.POST, "/api/books/$bookId/upload")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/octet-stream")
-                .header("X-Filename", "book-v2.pdf")
-                .body(ByteArrayInputStream(minimalPdf())),
-        )
+        val r2 =
+            app(
+                Request(Method.POST, "/api/books/$bookId/upload")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/octet-stream")
+                    .header("X-Filename", "book-v2.pdf")
+                    .body(ByteArrayInputStream(minimalPdf())),
+            )
         assertEquals(Status.OK, r2.status, "second upload should succeed")
 
         // Book is still downloadable
-        val dl = app(
-            Request(Method.GET, "/api/books/$bookId/file")
-                .header("Cookie", "token=$token"),
-        )
+        val dl =
+            app(
+                Request(Method.GET, "/api/books/$bookId/file")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, dl.status)
     }
 
@@ -183,12 +206,13 @@ class CombinedFeaturesIntegrationTest : IntegrationTestBase() {
         setProgress(tokenA, bookId, 99)
 
         // B tries to update progress on A's book → 404
-        val r = app(
-            Request(Method.PUT, "/api/books/$bookId/progress")
-                .header("Cookie", "token=$tokenB")
-                .header("Content-Type", "application/json")
-                .body("""{"currentPage":1}"""),
-        )
+        val r =
+            app(
+                Request(Method.PUT, "/api/books/$bookId/progress")
+                    .header("Cookie", "token=$tokenB")
+                    .header("Content-Type", "application/json")
+                    .body("""{"currentPage":1}"""),
+            )
         assertEquals(Status.NOT_FOUND, r.status)
     }
 
@@ -202,10 +226,11 @@ class CombinedFeaturesIntegrationTest : IntegrationTestBase() {
         addBookmark(tokenA, bookId, 5)
 
         // B queries bookmarks for A's book → empty, not A's marks
-        val r = app(
-            Request(Method.GET, "/api/bookmarks?bookId=$bookId")
-                .header("Cookie", "token=$tokenB"),
-        )
+        val r =
+            app(
+                Request(Method.GET, "/api/bookmarks?bookId=$bookId")
+                    .header("Cookie", "token=$tokenB"),
+            )
         assertEquals(Status.OK, r.status)
         assertFalse(r.bodyString().contains("\"page\":5"), "B should not see A's bookmarks")
     }
@@ -221,12 +246,13 @@ class CombinedFeaturesIntegrationTest : IntegrationTestBase() {
         Thread.sleep(2000) // wait for async PDF extraction
 
         // Page count for a minimal PDF is 1; set progress to 1 → should be 100%
-        val r = app(
-            Request(Method.PUT, "/api/books/$bookId/progress")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"currentPage":1}"""),
-        )
+        val r =
+            app(
+                Request(Method.PUT, "/api/books/$bookId/progress")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"currentPage":1}"""),
+            )
         assertEquals(Status.OK, r.status)
         val prog = Json.mapper.readValue(r.bodyString(), ReadingProgressDto::class.java)
         // percentage may be null if pageCount not yet extracted; if set it should be 100.0
@@ -245,10 +271,11 @@ class CombinedFeaturesIntegrationTest : IntegrationTestBase() {
 
         app(Request(Method.DELETE, "/api/books/$bookId").header("Cookie", "token=$token"))
 
-        val search = app(
-            Request(Method.GET, "/api/search?q=UniqueVanishingTitle")
-                .header("Cookie", "token=$token"),
-        )
+        val search =
+            app(
+                Request(Method.GET, "/api/search?q=UniqueVanishingTitle")
+                    .header("Cookie", "token=$token"),
+            )
         assertFalse(search.bodyString().contains(bookId))
     }
 
@@ -261,10 +288,11 @@ class CombinedFeaturesIntegrationTest : IntegrationTestBase() {
 
         app(Request(Method.DELETE, "/ui/libraries/$libId").header("Cookie", "token=$token"))
 
-        val all = app(
-            Request(Method.GET, "/api/books")
-                .header("Cookie", "token=$token"),
-        )
+        val all =
+            app(
+                Request(Method.GET, "/api/books")
+                    .header("Cookie", "token=$token"),
+            )
         val body = all.bodyString()
         assertFalse(body.contains(bookId1), "book1 should be gone after library deletion")
         assertFalse(body.contains(bookId2), "book2 should be gone after library deletion")
@@ -280,10 +308,11 @@ class CombinedFeaturesIntegrationTest : IntegrationTestBase() {
         setProgress(token, bookId, 10)
         addBookmark(token, bookId, 3)
 
-        val r = app(
-            Request(Method.DELETE, "/ui/libraries/$libId")
-                .header("Cookie", "token=$token"),
-        )
+        val r =
+            app(
+                Request(Method.DELETE, "/ui/libraries/$libId")
+                    .header("Cookie", "token=$token"),
+            )
         // Should succeed, not 500
         assertTrue(r.status.code < 500, "deletion of enriched library should not error: ${r.status}")
     }
@@ -305,10 +334,11 @@ class CombinedFeaturesIntegrationTest : IntegrationTestBase() {
         uploadPdf(token, withFile)
 
         listOf(bare, withProgress, withFile).forEach { id ->
-            val r = app(
-                Request(Method.GET, "/api/search?q=SearchTarget")
-                    .header("Cookie", "token=$token"),
-            )
+            val r =
+                app(
+                    Request(Method.GET, "/api/search?q=SearchTarget")
+                        .header("Cookie", "token=$token"),
+                )
             assertTrue(r.bodyString().contains(id), "book $id should appear in search")
         }
     }
@@ -322,10 +352,11 @@ class CombinedFeaturesIntegrationTest : IntegrationTestBase() {
         val withProgress = createBook(token, libId)
         setProgress(token, withProgress, 1)
 
-        val r = app(
-            Request(Method.GET, "/api/recent")
-                .header("Cookie", "token=$token"),
-        )
+        val r =
+            app(
+                Request(Method.GET, "/api/recent")
+                    .header("Cookie", "token=$token"),
+            )
         val body = r.bodyString()
         assertTrue(body.contains(withProgress), "book with progress should appear in recent")
         assertFalse(body.contains(noProgress), "book without progress should NOT appear in recent")
@@ -341,10 +372,11 @@ class CombinedFeaturesIntegrationTest : IntegrationTestBase() {
         val book1 = createBook(token, lib1)
         val book2 = createBook(token, lib2)
 
-        val r = app(
-            Request(Method.GET, "/api/books")
-                .header("Cookie", "token=$token"),
-        )
+        val r =
+            app(
+                Request(Method.GET, "/api/books")
+                    .header("Cookie", "token=$token"),
+            )
         val body = r.bodyString()
         assertTrue(body.contains(book1))
         assertTrue(body.contains(book2))
@@ -360,10 +392,11 @@ class CombinedFeaturesIntegrationTest : IntegrationTestBase() {
 
         app(Request(Method.DELETE, "/ui/libraries/$lib1").header("Cookie", "token=$token"))
 
-        val r = app(
-            Request(Method.GET, "/api/books")
-                .header("Cookie", "token=$token"),
-        )
+        val r =
+            app(
+                Request(Method.GET, "/api/books")
+                    .header("Cookie", "token=$token"),
+            )
         val body = r.bodyString()
         assertFalse(body.contains(book1), "book in deleted library should be gone")
         assertTrue(body.contains(book2), "book in surviving library should remain")

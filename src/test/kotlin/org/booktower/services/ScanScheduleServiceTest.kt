@@ -2,13 +2,11 @@ package org.booktower.services
 
 import org.booktower.TestFixture
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.util.UUID
 
 class ScanScheduleServiceTest {
-
     private val jdbi = TestFixture.database.getJdbi()
     private val config = TestFixture.config
 
@@ -49,9 +47,14 @@ class ScanScheduleServiceTest {
         // Register a user and library so scanAll has something to process
         val jwtService = JwtService(config.security)
         val authService = AuthService(jdbi, jwtService)
-        val result = authService.register(
-            org.booktower.models.CreateUserRequest("scantest_${System.nanoTime()}", "scantest_${System.nanoTime()}@test.com", "pass1234")
-        )
+        val result =
+            authService.register(
+                org.booktower.models.CreateUserRequest(
+                    "scantest_${System.nanoTime()}",
+                    "scantest_${System.nanoTime()}@test.com",
+                    "pass1234",
+                ),
+            )
         val userId = UUID.fromString(result.getOrThrow().user.id)
         libraryService.createLibrary(userId, org.booktower.models.CreateLibraryRequest("ScanLib", "./data/nonexistent-scan-test"))
 

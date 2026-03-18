@@ -7,7 +7,9 @@ import org.http4k.core.cookie.cookie
 import org.http4k.lens.RequestKey
 import java.util.Locale
 
-class WebContext(val request: Request) {
+class WebContext(
+    val request: Request,
+) {
     companion object {
         val KEY = RequestKey.required<WebContext>("web.context")
 
@@ -19,7 +21,11 @@ class WebContext(val request: Request) {
     val lang: String by lazy {
         request.query("lang")
             ?: request.cookie(LANG_COOKIE)?.value
-            ?: Locale.getDefault().language.lowercase().let { if (it in SUPPORTED_LANGS) it else "en" }
+            ?: Locale
+                .getDefault()
+                .language
+                .lowercase()
+                .let { if (it in SUPPORTED_LANGS) it else "en" }
     }
 
     val theme: String by lazy {

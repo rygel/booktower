@@ -9,26 +9,35 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class AnalyticsIntegrationTest : IntegrationTestBase() {
-
     private fun enableAnalytics(token: String) {
-        app(Request(Method.POST, "/ui/preferences/analytics")
-            .header("Cookie", "token=$token")
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .body("enabled=true"))
+        app(
+            Request(Method.POST, "/ui/preferences/analytics")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .body("enabled=true"),
+        )
     }
 
     private fun disableAnalytics(token: String) {
-        app(Request(Method.POST, "/ui/preferences/analytics")
-            .header("Cookie", "token=$token")
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .body("enabled=false"))
+        app(
+            Request(Method.POST, "/ui/preferences/analytics")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .body("enabled=false"),
+        )
     }
 
-    private fun recordProgress(token: String, bookId: String, page: Int) {
-        app(Request(Method.POST, "/ui/books/$bookId/progress")
-            .header("Cookie", "token=$token")
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .body("currentPage=$page"))
+    private fun recordProgress(
+        token: String,
+        bookId: String,
+        page: Int,
+    ) {
+        app(
+            Request(Method.POST, "/ui/books/$bookId/progress")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .body("currentPage=$page"),
+        )
     }
 
     @Test
@@ -48,10 +57,14 @@ class AnalyticsIntegrationTest : IntegrationTestBase() {
     fun `analytics page shows disabled state by default`() {
         val token = registerAndGetToken("ana2")
         val body = app(Request(Method.GET, "/analytics").header("Cookie", "token=$token")).bodyString()
-        assertTrue(body.contains("Analytics not enabled") || body.contains("disabled") || body.contains("enable"),
-            "Analytics page should show disabled state by default")
-        assertFalse(body.contains("Day Streak") || body.contains("Total Pages"),
-            "Stats should not show when analytics is disabled")
+        assertTrue(
+            body.contains("Analytics not enabled") || body.contains("disabled") || body.contains("enable"),
+            "Analytics page should show disabled state by default",
+        )
+        assertFalse(
+            body.contains("Day Streak") || body.contains("Total Pages"),
+            "Stats should not show when analytics is disabled",
+        )
     }
 
     @Test
@@ -60,8 +73,10 @@ class AnalyticsIntegrationTest : IntegrationTestBase() {
         enableAnalytics(token)
 
         val body = app(Request(Method.GET, "/analytics").header("Cookie", "token=$token")).bodyString()
-        assertTrue(body.contains("Day Streak") || body.contains("Total Pages") || body.contains("Books Finished"),
-            "Stats should show after enabling analytics")
+        assertTrue(
+            body.contains("Day Streak") || body.contains("Total Pages") || body.contains("Books Finished"),
+            "Stats should show after enabling analytics",
+        )
     }
 
     @Test
@@ -71,8 +86,10 @@ class AnalyticsIntegrationTest : IntegrationTestBase() {
         disableAnalytics(token)
 
         val body = app(Request(Method.GET, "/analytics").header("Cookie", "token=$token")).bodyString()
-        assertFalse(body.contains("Day Streak") || body.contains("Total Pages Read"),
-            "Stats should be hidden after disabling analytics")
+        assertFalse(
+            body.contains("Day Streak") || body.contains("Total Pages Read"),
+            "Stats should be hidden after disabling analytics",
+        )
     }
 
     @Test
@@ -102,8 +119,10 @@ class AnalyticsIntegrationTest : IntegrationTestBase() {
         enableAnalytics(token)
         val body = app(Request(Method.GET, "/analytics").header("Cookie", "token=$token")).bodyString()
         // No pages were recorded because analytics was off when progress was saved
-        assertFalse(body.contains(">100<") || body.contains(">100 <"),
-            "Pages read before enabling analytics should not be counted")
+        assertFalse(
+            body.contains(">100<") || body.contains(">100 <"),
+            "Pages read before enabling analytics should not be counted",
+        )
     }
 
     @Test
@@ -113,8 +132,10 @@ class AnalyticsIntegrationTest : IntegrationTestBase() {
 
         val body = app(Request(Method.GET, "/analytics").header("Cookie", "token=$token")).bodyString()
         // Streak should show 0
-        assertTrue(body.contains(">0<") || body.contains(">0 "),
-            "Streak should be 0 with no reading activity")
+        assertTrue(
+            body.contains(">0<") || body.contains(">0 "),
+            "Streak should be 0 with no reading activity",
+        )
     }
 
     @Test
@@ -128,8 +149,10 @@ class AnalyticsIntegrationTest : IntegrationTestBase() {
     fun `profile page shows analytics toggle`() {
         val token = registerAndGetToken("ana9")
         val body = app(Request(Method.GET, "/profile").header("Cookie", "token=$token")).bodyString()
-        assertTrue(body.contains("analytics-toggle") || body.contains("analytics.enable"),
-            "Profile page should show the analytics toggle")
+        assertTrue(
+            body.contains("analytics-toggle") || body.contains("analytics.enable"),
+            "Profile page should show the analytics toggle",
+        )
     }
 
     @Test
@@ -139,8 +162,10 @@ class AnalyticsIntegrationTest : IntegrationTestBase() {
         // JTE smart attr: checked="${true}" renders as `checked`, checked="${false}" omits the attribute.
         // When disabled, the id is followed by whitespace then onchange — not by the word "checked".
         assertTrue(body.contains("analytics-toggle"), "analytics-toggle element must exist")
-        assertFalse(body.contains("""analytics-toggle" checked"""),
-            "Analytics toggle should be unchecked by default (no checked attribute after id)")
+        assertFalse(
+            body.contains("""analytics-toggle" checked"""),
+            "Analytics toggle should be unchecked by default (no checked attribute after id)",
+        )
     }
 
     @Test

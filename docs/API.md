@@ -131,6 +131,55 @@ All bulk endpoints return the count of affected records:
 | `GET` | `/api/books/{id}/comic/pages` | Get comic page count: `{ "pageCount": 42 }` |
 | `GET` | `/api/books/{id}/comic/{page}` | Serve a comic page image (0-indexed) |
 
+## Reader Preferences API
+
+Per-user, per-format reading preferences (theme, font, typography, layout). Preferences are scoped to a **device** via the optional `?device=` query parameter — each browser/device generates a persistent 8-character hex ID stored in `localStorage` (`bt_device_id`) and appends it to every request. Omitting `?device=` reads/writes a global fallback slot.
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/api/reader-preferences/{format}` | Get saved preferences for a format |
+| `PUT` | `/api/reader-preferences/{format}` | Replace all preferences for a format |
+| `PATCH` | `/api/reader-preferences/{format}` | Merge partial preference updates |
+| `DELETE` | `/api/reader-preferences/{format}` | Reset preferences for a format |
+
+Supported formats: `epub`, `pdf`, `cbz`, `cbr`, `comic`.
+
+The `?device=<id>` query parameter is optional on all four endpoints. When provided (1–12 lowercase hex characters), preferences are stored independently per device, so your phone and desktop each maintain their own settings.
+
+### EPUB preference fields
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `theme` | `string` | `white` | Background theme: `white`, `sepia`, `dark` |
+| `fontSize` | `number` | `100` | Font size as a percentage (70–200) |
+| `fontFamily` | `string` | `""` | CSS font family name; empty string = publisher default |
+| `scrollMode` | `string` | `paginated` | Layout: `paginated` or `scrolled` |
+| `lineSpacing` | `string` | `1.6` | CSS `line-height` value |
+| `margins` | `string` | `normal` | `narrow`, `normal`, or `wide` |
+| `textAlign` | `string` | `left` | `left` or `justify` |
+
+### PDF preference fields
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `theme` | `string` | `dark` | Canvas background: `white`, `sepia`, `dark` |
+
+### Comic/CBZ/CBR preference fields
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `fitMode` | `string` | `contain` | Image fit: `contain`, `width`, `height` |
+| `direction` | `string` | `ltr` | Reading direction: `ltr` or `rtl` (manga) |
+
+### Example — save EPUB preferences for a specific device
+
+```http
+PATCH /api/reader-preferences/epub?device=a1b2c3d4
+Content-Type: application/json
+
+{ "theme": "sepia", "fontSize": 120, "lineSpacing": "1.8" }
+```
+
 ## Bookmark API
 
 | Method | Path | Description |

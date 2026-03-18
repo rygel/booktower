@@ -8,28 +8,40 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class ReadingGoalIntegrationTest : IntegrationTestBase() {
-
-    private fun setGoal(token: String, goal: Int) {
-        app(Request(Method.POST, "/ui/goal")
-            .header("Cookie", "token=$token")
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .body("goal=$goal"))
+    private fun setGoal(
+        token: String,
+        goal: Int,
+    ) {
+        app(
+            Request(Method.POST, "/ui/goal")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .body("goal=$goal"),
+        )
     }
 
-    private fun setBookFinished(token: String, bookId: String) {
-        app(Request(Method.POST, "/ui/books/$bookId/status")
-            .header("Cookie", "token=$token")
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .body("status=FINISHED"))
+    private fun setBookFinished(
+        token: String,
+        bookId: String,
+    ) {
+        app(
+            Request(Method.POST, "/ui/books/$bookId/status")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .body("status=FINISHED"),
+        )
     }
 
     @Test
     fun `set goal returns 200`() {
         val token = registerAndGetToken("rg1")
-        val response = app(Request(Method.POST, "/ui/goal")
-            .header("Cookie", "token=$token")
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .body("goal=12"))
+        val response =
+            app(
+                Request(Method.POST, "/ui/goal")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("goal=12"),
+            )
         assertEquals(Status.OK, response.status)
     }
 
@@ -37,8 +49,15 @@ class ReadingGoalIntegrationTest : IntegrationTestBase() {
     fun `dashboard shows reading goal card`() {
         val token = registerAndGetToken("rg2")
         val body = app(Request(Method.GET, "/").header("Cookie", "token=$token")).bodyString()
-        assertTrue(body.contains("page.dashboard.stat.goal") || body.contains("Reading Goal") || body.contains("Leseziel") || body.contains("goal-modal"),
-            "Dashboard should show reading goal widget")
+        assertTrue(
+            body.contains(
+                "page.dashboard.stat.goal",
+            ) ||
+                body.contains("Reading Goal") ||
+                body.contains("Leseziel") ||
+                body.contains("goal-modal"),
+            "Dashboard should show reading goal widget",
+        )
     }
 
     @Test
@@ -59,8 +78,10 @@ class ReadingGoalIntegrationTest : IntegrationTestBase() {
 
         val body = app(Request(Method.GET, "/").header("Cookie", "token=$token")).bodyString()
         // The dashboard shows booksFinishedThisYear / goal
-        assertTrue(body.contains("1 / 10") || body.contains("1&nbsp;/&nbsp;10") || body.contains(">1<"),
-            "Dashboard should show 1 book finished toward goal")
+        assertTrue(
+            body.contains("1 / 10") || body.contains("1&nbsp;/&nbsp;10") || body.contains(">1<"),
+            "Dashboard should show 1 book finished toward goal",
+        )
     }
 
     @Test
@@ -68,15 +89,20 @@ class ReadingGoalIntegrationTest : IntegrationTestBase() {
         val token = registerAndGetToken("rg5")
         // Default goal is 0 (unset)
         val body = app(Request(Method.GET, "/").header("Cookie", "token=$token")).bodyString()
-        assertTrue(body.contains("/ —") || body.contains("/&nbsp;—") || body.contains("/ &#8212;") || body.contains("—"),
-            "Dashboard should show dash when no goal is set")
+        assertTrue(
+            body.contains("/ —") || body.contains("/&nbsp;—") || body.contains("/ &#8212;") || body.contains("—"),
+            "Dashboard should show dash when no goal is set",
+        )
     }
 
     @Test
     fun `goal requires authentication`() {
-        val response = app(Request(Method.POST, "/ui/goal")
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .body("goal=12"))
+        val response =
+            app(
+                Request(Method.POST, "/ui/goal")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("goal=12"),
+            )
         assertEquals(Status.UNAUTHORIZED, response.status)
     }
 

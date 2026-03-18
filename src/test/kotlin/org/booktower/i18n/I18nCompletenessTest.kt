@@ -21,13 +21,13 @@ import kotlin.test.assertTrue
  * verify it is complete.
  */
 class I18nCompletenessTest {
-
     private val baseLocale = "messages"
 
     private fun loadProperties(resourceName: String): Properties {
         val props = Properties()
-        val stream = javaClass.classLoader.getResourceAsStream("$resourceName.properties")
-            ?: error("Properties file not found on classpath: $resourceName.properties")
+        val stream =
+            javaClass.classLoader.getResourceAsStream("$resourceName.properties")
+                ?: error("Properties file not found on classpath: $resourceName.properties")
         stream.use { props.load(it) }
         return props
     }
@@ -44,10 +44,11 @@ class I18nCompletenessTest {
         val base = loadProperties(baseLocale)
         val lang = loadProperties("messages_$locale")
 
-        val missingKeys = base.keys
-            .map { it as String }
-            .filter { !lang.containsKey(it) }
-            .sorted()
+        val missingKeys =
+            base.keys
+                .map { it as String }
+                .filter { !lang.containsKey(it) }
+                .sorted()
 
         assertTrue(
             missingKeys.isEmpty(),
@@ -61,10 +62,11 @@ class I18nCompletenessTest {
     fun `language file has no blank or empty values`(locale: String) {
         val lang = loadProperties("messages_$locale")
 
-        val blankKeys = lang.entries
-            .filter { (_, v) -> (v as String).isBlank() }
-            .map { it.key as String }
-            .sorted()
+        val blankKeys =
+            lang.entries
+                .filter { (_, v) -> (v as String).isBlank() }
+                .map { it.key as String }
+                .sorted()
 
         assertTrue(
             blankKeys.isEmpty(),
@@ -77,10 +79,11 @@ class I18nCompletenessTest {
     fun `base file itself has no blank values`() {
         val base = loadProperties(baseLocale)
 
-        val blankKeys = base.entries
-            .filter { (_, v) -> (v as String).isBlank() }
-            .map { it.key as String }
-            .sorted()
+        val blankKeys =
+            base.entries
+                .filter { (_, v) -> (v as String).isBlank() }
+                .map { it.key as String }
+                .sorted()
 
         assertTrue(
             blankKeys.isEmpty(),
@@ -95,10 +98,11 @@ class I18nCompletenessTest {
         val base = loadProperties(baseLocale)
         val lang = loadProperties("messages_$locale")
 
-        val extraKeys = lang.keys
-            .map { it as String }
-            .filter { !base.containsKey(it) }
-            .sorted()
+        val extraKeys =
+            lang.keys
+                .map { it as String }
+                .filter { !base.containsKey(it) }
+                .sorted()
 
         assertTrue(
             extraKeys.isEmpty(),

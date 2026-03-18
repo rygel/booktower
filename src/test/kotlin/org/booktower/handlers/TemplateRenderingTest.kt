@@ -17,20 +17,22 @@ class TemplateRenderingTest {
         libraries: Any? = null,
         showLogin: Boolean = false,
         showRegister: Boolean = false,
-    ): String {
-        return TestFixture.templateRenderer.render("index.kte", mapOf(
-            "title" to "BookTower",
-            "isAuthenticated" to isAuthenticated,
-            "username" to username,
-            "libraries" to libraries,
-            "showLogin" to showLogin,
-            "showRegister" to showRegister,
-            "themeCss" to themeCss,
-            "currentTheme" to "dark",
-            "lang" to "en",
-            "i18n" to i18n,
-        ))
-    }
+    ): String =
+        TestFixture.templateRenderer.render(
+            "index.kte",
+            mapOf(
+                "title" to "BookTower",
+                "isAuthenticated" to isAuthenticated,
+                "username" to username,
+                "libraries" to libraries,
+                "showLogin" to showLogin,
+                "showRegister" to showRegister,
+                "themeCss" to themeCss,
+                "currentTheme" to "dark",
+                "lang" to "en",
+                "i18n" to i18n,
+            ),
+        )
 
     @Test
     fun `index template renders with theme CSS`() {

@@ -9,59 +9,77 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class MagicShelfIntegrationTest : IntegrationTestBase() {
-
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    private fun createShelf(token: String, name: String, ruleType: String, ruleValue: String): String {
-        val valueField = when (ruleType) {
-            "STATUS" -> "ruleValueStatus=$ruleValue"
-            "TAG"    -> "ruleValueTag=$ruleValue"
-            else     -> "ruleValueRating=$ruleValue"
-        }
-        val resp = app(
-            Request(Method.POST, "/ui/shelves")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .body("name=$name&ruleType=$ruleType&$valueField"),
-        )
+    private fun createShelf(
+        token: String,
+        name: String,
+        ruleType: String,
+        ruleValue: String,
+    ): String {
+        val valueField =
+            when (ruleType) {
+                "STATUS" -> "ruleValueStatus=$ruleValue"
+                "TAG" -> "ruleValueTag=$ruleValue"
+                else -> "ruleValueRating=$ruleValue"
+            }
+        val resp =
+            app(
+                Request(Method.POST, "/ui/shelves")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("name=$name&ruleType=$ruleType&$valueField"),
+            )
         assertEquals(Status.CREATED, resp.status, "createShelf failed: ${resp.bodyString()}")
         // Extract shelf id from the response HTML (id="shelf-{uuid}")
         val match = Regex("""id="shelf-([0-9a-f-]{36})"""").find(resp.bodyString())
         return match?.groupValues?.get(1) ?: error("Could not find shelf id in response")
     }
 
-    private fun deleteShelf(token: String, shelfId: String) =
-        app(Request(Method.DELETE, "/ui/shelves/$shelfId").header("Cookie", "token=$token"))
+    private fun deleteShelf(
+        token: String,
+        shelfId: String,
+    ) = app(Request(Method.DELETE, "/ui/shelves/$shelfId").header("Cookie", "token=$token"))
 
-    private fun setStatus(token: String, bookId: String, status: String) =
-        app(
-            Request(Method.POST, "/ui/books/$bookId/status")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .body("status=$status"),
-        )
+    private fun setStatus(
+        token: String,
+        bookId: String,
+        status: String,
+    ) = app(
+        Request(Method.POST, "/ui/books/$bookId/status")
+            .header("Cookie", "token=$token")
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .body("status=$status"),
+    )
 
-    private fun setRating(token: String, bookId: String, rating: Int) =
-        app(
-            Request(Method.POST, "/ui/books/$bookId/rating")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .body("rating=$rating"),
-        )
+    private fun setRating(
+        token: String,
+        bookId: String,
+        rating: Int,
+    ) = app(
+        Request(Method.POST, "/ui/books/$bookId/rating")
+            .header("Cookie", "token=$token")
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .body("rating=$rating"),
+    )
 
-    private fun setTags(token: String, bookId: String, tags: String) =
-        app(
-            Request(Method.POST, "/ui/books/$bookId/tags")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .body("tags=$tags"),
-        )
+    private fun setTags(
+        token: String,
+        bookId: String,
+        tags: String,
+    ) = app(
+        Request(Method.POST, "/ui/books/$bookId/tags")
+            .header("Cookie", "token=$token")
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .body("tags=$tags"),
+    )
 
-    private fun librariesPage(token: String) =
-        app(Request(Method.GET, "/libraries").header("Cookie", "token=$token")).bodyString()
+    private fun librariesPage(token: String) = app(Request(Method.GET, "/libraries").header("Cookie", "token=$token")).bodyString()
 
-    private fun shelfPage(token: String, shelfId: String) =
-        app(Request(Method.GET, "/shelves/$shelfId").header("Cookie", "token=$token"))
+    private fun shelfPage(
+        token: String,
+        shelfId: String,
+    ) = app(Request(Method.GET, "/shelves/$shelfId").header("Cookie", "token=$token"))
 
     // ── Libraries page shows shelves section ──────────────────────────────────
 
@@ -87,12 +105,13 @@ class MagicShelfIntegrationTest : IntegrationTestBase() {
     @Test
     fun `create STATUS shelf returns 201 with rendered card`() {
         val token = registerAndGetToken("sh_cre1")
-        val resp = app(
-            Request(Method.POST, "/ui/shelves")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .body("name=My+Shelf&ruleType=STATUS&ruleValueStatus=READING"),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/ui/shelves")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("name=My+Shelf&ruleType=STATUS&ruleValueStatus=READING"),
+            )
         assertEquals(Status.CREATED, resp.status)
         assertTrue(resp.bodyString().contains("My Shelf"))
     }
@@ -100,58 +119,63 @@ class MagicShelfIntegrationTest : IntegrationTestBase() {
     @Test
     fun `create TAG shelf returns 201`() {
         val token = registerAndGetToken("sh_cre2")
-        val resp = app(
-            Request(Method.POST, "/ui/shelves")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .body("name=SciFi&ruleType=TAG&ruleValueTag=sci-fi"),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/ui/shelves")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("name=SciFi&ruleType=TAG&ruleValueTag=sci-fi"),
+            )
         assertEquals(Status.CREATED, resp.status)
     }
 
     @Test
     fun `create RATING_GTE shelf returns 201`() {
         val token = registerAndGetToken("sh_cre3")
-        val resp = app(
-            Request(Method.POST, "/ui/shelves")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .body("name=Top+Rated&ruleType=RATING_GTE&ruleValueRating=4"),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/ui/shelves")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("name=Top+Rated&ruleType=RATING_GTE&ruleValueRating=4"),
+            )
         assertEquals(Status.CREATED, resp.status)
     }
 
     @Test
     fun `create shelf without name returns 400`() {
         val token = registerAndGetToken("sh_bad1")
-        val resp = app(
-            Request(Method.POST, "/ui/shelves")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .body("ruleType=STATUS&ruleValueStatus=READING"),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/ui/shelves")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("ruleType=STATUS&ruleValueStatus=READING"),
+            )
         assertEquals(Status.BAD_REQUEST, resp.status)
     }
 
     @Test
     fun `create shelf with invalid ruleType returns 400`() {
         val token = registerAndGetToken("sh_bad2")
-        val resp = app(
-            Request(Method.POST, "/ui/shelves")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .body("name=Test&ruleType=INVALID&ruleValueStatus=READING"),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/ui/shelves")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("name=Test&ruleType=INVALID&ruleValueStatus=READING"),
+            )
         assertEquals(Status.BAD_REQUEST, resp.status)
     }
 
     @Test
     fun `create shelf requires authentication`() {
-        val resp = app(
-            Request(Method.POST, "/ui/shelves")
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .body("name=Test&ruleType=STATUS&ruleValueStatus=READING"),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/ui/shelves")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("name=Test&ruleType=STATUS&ruleValueStatus=READING"),
+            )
         assertEquals(Status.UNAUTHORIZED, resp.status)
     }
 
@@ -292,7 +316,7 @@ class MagicShelfIntegrationTest : IntegrationTestBase() {
         val token = registerAndGetToken("sh_tag2")
         val lib = createLibrary(token)
         val bookId = createBook(token, lib, "Case Book")
-        setTags(token, bookId, "Sci-Fi")  // set as mixed case
+        setTags(token, bookId, "Sci-Fi") // set as mixed case
 
         // Shelf rule is lowercase (normalized by server)
         val shelfId = createShelf(token, "SciFi", "TAG", "sci-fi")

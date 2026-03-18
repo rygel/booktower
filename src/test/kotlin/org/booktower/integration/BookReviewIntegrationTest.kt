@@ -10,7 +10,6 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class BookReviewIntegrationTest : IntegrationTestBase() {
-
     @Test
     fun `GET reviews returns empty list for new book`() {
         val token = registerAndGetToken()
@@ -29,12 +28,13 @@ class BookReviewIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
 
-        val resp = app(
-            Request(Method.POST, "/api/books/$bookId/reviews")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"rating":4,"title":"Great book","body":"I really enjoyed this one.","spoiler":false}"""),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/api/books/$bookId/reviews")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"rating":4,"title":"Great book","body":"I really enjoyed this one.","spoiler":false}"""),
+            )
         assertEquals(Status.CREATED, resp.status)
         val tree = Json.mapper.readTree(resp.bodyString())
         assertEquals(4, tree.get("rating").asInt())
@@ -68,20 +68,26 @@ class BookReviewIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
 
-        val createResp = app(
-            Request(Method.POST, "/api/books/$bookId/reviews")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"body":"Initial review.","rating":3}"""),
-        )
-        val reviewId = Json.mapper.readTree(createResp.bodyString()).get("id").asText()
+        val createResp =
+            app(
+                Request(Method.POST, "/api/books/$bookId/reviews")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"body":"Initial review.","rating":3}"""),
+            )
+        val reviewId =
+            Json.mapper
+                .readTree(createResp.bodyString())
+                .get("id")
+                .asText()
 
-        val putResp = app(
-            Request(Method.PUT, "/api/books/$bookId/reviews/$reviewId")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"body":"Updated review.","rating":5}"""),
-        )
+        val putResp =
+            app(
+                Request(Method.PUT, "/api/books/$bookId/reviews/$reviewId")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"body":"Updated review.","rating":5}"""),
+            )
         assertEquals(Status.OK, putResp.status)
         val tree = Json.mapper.readTree(putResp.bodyString())
         assertEquals("Updated review.", tree.get("body").asText())
@@ -94,13 +100,18 @@ class BookReviewIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
 
-        val createResp = app(
-            Request(Method.POST, "/api/books/$bookId/reviews")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"body":"To be deleted.","rating":2}"""),
-        )
-        val reviewId = Json.mapper.readTree(createResp.bodyString()).get("id").asText()
+        val createResp =
+            app(
+                Request(Method.POST, "/api/books/$bookId/reviews")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"body":"To be deleted.","rating":2}"""),
+            )
+        val reviewId =
+            Json.mapper
+                .readTree(createResp.bodyString())
+                .get("id")
+                .asText()
 
         val delResp = app(Request(Method.DELETE, "/api/books/$bookId/reviews/$reviewId").header("Cookie", "token=$token"))
         assertEquals(Status.NO_CONTENT, delResp.status)
@@ -115,12 +126,13 @@ class BookReviewIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
 
-        val resp = app(
-            Request(Method.POST, "/api/books/$bookId/reviews")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"body":"Bad rating.","rating":10}"""),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/api/books/$bookId/reviews")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"body":"Bad rating.","rating":10}"""),
+            )
         assertEquals(Status.BAD_REQUEST, resp.status)
     }
 
@@ -130,12 +142,13 @@ class BookReviewIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
 
-        val resp = app(
-            Request(Method.POST, "/api/books/$bookId/reviews")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"body":"","rating":3}"""),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/api/books/$bookId/reviews")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"body":"","rating":3}"""),
+            )
         assertEquals(Status.BAD_REQUEST, resp.status)
     }
 

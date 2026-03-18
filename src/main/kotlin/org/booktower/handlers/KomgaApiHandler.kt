@@ -15,8 +15,9 @@ import java.util.UUID
  *
  * Auth: uses the same JWT cookie / token header as the main API.
  */
-class KomgaApiHandler(private val komgaApiService: KomgaApiService) {
-
+class KomgaApiHandler(
+    private val komgaApiService: KomgaApiService,
+) {
     /** GET /api/v1/libraries */
     fun libraries(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
@@ -52,12 +53,12 @@ class KomgaApiHandler(private val komgaApiService: KomgaApiService) {
     /** GET /api/v1/books/{id} */
     fun bookById(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
-        val bookId = req.path("id")?.let { runCatching { UUID.fromString(it) }.getOrNull() }
-            ?: return Response(Status.BAD_REQUEST)
+        val bookId =
+            req.path("id")?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+                ?: return Response(Status.BAD_REQUEST)
         val book = komgaApiService.getBook(userId, bookId) ?: return Response(Status.NOT_FOUND)
         return ok(book)
     }
 
-    private fun ok(body: Any) =
-        Response(Status.OK).header("Content-Type", "application/json").body(Json.mapper.writeValueAsString(body))
+    private fun ok(body: Any) = Response(Status.OK).header("Content-Type", "application/json").body(Json.mapper.writeValueAsString(body))
 }

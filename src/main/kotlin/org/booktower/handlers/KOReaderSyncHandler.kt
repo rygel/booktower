@@ -7,17 +7,18 @@ import org.http4k.core.Request
 import org.http4k.core.Response
 import org.http4k.core.Status
 import org.http4k.routing.path
-import java.util.UUID
 
-class KOReaderSyncHandler(private val koReaderSyncService: KOReaderSyncService) {
-
+class KOReaderSyncHandler(
+    private val koReaderSyncService: KOReaderSyncService,
+) {
     /** POST /api/koreader/devices — register a KOReader device. */
     fun register(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
         val body = runCatching { Json.mapper.readTree(req.bodyString()) }.getOrNull()
         val deviceName = body?.get("deviceName")?.asText()?.takeIf { it.isNotBlank() }
         val device = koReaderSyncService.registerDevice(userId, deviceName)
-        return Response(Status.CREATED).header("Content-Type", "application/json")
+        return Response(Status.CREATED)
+            .header("Content-Type", "application/json")
             .body(Json.mapper.writeValueAsString(mapOf("token" to device.token, "deviceName" to device.deviceName)))
     }
 
@@ -25,7 +26,15 @@ class KOReaderSyncHandler(private val koReaderSyncService: KOReaderSyncService) 
     fun listDevices(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
         val devices = koReaderSyncService.listDevices(userId)
-        val body = devices.map { mapOf("token" to it.token, "deviceName" to it.deviceName, "lastSyncAt" to it.lastSyncAt?.toString(), "createdAt" to it.createdAt.toString()) }
+        val body =
+            devices.map {
+                mapOf(
+                    "token" to it.token,
+                    "deviceName" to it.deviceName,
+                    "lastSyncAt" to it.lastSyncAt?.toString(),
+                    "createdAt" to it.createdAt.toString(),
+                )
+            }
         return Response(Status.OK).header("Content-Type", "application/json").body(Json.mapper.writeValueAsString(body))
     }
 
@@ -33,8 +42,11 @@ class KOReaderSyncHandler(private val koReaderSyncService: KOReaderSyncService) 
     fun deleteDevice(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
         val token = req.path("token") ?: return Response(Status.BAD_REQUEST)
-        return if (koReaderSyncService.deleteDevice(userId, token)) Response(Status.NO_CONTENT)
-        else Response(Status.NOT_FOUND)
+        return if (koReaderSyncService.deleteDevice(userId, token)) {
+            Response(Status.NO_CONTENT)
+        } else {
+            Response(Status.NOT_FOUND)
+        }
     }
 
     /**
@@ -44,8 +56,9 @@ class KOReaderSyncHandler(private val koReaderSyncService: KOReaderSyncService) 
     fun pushProgress(req: Request): Response {
         val token = req.path("token") ?: return Response(Status.UNAUTHORIZED)
         val device = koReaderSyncService.getDevice(token) ?: return Response(Status.UNAUTHORIZED)
-        val body = runCatching { Json.mapper.readTree(req.bodyString()) }.getOrNull()
-            ?: return Response(Status.BAD_REQUEST)
+        val body =
+            runCatching { Json.mapper.readTree(req.bodyString()) }.getOrNull()
+                ?: return Response(Status.BAD_REQUEST)
         val document = body.get("document")?.asText() ?: return Response(Status.BAD_REQUEST)
         val progress = body.get("progress")?.asText()
         val percentage = body.get("percentage")?.asDouble() ?: 0.0
@@ -53,7 +66,8 @@ class KOReaderSyncHandler(private val koReaderSyncService: KOReaderSyncService) 
         val deviceId = body.get("device_id")?.asText()
         koReaderSyncService.pushProgress(device.userId, document, progress ?: "", percentage, deviceName, deviceId)
         koReaderSyncService.touchLastSync(token)
-        return Response(Status.OK).header("Content-Type", "application/json")
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
             .body(Json.mapper.writeValueAsString(mapOf("document" to document, "timestamp" to System.currentTimeMillis() / 1000)))
     }
 
@@ -64,9 +78,11 @@ class KOReaderSyncHandler(private val koReaderSyncService: KOReaderSyncService) 
         val token = req.path("token") ?: return Response(Status.UNAUTHORIZED)
         val device = koReaderSyncService.getDevice(token) ?: return Response(Status.UNAUTHORIZED)
         val document = req.path("document") ?: return Response(Status.BAD_REQUEST)
-        val progress = koReaderSyncService.getProgress(device.userId, document)
-            ?: return Response(Status.NOT_FOUND)
-        return Response(Status.OK).header("Content-Type", "application/json")
+        val progress =
+            koReaderSyncService.getProgress(device.userId, document)
+                ?: return Response(Status.NOT_FOUND)
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
             .body(Json.mapper.writeValueAsString(progress))
     }
 }

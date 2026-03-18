@@ -5,7 +5,9 @@ WORKDIR /build
 
 # Cache dependencies first
 COPY pom.xml .
-RUN mvn dependency:go-offline -q
+# go-offline pre-warms the dependency cache; || true so a transient repo
+# failure (e.g. sonar-maven-plugin not yet in Central) never breaks the build.
+RUN mvn dependency:go-offline -q || true
 
 # Copy source and build fat jar
 COPY src ./src
