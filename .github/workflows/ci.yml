@@ -43,25 +43,25 @@ jobs:
       - name: Run quality checks (no tests, no Sonar)
         run: mvn verify -DskipTests -Dflyway.skip=true -Dsonar.skip=true
 
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: checkstyle-report
           path: target/checkstyle-result.xml
 
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: spotbugs-report
           path: target/spotbugsXml.xml
 
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: pmd-report
           path: target/pmd.xml
 
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: detekt-report
@@ -96,14 +96,14 @@ jobs:
         run: mvn test -Dflyway.skip=true
 
       - name: Upload test results
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: test-results-${{ matrix.os }}
           path: target/surefire-reports/
 
       - name: Upload coverage report
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: jacoco-report-${{ matrix.os }}
@@ -141,7 +141,7 @@ jobs:
         run: mvn test -P browser-tests -Dflyway.skip=true
 
       - name: Upload browser test results
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: browser-test-results
@@ -176,7 +176,7 @@ jobs:
         run: mvn package -DskipTests -Dflyway.skip=true
 
       - name: Upload JAR
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: booktower-jar-${{ matrix.os }}
           path: target/booktower-*.jar
@@ -247,7 +247,7 @@ jobs:
         if: always()
         run: kill "$APP_PID" 2>/dev/null || true
 
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: e2e-test-results

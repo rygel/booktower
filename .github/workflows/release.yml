@@ -36,7 +36,7 @@ jobs:
           FAT=$(find target/ -name "booktower-*-fat.jar" | head -1)
           cp "$FAT" target/booktower-${{ github.ref_name }}.jar
 
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: fat-jar
           path: target/booktower-${{ github.ref_name }}.jar
@@ -101,7 +101,7 @@ jobs:
         run: |
           cp target/${{ matrix.binary }} target/${{ matrix.asset }}
 
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: native-${{ matrix.label }}
           path: target/${{ matrix.asset }}
