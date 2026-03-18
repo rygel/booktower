@@ -6,13 +6,14 @@ A self-hosted personal digital library manager built with Kotlin, http4k, and HT
 
 - **Library management** — organize books into named libraries with folder-backed storage
 - **Book reader** — in-browser PDF, EPUB, and comic (CBZ/CBR) reader with bookmarks, annotations, and reading progress
+- **Audio book support** — listen to audio books and manage them in the smae application as your ebooks
 - **Metadata** — automatic PDF metadata extraction and cover generation; manual metadata editing with online fetch
 - **Reading analytics** — daily page tracking, streaks, finished-book counts, and reading goals
 - **Bulk operations** — select multiple books to move, delete, tag, or change status at once
 - **Smart shelves** — auto-populated virtual shelves driven by status, tag, or minimum rating rules
 - **Multi-user** — user registration, admin panel, per-user settings and data isolation
 - **Themes** — multiple color themes, persisted per user
-- **Internationalization** — English, French, and German; locale switching via sidebar; Weblate integration for translation management
+- **Internationalization** — AI translations: English, French, and German; locale switching via sidebar; Weblate integration for translation management
 - **API tokens** — Bearer token support for OPDS and programmatic access
 - **Data export** — download all reading data as JSON
 - **Auto-scan** — background folder scanning on a configurable interval
