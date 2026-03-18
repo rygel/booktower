@@ -54,7 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Audiobook playback with listening sessions and bookmarks
 - Metadata fetching from OpenLibrary, Google Books, Hardcover, ComicVine, and Audible
 - Metadata proposals and metadata lock system
-- Kobo device sync, KOReader sync, OPDS catalog, and Komga-compatible API
+- Kobo device sync, KOReader sync, and OPDS catalog
 - Book delivery via email (Send-to-Kindle support)
 - Bookmarks, annotations, journals, notebooks, and reviews
 - Reading goals, reading sessions, and reading statistics

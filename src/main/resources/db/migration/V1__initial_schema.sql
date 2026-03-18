@@ -47,7 +47,6 @@ CREATE TABLE IF NOT EXISTS user_permissions (
     can_change_email            BOOLEAN   NOT NULL DEFAULT TRUE,
     can_use_search_filters      BOOLEAN   NOT NULL DEFAULT TRUE,
     can_view_audit_log          BOOLEAN   NOT NULL DEFAULT FALSE,
-    can_access_komga_api        BOOLEAN   NOT NULL DEFAULT TRUE,
     can_manage_notebooks        BOOLEAN   NOT NULL DEFAULT TRUE,
     can_manage_fonts            BOOLEAN   NOT NULL DEFAULT TRUE,
     can_access_admin_panel      BOOLEAN   NOT NULL DEFAULT FALSE,

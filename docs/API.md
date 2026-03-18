@@ -366,16 +366,6 @@ Annotation endpoints are served via the HTMX UI layer:
 | `PUT` | `/koreader/{token}/syncs/progress` | Token | Push reading progress from KOReader |
 | `GET` | `/koreader/{token}/syncs/progress/{document}` | Token | Get reading progress for a document |
 
-### Komga-Compatible API (Tachiyomi / Paperback)
-
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| `GET` | `/api/v1/libraries` | Yes | List libraries (Komga format) |
-| `GET` | `/api/v1/series` | Yes | List series (Komga format) |
-| `GET` | `/api/v1/series/{id}` | Yes | Get series by ID (Komga format) |
-| `GET` | `/api/v1/books` | Yes | List books (Komga format) |
-| `GET` | `/api/v1/books/{id}` | Yes | Get book by ID (Komga format) |
-
 ---
 
 ## 15. Admin

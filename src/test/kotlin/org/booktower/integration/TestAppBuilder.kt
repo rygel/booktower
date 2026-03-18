@@ -73,7 +73,6 @@ import org.booktower.services.JournalService
 import org.booktower.services.JwtService
 import org.booktower.services.KOReaderSyncService
 import org.booktower.services.KoboSyncService
-import org.booktower.services.KomgaApiService
 import org.booktower.services.LibraryAccessService
 import org.booktower.services.LibraryHealthService
 import org.booktower.services.LibraryService
@@ -128,7 +127,6 @@ fun buildTestApp(
     readerPreferencesService: ReaderPreferencesService? = null,
     journalService: JournalService? = null,
     koboSyncService: KoboSyncService? = null,
-    komgaApiService: KomgaApiService? = null,
     koReaderSyncService: KOReaderSyncService? = null,
     libraryHealthService: LibraryHealthService? = null,
     recommendationService: RecommendationService? = null,
@@ -244,7 +242,6 @@ fun buildTestApp(
     val oidcHandler = oidcService?.let { org.booktower.handlers.OidcHandler(it, auth) }
     val koboSyncHandler = org.booktower.handlers.KoboSyncHandler(koboSync)
     val koReaderSyncHandler = koReaderSyncService?.let { org.booktower.handlers.KOReaderSyncHandler(it) }
-    val komgaApiHandler = komgaApiService?.let { org.booktower.handlers.KomgaApiHandler(it) }
     val fontHandler = fontService?.let { FontHandler(it) }
     val readerPrefsHandler = readerPreferencesService?.let { ReaderPreferencesHandler(it) }
     val opdsHandler = OpdsHandler(auth, lib, book, config.storage, apiTokenService, opdsCredentialsService)
@@ -343,7 +340,6 @@ fun buildTestApp(
             filters,
             koboSyncHandler,
             koReaderSyncHandler,
-            komgaApiHandler,
             opdsHandler,
         )
 

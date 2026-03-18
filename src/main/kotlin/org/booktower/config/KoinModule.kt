@@ -18,7 +18,6 @@ import org.booktower.handlers.GoodreadsImportHandler
 import org.booktower.handlers.JournalHandler
 import org.booktower.handlers.KOReaderSyncHandler
 import org.booktower.handlers.KoboSyncHandler
-import org.booktower.handlers.KomgaApiHandler
 import org.booktower.handlers.LibraryHandler2
 import org.booktower.handlers.OidcHandler
 import org.booktower.handlers.OpdsHandler
@@ -71,7 +70,6 @@ import org.booktower.services.JournalService
 import org.booktower.services.JwtService
 import org.booktower.services.KOReaderSyncService
 import org.booktower.services.KoboSyncService
-import org.booktower.services.KomgaApiService
 import org.booktower.services.LibraryAccessService
 import org.booktower.services.LibraryHealthService
 import org.booktower.services.LibraryService
@@ -159,7 +157,6 @@ val appModule =
         single { OidcService(get<AppConfig>().oidc) }
         single { KoboSyncService(get<Database>().getJdbi(), get(), get<AppConfig>().baseUrl, get()) }
         single { KOReaderSyncService(get<Database>().getJdbi(), get()) }
-        single { KomgaApiService(get<Database>().getJdbi(), get(), get(), get<AppConfig>().baseUrl) }
         single { org.booktower.services.FontService(get<Database>().getJdbi(), "${get<AppConfig>().storage.booksPath}/fonts") }
         single { ReaderPreferencesService(get()) }
         single { org.booktower.services.FtsService(get<Database>().getJdbi(), get<AppConfig>().fts.enabled) }
@@ -248,7 +245,6 @@ val appModule =
         single { OidcHandler(get(), get()) }
         single { KoboSyncHandler(get()) }
         single { KOReaderSyncHandler(get()) }
-        single { KomgaApiHandler(get()) }
         single { FontHandler(get()) }
         single { ReaderPreferencesHandler(get()) }
         single {
@@ -383,7 +379,6 @@ val appModule =
                 get<FilterSet>(),
                 get<KoboSyncHandler>(),
                 get<KOReaderSyncHandler>(),
-                get<KomgaApiHandler>(),
                 get<OpdsHandler>(),
             )
         }

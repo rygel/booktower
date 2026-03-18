@@ -316,7 +316,6 @@ abstract class IntegrationTestBase {
                 filters,
                 koboSyncHandler,
                 null,
-                null,
                 opdsHandler,
             )
 

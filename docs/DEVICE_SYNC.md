@@ -1,6 +1,6 @@
 # Device Sync Guide
 
-BookTower supports syncing books and reading progress with Kobo e-readers, KOReader, OPDS catalog clients, and Komga-compatible apps.
+BookTower supports syncing books and reading progress with Kobo e-readers, KOReader, and OPDS catalog clients.
 
 > [!CAUTION]
 > **Device sync features are experimental.** The protocols are implemented based on
@@ -133,30 +133,3 @@ The OPDS catalog works with any OPDS 1.2 compatible app:
 
 For audiobook entries, the OPDS feed includes individual chapter links with appropriate MIME types (`audio/mpeg`, `audio/mp4`, `audio/ogg`, `audio/flac`). Clients that support streaming can play chapters directly.
 
-## Komga API Compatibility
-
-> **Status: Experimental** — implements a minimal subset of the Komga API (read-only library/series/book listing). Not a full Komga replacement. Not tested with Tachiyomi/Paperback on real devices.
-
-BookTower exposes a **minimal read-only subset** of the [Komga REST API](https://komga.org/docs/api/). This is **not** a full Komga replacement — it only provides enough endpoints for comic/manga reader apps (Tachiyomi, Paperback) to list and browse your BookTower libraries as if they were a Komga server. Book downloads, page streaming, and write operations are not implemented.
-
-### Supported Endpoints
-
-| Endpoint | Description |
-|----------|-------------|
-| `GET /api/v1/libraries` | List all libraries |
-| `GET /api/v1/series?libraryId=...` | List series (optionally filtered by library) |
-| `GET /api/v1/series/{id}` | Get a single series |
-| `GET /api/v1/books?libraryId=...&seriesId=...` | List books (filtered by library or series) |
-| `GET /api/v1/books/{id}` | Get a single book |
-
-### Authentication
-
-These endpoints use the same JWT authentication as the main BookTower API. Log in via the web UI or pass a JWT token / API token in the request headers.
-
-### Compatible Clients
-
-- **Tachiyomi** (Android) — Install the Komga extension, add BookTower as a Komga server
-- **Paperback** (iOS) — Add as a Komga source
-- **Mihon** (Android, Tachiyomi fork) — Same setup as Tachiyomi
-
-When configuring the server URL in these clients, use your BookTower base URL (e.g., `https://books.example.com`). The client will automatically discover the `/api/v1/` endpoints.

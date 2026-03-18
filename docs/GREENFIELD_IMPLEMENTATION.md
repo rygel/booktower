@@ -77,7 +77,6 @@
 39. **KoboSettingsController** - Kobo settings
 40. **KoreaderController** - KOReader sync
 41. **KoreaderUserController** - KOReader user settings
-42. **KomgaController** - Komga integration
 43. **HardcoverSyncSettingsController** - Hardcover sync
 44. **OidcAuthController** - OIDC auth
 45. **OidcGroupMappingController** - OIDC groups
@@ -389,7 +388,6 @@ data class UserEntity(
 **Weeks 36-38: Sync & Integrations**
 - Kobo sync (KePub)
 - KOReader sync
-- Komga integration
 - Hardcover sync
 - OPDS feed
 

@@ -20,7 +20,6 @@ A self-hosted personal book, audiobook, and comic manager with a built-in reader
 | Metadata fetching | **Stable** | OpenLibrary, Google Books, Hardcover, ComicVine, Audible |
 | Kobo / KOReader sync | **Experimental** | Implements protocols but not tested with real hardware |
 | OPDS catalog | **Experimental** | Basic catalog works; not verified with all client apps |
-| Komga API | **Experimental** | Read-only subset; not tested with Tachiyomi/Paperback |
 | OIDC / SSO | **Experimental** | Implements OIDC spec; tested only with mock providers |
 | Hardcover.app sync | **Experimental** | API integration exists; not tested with real accounts |
 | Email delivery | **Experimental** | SMTP sending works; not tested with Kindle/device delivery |
@@ -66,7 +65,6 @@ A self-hosted personal book, audiobook, and comic manager with a built-in reader
 - **Kobo** device synchronization *(not tested with real hardware)*
 - **KOReader** sync protocol support *(not tested with real devices)*
 - **OPDS** catalog feed for e-reader apps *(basic, not verified with all clients)*
-- **Komga**-compatible API for comic reader apps *(read-only subset, not tested with Tachiyomi/Paperback)*
 - Book delivery via email (Send-to-Kindle and similar)
 
 ### User Features
