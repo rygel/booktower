@@ -2,10 +2,6 @@ package org.booktower.integration
 
 import org.booktower.TestFixture
 import org.booktower.config.Json
-import org.booktower.config.SmtpConfig
-import org.booktower.config.WeblateConfig
-import org.booktower.filters.globalErrorFilter
-import org.booktower.handlers.AppHandler
 import org.booktower.models.LoginResponse
 import org.booktower.services.AdminService
 import org.booktower.services.AnalyticsService
@@ -16,25 +12,21 @@ import org.booktower.services.BookDropService
 import org.booktower.services.BookService
 import org.booktower.services.BookmarkService
 import org.booktower.services.ComicService
-import org.booktower.services.EmailService
 import org.booktower.services.EpubMetadataService
 import org.booktower.services.ExportService
 import org.booktower.services.GoodreadsImportService
 import org.booktower.services.JwtService
 import org.booktower.services.LibraryService
 import org.booktower.services.MagicShelfService
-import org.booktower.services.MetadataFetchService
 import org.booktower.services.PasswordResetService
 import org.booktower.services.PdfMetadataService
 import org.booktower.services.ReadingSessionService
 import org.booktower.services.SeedService
 import org.booktower.services.UserSettingsService
-import org.booktower.weblate.WeblateHandler
 import org.http4k.core.HttpHandler
 import org.http4k.core.Method
 import org.http4k.core.Request
 import org.http4k.core.Status
-import org.http4k.core.then
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -75,47 +67,14 @@ class BookDropIntegrationTest {
         val goodreadsImportService = GoodreadsImportService(bookService)
         val seedService = SeedService(bookService, libraryService, config.storage.coversPath, config.storage.booksPath)
         bookDropService = BookDropService(bookService, dropDir.absolutePath)
-        val appHandler =
-            AppHandler(
-                authService,
-                libraryService,
-                bookService,
-                bookmarkService,
-                userSettingsService,
-                pdfMetadataService,
-                epubMetadataService,
-                adminService,
-                jwtService,
-                config.storage,
-                TestFixture.templateRenderer,
-                WeblateHandler(WeblateConfig("", "", "", false)),
-                analyticsService,
-                annotationService,
-                MetadataFetchService(),
-                magicShelfService,
-                passwordResetService,
-                EmailService(SmtpConfig("", 587, "", "", "", false)),
-                "http://localhost:9999",
-                true,
-                apiTokenService,
-                exportService,
-                comicService,
-                goodreadsImportService,
-                readingSessionService,
-                seedService,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                bookDropService,
+        app =
+            buildTestApp(
+                authService = authService,
+                libraryService = libraryService,
+                bookService = bookService,
+                jwtService = jwtService,
+                bookDropService = bookDropService,
             )
-        app = globalErrorFilter().then(appHandler.routes())
     }
 
     private fun registerAndGetToken(prefix: String = "drop"): String {

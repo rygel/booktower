@@ -4,9 +4,37 @@ import org.booktower.TestFixture
 import org.booktower.config.Json
 import org.booktower.config.SmtpConfig
 import org.booktower.config.WeblateConfig
+import org.booktower.filters.RateLimitFilter
+import org.booktower.filters.adminFilter
 import org.booktower.filters.globalErrorFilter
+import org.booktower.filters.jwtAuthFilter
+import org.booktower.handlers.AdminHandler
+import org.booktower.handlers.ApiTokenHandler
 import org.booktower.handlers.AppHandler
+import org.booktower.handlers.AuthHandler2
+import org.booktower.handlers.BackgroundTaskHandler
+import org.booktower.handlers.BookHandler2
+import org.booktower.handlers.BookmarkHandler
+import org.booktower.handlers.BulkBookHandler
+import org.booktower.handlers.ExportHandler
+import org.booktower.handlers.FileHandler
+import org.booktower.handlers.GoodreadsImportHandler
+import org.booktower.handlers.LibraryHandler2
+import org.booktower.handlers.OpdsHandler
+import org.booktower.handlers.PageHandler
+import org.booktower.handlers.UserSettingsHandler
 import org.booktower.models.LoginResponse
+import org.booktower.routers.AdminApiRouter
+import org.booktower.routers.AudiobookApiRouter
+import org.booktower.routers.AuthRouter
+import org.booktower.routers.BookApiRouter
+import org.booktower.routers.DeviceSyncRouter
+import org.booktower.routers.FilterSet
+import org.booktower.routers.LibraryApiRouter
+import org.booktower.routers.MetadataApiRouter
+import org.booktower.routers.OidcRouter
+import org.booktower.routers.PageRouter
+import org.booktower.routers.UserApiRouter
 import org.booktower.services.AdminService
 import org.booktower.services.AlternativeCoverService
 import org.booktower.services.AnalyticsService
@@ -15,6 +43,7 @@ import org.booktower.services.ApiTokenService
 import org.booktower.services.AuthService
 import org.booktower.services.BookService
 import org.booktower.services.BookmarkService
+import org.booktower.services.CalibreConversionService
 import org.booktower.services.ComicService
 import org.booktower.services.CoverCandidate
 import org.booktower.services.EmailService
@@ -49,7 +78,6 @@ class AlternativeCoverIntegrationTest {
     private val config = TestFixture.config
     private val jdbi = TestFixture.database.getJdbi()
 
-    // Stub: returns two canned candidates; downloadBytes returns fake PNG bytes
     private val stubCoverService =
         object : AlternativeCoverService() {
             override fun fetchCandidates(
@@ -77,6 +105,7 @@ class AlternativeCoverIntegrationTest {
         app = buildApp()
     }
 
+    @Suppress("LongMethod")
     private fun buildApp(): HttpHandler {
         val jwtService = JwtService(config.security)
         val authService = AuthService(jdbi, jwtService)
@@ -97,46 +126,109 @@ class AlternativeCoverIntegrationTest {
         val comicService = ComicService()
         val goodreadsImportService = GoodreadsImportService(bookService)
         val seedService = SeedService(bookService, libraryService, coversDir.toString(), config.storage.booksPath)
-        // Build a StorageConfig that points covers to our temp dir
         val storage = config.storage.copy(coversPath = coversDir.toString())
-        val appHandler =
-            AppHandler(
+
+        // Handlers
+        val authHandler =
+            AuthHandler2(
                 authService,
-                libraryService,
-                bookService,
-                bookmarkService,
                 userSettingsService,
-                pdfMetadataService,
-                epubMetadataService,
-                adminService,
-                jwtService,
-                storage,
-                TestFixture.templateRenderer,
-                WeblateHandler(WeblateConfig("", "", "", false)),
-                analyticsService,
-                annotationService,
-                MetadataFetchService(),
-                magicShelfService,
                 passwordResetService,
                 EmailService(SmtpConfig("", 587, "", "", "", true)),
                 "http://localhost:9999",
                 true,
-                apiTokenService,
-                exportService,
-                comicService,
-                goodreadsImportService,
-                readingSessionService,
+                null,
+                false,
+            )
+        val libraryHandler = LibraryHandler2(libraryService, null, storage)
+        val bookHandler = BookHandler2(bookService, readingSessionService)
+        val bookmarkHandler = BookmarkHandler(bookmarkService)
+        val calibreService = CalibreConversionService(java.io.File(storage.tempPath, "calibre-cache"))
+        val fileHandler = FileHandler(bookService, pdfMetadataService, epubMetadataService, storage, calibreService = calibreService)
+        val settingsHandler = UserSettingsHandler(userSettingsService)
+        val adminHandler =
+            AdminHandler(
+                adminService,
+                TestFixture.templateRenderer,
+                passwordResetService,
                 seedService,
+                EmailService(
+                    SmtpConfig("", 587, "", "", "", true),
+                ),
+                "http://localhost:9999",
                 null,
                 null,
                 null,
                 null,
                 null,
+            )
+        val pageHandler =
+            PageHandler(jwtService, authService, libraryService, bookService, bookmarkService, userSettingsService, analyticsService, annotationService, MetadataFetchService(), magicShelfService, TestFixture.templateRenderer, readingSessionService, null)
+        val opdsHandler = OpdsHandler(authService, libraryService, bookService, storage, apiTokenService, null)
+        val apiTokenHandler = ApiTokenHandler(apiTokenService, jwtService)
+        val exportHandler = ExportHandler(exportService, jwtService)
+        val goodreadsImportHandler = GoodreadsImportHandler(goodreadsImportService, jwtService)
+        val bulkBookHandler = BulkBookHandler(bookService)
+        val backgroundTaskService = org.booktower.services.BackgroundTaskService()
+        val backgroundTaskHandler = org.booktower.handlers.BackgroundTaskHandler(backgroundTaskService)
+
+        // Filters
+        val authFilter = jwtAuthFilter(jwtService) { userId: java.util.UUID -> authService.getUserById(userId) != null }
+        val filters =
+            FilterSet(
+                auth = authFilter,
+                admin = authFilter.then(adminFilter()),
+                authRateLimit = RateLimitFilter(maxRequests = 10, windowSeconds = 60),
+            )
+
+        // Routers — inject stubCoverService into BookApiRouter
+        val authRouter = AuthRouter(authHandler, filters)
+        val oidcRouter = OidcRouter(null)
+        val pageRouter = PageRouter(filters, pageHandler, adminHandler, jwtService, TestFixture.templateRenderer, true)
+        val bookApiRouter =
+            BookApiRouter(
+                filters,
+                bookHandler,
+                bulkBookHandler,
+                bookmarkHandler,
+                fileHandler,
+                bookService,
+                comicService,
+                storage,
+                magicShelfService,
                 null,
                 null,
                 null,
                 stubCoverService,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
             )
+        val libraryApiRouter = LibraryApiRouter(filters, libraryHandler, libraryService, null, null)
+        val userApiRouter =
+            UserApiRouter(filters, settingsHandler, bookService, userSettingsService, null, null, null, null, null, null, null, null, backgroundTaskHandler, apiTokenHandler, exportHandler, goodreadsImportHandler)
+        val adminApiRouter =
+            AdminApiRouter(
+                filters,
+                adminHandler,
+                backgroundTaskHandler,
+                WeblateHandler(WeblateConfig("", "", "", false)),
+                null,
+                null,
+                null,
+                null,
+            )
+        val metadataApiRouter = MetadataApiRouter(filters, MetadataFetchService(), bookService, null, null, null)
+        val audiobookApiRouter = AudiobookApiRouter(filters, null, null, null, storage)
+        val deviceSyncRouter = DeviceSyncRouter(filters, null, null, null, opdsHandler)
+
+        val appHandler =
+            AppHandler(fileHandler, storage, false, authRouter, oidcRouter, pageRouter, bookApiRouter, libraryApiRouter, userApiRouter, adminApiRouter, metadataApiRouter, audiobookApiRouter, deviceSyncRouter)
         return globalErrorFilter().then(appHandler.routes())
     }
 
@@ -183,7 +275,6 @@ class AlternativeCoverIntegrationTest {
     fun `GET api books id covers alternatives returns candidate list`() {
         val token = registerAndGetToken()
         val (_, bookId) = createLibraryAndBook(token)
-
         val resp =
             app(
                 Request(Method.GET, "/api/books/$bookId/covers/alternatives")
@@ -200,7 +291,6 @@ class AlternativeCoverIntegrationTest {
     fun `POST api books id cover apply-url downloads and saves cover`() {
         val token = registerAndGetToken()
         val (_, bookId) = createLibraryAndBook(token)
-
         val resp =
             app(
                 Request(Method.POST, "/api/books/$bookId/cover/apply-url")
@@ -217,7 +307,6 @@ class AlternativeCoverIntegrationTest {
     fun `POST api books id cover apply-url returns 400 when url missing`() {
         val token = registerAndGetToken()
         val (_, bookId) = createLibraryAndBook(token)
-
         val resp =
             app(
                 Request(Method.POST, "/api/books/$bookId/cover/apply-url")

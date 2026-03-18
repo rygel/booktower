@@ -14,8 +14,8 @@
 
 @template.components.layout(title="${i18n.translate("page.analytics.title")} - BookTower", username=username, currentPage="analytics",
     themeCss=themeCss, currentTheme=currentTheme, lang=lang, themes=themes, i18n=i18n, searchQuery="", isAdmin=isAdmin, content = @`
-<div style="padding:2rem; max-width:56rem; margin:0 auto;">
-    <h1 style="font-size:1.25rem; font-weight:700; color:var(--bt-text); margin-bottom:1.5rem; display:flex; align-items:center; gap:0.625rem;">
+<div class="page-container" style="max-width:56rem;">
+    <h1 class="page-title flex-center gap-sm" style="font-size:1.25rem;">
         <i class="ri-bar-chart-line" style="color:var(--bt-accent-dim);"></i>
         ${i18n.translate("page.analytics.title")}
     </h1>
@@ -62,8 +62,8 @@
         </div>
 
         <!-- Pages last 30 days bar chart -->
-        <div class="card" style="padding:1.5rem; margin-bottom:1.5rem;">
-            <h2 style="font-size:0.9rem; font-weight:600; color:var(--bt-text-dim); margin-bottom:1.25rem;">${i18n.translate("page.analytics.chart.last30")}</h2>
+        <div class="card card-padding-lg" style=" margin-bottom:1.5rem;">
+            <h2 class="section-title flex-center gap-sm" style="font-size:0.9rem; color:var(--bt-text-dim); margin-bottom:1.25rem;">${i18n.translate("page.analytics.chart.last30")}</h2>
             <div style="display:flex; align-items:flex-end; gap:3px; height:80px;">
                 @for(day in summary.pagesLast30Days)
                     <div style="flex:1; background:${if (day.pages > 0) "var(--bt-accent)" else "var(--bt-border)"}; height:${if (day.pages > 0) "${day.barHeightPct}%" else "2px"}; border-radius:2px 2px 0 0; transition:opacity 0.15s;"
@@ -81,8 +81,8 @@
 
     <!-- Reading session log (always visible) -->
     @if(recentSessions.isNotEmpty())
-        <div class="card" style="padding:1.5rem; margin-top:1.5rem;">
-            <h2 style="font-size:0.9rem; font-weight:600; color:var(--bt-text-dim); margin-bottom:1rem;">${i18n.translate("page.analytics.sessions.title")}</h2>
+        <div class="card card-padding-lg" style=" margin-top:1.5rem;">
+            <h2 class="section-title flex-center gap-sm" style="font-size:0.9rem; color:var(--bt-text-dim); margin-bottom:1rem;">${i18n.translate("page.analytics.sessions.title")}</h2>
             <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
                 <thead>
                     <tr style="color:var(--bt-subtle); text-align:left; border-bottom:1px solid var(--bt-border);">

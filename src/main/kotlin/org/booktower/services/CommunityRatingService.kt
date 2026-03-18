@@ -116,13 +116,21 @@ open class CommunityRatingService(
     ): CommunityRatingDto? {
         val url =
             when {
-                !googleBooksId.isNullOrBlank() ->
+                !googleBooksId.isNullOrBlank() -> {
                     "https://www.googleapis.com/books/v1/volumes/$googleBooksId"
-                !isbn.isNullOrBlank() ->
+                }
+
+                !isbn.isNullOrBlank() -> {
                     "https://www.googleapis.com/books/v1/volumes?q=isbn:${URLEncoder.encode(isbn, "UTF-8")}&maxResults=1"
-                !title.isNullOrBlank() ->
+                }
+
+                !title.isNullOrBlank() -> {
                     "https://www.googleapis.com/books/v1/volumes?q=intitle:${URLEncoder.encode(title, "UTF-8")}&maxResults=1"
-                else -> return null
+                }
+
+                else -> {
+                    return null
+                }
             }
         return runCatching {
             val req =

@@ -16,12 +16,7 @@
 <div style="padding:2rem; max-width:72rem; margin:0 auto;">
 
     <!-- Breadcrumb -->
-    <nav style="font-size:0.8rem; color:var(--bt-subtle); margin-bottom:1.5rem; display:flex; align-items:center; gap:0.375rem;">
-        <a href="/series" style="color:var(--bt-accent-dim); text-decoration:none;"
-            onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${i18n.translate("page.series.title")}</a>
-        <i class="ri-arrow-right-s-line"></i>
-        <span style="color:var(--bt-text-dim); font-weight:500;">${seriesName}</span>
-    </nav>
+    @template.components.breadcrumb(items = listOf(i18n.translate("page.series.title") to "/series", seriesName to null))
 
     <div style="display:flex; align-items:baseline; gap:1rem; margin-bottom:1.75rem;">
         <h1 style="font-size:1.5rem; font-weight:700; color:var(--bt-text);">
@@ -31,10 +26,7 @@
     </div>
 
     @if(books.isEmpty())
-        <div style="text-align:center; padding:5rem 0;">
-            <i class="ri-book-2-line" style="font-size:4rem; display:block; margin-bottom:1rem; color:var(--bt-border);"></i>
-            <p style="font-size:1.125rem; font-weight:500; color:var(--bt-subtle);">${i18n.translate("page.library.empty.title")}</p>
-        </div>
+        @template.components.emptyState(icon = "ri-book-2-line", message = i18n.translate("page.library.empty.title"))
     @else
         <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(9rem, 1fr)); gap:1.25rem;">
             @for(book in books)

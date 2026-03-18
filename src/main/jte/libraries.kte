@@ -29,36 +29,32 @@
     </div>
 
     <!-- Create Library Modal -->
-    <div id="create-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); align-items:center; justify-content:center; z-index:50;"
-         onclick="if(event.target===this)this.style.display='none'">
-        <div class="modal-panel" style="padding:1.5rem; width:100%; max-width:28rem; border-radius:0.75rem; border:1px solid var(--bt-border);" onclick="event.stopPropagation()">
-            <h2 style="font-size:1.125rem; font-weight:700; color:var(--bt-text); margin-bottom:1.25rem;">${i18n.translate("page.libraries.modal.title")}</h2>
-            <form
-                hx-post="/ui/libraries"
-                hx-target="#libraries-grid"
-                hx-swap="afterbegin"
-                hx-on:htmx:after-request="if(event.detail.successful){document.getElementById('create-modal').style.display='none';this.reset();document.getElementById('empty-hint').style.display='none'}"
-            >
-                <div style="display:flex; flex-direction:column; gap:1rem;">
-                    <div>
-                        <label style="display:block; font-size:0.8rem; font-weight:500; color:var(--bt-muted); margin-bottom:0.375rem;">${i18n.translate("field.name")}</label>
-                        <input type="text" name="name" required placeholder="My Fiction Collection"
-                            style="width:100%; border-radius:0.5rem; border:1px solid; padding:0.5rem 0.75rem; font-size:0.875rem; box-sizing:border-box;">
-                    </div>
-                    <div>
-                        <label style="display:block; font-size:0.8rem; font-weight:500; color:var(--bt-muted); margin-bottom:0.375rem;">${i18n.translate("field.storage.path")} <span style="color:var(--bt-subtle);">${i18n.translate("label.optional")}</span></label>
-                        <input type="text" name="path" placeholder="${i18n.translate("placeholder.auto.generate")}"
-                            style="width:100%; border-radius:0.5rem; border:1px solid; padding:0.5rem 0.75rem; font-size:0.875rem; box-sizing:border-box;">
-                    </div>
-                    <div style="display:flex; gap:0.75rem; padding-top:0.5rem;">
-                        <button type="submit" class="btn-primary" style="flex:1;">${i18n.translate("action.create")}</button>
-                        <button type="button" class="btn-secondary" style="flex:1;"
-                            onclick="document.getElementById('create-modal').style.display='none'">${i18n.translate("action.cancel")}</button>
-                    </div>
+    @template.components.modal(id = "create-modal", title = i18n.translate("page.libraries.modal.title"), content = @`
+        <form
+            hx-post="/ui/libraries"
+            hx-target="#libraries-grid"
+            hx-swap="afterbegin"
+            hx-on:htmx:after-request="if(event.detail.successful){document.getElementById('create-modal').style.display='none';this.reset();document.getElementById('empty-hint').style.display='none'}"
+        >
+            <div style="display:flex; flex-direction:column; gap:1rem;">
+                <div>
+                    <label style="display:block; font-size:0.8rem; font-weight:500; color:var(--bt-muted); margin-bottom:0.375rem;">${i18n.translate("field.name")}</label>
+                    <input type="text" name="name" required placeholder="My Fiction Collection"
+                        style="width:100%; border-radius:0.5rem; border:1px solid; padding:0.5rem 0.75rem; font-size:0.875rem; box-sizing:border-box;">
                 </div>
-            </form>
-        </div>
-    </div>
+                <div>
+                    <label style="display:block; font-size:0.8rem; font-weight:500; color:var(--bt-muted); margin-bottom:0.375rem;">${i18n.translate("field.storage.path")} <span style="color:var(--bt-subtle);">${i18n.translate("label.optional")}</span></label>
+                    <input type="text" name="path" placeholder="${i18n.translate("placeholder.auto.generate")}"
+                        style="width:100%; border-radius:0.5rem; border:1px solid; padding:0.5rem 0.75rem; font-size:0.875rem; box-sizing:border-box;">
+                </div>
+                <div style="display:flex; gap:0.75rem; padding-top:0.5rem;">
+                    <button type="submit" class="btn-primary" style="flex:1;">${i18n.translate("action.create")}</button>
+                    <button type="button" class="btn-secondary" style="flex:1;"
+                        onclick="document.getElementById('create-modal').style.display='none'">${i18n.translate("action.cancel")}</button>
+                </div>
+            </div>
+        </form>
+    `)
 
     <!-- Library grid -->
     <div id="libraries-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:1.25rem;">
@@ -92,68 +88,64 @@
         </div>
 
         <!-- Create Smart Shelf Modal -->
-        <div id="create-shelf-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); align-items:center; justify-content:center; z-index:50;"
-             onclick="if(event.target===this)this.style.display='none'">
-            <div class="modal-panel" style="padding:1.5rem; width:100%; max-width:28rem; border-radius:0.75rem; border:1px solid var(--bt-border);" onclick="event.stopPropagation()">
-                <h2 style="font-size:1.125rem; font-weight:700; color:var(--bt-text); margin-bottom:1.25rem;">${i18n.translate("page.shelves.modal.title")}</h2>
-                <form
-                    hx-post="/ui/shelves"
-                    hx-target="#shelves-grid"
-                    hx-swap="afterbegin"
-                    hx-on:htmx:after-request="if(event.detail.successful){document.getElementById('create-shelf-modal').style.display='none';this.reset();updateShelfValueField();document.getElementById('shelves-empty-hint').style.display='none'}"
-                >
-                    <div style="display:flex; flex-direction:column; gap:1rem;">
-                        <div>
-                            <label style="display:block; font-size:0.8rem; font-weight:500; color:var(--bt-muted); margin-bottom:0.375rem;">${i18n.translate("field.name")}</label>
-                            <input type="text" name="name" required placeholder="${i18n.translate("placeholder.shelf.name")}"
-                                style="width:100%; border-radius:0.5rem; border:1px solid; padding:0.5rem 0.75rem; font-size:0.875rem; box-sizing:border-box;">
-                        </div>
-                        <div>
-                            <label style="display:block; font-size:0.8rem; font-weight:500; color:var(--bt-muted); margin-bottom:0.375rem;">${i18n.translate("shelf.rule.type.label")}</label>
-                            <select name="ruleType" onchange="updateShelfValueField()"
-                                style="width:100%; border-radius:0.5rem; border:1px solid var(--bt-border-input); padding:0.5rem 0.75rem; font-size:0.875rem; background:var(--bt-input-bg); color:var(--bt-muted); box-sizing:border-box;">
-                                <option value="STATUS">${i18n.translate("shelf.rule.type.status")}</option>
-                                <option value="TAG">${i18n.translate("shelf.rule.type.tag")}</option>
-                                <option value="RATING_GTE">${i18n.translate("shelf.rule.type.rating")}</option>
-                            </select>
-                        </div>
-                        <!-- Status value -->
-                        <div id="shelf-value-status">
-                            <label style="display:block; font-size:0.8rem; font-weight:500; color:var(--bt-muted); margin-bottom:0.375rem;">${i18n.translate("label.status")}</label>
-                            <select name="ruleValueStatus"
-                                style="width:100%; border-radius:0.5rem; border:1px solid var(--bt-border-input); padding:0.5rem 0.75rem; font-size:0.875rem; background:var(--bt-input-bg); color:var(--bt-muted); box-sizing:border-box;">
-                                <option value="READING">${i18n.translate("status.reading")}</option>
-                                <option value="FINISHED">${i18n.translate("status.finished")}</option>
-                                <option value="WANT_TO_READ">${i18n.translate("status.want.to.read")}</option>
-                            </select>
-                        </div>
-                        <!-- Tag value -->
-                        <div id="shelf-value-tag" style="display:none;">
-                            <label style="display:block; font-size:0.8rem; font-weight:500; color:var(--bt-muted); margin-bottom:0.375rem;">${i18n.translate("label.tag")}</label>
-                            <input type="text" name="ruleValueTag" placeholder="${i18n.translate("placeholder.shelf.tag")}"
-                                style="width:100%; border-radius:0.5rem; border:1px solid; padding:0.5rem 0.75rem; font-size:0.875rem; box-sizing:border-box;">
-                        </div>
-                        <!-- Rating value -->
-                        <div id="shelf-value-rating" style="display:none;">
-                            <label style="display:block; font-size:0.8rem; font-weight:500; color:var(--bt-muted); margin-bottom:0.375rem;">${i18n.translate("label.rating")}</label>
-                            <select name="ruleValueRating"
-                                style="width:100%; border-radius:0.5rem; border:1px solid var(--bt-border-input); padding:0.5rem 0.75rem; font-size:0.875rem; background:var(--bt-input-bg); color:var(--bt-muted); box-sizing:border-box;">
-                                <option value="5">5 &#9733;</option>
-                                <option value="4">4+ &#9733;</option>
-                                <option value="3">3+ &#9733;</option>
-                                <option value="2">2+ &#9733;</option>
-                                <option value="1">1+ &#9733;</option>
-                            </select>
-                        </div>
-                        <div style="display:flex; gap:0.75rem; padding-top:0.5rem;">
-                            <button type="submit" class="btn-primary" style="flex:1;">${i18n.translate("action.create")}</button>
-                            <button type="button" class="btn-secondary" style="flex:1;"
-                                onclick="document.getElementById('create-shelf-modal').style.display='none'">${i18n.translate("action.cancel")}</button>
-                        </div>
+        @template.components.modal(id = "create-shelf-modal", title = i18n.translate("page.shelves.modal.title"), content = @`
+            <form
+                hx-post="/ui/shelves"
+                hx-target="#shelves-grid"
+                hx-swap="afterbegin"
+                hx-on:htmx:after-request="if(event.detail.successful){document.getElementById('create-shelf-modal').style.display='none';this.reset();updateShelfValueField();document.getElementById('shelves-empty-hint').style.display='none'}"
+            >
+                <div style="display:flex; flex-direction:column; gap:1rem;">
+                    <div>
+                        <label style="display:block; font-size:0.8rem; font-weight:500; color:var(--bt-muted); margin-bottom:0.375rem;">${i18n.translate("field.name")}</label>
+                        <input type="text" name="name" required placeholder="${i18n.translate("placeholder.shelf.name")}"
+                            style="width:100%; border-radius:0.5rem; border:1px solid; padding:0.5rem 0.75rem; font-size:0.875rem; box-sizing:border-box;">
                     </div>
-                </form>
-            </div>
-        </div>
+                    <div>
+                        <label style="display:block; font-size:0.8rem; font-weight:500; color:var(--bt-muted); margin-bottom:0.375rem;">${i18n.translate("shelf.rule.type.label")}</label>
+                        <select name="ruleType" onchange="updateShelfValueField()"
+                            style="width:100%; border-radius:0.5rem; border:1px solid var(--bt-border-input); padding:0.5rem 0.75rem; font-size:0.875rem; background:var(--bt-input-bg); color:var(--bt-muted); box-sizing:border-box;">
+                            <option value="STATUS">${i18n.translate("shelf.rule.type.status")}</option>
+                            <option value="TAG">${i18n.translate("shelf.rule.type.tag")}</option>
+                            <option value="RATING_GTE">${i18n.translate("shelf.rule.type.rating")}</option>
+                        </select>
+                    </div>
+                    <!-- Status value -->
+                    <div id="shelf-value-status">
+                        <label style="display:block; font-size:0.8rem; font-weight:500; color:var(--bt-muted); margin-bottom:0.375rem;">${i18n.translate("label.status")}</label>
+                        <select name="ruleValueStatus"
+                            style="width:100%; border-radius:0.5rem; border:1px solid var(--bt-border-input); padding:0.5rem 0.75rem; font-size:0.875rem; background:var(--bt-input-bg); color:var(--bt-muted); box-sizing:border-box;">
+                            <option value="READING">${i18n.translate("status.reading")}</option>
+                            <option value="FINISHED">${i18n.translate("status.finished")}</option>
+                            <option value="WANT_TO_READ">${i18n.translate("status.want.to.read")}</option>
+                        </select>
+                    </div>
+                    <!-- Tag value -->
+                    <div id="shelf-value-tag" style="display:none;">
+                        <label style="display:block; font-size:0.8rem; font-weight:500; color:var(--bt-muted); margin-bottom:0.375rem;">${i18n.translate("label.tag")}</label>
+                        <input type="text" name="ruleValueTag" placeholder="${i18n.translate("placeholder.shelf.tag")}"
+                            style="width:100%; border-radius:0.5rem; border:1px solid; padding:0.5rem 0.75rem; font-size:0.875rem; box-sizing:border-box;">
+                    </div>
+                    <!-- Rating value -->
+                    <div id="shelf-value-rating" style="display:none;">
+                        <label style="display:block; font-size:0.8rem; font-weight:500; color:var(--bt-muted); margin-bottom:0.375rem;">${i18n.translate("label.rating")}</label>
+                        <select name="ruleValueRating"
+                            style="width:100%; border-radius:0.5rem; border:1px solid var(--bt-border-input); padding:0.5rem 0.75rem; font-size:0.875rem; background:var(--bt-input-bg); color:var(--bt-muted); box-sizing:border-box;">
+                            <option value="5">5 &#9733;</option>
+                            <option value="4">4+ &#9733;</option>
+                            <option value="3">3+ &#9733;</option>
+                            <option value="2">2+ &#9733;</option>
+                            <option value="1">1+ &#9733;</option>
+                        </select>
+                    </div>
+                    <div style="display:flex; gap:0.75rem; padding-top:0.5rem;">
+                        <button type="submit" class="btn-primary" style="flex:1;">${i18n.translate("action.create")}</button>
+                        <button type="button" class="btn-secondary" style="flex:1;"
+                            onclick="document.getElementById('create-shelf-modal').style.display='none'">${i18n.translate("action.cancel")}</button>
+                    </div>
+                </div>
+            </form>
+        `)
 
         <!-- Shelves grid -->
         <div id="shelves-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:1.25rem;">

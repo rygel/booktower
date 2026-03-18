@@ -225,7 +225,7 @@ class FileHandler(
 
         val ext = file.extension.lowercase()
         return when (ext) {
-            "fb2" ->
+            "fb2" -> {
                 try {
                     val html = fb2ReaderService.toHtml(file)
                     Response(Status.OK)
@@ -237,6 +237,8 @@ class FileHandler(
                         .header("Content-Type", "application/json")
                         .body("""{"error":"FB2 conversion failed: ${e.message}"}""")
                 }
+            }
+
             "mobi", "azw3" -> {
                 val svc = calibreService
                 if (svc == null || !svc.isAvailable) {
@@ -256,10 +258,12 @@ class FileHandler(
                         .body("""{"error":"Calibre conversion failed: ${e.message}"}""")
                 }
             }
-            else ->
+
+            else -> {
                 Response(Status.UNPROCESSABLE_ENTITY)
                     .header("Content-Type", "application/json")
                     .body("""{"error":"read-content is only supported for FB2, MOBI, and AZW3 files"}""")
+            }
         }
     }
 

@@ -28,8 +28,9 @@ fun jwtAuthFilter(
     Filter { next ->
         { req ->
             val token = req.cookie("token")?.value
-            val userId = token?.let { jwtService.extractUserId(it) }
-            val isAdmin = token?.let { jwtService.extractIsAdmin(it) } ?: false
+            val claims = token?.let { jwtService.extractClaims(it) }
+            val userId = claims?.first
+            val isAdmin = claims?.second ?: false
 
             val authenticated = userId != null && (userExists == null || userExists(userId))
 
