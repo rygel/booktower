@@ -112,7 +112,8 @@ class LibraryWatchServiceTest {
         // Delete the file
         epub.delete()
 
-        Thread.sleep(2000)
+        // macOS WatchService uses polling (up to ~10s per poll interval); allow extra time.
+        Thread.sleep(12000)
 
         val missing =
             jdbi.withHandle<String?, Exception> { handle ->
