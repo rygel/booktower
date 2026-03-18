@@ -62,8 +62,9 @@ class LibraryWatchServiceTest {
         val pdf = File(dir, "newbook.pdf")
         pdf.writeBytes(ByteArray(100) { it.toByte() })
 
-        // Give the watcher time to detect and scan
-        Thread.sleep(2000)
+        // Give the watcher time to detect and scan.
+        // macOS WatchService uses polling (up to ~10s per poll interval); allow extra time.
+        Thread.sleep(5000)
 
         val books = jdbi.withHandle<List<String>, Exception> { handle ->
             handle.createQuery("SELECT title FROM books WHERE library_id = ?")
