@@ -119,23 +119,28 @@ class PageHandler(
             }
         val ruleValue: String? =
             when (ruleType) {
-                ShelfRuleType.STATUS ->
+                ShelfRuleType.STATUS -> {
                     req.form("ruleValueStatus")?.takeIf { it.isNotBlank() }
                         ?: return Response(Status.BAD_REQUEST).body("Status is required")
-                ShelfRuleType.TAG ->
+                }
+
+                ShelfRuleType.TAG -> {
                     req
                         .form("ruleValueTag")
                         ?.trim()
                         ?.lowercase()
                         ?.takeIf { it.isNotBlank() }
                         ?: return Response(Status.BAD_REQUEST).body("Tag is required")
-                ShelfRuleType.RATING_GTE ->
+                }
+
+                ShelfRuleType.RATING_GTE -> {
                     req
                         .form("ruleValueRating")
                         ?.toIntOrNull()
                         ?.coerceIn(1, 5)
                         ?.toString()
                         ?: return Response(Status.BAD_REQUEST).body("Rating is required")
+                }
             }
         val shelf = magicShelfService.createShelf(userId, CreateMagicShelfRequest(name, ruleType, ruleValue))
         val rendered = templateRenderer.render("components/shelfCard.kte", mapOf("shelf" to shelf, "i18n" to ctx.i18n))
@@ -265,9 +270,15 @@ class PageHandler(
         val hasChapters = bookService.hasBookFiles(userId, bookId)
         val readerType =
             when {
-                hasChapters -> "audio-multi"
-                book.fileSize <= 0 || filePath.isNullOrBlank() -> "none"
-                else ->
+                hasChapters -> {
+                    "audio-multi"
+                }
+
+                book.fileSize <= 0 || filePath.isNullOrBlank() -> {
+                    "none"
+                }
+
+                else -> {
                     when (filePath.substringAfterLast('.', "").lowercase()) {
                         "epub" -> "epub"
                         "cbz", "cbr" -> "comic"
@@ -276,6 +287,7 @@ class PageHandler(
                         "mobi", "azw3" -> "kindle"
                         else -> "pdf"
                     }
+                }
             }
         val chapters = bookService.getBookFiles(userId, bookId)
         return htmlOk(

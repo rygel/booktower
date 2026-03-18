@@ -26,9 +26,13 @@ open class GeoIpService {
         return try {
             val addr = InetAddress.getByName(ip)
             when {
-                addr.isLoopbackAddress || addr.isLinkLocalAddress || addr.isSiteLocalAddress ->
+                addr.isLoopbackAddress || addr.isLinkLocalAddress || addr.isSiteLocalAddress -> {
                     GeoLocation(countryCode = null, countryName = "Private Network", city = null)
-                else -> fetchFromApi(ip)
+                }
+
+                else -> {
+                    fetchFromApi(ip)
+                }
             }
         } catch (e: Exception) {
             logger.debug("GeoIP lookup failed for ip=$ip: ${e.message}")

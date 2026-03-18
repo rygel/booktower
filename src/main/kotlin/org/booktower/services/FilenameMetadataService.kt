@@ -79,12 +79,14 @@ object FilenameMetadataService {
                 }
                 FilenameMetadata(title = titleCandidate.ifBlank { raw }, author = author, series = series, seriesIndex = seriesIndex)
             }
+
             parts.size == 2 -> {
                 // "Author - Title"
                 val author = parts[0].trim().takeIf { it.isNotBlank() }
                 val title = parts[1].trim().ifBlank { raw }
                 FilenameMetadata(title = title, author = author, series = series, seriesIndex = seriesIndex)
             }
+
             else -> {
                 // No author separator — remainder is the title
                 FilenameMetadata(title = remainder.ifBlank { raw }, author = null, series = series, seriesIndex = seriesIndex)
