@@ -1,5 +1,8 @@
 package org.booktower.config
 
+import org.booktower.filters.RateLimitFilter
+import org.booktower.filters.adminFilter
+import org.booktower.filters.jwtAuthFilter
 import org.booktower.handlers.AdminHandler
 import org.booktower.handlers.ApiTokenHandler
 import org.booktower.handlers.AppHandler
@@ -22,10 +25,6 @@ import org.booktower.handlers.OpdsHandler
 import org.booktower.handlers.PageHandler
 import org.booktower.handlers.ReaderPreferencesHandler
 import org.booktower.handlers.UserSettingsHandler
-import org.booktower.filters.RateLimitFilter
-import org.booktower.filters.adminFilter
-import org.booktower.filters.jwtAuthFilter
-import org.http4k.core.then
 import org.booktower.routers.AdminApiRouter
 import org.booktower.routers.AudiobookApiRouter
 import org.booktower.routers.AuthRouter
@@ -99,6 +98,7 @@ import org.booktower.services.TelemetryService
 import org.booktower.services.UserPermissionsService
 import org.booktower.services.UserSettingsService
 import org.booktower.weblate.WeblateHandler
+import org.http4k.core.then
 import org.koin.dsl.module
 
 val appModule =
@@ -193,9 +193,14 @@ val appModule =
         // ── Handler objects ──────────────────────────────────────────────────
         single {
             AuthHandler2(
-                get(), get(), get(), get(),
-                get<AppConfig>().baseUrl, get<AppConfig>().registrationOpen,
-                get(), get<OidcService>().config.forceOnlyMode,
+                get(),
+                get(),
+                get(),
+                get(),
+                get<AppConfig>().baseUrl,
+                get<AppConfig>().registrationOpen,
+                get(),
+                get<OidcService>().config.forceOnlyMode,
             )
         }
         single { LibraryHandler2(get(), get(), get<AppConfig>().storage) }
@@ -238,9 +243,10 @@ val appModule =
         single {
             val jwtService = get<JwtService>()
             val authService = get<AuthService>()
-            val authFilter = jwtAuthFilter(jwtService) { userId: java.util.UUID ->
-                authService.getUserById(userId) != null
-            }
+            val authFilter =
+                jwtAuthFilter(jwtService) { userId: java.util.UUID ->
+                    authService.getUserById(userId) != null
+                }
             FilterSet(
                 auth = authFilter,
                 admin = authFilter.then(adminFilter()),
@@ -253,8 +259,11 @@ val appModule =
         single { OidcRouter(get<OidcHandler>()) }
         single {
             PageRouter(
-                get<FilterSet>(), get<PageHandler>(), get<AdminHandler>(),
-                get<JwtService>(), get<TemplateRenderer>(),
+                get<FilterSet>(),
+                get<PageHandler>(),
+                get<AdminHandler>(),
+                get<JwtService>(),
+                get<TemplateRenderer>(),
                 get<AppConfig>().registrationOpen,
             )
         }
@@ -285,8 +294,11 @@ val appModule =
         }
         single {
             LibraryApiRouter(
-                get<FilterSet>(), get<LibraryHandler2>(), get<LibraryService>(),
-                get<LibraryHealthService>(), get<BookDropService>(),
+                get<FilterSet>(),
+                get<LibraryHandler2>(),
+                get<LibraryService>(),
+                get<LibraryHealthService>(),
+                get<BookDropService>(),
             )
         }
         single {
@@ -311,27 +323,42 @@ val appModule =
         }
         single {
             AdminApiRouter(
-                get<FilterSet>(), get<AdminHandler>(), get<BackgroundTaskHandler>(),
-                get<WeblateHandler>(), get<EmailProviderService>(),
-                get<ScheduledTaskService>(), get<BulkCoverService>(), get<TelemetryService>(),
+                get<FilterSet>(),
+                get<AdminHandler>(),
+                get<BackgroundTaskHandler>(),
+                get<WeblateHandler>(),
+                get<EmailProviderService>(),
+                get<ScheduledTaskService>(),
+                get<BulkCoverService>(),
+                get<TelemetryService>(),
             )
         }
         single {
             MetadataApiRouter(
-                get<FilterSet>(), get<MetadataFetchService>(), get<BookService>(),
-                get<MetadataProposalService>(), get<MetadataLockService>(), get<AuthorMetadataService>(),
+                get<FilterSet>(),
+                get<MetadataFetchService>(),
+                get<BookService>(),
+                get<MetadataProposalService>(),
+                get<MetadataLockService>(),
+                get<AuthorMetadataService>(),
             )
         }
         single {
             AudiobookApiRouter(
-                get<FilterSet>(), get<ListeningSessionService>(), get<ListeningStatsService>(),
-                get<AudiobookMetaService>(), get<AppConfig>().storage,
+                get<FilterSet>(),
+                get<ListeningSessionService>(),
+                get<ListeningStatsService>(),
+                get<AudiobookMetaService>(),
+                get<AppConfig>().storage,
             )
         }
         single {
             DeviceSyncRouter(
-                get<FilterSet>(), get<KoboSyncHandler>(), get<KOReaderSyncHandler>(),
-                get<KomgaApiHandler>(), get<OpdsHandler>(),
+                get<FilterSet>(),
+                get<KoboSyncHandler>(),
+                get<KOReaderSyncHandler>(),
+                get<KomgaApiHandler>(),
+                get<OpdsHandler>(),
             )
         }
 

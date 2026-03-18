@@ -170,28 +170,35 @@ abstract class IntegrationTestBase {
         val backgroundTaskService = org.booktower.services.BackgroundTaskService()
 
         // ── Handler objects ──────────────────────────────────────────────
-        val authHandler = AuthHandler2(
-            authService, userSettingsService, passwordResetService,
-            EmailService(SmtpConfig("", 587, "", "", "", true)),
-            "http://localhost:9999", registrationOpen, auditService,
-            oidcService?.config?.forceOnlyMode ?: false,
-        )
+        val authHandler =
+            AuthHandler2(
+                authService,
+                userSettingsService,
+                passwordResetService,
+                EmailService(SmtpConfig("", 587, "", "", "", true)),
+                "http://localhost:9999",
+                registrationOpen,
+                auditService,
+                oidcService?.config?.forceOnlyMode ?: false,
+            )
         val libraryHandler = LibraryHandler2(libraryService, backgroundTaskService, config.storage)
         val bookHandler = BookHandler2(bookService, readingSessionService)
         val bookmarkHandler = BookmarkHandler(bookmarkService)
         val calibreService = CalibreConversionService(java.io.File(config.storage.tempPath, "calibre-cache"))
         val fileHandler = FileHandler(bookService, pdfMetadataService, epubMetadataService, config.storage, calibreService = calibreService)
         val settingsHandler = UserSettingsHandler(userSettingsService)
-        val adminHandler = AdminHandler(
-            adminService, TestFixture.templateRenderer, passwordResetService, seedService,
-            EmailService(SmtpConfig("", 587, "", "", "", true)), "http://localhost:9999",
-            duplicateDetectionService, auditService, userPermissionsService, libraryAccessService, comicPageHashService,
-        )
-        val pageHandler = PageHandler(
-            jwtService, authService, libraryService, bookService, bookmarkService,
-            userSettingsService, analyticsService, annotationService, metadataFetchService,
-            magicShelfService, TestFixture.templateRenderer, readingSessionService, null,
-        )
+        val adminHandler =
+            AdminHandler(
+                adminService, TestFixture.templateRenderer, passwordResetService, seedService,
+                EmailService(SmtpConfig("", 587, "", "", "", true)), "http://localhost:9999",
+                duplicateDetectionService, auditService, userPermissionsService, libraryAccessService, comicPageHashService,
+            )
+        val pageHandler =
+            PageHandler(
+                jwtService, authService, libraryService, bookService, bookmarkService,
+                userSettingsService, analyticsService, annotationService, metadataFetchService,
+                magicShelfService, TestFixture.templateRenderer, readingSessionService, null,
+            )
         val backgroundTaskHandler = BackgroundTaskHandler(backgroundTaskService)
         val journalHandler = JournalHandler(journalService)
         val oidcHandler = oidcService?.let { org.booktower.handlers.OidcHandler(it, authService) }
@@ -204,55 +211,79 @@ abstract class IntegrationTestBase {
 
         // ── Shared filters ───────────────────────────────────────────────
         val authFilter = jwtAuthFilter(jwtService) { userId: java.util.UUID -> authService.getUserById(userId) != null }
-        val filters = FilterSet(
-            auth = authFilter,
-            admin = authFilter.then(adminFilter()),
-            authRateLimit = RateLimitFilter(maxRequests = 10, windowSeconds = 60),
-        )
+        val filters =
+            FilterSet(
+                auth = authFilter,
+                admin = authFilter.then(adminFilter()),
+                authRateLimit = RateLimitFilter(maxRequests = 10, windowSeconds = 60),
+            )
 
         // ── Domain routers ───────────────────────────────────────────────
         val authRouter = AuthRouter(authHandler, filters)
         val oidcRouter = OidcRouter(oidcHandler)
         val pageRouter = PageRouter(filters, pageHandler, adminHandler, jwtService, TestFixture.templateRenderer, registrationOpen)
-        val bookApiRouter = BookApiRouter(
-            filters, bookHandler, bulkBookHandler, bookmarkHandler, fileHandler,
-            bookService, comicService, config.storage, magicShelfService,
-            null, null, journalHandler, null, null, null,
-            bookFilesService, comicMetadataService, communityRatingService,
-            bookReviewService, bookNotebookService, duplicateDetectionService,
-        )
+        val bookApiRouter =
+            BookApiRouter(
+                filters, bookHandler, bulkBookHandler, bookmarkHandler, fileHandler,
+                bookService, comicService, config.storage, magicShelfService,
+                null, null, journalHandler, null, null, null,
+                bookFilesService, comicMetadataService, communityRatingService,
+                bookReviewService, bookNotebookService, duplicateDetectionService,
+            )
         val libraryApiRouter = LibraryApiRouter(filters, libraryHandler, libraryService, null, null)
-        val userApiRouter = UserApiRouter(
-            filters, settingsHandler, bookService, userSettingsService,
-            readingStatsService, hardcoverSyncService, opdsCredentialsService,
-            contentRestrictionsService, filterPresetService, telemetryService,
-            null, notificationService, backgroundTaskHandler, apiTokenHandler,
-            exportHandler, goodreadsImportHandler,
-        )
-        val adminApiRouter = AdminApiRouter(
-            filters, adminHandler, backgroundTaskHandler,
-            WeblateHandler(WeblateConfig("", "", "", false)),
-            emailProviderService, scheduledTaskService, bulkCoverService, telemetryService,
-        )
-        val metadataApiRouter = MetadataApiRouter(
-            filters, metadataFetchService, bookService,
-            metadataProposalService, metadataLockService, null,
-        )
-        val audiobookApiRouter = AudiobookApiRouter(
-            filters, listeningSessionService, listeningStatsService,
-            audiobookMetaService, config.storage,
-        )
-        val deviceSyncRouter = DeviceSyncRouter(
-            filters, koboSyncHandler, null, null, opdsHandler,
-        )
+        val userApiRouter =
+            UserApiRouter(
+                filters, settingsHandler, bookService, userSettingsService,
+                readingStatsService, hardcoverSyncService, opdsCredentialsService,
+                contentRestrictionsService, filterPresetService, telemetryService,
+                null, notificationService, backgroundTaskHandler, apiTokenHandler,
+                exportHandler, goodreadsImportHandler,
+            )
+        val adminApiRouter =
+            AdminApiRouter(
+                filters,
+                adminHandler,
+                backgroundTaskHandler,
+                WeblateHandler(WeblateConfig("", "", "", false)),
+                emailProviderService,
+                scheduledTaskService,
+                bulkCoverService,
+                telemetryService,
+            )
+        val metadataApiRouter =
+            MetadataApiRouter(
+                filters,
+                metadataFetchService,
+                bookService,
+                metadataProposalService,
+                metadataLockService,
+                null,
+            )
+        val audiobookApiRouter =
+            AudiobookApiRouter(
+                filters,
+                listeningSessionService,
+                listeningStatsService,
+                audiobookMetaService,
+                config.storage,
+            )
+        val deviceSyncRouter =
+            DeviceSyncRouter(
+                filters,
+                koboSyncHandler,
+                null,
+                null,
+                opdsHandler,
+            )
 
         // ── Compose ──────────────────────────────────────────────────────
-        val appHandler = AppHandler(
-            fileHandler, config.storage, demoMode,
-            authRouter, oidcRouter, pageRouter, bookApiRouter, libraryApiRouter,
-            userApiRouter, adminApiRouter, metadataApiRouter, audiobookApiRouter,
-            deviceSyncRouter,
-        )
+        val appHandler =
+            AppHandler(
+                fileHandler, config.storage, demoMode,
+                authRouter, oidcRouter, pageRouter, bookApiRouter, libraryApiRouter,
+                userApiRouter, adminApiRouter, metadataApiRouter, audiobookApiRouter,
+                deviceSyncRouter,
+            )
         return globalErrorFilter().then(DemoModeFilter(demoMode)).then(appHandler.routes())
     }
 

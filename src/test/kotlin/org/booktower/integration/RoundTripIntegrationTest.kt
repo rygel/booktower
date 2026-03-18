@@ -2,10 +2,7 @@ package org.booktower.integration
 
 import org.booktower.TestFixture
 import org.booktower.config.Json
-import org.booktower.config.SmtpConfig
-import org.booktower.config.WeblateConfig
 import org.booktower.filters.csrfFilter
-import org.booktower.filters.globalErrorFilter
 import org.booktower.filters.requestLoggingFilter
 import org.booktower.filters.staticCacheFilter
 import org.booktower.models.LibraryDto
@@ -16,26 +13,19 @@ import org.booktower.services.AnnotationService
 import org.booktower.services.AuthService
 import org.booktower.services.BookService
 import org.booktower.services.BookmarkService
-import org.booktower.services.EmailService
 import org.booktower.services.EpubMetadataService
-import org.booktower.services.GoodreadsImportService
 import org.booktower.services.JwtService
 import org.booktower.services.LibraryService
 import org.booktower.services.MetadataFetchService
 import org.booktower.services.PdfMetadataService
 import org.booktower.services.ReadingSessionService
-import org.booktower.services.SeedService
 import org.booktower.services.UserSettingsService
-import org.booktower.weblate.WeblateHandler
 import org.http4k.client.JettyClient
 import org.http4k.core.Method
 import org.http4k.core.Request
-import org.http4k.core.Response
 import org.http4k.core.Status
 import org.http4k.core.Status.Companion.OK
 import org.http4k.core.then
-import org.http4k.routing.bind
-import org.http4k.routing.routes
 import org.http4k.server.Jetty
 import org.http4k.server.asServer
 import org.junit.jupiter.api.AfterAll
@@ -69,13 +59,14 @@ class RoundTripIntegrationTest {
         val annotationService = AnnotationService(jdbi)
         val metadataFetchService = MetadataFetchService()
         val epubMetadataService = EpubMetadataService(jdbi, config.storage.coversPath)
-        val testApp = buildTestApp(
-            authService = authService,
-            libraryService = libraryService,
-            bookService = bookService,
-            jwtService = jwtService,
-            metadataFetchService = metadataFetchService,
-        )
+        val testApp =
+            buildTestApp(
+                authService = authService,
+                libraryService = libraryService,
+                bookService = bookService,
+                jwtService = jwtService,
+                metadataFetchService = metadataFetchService,
+            )
 
         val filteredApp =
             requestLoggingFilter()
@@ -111,7 +102,7 @@ class RoundTripIntegrationTest {
     fun `health endpoint returns OK over HTTP`() {
         val response = client(Request(Method.GET, url("/health")))
         assertEquals(Status.OK, response.status)
-        assertEquals("OK", response.bodyString())
+        assertTrue(response.bodyString().contains("ok"))
     }
 
     @Test

@@ -16,12 +16,13 @@ data class FilterSet(
 )
 
 /** Returns the handler if non-null, or a 503 SERVICE_UNAVAILABLE fallback. */
-fun optionalHandler(handler: HttpHandler?): HttpHandler =
-    handler ?: { _ -> Response(Status.SERVICE_UNAVAILABLE) }
+fun optionalHandler(handler: HttpHandler?): HttpHandler = handler ?: { _ -> Response(Status.SERVICE_UNAVAILABLE) }
 
 /** Returns the handler if non-null, or a 404 NOT_FOUND with a JSON error body. */
-fun optionalOr404(handler: HttpHandler?, errorJson: String = """{"error":"Not enabled"}"""): HttpHandler =
-    handler ?: { _ -> Response(Status.NOT_FOUND).body(errorJson) }
+fun optionalOr404(
+    handler: HttpHandler?,
+    errorJson: String = """{"error":"Not enabled"}""",
+): HttpHandler = handler ?: { _ -> Response(Status.NOT_FOUND).body(errorJson) }
 
 /** Extracts a book UUID from the path segment after "books". Shared across routers. */
 fun extractBookIdFromPath(req: org.http4k.core.Request): java.util.UUID? =

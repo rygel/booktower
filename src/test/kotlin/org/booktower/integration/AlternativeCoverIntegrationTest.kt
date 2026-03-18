@@ -54,8 +54,8 @@ import org.booktower.services.JwtService
 import org.booktower.services.LibraryService
 import org.booktower.services.MagicShelfService
 import org.booktower.services.MetadataFetchService
-import org.booktower.services.PdfMetadataService
 import org.booktower.services.PasswordResetService
+import org.booktower.services.PdfMetadataService
 import org.booktower.services.ReadingSessionService
 import org.booktower.services.SeedService
 import org.booktower.services.UserSettingsService
@@ -129,15 +129,33 @@ class AlternativeCoverIntegrationTest {
         val storage = config.storage.copy(coversPath = coversDir.toString())
 
         // Handlers
-        val authHandler = AuthHandler2(authService, userSettingsService, passwordResetService, EmailService(SmtpConfig("", 587, "", "", "", true)), "http://localhost:9999", true, null, false)
+        val authHandler =
+            AuthHandler2(
+                authService,
+                userSettingsService,
+                passwordResetService,
+                EmailService(SmtpConfig("", 587, "", "", "", true)),
+                "http://localhost:9999",
+                true,
+                null,
+                false,
+            )
         val libraryHandler = LibraryHandler2(libraryService, null, storage)
         val bookHandler = BookHandler2(bookService, readingSessionService)
         val bookmarkHandler = BookmarkHandler(bookmarkService)
         val calibreService = CalibreConversionService(java.io.File(storage.tempPath, "calibre-cache"))
         val fileHandler = FileHandler(bookService, pdfMetadataService, epubMetadataService, storage, calibreService = calibreService)
         val settingsHandler = UserSettingsHandler(userSettingsService)
-        val adminHandler = AdminHandler(adminService, TestFixture.templateRenderer, passwordResetService, seedService, EmailService(SmtpConfig("", 587, "", "", "", true)), "http://localhost:9999", null, null, null, null, null)
-        val pageHandler = PageHandler(jwtService, authService, libraryService, bookService, bookmarkService, userSettingsService, analyticsService, annotationService, MetadataFetchService(), magicShelfService, TestFixture.templateRenderer, readingSessionService, null)
+        val adminHandler =
+            AdminHandler(
+                adminService, TestFixture.templateRenderer, passwordResetService, seedService,
+                EmailService(
+                    SmtpConfig("", 587, "", "", "", true),
+                ),
+                "http://localhost:9999", null, null, null, null, null,
+            )
+        val pageHandler =
+            PageHandler(jwtService, authService, libraryService, bookService, bookmarkService, userSettingsService, analyticsService, annotationService, MetadataFetchService(), magicShelfService, TestFixture.templateRenderer, readingSessionService, null)
         val opdsHandler = OpdsHandler(authService, libraryService, bookService, storage, apiTokenService, null)
         val apiTokenHandler = ApiTokenHandler(apiTokenService, jwtService)
         val exportHandler = ExportHandler(exportService, jwtService)
@@ -148,25 +166,43 @@ class AlternativeCoverIntegrationTest {
 
         // Filters
         val authFilter = jwtAuthFilter(jwtService) { userId: java.util.UUID -> authService.getUserById(userId) != null }
-        val filters = FilterSet(auth = authFilter, admin = authFilter.then(adminFilter()), authRateLimit = RateLimitFilter(maxRequests = 10, windowSeconds = 60))
+        val filters =
+            FilterSet(
+                auth = authFilter,
+                admin = authFilter.then(adminFilter()),
+                authRateLimit = RateLimitFilter(maxRequests = 10, windowSeconds = 60),
+            )
 
         // Routers — inject stubCoverService into BookApiRouter
         val authRouter = AuthRouter(authHandler, filters)
         val oidcRouter = OidcRouter(null)
         val pageRouter = PageRouter(filters, pageHandler, adminHandler, jwtService, TestFixture.templateRenderer, true)
-        val bookApiRouter = BookApiRouter(
-            filters, bookHandler, bulkBookHandler, bookmarkHandler, fileHandler,
-            bookService, comicService, storage, magicShelfService,
-            null, null, null, stubCoverService, null, null, null, null, null, null, null, null,
-        )
+        val bookApiRouter =
+            BookApiRouter(
+                filters, bookHandler, bulkBookHandler, bookmarkHandler, fileHandler,
+                bookService, comicService, storage, magicShelfService,
+                null, null, null, stubCoverService, null, null, null, null, null, null, null, null,
+            )
         val libraryApiRouter = LibraryApiRouter(filters, libraryHandler, libraryService, null, null)
-        val userApiRouter = UserApiRouter(filters, settingsHandler, bookService, userSettingsService, null, null, null, null, null, null, null, null, backgroundTaskHandler, apiTokenHandler, exportHandler, goodreadsImportHandler)
-        val adminApiRouter = AdminApiRouter(filters, adminHandler, backgroundTaskHandler, WeblateHandler(WeblateConfig("", "", "", false)), null, null, null, null)
+        val userApiRouter =
+            UserApiRouter(filters, settingsHandler, bookService, userSettingsService, null, null, null, null, null, null, null, null, backgroundTaskHandler, apiTokenHandler, exportHandler, goodreadsImportHandler)
+        val adminApiRouter =
+            AdminApiRouter(
+                filters,
+                adminHandler,
+                backgroundTaskHandler,
+                WeblateHandler(WeblateConfig("", "", "", false)),
+                null,
+                null,
+                null,
+                null,
+            )
         val metadataApiRouter = MetadataApiRouter(filters, MetadataFetchService(), bookService, null, null, null)
         val audiobookApiRouter = AudiobookApiRouter(filters, null, null, null, storage)
         val deviceSyncRouter = DeviceSyncRouter(filters, null, null, null, opdsHandler)
 
-        val appHandler = AppHandler(fileHandler, storage, false, authRouter, oidcRouter, pageRouter, bookApiRouter, libraryApiRouter, userApiRouter, adminApiRouter, metadataApiRouter, audiobookApiRouter, deviceSyncRouter)
+        val appHandler =
+            AppHandler(fileHandler, storage, false, authRouter, oidcRouter, pageRouter, bookApiRouter, libraryApiRouter, userApiRouter, adminApiRouter, metadataApiRouter, audiobookApiRouter, deviceSyncRouter)
         return globalErrorFilter().then(appHandler.routes())
     }
 
