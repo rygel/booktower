@@ -201,6 +201,7 @@ jobs:
     name: E2E Tests (Linux)
     needs: build
     if: >
+      github.event_name == 'pull_request' ||
       github.event.inputs.run_e2e_tests == 'true' ||
       (github.event_name == 'push' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
