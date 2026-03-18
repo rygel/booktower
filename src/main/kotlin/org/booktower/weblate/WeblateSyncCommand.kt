@@ -55,15 +55,16 @@ object WeblateSyncCommand {
         }
     }
 
-    private fun loadConfig(): WeblateConfig {
-        return try {
-            val config = com.typesafe.config.ConfigFactory.load()
+    private fun loadConfig(): WeblateConfig =
+        try {
+            val config =
+                com.typesafe.config.ConfigFactory
+                    .load()
             val app = config.getConfig("app")
             WeblateConfig.load(app.getConfig("weblate"))
         } catch (e: Exception) {
             WeblateConfig("", "", "", false)
         }
-    }
 
     private fun getTranslationsDir(): java.io.File {
         val resourcesDir = java.io.File("src/main/resources")

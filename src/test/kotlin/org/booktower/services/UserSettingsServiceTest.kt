@@ -24,9 +24,10 @@ class UserSettingsServiceTest {
         authService = AuthService(jdbi, jwtService)
         userSettingsService = UserSettingsService(jdbi)
 
-        val result = authService.register(
-            CreateUserRequest("settings_${System.nanoTime()}", "settings_${System.nanoTime()}@test.com", "password123"),
-        )
+        val result =
+            authService.register(
+                CreateUserRequest("settings_${System.nanoTime()}", "settings_${System.nanoTime()}@test.com", "password123"),
+            )
         userId = jwtService.extractUserId(result.getOrThrow().token)!!
     }
 
@@ -61,9 +62,10 @@ class UserSettingsServiceTest {
 
     @Test
     fun `getAll returns empty map for user with no settings`() {
-        val otherResult = authService.register(
-            CreateUserRequest("emptyset_${System.nanoTime()}", "emptyset_${System.nanoTime()}@test.com", "password123"),
-        )
+        val otherResult =
+            authService.register(
+                CreateUserRequest("emptyset_${System.nanoTime()}", "emptyset_${System.nanoTime()}@test.com", "password123"),
+            )
         val otherId = jwtService.extractUserId(otherResult.getOrThrow().token)!!
         assertTrue(userSettingsService.getAll(otherId).isEmpty())
     }
@@ -105,9 +107,10 @@ class UserSettingsServiceTest {
 
     @Test
     fun `settings are isolated between users`() {
-        val otherResult = authService.register(
-            CreateUserRequest("isolated_${System.nanoTime()}", "isolated_${System.nanoTime()}@test.com", "password123"),
-        )
+        val otherResult =
+            authService.register(
+                CreateUserRequest("isolated_${System.nanoTime()}", "isolated_${System.nanoTime()}@test.com", "password123"),
+            )
         val otherId = jwtService.extractUserId(otherResult.getOrThrow().token)!!
 
         userSettingsService.set(userId, "shared-key", "user1-value")

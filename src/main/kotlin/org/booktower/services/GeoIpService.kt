@@ -20,7 +20,6 @@ data class GeoLocation(
  * return a fixed value without touching the network.
  */
 open class GeoIpService {
-
     /** Override in tests to inject a fixed location without network calls. */
     open fun lookup(ip: String): GeoLocation? {
         if (ip.isBlank()) return null
@@ -46,7 +45,10 @@ open class GeoIpService {
             conn.requestMethod = "GET"
             if (conn.responseCode != 200) return null
             val body = conn.inputStream.bufferedReader().readText()
-            val tree = com.fasterxml.jackson.databind.ObjectMapper().readTree(body)
+            val tree =
+                com.fasterxml.jackson.databind
+                    .ObjectMapper()
+                    .readTree(body)
             if (tree.get("status")?.asText() != "success") return null
             GeoLocation(
                 countryCode = tree.get("countryCode")?.asText()?.takeIf { it.isNotBlank() },

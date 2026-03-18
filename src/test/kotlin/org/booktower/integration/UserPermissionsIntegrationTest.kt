@@ -8,33 +8,45 @@ import org.http4k.core.Request
 import org.http4k.core.Status
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class UserPermissionsIntegrationTest : IntegrationTestBase() {
-
     private fun registerAdminAndGetToken(): Pair<String, String> {
         val u = "padmin_${System.nanoTime()}"
-        val regResp = app(Request(Method.POST, "/auth/register")
-            .header("Content-Type", "application/json")
-            .body("""{"username":"$u","email":"$u@test.com","password":"pass1234"}"""))
-        val userId = Json.mapper.readValue(regResp.bodyString(), LoginResponse::class.java).user.id
+        val regResp =
+            app(
+                Request(Method.POST, "/auth/register")
+                    .header("Content-Type", "application/json")
+                    .body("""{"username":"$u","email":"$u@test.com","password":"pass1234"}"""),
+            )
+        val userId =
+            Json.mapper
+                .readValue(regResp.bodyString(), LoginResponse::class.java)
+                .user.id
         TestFixture.database.getJdbi().useHandle<Exception> { h ->
             h.createUpdate("UPDATE users SET is_admin = true WHERE id = ?").bind(0, userId).execute()
         }
-        val loginResp = app(Request(Method.POST, "/auth/login")
-            .header("Content-Type", "application/json")
-            .body("""{"username":"$u","password":"pass1234"}"""))
+        val loginResp =
+            app(
+                Request(Method.POST, "/auth/login")
+                    .header("Content-Type", "application/json")
+                    .body("""{"username":"$u","password":"pass1234"}"""),
+            )
         return userId to Json.mapper.readValue(loginResp.bodyString(), LoginResponse::class.java).token
     }
 
     private fun registerUserAndGetId(): String {
         val u = "puser_${System.nanoTime()}"
-        val r = app(Request(Method.POST, "/auth/register")
-            .header("Content-Type", "application/json")
-            .body("""{"username":"$u","email":"$u@test.com","password":"pass1234"}"""))
-        return Json.mapper.readValue(r.bodyString(), LoginResponse::class.java).user.id
+        val r =
+            app(
+                Request(Method.POST, "/auth/register")
+                    .header("Content-Type", "application/json")
+                    .body("""{"username":"$u","email":"$u@test.com","password":"pass1234"}"""),
+            )
+        return Json.mapper
+            .readValue(r.bodyString(), LoginResponse::class.java)
+            .user.id
     }
 
     @Test
@@ -42,8 +54,11 @@ class UserPermissionsIntegrationTest : IntegrationTestBase() {
         val (_, adminToken) = registerAdminAndGetToken()
         val userId = registerUserAndGetId()
 
-        val resp = app(Request(Method.GET, "/api/admin/users/$userId/permissions")
-            .header("Cookie", "token=$adminToken"))
+        val resp =
+            app(
+                Request(Method.GET, "/api/admin/users/$userId/permissions")
+                    .header("Cookie", "token=$adminToken"),
+            )
         assertEquals(Status.OK, resp.status)
         val tree = Json.mapper.readTree(resp.bodyString())
         // Defaults
@@ -69,10 +84,13 @@ class UserPermissionsIntegrationTest : IntegrationTestBase() {
             "canAccessKomgaApi":true,"canManageNotebooks":true,"canManageFonts":true,
             "canAccessAdminPanel":false}"""
 
-        val resp = app(Request(Method.PUT, "/api/admin/users/$userId/permissions")
-            .header("Cookie", "token=$adminToken")
-            .header("Content-Type", "application/json")
-            .body(payload))
+        val resp =
+            app(
+                Request(Method.PUT, "/api/admin/users/$userId/permissions")
+                    .header("Cookie", "token=$adminToken")
+                    .header("Content-Type", "application/json")
+                    .body(payload),
+            )
         assertEquals(Status.OK, resp.status)
         val tree = Json.mapper.readTree(resp.bodyString())
         assertTrue(tree.get("canDeleteBooks")?.asBoolean() == true)
@@ -94,13 +112,18 @@ class UserPermissionsIntegrationTest : IntegrationTestBase() {
             "canChangeEmail":true,"canUseSearchFilters":true,"canViewAuditLog":false,
             "canAccessKomgaApi":true,"canManageNotebooks":true,"canManageFonts":true,
             "canAccessAdminPanel":false}"""
-        app(Request(Method.PUT, "/api/admin/users/$userId/permissions")
-            .header("Cookie", "token=$adminToken")
-            .header("Content-Type", "application/json")
-            .body(payload))
+        app(
+            Request(Method.PUT, "/api/admin/users/$userId/permissions")
+                .header("Cookie", "token=$adminToken")
+                .header("Content-Type", "application/json")
+                .body(payload),
+        )
 
-        val getResp = app(Request(Method.GET, "/api/admin/users/$userId/permissions")
-            .header("Cookie", "token=$adminToken"))
+        val getResp =
+            app(
+                Request(Method.GET, "/api/admin/users/$userId/permissions")
+                    .header("Cookie", "token=$adminToken"),
+            )
         assertEquals(Status.OK, getResp.status)
         val tree = Json.mapper.readTree(getResp.bodyString())
         assertFalse(tree.get("canDownloadBooks")?.asBoolean() ?: true)
@@ -113,8 +136,11 @@ class UserPermissionsIntegrationTest : IntegrationTestBase() {
         val token = registerAndGetToken("noadmin")
         val userId = registerUserAndGetId()
 
-        val resp = app(Request(Method.GET, "/api/admin/users/$userId/permissions")
-            .header("Cookie", "token=$token"))
+        val resp =
+            app(
+                Request(Method.GET, "/api/admin/users/$userId/permissions")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.FORBIDDEN, resp.status)
     }
 
@@ -130,8 +156,11 @@ class UserPermissionsIntegrationTest : IntegrationTestBase() {
         val (_, adminToken) = registerAdminAndGetToken()
         val userId = registerUserAndGetId()
 
-        val resp = app(Request(Method.GET, "/api/admin/users/$userId/permissions")
-            .header("Cookie", "token=$adminToken"))
+        val resp =
+            app(
+                Request(Method.GET, "/api/admin/users/$userId/permissions")
+                    .header("Cookie", "token=$adminToken"),
+            )
         assertEquals(Status.OK, resp.status)
         val tree = Json.mapper.readTree(resp.bodyString())
         assertEquals(userId, tree.get("userId")?.asText())

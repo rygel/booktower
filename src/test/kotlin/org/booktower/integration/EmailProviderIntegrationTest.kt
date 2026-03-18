@@ -12,25 +12,29 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class EmailProviderIntegrationTest : IntegrationTestBase() {
-
     private val validProvider = """{"name":"Test SMTP","host":"smtp.example.com","port":587,"username":"user@example.com","password":"secret","fromAddress":"noreply@example.com","useTls":true,"isDefault":false}"""
 
     private fun registerAdminAndGetToken(): String {
         val username = "admin_${System.nanoTime()}"
-        val resp = app(
-            Request(Method.POST, "/auth/register")
-                .header("Content-Type", "application/json")
-                .body("""{"username":"$username","email":"$username@test.com","password":"password123"}"""),
-        )
-        val userId = Json.mapper.readValue(resp.bodyString(), LoginResponse::class.java).user.id
+        val resp =
+            app(
+                Request(Method.POST, "/auth/register")
+                    .header("Content-Type", "application/json")
+                    .body("""{"username":"$username","email":"$username@test.com","password":"password123"}"""),
+            )
+        val userId =
+            Json.mapper
+                .readValue(resp.bodyString(), LoginResponse::class.java)
+                .user.id
         TestFixture.database.getJdbi().useHandle<Exception> { h ->
             h.createUpdate("UPDATE users SET is_admin = true WHERE id = ?").bind(0, userId).execute()
         }
-        val loginResp = app(
-            Request(Method.POST, "/auth/login")
-                .header("Content-Type", "application/json")
-                .body("""{"username":"$username","password":"password123"}"""),
-        )
+        val loginResp =
+            app(
+                Request(Method.POST, "/auth/login")
+                    .header("Content-Type", "application/json")
+                    .body("""{"username":"$username","password":"password123"}"""),
+            )
         return Json.mapper.readValue(loginResp.bodyString(), LoginResponse::class.java).token
     }
 
@@ -46,12 +50,13 @@ class EmailProviderIntegrationTest : IntegrationTestBase() {
     @Test
     fun `POST creates an email provider`() {
         val adminToken = registerAdminAndGetToken()
-        val resp = app(
-            Request(Method.POST, "/api/admin/email-providers")
-                .header("Cookie", "token=$adminToken")
-                .header("Content-Type", "application/json")
-                .body(validProvider),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/api/admin/email-providers")
+                    .header("Cookie", "token=$adminToken")
+                    .header("Content-Type", "application/json")
+                    .body(validProvider),
+            )
         assertEquals(Status.CREATED, resp.status)
         val tree = Json.mapper.readTree(resp.bodyString())
         assertEquals("Test SMTP", tree.get("name").asText())
@@ -77,20 +82,26 @@ class EmailProviderIntegrationTest : IntegrationTestBase() {
     @Test
     fun `PUT updates an email provider`() {
         val adminToken = registerAdminAndGetToken()
-        val createResp = app(
-            Request(Method.POST, "/api/admin/email-providers")
-                .header("Cookie", "token=$adminToken")
-                .header("Content-Type", "application/json")
-                .body(validProvider),
-        )
-        val id = Json.mapper.readTree(createResp.bodyString()).get("id").asText()
+        val createResp =
+            app(
+                Request(Method.POST, "/api/admin/email-providers")
+                    .header("Cookie", "token=$adminToken")
+                    .header("Content-Type", "application/json")
+                    .body(validProvider),
+            )
+        val id =
+            Json.mapper
+                .readTree(createResp.bodyString())
+                .get("id")
+                .asText()
 
-        val putResp = app(
-            Request(Method.PUT, "/api/admin/email-providers/$id")
-                .header("Cookie", "token=$adminToken")
-                .header("Content-Type", "application/json")
-                .body("""{"name":"Updated SMTP","port":465}"""),
-        )
+        val putResp =
+            app(
+                Request(Method.PUT, "/api/admin/email-providers/$id")
+                    .header("Cookie", "token=$adminToken")
+                    .header("Content-Type", "application/json")
+                    .body("""{"name":"Updated SMTP","port":465}"""),
+            )
         assertEquals(Status.OK, putResp.status)
         val tree = Json.mapper.readTree(putResp.bodyString())
         assertEquals("Updated SMTP", tree.get("name").asText())
@@ -100,35 +111,47 @@ class EmailProviderIntegrationTest : IntegrationTestBase() {
     @Test
     fun `DELETE removes an email provider`() {
         val adminToken = registerAdminAndGetToken()
-        val createResp = app(
-            Request(Method.POST, "/api/admin/email-providers")
-                .header("Cookie", "token=$adminToken")
-                .header("Content-Type", "application/json")
-                .body(validProvider),
-        )
-        val id = Json.mapper.readTree(createResp.bodyString()).get("id").asText()
+        val createResp =
+            app(
+                Request(Method.POST, "/api/admin/email-providers")
+                    .header("Cookie", "token=$adminToken")
+                    .header("Content-Type", "application/json")
+                    .body(validProvider),
+            )
+        val id =
+            Json.mapper
+                .readTree(createResp.bodyString())
+                .get("id")
+                .asText()
 
-        val delResp = app(
-            Request(Method.DELETE, "/api/admin/email-providers/$id").header("Cookie", "token=$adminToken"),
-        )
+        val delResp =
+            app(
+                Request(Method.DELETE, "/api/admin/email-providers/$id").header("Cookie", "token=$adminToken"),
+            )
         assertEquals(Status.NO_CONTENT, delResp.status)
     }
 
     @Test
     fun `POST set-default marks provider as default`() {
         val adminToken = registerAdminAndGetToken()
-        val createResp = app(
-            Request(Method.POST, "/api/admin/email-providers")
-                .header("Cookie", "token=$adminToken")
-                .header("Content-Type", "application/json")
-                .body(validProvider),
-        )
-        val id = Json.mapper.readTree(createResp.bodyString()).get("id").asText()
+        val createResp =
+            app(
+                Request(Method.POST, "/api/admin/email-providers")
+                    .header("Cookie", "token=$adminToken")
+                    .header("Content-Type", "application/json")
+                    .body(validProvider),
+            )
+        val id =
+            Json.mapper
+                .readTree(createResp.bodyString())
+                .get("id")
+                .asText()
 
-        val defaultResp = app(
-            Request(Method.POST, "/api/admin/email-providers/$id/set-default")
-                .header("Cookie", "token=$adminToken"),
-        )
+        val defaultResp =
+            app(
+                Request(Method.POST, "/api/admin/email-providers/$id/set-default")
+                    .header("Cookie", "token=$adminToken"),
+            )
         assertEquals(Status.NO_CONTENT, defaultResp.status)
 
         val listResp = app(Request(Method.GET, "/api/admin/email-providers").header("Cookie", "token=$adminToken"))
@@ -144,13 +167,17 @@ class EmailProviderIntegrationTest : IntegrationTestBase() {
             Request(Method.POST, "/api/admin/email-providers")
                 .header("Cookie", "token=$adminToken")
                 .header("Content-Type", "application/json")
-                .body("""{"name":"First","host":"smtp1.example.com","port":587,"username":"u","password":"p","fromAddress":"a@b.com","useTls":true,"isDefault":true}"""),
+                .body(
+                    """{"name":"First","host":"smtp1.example.com","port":587,"username":"u","password":"p","fromAddress":"a@b.com","useTls":true,"isDefault":true}""",
+                ),
         )
         app(
             Request(Method.POST, "/api/admin/email-providers")
                 .header("Cookie", "token=$adminToken")
                 .header("Content-Type", "application/json")
-                .body("""{"name":"Second","host":"smtp2.example.com","port":587,"username":"u","password":"p","fromAddress":"a@b.com","useTls":true,"isDefault":true}"""),
+                .body(
+                    """{"name":"Second","host":"smtp2.example.com","port":587,"username":"u","password":"p","fromAddress":"a@b.com","useTls":true,"isDefault":true}""",
+                ),
         )
 
         val listResp = app(Request(Method.GET, "/api/admin/email-providers").header("Cookie", "token=$adminToken"))
@@ -169,12 +196,13 @@ class EmailProviderIntegrationTest : IntegrationTestBase() {
     @Test
     fun `POST with missing required field returns 400`() {
         val adminToken = registerAdminAndGetToken()
-        val resp = app(
-            Request(Method.POST, "/api/admin/email-providers")
-                .header("Cookie", "token=$adminToken")
-                .header("Content-Type", "application/json")
-                .body("""{"name":"No host","port":587,"username":"u","password":"p","fromAddress":"a@b.com"}"""),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/api/admin/email-providers")
+                    .header("Cookie", "token=$adminToken")
+                    .header("Content-Type", "application/json")
+                    .body("""{"name":"No host","port":587,"username":"u","password":"p","fromAddress":"a@b.com"}"""),
+            )
         assertEquals(Status.BAD_REQUEST, resp.status)
     }
 }

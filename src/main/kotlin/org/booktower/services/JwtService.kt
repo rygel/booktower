@@ -13,14 +13,17 @@ import java.util.UUID
 
 private val logger = LoggerFactory.getLogger("booktower.JwtService")
 
-class JwtService(private val config: SecurityConfig) {
+class JwtService(
+    private val config: SecurityConfig,
+) {
     private val algorithm = Algorithm.HMAC256(config.jwtSecret)
 
     fun generateToken(user: User): String {
         val now = Instant.now()
         val expiresAt = now.plus(config.sessionTimeout.toLong(), ChronoUnit.SECONDS)
 
-        return JWT.create()
+        return JWT
+            .create()
             .withIssuer(config.jwtIssuer)
             .withSubject(user.id.toString())
             .withClaim("username", user.username)
@@ -31,9 +34,10 @@ class JwtService(private val config: SecurityConfig) {
             .sign(algorithm)
     }
 
-    fun verifyToken(token: String): DecodedJWT? {
-        return try {
-            JWT.require(algorithm)
+    fun verifyToken(token: String): DecodedJWT? =
+        try {
+            JWT
+                .require(algorithm)
                 .withIssuer(config.jwtIssuer)
                 .build()
                 .verify(token)
@@ -41,21 +45,18 @@ class JwtService(private val config: SecurityConfig) {
             logger.warn("JWT verification failed: ${e.message}")
             null
         }
-    }
 
-    fun extractUserId(token: String): UUID? {
-        return try {
+    fun extractUserId(token: String): UUID? =
+        try {
             verifyToken(token)?.subject?.let { UUID.fromString(it) }
         } catch (e: Exception) {
             null
         }
-    }
 
-    fun extractIsAdmin(token: String): Boolean {
-        return try {
+    fun extractIsAdmin(token: String): Boolean =
+        try {
             verifyToken(token)?.getClaim("admin")?.asBoolean() ?: false
         } catch (e: Exception) {
             false
         }
-    }
 }

@@ -5,7 +5,6 @@ import org.http4k.core.Request
 import org.http4k.core.Status
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 /**
@@ -15,7 +14,6 @@ import kotlin.test.assertTrue
  * status changes.
  */
 class ReadStatusAnalyticsIntegrationTest : IntegrationTestBase() {
-
     private fun enableAnalytics(token: String) {
         app(
             Request(Method.POST, "/ui/preferences/analytics")
@@ -25,17 +23,26 @@ class ReadStatusAnalyticsIntegrationTest : IntegrationTestBase() {
         )
     }
 
-    private fun setStatus(token: String, bookId: String, status: String) {
-        val resp = app(
-            Request(Method.POST, "/ui/books/$bookId/status")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .body("status=$status"),
-        )
+    private fun setStatus(
+        token: String,
+        bookId: String,
+        status: String,
+    ) {
+        val resp =
+            app(
+                Request(Method.POST, "/ui/books/$bookId/status")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("status=$status"),
+            )
         assertEquals(Status.OK, resp.status, "setStatus($status) should return 200")
     }
 
-    private fun recordProgress(token: String, bookId: String, page: Int) {
+    private fun recordProgress(
+        token: String,
+        bookId: String,
+        page: Int,
+    ) {
         app(
             Request(Method.POST, "/ui/books/$bookId/progress")
                 .header("Cookie", "token=$token")
@@ -54,12 +61,13 @@ class ReadStatusAnalyticsIntegrationTest : IntegrationTestBase() {
         val bookId = createBook(token, libId, "Done Book")
 
         // Should not throw or return 5xx
-        val resp = app(
-            Request(Method.POST, "/ui/books/$bookId/status")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .body("status=FINISHED"),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/ui/books/$bookId/status")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("status=FINISHED"),
+            )
         assertEquals(Status.OK, resp.status, "FINISHED status with analytics enabled should return 200")
     }
 
@@ -75,8 +83,10 @@ class ReadStatusAnalyticsIntegrationTest : IntegrationTestBase() {
         assertEquals(Status.OK, resp.status)
         // Page should render without error — stats section should be visible
         val body = resp.bodyString()
-        assertTrue(body.contains("Books Finished") || body.contains("Total Pages"),
-            "Analytics page should render stats after marking book finished")
+        assertTrue(
+            body.contains("Books Finished") || body.contains("Total Pages"),
+            "Analytics page should render stats after marking book finished",
+        )
     }
 
     @Test
@@ -106,12 +116,13 @@ class ReadStatusAnalyticsIntegrationTest : IntegrationTestBase() {
 
         // Walk through all statuses
         for (status in listOf("WANT_TO_READ", "READING", "FINISHED", "NONE")) {
-            val resp = app(
-                Request(Method.POST, "/ui/books/$bookId/status")
-                    .header("Cookie", "token=$token")
-                    .header("Content-Type", "application/x-www-form-urlencoded")
-                    .body("status=$status"),
-            )
+            val resp =
+                app(
+                    Request(Method.POST, "/ui/books/$bookId/status")
+                        .header("Cookie", "token=$token")
+                        .header("Content-Type", "application/x-www-form-urlencoded")
+                        .body("status=$status"),
+                )
             assertEquals(Status.OK, resp.status, "Status transition to $status should succeed")
         }
 
@@ -127,12 +138,13 @@ class ReadStatusAnalyticsIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId, "Untracked Book")
 
-        val resp = app(
-            Request(Method.POST, "/ui/books/$bookId/status")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .body("status=FINISHED"),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/ui/books/$bookId/status")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("status=FINISHED"),
+            )
         assertEquals(Status.OK, resp.status, "Status change with analytics disabled should succeed")
     }
 
@@ -152,7 +164,10 @@ class ReadStatusAnalyticsIntegrationTest : IntegrationTestBase() {
         val selectedReading = Regex("""<option\b[^>]*value="READING"[^>]*selected""").containsMatchIn(html)
         val selectedReadingRev = Regex("""<option\b[^>]*selected[^>]*value="READING"""").containsMatchIn(html)
         val selectorArea = html.substringAfter("book-status-select", "").take(600)
-        assertTrue(selectedReading || selectedReadingRev, "READING option must be selected in status dropdown. Selector area: $selectorArea")
+        assertTrue(
+            selectedReading || selectedReadingRev,
+            "READING option must be selected in status dropdown. Selector area: $selectorArea",
+        )
     }
 
     @Test

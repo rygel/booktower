@@ -25,46 +25,118 @@ import java.io.ByteArrayOutputStream
  * stack (handler → service → DB → template) produces correct HTML output.
  */
 class WorkflowIntegrationTest : IntegrationTestBase() {
-
     // ── Fixtures ─────────────────────────────────────────────────────────────
 
     private fun minimalPdf(): ByteArray {
         val doc = PDDocument().also { it.addPage(PDPage()) }
-        return ByteArrayOutputStream().also { doc.save(it); doc.close() }.toByteArray()
+        return ByteArrayOutputStream()
+            .also {
+                doc.save(it)
+                doc.close()
+            }.toByteArray()
     }
 
     // Minimal valid 1×1 PNG
-    private val minimalPng = byteArrayOf(
-        0x89.toByte(), 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
-        0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44, 0x52,
-        0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
-        0x08, 0x02, 0x00, 0x00, 0x00, 0x90.toByte(), 0x77, 0x53,
-        0xde.toByte(), 0x00, 0x00, 0x00, 0x0c, 0x49, 0x44, 0x41,
-        0x54, 0x08, 0xd7.toByte(), 0x63, 0xf8.toByte(), 0xcf.toByte(), 0xc0.toByte(), 0x00,
-        0x00, 0x00, 0x02, 0x00, 0x01, 0xe2.toByte(), 0x21, 0xbc.toByte(),
-        0x33, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4e,
-        0x44, 0xae.toByte(), 0x42, 0x60, 0x82.toByte(),
+    private val minimalPng =
+        byteArrayOf(
+            0x89.toByte(),
+            0x50,
+            0x4e,
+            0x47,
+            0x0d,
+            0x0a,
+            0x1a,
+            0x0a,
+            0x00,
+            0x00,
+            0x00,
+            0x0d,
+            0x49,
+            0x48,
+            0x44,
+            0x52,
+            0x00,
+            0x00,
+            0x00,
+            0x01,
+            0x00,
+            0x00,
+            0x00,
+            0x01,
+            0x08,
+            0x02,
+            0x00,
+            0x00,
+            0x00,
+            0x90.toByte(),
+            0x77,
+            0x53,
+            0xde.toByte(),
+            0x00,
+            0x00,
+            0x00,
+            0x0c,
+            0x49,
+            0x44,
+            0x41,
+            0x54,
+            0x08,
+            0xd7.toByte(),
+            0x63,
+            0xf8.toByte(),
+            0xcf.toByte(),
+            0xc0.toByte(),
+            0x00,
+            0x00,
+            0x00,
+            0x02,
+            0x00,
+            0x01,
+            0xe2.toByte(),
+            0x21,
+            0xbc.toByte(),
+            0x33,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x49,
+            0x45,
+            0x4e,
+            0x44,
+            0xae.toByte(),
+            0x42,
+            0x60,
+            0x82.toByte(),
+        )
+
+    private fun uploadPdf(
+        token: String,
+        bookId: String,
+    ) = app(
+        Request(Method.POST, "/api/books/$bookId/upload")
+            .header("Cookie", "token=$token")
+            .header("Content-Type", "application/octet-stream")
+            .header("X-Filename", "book.pdf")
+            .body(minimalPdf().inputStream()),
     )
 
-    private fun uploadPdf(token: String, bookId: String) =
-        app(
-            Request(Method.POST, "/api/books/$bookId/upload")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/octet-stream")
-                .header("X-Filename", "book.pdf")
-                .body(minimalPdf().inputStream()),
-        )
+    private fun uploadCover(
+        token: String,
+        bookId: String,
+    ) = app(
+        Request(Method.POST, "/api/books/$bookId/cover")
+            .header("Cookie", "token=$token")
+            .header("Content-Type", "application/octet-stream")
+            .header("X-Filename", "cover.png")
+            .body(minimalPng.inputStream()),
+    )
 
-    private fun uploadCover(token: String, bookId: String) =
-        app(
-            Request(Method.POST, "/api/books/$bookId/cover")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/octet-stream")
-                .header("X-Filename", "cover.png")
-                .body(minimalPng.inputStream()),
-        )
-
-    private fun getHtml(path: String, token: String, extraCookies: String = ""): String {
+    private fun getHtml(
+        path: String,
+        token: String,
+        extraCookies: String = "",
+    ): String {
         val cookie = if (extraCookies.isBlank()) "token=$token" else "token=$token; $extraCookies"
         return app(Request(Method.GET, path).header("Cookie", cookie)).bodyString()
     }
@@ -112,11 +184,12 @@ class WorkflowIntegrationTest : IntegrationTestBase() {
         val username = "wf_newuser_${System.nanoTime()}"
 
         // 1. Register
-        val regResp = app(
-            Request(Method.POST, "/auth/register")
-                .header("Content-Type", "application/json")
-                .body("""{"username":"$username","email":"$username@test.com","password":"password123"}"""),
-        )
+        val regResp =
+            app(
+                Request(Method.POST, "/auth/register")
+                    .header("Content-Type", "application/json")
+                    .body("""{"username":"$username","email":"$username@test.com","password":"password123"}"""),
+            )
         val token = Json.mapper.readValue(regResp.bodyString(), LoginResponse::class.java).token
 
         // 2. Libraries page renders (authenticated entry point)
@@ -125,41 +198,49 @@ class WorkflowIntegrationTest : IntegrationTestBase() {
         assertTrue(libsPage.contains("BookTower"), "Libraries page should be a BookTower page")
 
         // 3. Create library via HTMX endpoint → returns HTML fragment
-        val createLibResp = app(
-            Request(Method.POST, "/ui/libraries")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .body("name=My+First+Library&path=./data/wf-${System.nanoTime()}"),
-        )
+        val createLibResp =
+            app(
+                Request(Method.POST, "/ui/libraries")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("name=My+First+Library&path=./data/wf-${System.nanoTime()}"),
+            )
         assertEquals(Status.OK, createLibResp.status)
         val libFragment = createLibResp.bodyString()
         assertTrue(libFragment.contains("My First Library"), "Library fragment should contain library name")
 
         // Get the library id from API
-        val libId = Json.mapper.readValue(
-            app(Request(Method.GET, "/api/libraries").header("Cookie", "token=$token")).bodyString(),
-            Array<LibraryDto>::class.java,
-        ).first { it.name == "My First Library" }.id
+        val libId =
+            Json.mapper
+                .readValue(
+                    app(Request(Method.GET, "/api/libraries").header("Cookie", "token=$token")).bodyString(),
+                    Array<LibraryDto>::class.java,
+                ).first { it.name == "My First Library" }
+                .id
 
         // 4. Library detail page renders
         val libPage = getHtml("/libraries/$libId", token)
         assertTrue(libPage.contains("My First Library"), "Library detail page should show library name")
 
         // 5. Add a book via HTMX endpoint → returns HTML fragment
-        val createBookResp = app(
-            Request(Method.POST, "/ui/libraries/$libId/books")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .body("title=My+First+Book&author=Me"),
-        )
+        val createBookResp =
+            app(
+                Request(Method.POST, "/ui/libraries/$libId/books")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("title=My+First+Book&author=Me"),
+            )
         assertEquals(Status.OK, createBookResp.status)
         assertTrue(createBookResp.bodyString().contains("My First Book"), "Book fragment should contain book title")
 
         // Get book id from API
-        val bookId = Json.mapper.readValue(
-            app(Request(Method.GET, "/api/books?libraryId=$libId").header("Cookie", "token=$token")).bodyString(),
-            com.fasterxml.jackson.databind.JsonNode::class.java,
-        )["books"][0]["id"].asText()
+        val bookId =
+            Json.mapper
+                .readValue(
+                    app(Request(Method.GET, "/api/books?libraryId=$libId").header("Cookie", "token=$token")).bodyString(),
+                    com.fasterxml.jackson.databind.JsonNode::class.java,
+                )["books"][0]["id"]
+                .asText()
 
         // 6. Book detail page renders
         val bookPage = getHtml("/books/$bookId", token)
@@ -170,12 +251,13 @@ class WorkflowIntegrationTest : IntegrationTestBase() {
         assertEquals(Status.OK, uploadResp.status)
 
         // 8. Update reading progress via HTMX endpoint
-        val progressResp = app(
-            Request(Method.POST, "/ui/books/$bookId/progress")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .body("currentPage=5"),
-        )
+        val progressResp =
+            app(
+                Request(Method.POST, "/ui/books/$bookId/progress")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("currentPage=5"),
+            )
         assertEquals(Status.OK, progressResp.status)
 
         // 9. Book detail page shows progress
@@ -183,10 +265,11 @@ class WorkflowIntegrationTest : IntegrationTestBase() {
         assertTrue(bookAfterProgress.contains("5"), "Book page should show current page progress")
 
         // 10. Reader page is accessible
-        val readerResp = app(
-            Request(Method.GET, "/books/$bookId/read")
-                .header("Cookie", "token=$token"),
-        )
+        val readerResp =
+            app(
+                Request(Method.GET, "/books/$bookId/read")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, readerResp.status)
         assertTrue(readerResp.bodyString().contains("BookTower"), "Reader page should render")
     }
@@ -204,10 +287,14 @@ class WorkflowIntegrationTest : IntegrationTestBase() {
         assertTrue(body.contains("text/html", ignoreCase = true) || resp.header("Content-Type")?.contains("html") == true)
         assertTrue(body.contains("password", ignoreCase = true), "Profile page should contain password form")
         // Form fields present
-        assertTrue(body.contains("currentPassword") || body.contains("current-password"),
-            "Form should have current password field")
-        assertTrue(body.contains("newPassword") || body.contains("new-password"),
-            "Form should have new password field")
+        assertTrue(
+            body.contains("currentPassword") || body.contains("current-password"),
+            "Form should have current password field",
+        )
+        assertTrue(
+            body.contains("newPassword") || body.contains("new-password"),
+            "Form should have new password field",
+        )
     }
 
     @Test
@@ -223,36 +310,40 @@ class WorkflowIntegrationTest : IntegrationTestBase() {
     @Test
     fun `password change workflow - old password rejected, new password works`() {
         val username = "wf_pwflow_${System.nanoTime()}"
-        val regResp = app(
-            Request(Method.POST, "/auth/register")
-                .header("Content-Type", "application/json")
-                .body("""{"username":"$username","email":"$username@test.com","password":"oldpassword1"}"""),
-        )
+        val regResp =
+            app(
+                Request(Method.POST, "/auth/register")
+                    .header("Content-Type", "application/json")
+                    .body("""{"username":"$username","email":"$username@test.com","password":"oldpassword1"}"""),
+            )
         val token = Json.mapper.readValue(regResp.bodyString(), LoginResponse::class.java).token
 
         // Change password
-        val changeResp = app(
-            Request(Method.POST, "/api/auth/change-password")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"currentPassword":"oldpassword1","newPassword":"newpassword99"}"""),
-        )
+        val changeResp =
+            app(
+                Request(Method.POST, "/api/auth/change-password")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"currentPassword":"oldpassword1","newPassword":"newpassword99"}"""),
+            )
         assertEquals(Status.OK, changeResp.status, "Password change should succeed")
 
         // Old password login fails
-        val oldLogin = app(
-            Request(Method.POST, "/auth/login")
-                .header("Content-Type", "application/json")
-                .body("""{"username":"$username","password":"oldpassword1"}"""),
-        )
+        val oldLogin =
+            app(
+                Request(Method.POST, "/auth/login")
+                    .header("Content-Type", "application/json")
+                    .body("""{"username":"$username","password":"oldpassword1"}"""),
+            )
         assertEquals(Status.UNAUTHORIZED, oldLogin.status, "Old password should no longer work")
 
         // New password login succeeds
-        val newLogin = app(
-            Request(Method.POST, "/auth/login")
-                .header("Content-Type", "application/json")
-                .body("""{"username":"$username","password":"newpassword99"}"""),
-        )
+        val newLogin =
+            app(
+                Request(Method.POST, "/auth/login")
+                    .header("Content-Type", "application/json")
+                    .body("""{"username":"$username","password":"newpassword99"}"""),
+            )
         assertEquals(Status.OK, newLogin.status, "New password should work for login")
         val newToken = Json.mapper.readValue(newLogin.bodyString(), LoginResponse::class.java).token
         assertNotNull(newToken)
@@ -270,10 +361,11 @@ class WorkflowIntegrationTest : IntegrationTestBase() {
         )
 
         // Existing JWT still authorises API calls (no token rotation)
-        val resp = app(
-            Request(Method.GET, "/api/libraries")
-                .header("Cookie", "token=$token"),
-        )
+        val resp =
+            app(
+                Request(Method.GET, "/api/libraries")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, resp.status, "Existing JWT should remain valid after password change")
     }
 
@@ -281,11 +373,12 @@ class WorkflowIntegrationTest : IntegrationTestBase() {
 
     @Test
     fun `setting theme via preferences endpoint returns CSS and sets cookie`() {
-        val resp = app(
-            Request(Method.POST, "/preferences/theme")
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .body("theme=dracula"),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/preferences/theme")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("theme=dracula"),
+            )
         assertEquals(Status.OK, resp.status)
         // Response body is the <style> tag with inline CSS
         val body = resp.bodyString()
@@ -303,20 +396,26 @@ class WorkflowIntegrationTest : IntegrationTestBase() {
 
         // Libraries page
         val libsHtml = getHtml("/libraries", token, "app_theme=dracula")
-        assertTrue(libsHtml.contains("data-theme=\"dracula\""),
-            "Libraries page should reflect theme cookie")
+        assertTrue(
+            libsHtml.contains("data-theme=\"dracula\""),
+            "Libraries page should reflect theme cookie",
+        )
 
         // Create library and check book detail page
         val libId = createLibrary(token)
         val libHtml = getHtml("/libraries/$libId", token, "app_theme=nord")
-        assertTrue(libHtml.contains("data-theme=\"nord\""),
-            "Library detail page should reflect theme cookie")
+        assertTrue(
+            libHtml.contains("data-theme=\"nord\""),
+            "Library detail page should reflect theme cookie",
+        )
 
         // Book detail page
         val bookId = createBook(token, libId)
         val bookHtml = getHtml("/books/$bookId", token, "app_theme=solarized-light")
-        assertTrue(bookHtml.contains("data-theme=\"solarized-light\""),
-            "Book detail page should reflect theme cookie")
+        assertTrue(
+            bookHtml.contains("data-theme=\"solarized-light\""),
+            "Book detail page should reflect theme cookie",
+        )
     }
 
     @Test
@@ -336,11 +435,12 @@ class WorkflowIntegrationTest : IntegrationTestBase() {
 
     @Test
     fun `setting language via preferences endpoint triggers page refresh header`() {
-        val resp = app(
-            Request(Method.POST, "/preferences/lang")
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .body("lang=fr"),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/preferences/lang")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("lang=fr"),
+            )
         assertEquals(Status.OK, resp.status)
         // HTMX refresh header
         val hxRefresh = resp.header("HX-Refresh")
@@ -355,11 +455,12 @@ class WorkflowIntegrationTest : IntegrationTestBase() {
     fun `preferences cookies applied during login restore theme and language on first page`() {
         val username = "wf_prefs_${System.nanoTime()}"
         // Register and save theme + lang settings
-        val regResp = app(
-            Request(Method.POST, "/auth/register")
-                .header("Content-Type", "application/json")
-                .body("""{"username":"$username","email":"$username@test.com","password":"password123"}"""),
-        )
+        val regResp =
+            app(
+                Request(Method.POST, "/auth/register")
+                    .header("Content-Type", "application/json")
+                    .body("""{"username":"$username","email":"$username@test.com","password":"password123"}"""),
+            )
         val token = Json.mapper.readValue(regResp.bodyString(), LoginResponse::class.java).token
 
         // Save theme and lang preferences via settings API (body is plain value string)
@@ -375,11 +476,12 @@ class WorkflowIntegrationTest : IntegrationTestBase() {
         )
 
         // Login: response should set preference cookies
-        val loginResp = app(
-            Request(Method.POST, "/auth/login")
-                .header("Content-Type", "application/json")
-                .body("""{"username":"$username","password":"password123"}"""),
-        )
+        val loginResp =
+            app(
+                Request(Method.POST, "/auth/login")
+                    .header("Content-Type", "application/json")
+                    .body("""{"username":"$username","password":"password123"}"""),
+            )
         assertEquals(Status.OK, loginResp.status)
         val themeCookie = loginResp.cookies().find { it.name == "app_theme" }
         val langCookie = loginResp.cookies().find { it.name == "app_lang" }
@@ -400,12 +502,13 @@ class WorkflowIntegrationTest : IntegrationTestBase() {
         assertTrue(getHtml("/libraries/$libId", token).contains("Old Library Name"))
 
         // Rename via HTMX endpoint
-        val renameResp = app(
-            Request(Method.POST, "/ui/libraries/$libId/rename")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .body("name=New+Library+Name"),
-        )
+        val renameResp =
+            app(
+                Request(Method.POST, "/ui/libraries/$libId/rename")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("name=New+Library+Name"),
+            )
         assertEquals(Status.OK, renameResp.status)
         val redirect = renameResp.header("HX-Redirect")
         assertNotNull(redirect, "Rename should return HX-Redirect header")
@@ -427,12 +530,13 @@ class WorkflowIntegrationTest : IntegrationTestBase() {
         assertTrue(getHtml("/books/$bookId", token).contains("Original Title"))
 
         // Edit via HTMX endpoint
-        val editResp = app(
-            Request(Method.POST, "/ui/books/$bookId/meta")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .body("title=Updated+Title&author=New+Author&description=New+description+text"),
-        )
+        val editResp =
+            app(
+                Request(Method.POST, "/ui/books/$bookId/meta")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("title=Updated+Title&author=New+Author&description=New+description+text"),
+            )
         assertEquals(Status.OK, editResp.status)
         assertNotNull(editResp.header("HX-Redirect"), "Edit should return HX-Redirect")
 
@@ -453,20 +557,22 @@ class WorkflowIntegrationTest : IntegrationTestBase() {
         repeat(25) { createBook(token, libId, "PagingBook $it") }
 
         // Page 1: 20 books
-        val page1Resp = app(
-            Request(Method.GET, "/api/books?libraryId=$libId&page=1")
-                .header("Cookie", "token=$token"),
-        )
+        val page1Resp =
+            app(
+                Request(Method.GET, "/api/books?libraryId=$libId&page=1")
+                    .header("Cookie", "token=$token"),
+            )
         val page1 = Json.mapper.readTree(page1Resp.bodyString())
         assertEquals(20, page1["pageSize"].asInt())
         assertEquals(25, page1["total"].asInt())
         assertEquals(20, page1["books"].size())
 
         // Page 2: remaining 5 books
-        val page2Resp = app(
-            Request(Method.GET, "/api/books?libraryId=$libId&page=2")
-                .header("Cookie", "token=$token"),
-        )
+        val page2Resp =
+            app(
+                Request(Method.GET, "/api/books?libraryId=$libId&page=2")
+                    .header("Cookie", "token=$token"),
+            )
         val page2 = Json.mapper.readTree(page2Resp.bodyString())
         assertEquals(5, page2["books"].size())
         assertEquals(25, page2["total"].asInt())
@@ -485,33 +591,39 @@ class WorkflowIntegrationTest : IntegrationTestBase() {
         assertFalse(before.contains("Chapter One"), "No bookmarks initially")
 
         // Add bookmark via HTMX
-        val bmResp = app(
-            Request(Method.POST, "/ui/books/$bookId/bookmarks")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .body("page=12&title=Chapter+One&note=Important+bit"),
-        )
+        val bmResp =
+            app(
+                Request(Method.POST, "/ui/books/$bookId/bookmarks")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("page=12&title=Chapter+One&note=Important+bit"),
+            )
         assertEquals(Status.OK, bmResp.status)
         val fragment = bmResp.bodyString()
         assertTrue(fragment.contains("Chapter One"), "Returned fragment should contain bookmark title")
         assertTrue(fragment.contains("12"), "Returned fragment should contain page number")
 
         // Delete bookmark: response is 200, fragment disappears
-        val bmId = Json.mapper.readValue(
-            app(Request(Method.GET, "/api/bookmarks?bookId=$bookId").header("Cookie", "token=$token")).bodyString(),
-            Array<BookmarkDto>::class.java,
-        ).first().id
+        val bmId =
+            Json.mapper
+                .readValue(
+                    app(Request(Method.GET, "/api/bookmarks?bookId=$bookId").header("Cookie", "token=$token")).bodyString(),
+                    Array<BookmarkDto>::class.java,
+                ).first()
+                .id
 
-        val delResp = app(
-            Request(Method.DELETE, "/ui/bookmarks/$bmId").header("Cookie", "token=$token"),
-        )
+        val delResp =
+            app(
+                Request(Method.DELETE, "/ui/bookmarks/$bmId").header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, delResp.status)
 
         // Bookmark gone from API
-        val remaining = Json.mapper.readValue(
-            app(Request(Method.GET, "/api/bookmarks?bookId=$bookId").header("Cookie", "token=$token")).bodyString(),
-            Array<BookmarkDto>::class.java,
-        )
+        val remaining =
+            Json.mapper.readValue(
+                app(Request(Method.GET, "/api/bookmarks?bookId=$bookId").header("Cookie", "token=$token")).bodyString(),
+                Array<BookmarkDto>::class.java,
+            )
         assertTrue(remaining.isEmpty(), "Bookmark should be deleted")
     }
 }

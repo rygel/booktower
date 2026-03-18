@@ -3,7 +3,6 @@ package org.booktower.integration
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.pdmodel.PDPage
 import org.booktower.config.Json
-import org.booktower.models.BookDto
 import org.http4k.core.Method
 import org.http4k.core.Request
 import org.http4k.core.Status
@@ -15,21 +14,29 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class MoveBookIntegrationTest : IntegrationTestBase() {
+    private fun move(
+        token: String,
+        bookId: String,
+        targetLibId: String,
+    ) = app(
+        Request(Method.POST, "/ui/books/$bookId/move")
+            .header("Cookie", "token=$token")
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .body("targetLibraryId=$targetLibId"),
+    )
 
-    private fun move(token: String, bookId: String, targetLibId: String) =
-        app(
-            Request(Method.POST, "/ui/books/$bookId/move")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .body("targetLibraryId=$targetLibId"),
-        )
-
-    private fun booksInLib(token: String, libId: String): String =
-        app(Request(Method.GET, "/api/books?libraryId=$libId").header("Cookie", "token=$token")).bodyString()
+    private fun booksInLib(
+        token: String,
+        libId: String,
+    ): String = app(Request(Method.GET, "/api/books?libraryId=$libId").header("Cookie", "token=$token")).bodyString()
 
     private fun minimalPdf(): ByteArray {
         val doc = PDDocument().also { it.addPage(PDPage()) }
-        return ByteArrayOutputStream().also { doc.save(it); doc.close() }.toByteArray()
+        return ByteArrayOutputStream()
+            .also {
+                doc.save(it)
+                doc.close()
+            }.toByteArray()
     }
 
     // ── Happy path ───────────────────────────────────────────────────────────
@@ -43,8 +50,10 @@ class MoveBookIntegrationTest : IntegrationTestBase() {
 
         val resp = move(token, bookId, lib2)
         assertEquals(Status.OK, resp.status)
-        assertTrue(resp.header("HX-Redirect")?.contains("/libraries/$lib2") == true,
-            "Should redirect to target library")
+        assertTrue(
+            resp.header("HX-Redirect")?.contains("/libraries/$lib2") == true,
+            "Should redirect to target library",
+        )
     }
 
     @Test
@@ -95,19 +104,25 @@ class MoveBookIntegrationTest : IntegrationTestBase() {
         val lib2 = createLibrary(token)
         val bookId = createBook(token, lib1)
 
-        val bmResp = app(
-            Request(Method.POST, "/api/bookmarks")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"bookId":"$bookId","page":42,"title":"Survive Move","note":null}"""),
-        )
-        val bmId = Json.mapper.readTree(bmResp.bodyString()).get("id").asText()
+        val bmResp =
+            app(
+                Request(Method.POST, "/api/bookmarks")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"bookId":"$bookId","page":42,"title":"Survive Move","note":null}"""),
+            )
+        val bmId =
+            Json.mapper
+                .readTree(bmResp.bodyString())
+                .get("id")
+                .asText()
 
         move(token, bookId, lib2)
 
-        val bms = app(
-            Request(Method.GET, "/api/bookmarks?bookId=$bookId").header("Cookie", "token=$token"),
-        ).bodyString()
+        val bms =
+            app(
+                Request(Method.GET, "/api/bookmarks?bookId=$bookId").header("Cookie", "token=$token"),
+            ).bodyString()
         assertTrue(bms.contains(bmId), "bookmark should survive the move")
     }
 
@@ -181,11 +196,12 @@ class MoveBookIntegrationTest : IntegrationTestBase() {
         val lib2 = createLibrary(token)
         val bookId = createBook(token, lib1)
 
-        val resp = app(
-            Request(Method.POST, "/ui/books/$bookId/move")
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .body("targetLibraryId=$lib2"),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/ui/books/$bookId/move")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("targetLibraryId=$lib2"),
+            )
         assertEquals(Status.UNAUTHORIZED, resp.status)
     }
 
@@ -241,12 +257,13 @@ class MoveBookIntegrationTest : IntegrationTestBase() {
         val lib1 = createLibrary(token)
         val bookId = createBook(token, lib1)
 
-        val resp = app(
-            Request(Method.POST, "/ui/books/$bookId/move")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .body(""),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/ui/books/$bookId/move")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body(""),
+            )
         assertEquals(Status.BAD_REQUEST, resp.status)
     }
 
@@ -256,12 +273,13 @@ class MoveBookIntegrationTest : IntegrationTestBase() {
         val lib1 = createLibrary(token)
         val bookId = createBook(token, lib1)
 
-        val resp = app(
-            Request(Method.POST, "/ui/books/$bookId/move")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .body("targetLibraryId=not-a-uuid"),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/ui/books/$bookId/move")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("targetLibraryId=not-a-uuid"),
+            )
         assertEquals(Status.BAD_REQUEST, resp.status)
     }
 
@@ -275,8 +293,10 @@ class MoveBookIntegrationTest : IntegrationTestBase() {
         val bookId = createBook(token, lib1)
 
         val html = app(Request(Method.GET, "/books/$bookId").header("Cookie", "token=$token")).bodyString()
-        assertTrue(html.contains("move-panel") || html.contains("ri-folder-transfer-line"),
-            "Move button should appear when user has multiple libraries")
+        assertTrue(
+            html.contains("move-panel") || html.contains("ri-folder-transfer-line"),
+            "Move button should appear when user has multiple libraries",
+        )
     }
 
     @Test
@@ -286,8 +306,10 @@ class MoveBookIntegrationTest : IntegrationTestBase() {
         val bookId = createBook(token, lib1)
 
         val html = app(Request(Method.GET, "/books/$bookId").header("Cookie", "token=$token")).bodyString()
-        assertFalse(html.contains("move-panel"),
-            "Move button should not appear when user has only one library")
+        assertFalse(
+            html.contains("move-panel"),
+            "Move button should not appear when user has only one library",
+        )
     }
 
     // ── Move between multiple libraries ──────────────────────────────────────

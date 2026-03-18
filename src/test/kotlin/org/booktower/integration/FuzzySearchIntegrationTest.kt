@@ -5,12 +5,11 @@ import org.http4k.core.Method
 import org.http4k.core.Request
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import java.net.URLEncoder
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
-import java.net.URLEncoder
 
 class FuzzySearchIntegrationTest : IntegrationTestBase() {
-
     private lateinit var token: String
 
     @BeforeEach
@@ -46,16 +45,20 @@ class FuzzySearchIntegrationTest : IntegrationTestBase() {
 
     // ── End-to-end search via the HTTP API ────────────────────────────────────
 
-    private fun addBook(title: String, author: String = "Author"): String {
+    private fun addBook(
+        title: String,
+        author: String = "Author",
+    ): String {
         val libId = createLibrary(token)
         return createBook(token, libId, title)
     }
 
     private fun search(q: String): String {
-        val resp = app(
-            Request(Method.GET, "/api/search?q=${URLEncoder.encode(q, "UTF-8")}")
-                .header("Cookie", "token=$token"),
-        )
+        val resp =
+            app(
+                Request(Method.GET, "/api/search?q=${URLEncoder.encode(q, "UTF-8")}")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(200, resp.status.code)
         return resp.bodyString()
     }

@@ -11,7 +11,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class AudiobookChapterIntegrationTest : IntegrationTestBase() {
-
     private fun minimalMp3(): ByteArray {
         // Minimal valid MP3 frame header (sync word + MPEG1 Layer3 128kbps 44100Hz stereo)
         // Followed by enough zeros to satisfy size checks
@@ -19,13 +18,19 @@ class AudiobookChapterIntegrationTest : IntegrationTestBase() {
         return header + ByteArray(416) // one minimal MP3 frame
     }
 
-    private fun uploadChapter(token: String, bookId: String, trackIndex: Int, title: String? = null): org.http4k.core.Response {
-        val req = Request(Method.POST, "/api/books/$bookId/chapters")
-            .header("Cookie", "token=$token")
-            .header("Content-Type", "application/octet-stream")
-            .header("X-Filename", "chapter-$trackIndex.mp3")
-            .header("X-Track-Index", trackIndex.toString())
-            .body(minimalMp3().inputStream(), minimalMp3().size.toLong())
+    private fun uploadChapter(
+        token: String,
+        bookId: String,
+        trackIndex: Int,
+        title: String? = null,
+    ): org.http4k.core.Response {
+        val req =
+            Request(Method.POST, "/api/books/$bookId/chapters")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/octet-stream")
+                .header("X-Filename", "chapter-$trackIndex.mp3")
+                .header("X-Track-Index", trackIndex.toString())
+                .body(minimalMp3().inputStream(), minimalMp3().size.toLong())
         return if (title != null) app(req.header("X-Chapter-Title", title)) else app(req)
     }
 
@@ -35,10 +40,11 @@ class AudiobookChapterIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
 
-        val response = app(
-            Request(Method.GET, "/api/books/$bookId/chapters")
-                .header("Cookie", "token=$token"),
-        )
+        val response =
+            app(
+                Request(Method.GET, "/api/books/$bookId/chapters")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, response.status)
         val tree = Json.mapper.readTree(response.bodyString())
         assertTrue(tree.isArray)
@@ -77,10 +83,11 @@ class AudiobookChapterIntegrationTest : IntegrationTestBase() {
 
         uploadChapter(token, bookId, 0, "Chapter One")
 
-        val response = app(
-            Request(Method.GET, "/api/books/$bookId/chapters")
-                .header("Cookie", "token=$token"),
-        )
+        val response =
+            app(
+                Request(Method.GET, "/api/books/$bookId/chapters")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, response.status)
         val arr = Json.mapper.readTree(response.bodyString())
         assertTrue(arr.isArray)
@@ -99,10 +106,11 @@ class AudiobookChapterIntegrationTest : IntegrationTestBase() {
         uploadChapter(token, bookId, 1, "Chapter Two")
         uploadChapter(token, bookId, 2, "Chapter Three")
 
-        val response = app(
-            Request(Method.GET, "/api/books/$bookId/chapters")
-                .header("Cookie", "token=$token"),
-        )
+        val response =
+            app(
+                Request(Method.GET, "/api/books/$bookId/chapters")
+                    .header("Cookie", "token=$token"),
+            )
         val arr = Json.mapper.readTree(response.bodyString())
         assertEquals(3, arr.size())
     }
@@ -114,10 +122,11 @@ class AudiobookChapterIntegrationTest : IntegrationTestBase() {
         val bookId = createBook(token, libId)
         uploadChapter(token, bookId, 0)
 
-        val response = app(
-            Request(Method.GET, "/api/books/$bookId/chapters/0")
-                .header("Cookie", "token=$token"),
-        )
+        val response =
+            app(
+                Request(Method.GET, "/api/books/$bookId/chapters/0")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, response.status)
         val ct = response.header("Content-Type") ?: ""
         assertTrue(ct.contains("audio/") || ct.contains("octet-stream"), "Expected audio content type, got: $ct")
@@ -131,11 +140,12 @@ class AudiobookChapterIntegrationTest : IntegrationTestBase() {
         val bookId = createBook(token, libId)
         uploadChapter(token, bookId, 0)
 
-        val response = app(
-            Request(Method.GET, "/api/books/$bookId/chapters/0")
-                .header("Cookie", "token=$token")
-                .header("Range", "bytes=0-99"),
-        )
+        val response =
+            app(
+                Request(Method.GET, "/api/books/$bookId/chapters/0")
+                    .header("Cookie", "token=$token")
+                    .header("Range", "bytes=0-99"),
+            )
         assertEquals(Status.PARTIAL_CONTENT, response.status)
         assertNotNull(response.header("Content-Range"))
     }
@@ -146,10 +156,11 @@ class AudiobookChapterIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
 
-        val response = app(
-            Request(Method.GET, "/api/books/$bookId/chapters/99")
-                .header("Cookie", "token=$token"),
-        )
+        val response =
+            app(
+                Request(Method.GET, "/api/books/$bookId/chapters/99")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.NOT_FOUND, response.status)
     }
 
@@ -160,16 +171,18 @@ class AudiobookChapterIntegrationTest : IntegrationTestBase() {
         val bookId = createBook(token, libId)
         uploadChapter(token, bookId, 0, "To Delete")
 
-        val deleteResp = app(
-            Request(Method.DELETE, "/api/books/$bookId/chapters/0")
-                .header("Cookie", "token=$token"),
-        )
+        val deleteResp =
+            app(
+                Request(Method.DELETE, "/api/books/$bookId/chapters/0")
+                    .header("Cookie", "token=$token"),
+            )
         assertTrue(deleteResp.status.code in listOf(200, 204))
 
-        val listResp = app(
-            Request(Method.GET, "/api/books/$bookId/chapters")
-                .header("Cookie", "token=$token"),
-        )
+        val listResp =
+            app(
+                Request(Method.GET, "/api/books/$bookId/chapters")
+                    .header("Cookie", "token=$token"),
+            )
         val arr = Json.mapper.readTree(listResp.bodyString())
         assertEquals(0, arr.size())
     }
@@ -180,10 +193,11 @@ class AudiobookChapterIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
 
-        val response = app(
-            Request(Method.DELETE, "/api/books/$bookId/chapters/99")
-                .header("Cookie", "token=$token"),
-        )
+        val response =
+            app(
+                Request(Method.DELETE, "/api/books/$bookId/chapters/99")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.NOT_FOUND, response.status)
     }
 
@@ -194,18 +208,20 @@ class AudiobookChapterIntegrationTest : IntegrationTestBase() {
         val bookId = createBook(token, libId)
         uploadChapter(token, bookId, 0, "Old Title")
 
-        val response = app(
-            Request(Method.PUT, "/api/books/$bookId/chapters/0")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"title":"New Title"}"""),
-        )
+        val response =
+            app(
+                Request(Method.PUT, "/api/books/$bookId/chapters/0")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"title":"New Title"}"""),
+            )
         assertEquals(Status.OK, response.status)
 
-        val listResp = app(
-            Request(Method.GET, "/api/books/$bookId/chapters")
-                .header("Cookie", "token=$token"),
-        )
+        val listResp =
+            app(
+                Request(Method.GET, "/api/books/$bookId/chapters")
+                    .header("Cookie", "token=$token"),
+            )
         val arr = Json.mapper.readTree(listResp.bodyString())
         assertEquals("New Title", arr.get(0).get("title").asText())
     }
@@ -216,13 +232,14 @@ class AudiobookChapterIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
 
-        val response = app(
-            Request(Method.POST, "/api/books/$bookId/chapters")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/octet-stream")
-                .header("X-Track-Index", "0")
-                .body(minimalMp3().inputStream(), minimalMp3().size.toLong()),
-        )
+        val response =
+            app(
+                Request(Method.POST, "/api/books/$bookId/chapters")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/octet-stream")
+                    .header("X-Track-Index", "0")
+                    .body(minimalMp3().inputStream(), minimalMp3().size.toLong()),
+            )
         assertEquals(Status.BAD_REQUEST, response.status)
     }
 
@@ -232,13 +249,14 @@ class AudiobookChapterIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
 
-        val response = app(
-            Request(Method.POST, "/api/books/$bookId/chapters")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/octet-stream")
-                .header("X-Filename", "chapter.mp3")
-                .body(minimalMp3().inputStream(), minimalMp3().size.toLong()),
-        )
+        val response =
+            app(
+                Request(Method.POST, "/api/books/$bookId/chapters")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/octet-stream")
+                    .header("X-Filename", "chapter.mp3")
+                    .body(minimalMp3().inputStream(), minimalMp3().size.toLong()),
+            )
         assertEquals(Status.BAD_REQUEST, response.status)
     }
 
@@ -248,14 +266,15 @@ class AudiobookChapterIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
 
-        val response = app(
-            Request(Method.POST, "/api/books/$bookId/chapters")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/octet-stream")
-                .header("X-Filename", "chapter.docx")
-                .header("X-Track-Index", "0")
-                .body(ByteArray(100).inputStream(), 100),
-        )
+        val response =
+            app(
+                Request(Method.POST, "/api/books/$bookId/chapters")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/octet-stream")
+                    .header("X-Filename", "chapter.docx")
+                    .header("X-Track-Index", "0")
+                    .body(ByteArray(100).inputStream(), 100),
+            )
         assertEquals(Status.BAD_REQUEST, response.status)
     }
 
@@ -278,10 +297,11 @@ class AudiobookChapterIntegrationTest : IntegrationTestBase() {
         uploadChapter(tokenA, bookId, 0, "Secret Chapter")
 
         // User B queries A's book — must see 0 chapters (book not found for B)
-        val response = app(
-            Request(Method.GET, "/api/books/$bookId/chapters")
-                .header("Cookie", "token=$tokenB"),
-        )
+        val response =
+            app(
+                Request(Method.GET, "/api/books/$bookId/chapters")
+                    .header("Cookie", "token=$tokenB"),
+            )
         // Either 404 (book not found) or 200 with empty array are acceptable
         assertTrue(
             response.status == Status.NOT_FOUND || response.status == Status.OK,
@@ -301,22 +321,24 @@ class AudiobookChapterIntegrationTest : IntegrationTestBase() {
         val bookId = createBook(tokenA, libId)
 
         val mp3 = byteArrayOf(0xFF.toByte(), 0xFB.toByte(), 0x90.toByte(), 0x00.toByte()) + ByteArray(416)
-        val response = app(
-            Request(Method.POST, "/api/books/$bookId/chapters")
-                .header("Cookie", "token=$tokenB")
-                .header("Content-Type", "application/octet-stream")
-                .header("X-Filename", "attack.mp3")
-                .header("X-Track-Index", "0")
-                .body(mp3.inputStream(), mp3.size.toLong()),
-        )
+        val response =
+            app(
+                Request(Method.POST, "/api/books/$bookId/chapters")
+                    .header("Cookie", "token=$tokenB")
+                    .header("Content-Type", "application/octet-stream")
+                    .header("X-Filename", "attack.mp3")
+                    .header("X-Track-Index", "0")
+                    .body(mp3.inputStream(), mp3.size.toLong()),
+            )
         // Book belongs to A; B's request should get 404 (book not found for B)
         assertEquals(Status.NOT_FOUND, response.status, "User B must not upload chapters to User A's book")
 
         // Verify A's book has no chapters
-        val listResp = app(
-            Request(Method.GET, "/api/books/$bookId/chapters")
-                .header("Cookie", "token=$tokenA"),
-        )
+        val listResp =
+            app(
+                Request(Method.GET, "/api/books/$bookId/chapters")
+                    .header("Cookie", "token=$tokenA"),
+            )
         val arr = Json.mapper.readTree(listResp.bodyString())
         assertEquals(0, arr.size(), "No chapters should exist after cross-user upload attempt")
     }
@@ -329,10 +351,11 @@ class AudiobookChapterIntegrationTest : IntegrationTestBase() {
         uploadChapter(token, bookId, 0, "Ch 1")
         uploadChapter(token, bookId, 1, "Ch 2")
 
-        val bookResp = app(
-            Request(Method.GET, "/api/books/$bookId")
-                .header("Cookie", "token=$token"),
-        )
+        val bookResp =
+            app(
+                Request(Method.GET, "/api/books/$bookId")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, bookResp.status)
         val bookTree = Json.mapper.readTree(bookResp.bodyString())
         assertTrue(bookTree.get("fileSize").asLong() > 0, "fileSize should be > 0 after chapter uploads")
@@ -346,16 +369,22 @@ class AudiobookChapterIntegrationTest : IntegrationTestBase() {
         uploadChapter(token, bookId, 0, "Ch 1")
         uploadChapter(token, bookId, 1, "Ch 2")
 
-        val sizeBefore = Json.mapper.readTree(
-            app(Request(Method.GET, "/api/books/$bookId").header("Cookie", "token=$token")).bodyString()
-        ).get("fileSize").asLong()
+        val sizeBefore =
+            Json.mapper
+                .readTree(
+                    app(Request(Method.GET, "/api/books/$bookId").header("Cookie", "token=$token")).bodyString(),
+                ).get("fileSize")
+                .asLong()
         assertTrue(sizeBefore > 0, "fileSize should be > 0 before deletion")
 
         app(Request(Method.DELETE, "/api/books/$bookId/chapters/0").header("Cookie", "token=$token"))
 
-        val sizeAfter = Json.mapper.readTree(
-            app(Request(Method.GET, "/api/books/$bookId").header("Cookie", "token=$token")).bodyString()
-        ).get("fileSize").asLong()
+        val sizeAfter =
+            Json.mapper
+                .readTree(
+                    app(Request(Method.GET, "/api/books/$bookId").header("Cookie", "token=$token")).bodyString(),
+                ).get("fileSize")
+                .asLong()
         assertTrue(sizeAfter < sizeBefore, "fileSize should decrease after deleting a chapter")
         assertTrue(sizeAfter > 0, "fileSize should still be > 0 with one chapter remaining")
     }
@@ -385,10 +414,11 @@ class AudiobookChapterIntegrationTest : IntegrationTestBase() {
         val bookId = createBook(token, libId)
         uploadChapter(token, bookId, 0, "Ch 1")
 
-        val listResp = app(
-            Request(Method.GET, "/api/books/$bookId/chapters")
-                .header("Cookie", "token=$token"),
-        )
+        val listResp =
+            app(
+                Request(Method.GET, "/api/books/$bookId/chapters")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, listResp.status)
         val arr = Json.mapper.readTree(listResp.bodyString())
         assertTrue(arr.isArray && arr.size() == 1, "Should return one chapter")

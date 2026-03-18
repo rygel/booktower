@@ -11,7 +11,6 @@ import kotlin.test.assertTrue
  */
 @Tag("browser")
 class LibraryBrowserTest : BrowserTestBase() {
-
     @Test
     fun `home page loads without JS errors`() {
         val (page, _) = newAuthenticatedPage("libhome")
@@ -125,9 +124,10 @@ class LibraryBrowserTest : BrowserTestBase() {
         page.waitForTimeout(500.0)
 
         // Check the CSS link points to vendored path
-        val cssHref = page.evaluate(
-            "() => { const l = document.querySelector('link[href*=\"remixicon\"]'); return l ? l.href : '' }",
-        ) as String
+        val cssHref =
+            page.evaluate(
+                "() => { const l = document.querySelector('link[href*=\"remixicon\"]'); return l ? l.href : '' }",
+            ) as String
         assertTrue(
             cssHref.contains("/static/vendor/remixicon"),
             "RemixIcon CSS should be loaded from /static/vendor/, not a CDN. Got: $cssHref",

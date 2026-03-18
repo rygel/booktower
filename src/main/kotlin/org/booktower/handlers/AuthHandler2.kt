@@ -24,8 +24,8 @@ import org.http4k.core.cookie.cookie
 import org.slf4j.LoggerFactory
 import java.util.UUID
 
-
 private val logger = LoggerFactory.getLogger("booktower.AuthHandler")
+
 // Secure cookies in production; derived from the same env var used by SecurityConfig
 private val secureCookies = System.getenv("BOOKTOWER_ENV")?.lowercase() == "production"
 
@@ -46,10 +46,11 @@ class AuthHandler2(
                 .body(Json.mapper.writeValueAsString(ErrorResponse("REGISTRATION_CLOSED", "Registration is closed on this server")))
         }
         return try {
-            val createRequest = parseRegisterRequest(req)
-                ?: return Response(Status.BAD_REQUEST)
-                    .header("Content-Type", "application/json")
-                    .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Request body is required")))
+            val createRequest =
+                parseRegisterRequest(req)
+                    ?: return Response(Status.BAD_REQUEST)
+                        .header("Content-Type", "application/json")
+                        .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Request body is required")))
 
             val validationError = validateCreateUserRequest(createRequest)
             if (validationError != null) {
@@ -63,17 +64,23 @@ class AuthHandler2(
             result.fold(
                 onSuccess = { loginResponse ->
                     logger.info("User registered successfully: ${loginResponse.user.username}")
-                    auditService?.record(UUID.fromString(loginResponse.user.id), loginResponse.user.username, "user.register", ipAddress = clientIp(req))
-                    val base = if (isFormRequest(req)) {
-                        Response(Status.SEE_OTHER)
-                            .header("Location", "/")
-                            .cookie(createAuthCookie(loginResponse.token))
-                    } else {
-                        Response(Status.CREATED)
-                            .header("Content-Type", "application/json")
-                            .cookie(createAuthCookie(loginResponse.token))
-                            .body(Json.mapper.writeValueAsString(loginResponse))
-                    }
+                    auditService?.record(
+                        UUID.fromString(loginResponse.user.id),
+                        loginResponse.user.username,
+                        "user.register",
+                        ipAddress = clientIp(req),
+                    )
+                    val base =
+                        if (isFormRequest(req)) {
+                            Response(Status.SEE_OTHER)
+                                .header("Location", "/")
+                                .cookie(createAuthCookie(loginResponse.token))
+                        } else {
+                            Response(Status.CREATED)
+                                .header("Content-Type", "application/json")
+                                .cookie(createAuthCookie(loginResponse.token))
+                                .body(Json.mapper.writeValueAsString(loginResponse))
+                        }
                     applyPreferenceCookies(base, loginResponse.user.id)
                 },
                 onFailure = { error ->
@@ -107,13 +114,16 @@ class AuthHandler2(
         if (oidcForceOnly) {
             return Response(Status.FORBIDDEN)
                 .header("Content-Type", "application/json")
-                .body(Json.mapper.writeValueAsString(ErrorResponse("OIDC_FORCE_ONLY", "Local login is disabled. Please use SSO to sign in.")))
+                .body(
+                    Json.mapper.writeValueAsString(ErrorResponse("OIDC_FORCE_ONLY", "Local login is disabled. Please use SSO to sign in.")),
+                )
         }
         return try {
-            val loginRequest = parseLoginRequest(req)
-                ?: return Response(Status.BAD_REQUEST)
-                    .header("Content-Type", "application/json")
-                    .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Request body is required")))
+            val loginRequest =
+                parseLoginRequest(req)
+                    ?: return Response(Status.BAD_REQUEST)
+                        .header("Content-Type", "application/json")
+                        .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Request body is required")))
 
             val validationError = validateLoginRequest(loginRequest)
             if (validationError != null) {
@@ -127,17 +137,23 @@ class AuthHandler2(
             result.fold(
                 onSuccess = { loginResponse ->
                     logger.info("User logged in successfully: ${loginResponse.user.username}")
-                    auditService?.record(UUID.fromString(loginResponse.user.id), loginResponse.user.username, "user.login", ipAddress = clientIp(req))
-                    val base = if (isFormRequest(req)) {
-                        Response(Status.SEE_OTHER)
-                            .header("Location", "/")
-                            .cookie(createAuthCookie(loginResponse.token))
-                    } else {
-                        Response(Status.OK)
-                            .header("Content-Type", "application/json")
-                            .cookie(createAuthCookie(loginResponse.token))
-                            .body(Json.mapper.writeValueAsString(loginResponse))
-                    }
+                    auditService?.record(
+                        UUID.fromString(loginResponse.user.id),
+                        loginResponse.user.username,
+                        "user.login",
+                        ipAddress = clientIp(req),
+                    )
+                    val base =
+                        if (isFormRequest(req)) {
+                            Response(Status.SEE_OTHER)
+                                .header("Location", "/")
+                                .cookie(createAuthCookie(loginResponse.token))
+                        } else {
+                            Response(Status.OK)
+                                .header("Content-Type", "application/json")
+                                .cookie(createAuthCookie(loginResponse.token))
+                                .body(Json.mapper.writeValueAsString(loginResponse))
+                        }
                     applyPreferenceCookies(base, loginResponse.user.id)
                 },
                 onFailure = { error ->
@@ -170,7 +186,12 @@ class AuthHandler2(
      * Returns new access token + rotated refresh token.
      */
     fun refresh(req: Request): Response {
-        val body = try { Json.mapper.readTree(req.bodyString()) } catch (_: Exception) { null }
+        val body =
+            try {
+                Json.mapper.readTree(req.bodyString())
+            } catch (_: Exception) {
+                null
+            }
         val token = body?.get("refreshToken")?.asText()
         if (token.isNullOrBlank()) {
             return Response(Status.BAD_REQUEST)
@@ -188,7 +209,7 @@ class AuthHandler2(
                 Response(Status.UNAUTHORIZED)
                     .header("Content-Type", "application/json")
                     .body(Json.mapper.writeValueAsString(ErrorResponse("INVALID_TOKEN", it.message ?: "Invalid refresh token")))
-            }
+            },
         )
     }
 
@@ -198,7 +219,12 @@ class AuthHandler2(
      * Revokes the given refresh token.
      */
     fun revokeToken(req: Request): Response {
-        val body = try { Json.mapper.readTree(req.bodyString()) } catch (_: Exception) { null }
+        val body =
+            try {
+                Json.mapper.readTree(req.bodyString())
+            } catch (_: Exception) {
+                null
+            }
         val token = body?.get("refreshToken")?.asText()
         if (!token.isNullOrBlank()) {
             authService.revokeRefreshToken(token)
@@ -243,11 +269,12 @@ class AuthHandler2(
                     .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "New password must be at least 8 characters")))
             }
 
-            val result = authService.changePassword(
-                userId,
-                changeRequest.currentPassword,
-                changeRequest.newPassword,
-            )
+            val result =
+                authService.changePassword(
+                    userId,
+                    changeRequest.currentPassword,
+                    changeRequest.newPassword,
+                )
 
             result.fold(
                 onSuccess = {
@@ -300,11 +327,12 @@ class AuthHandler2(
                     .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "New email is required")))
             }
 
-            val result = authService.changeEmail(
-                userId,
-                changeRequest.currentPassword,
-                changeRequest.newEmail,
-            )
+            val result =
+                authService.changeEmail(
+                    userId,
+                    changeRequest.currentPassword,
+                    changeRequest.newEmail,
+                )
 
             result.fold(
                 onSuccess = {
@@ -342,9 +370,19 @@ class AuthHandler2(
      * The raw token is logged at INFO level for the self-hosted admin.
      */
     fun forgotPassword(req: Request): Response {
-        val email = if (isFormRequest(req)) req.form("email") else {
-            try { Json.mapper.readTree(req.bodyString()).get("email")?.asText() } catch (_: Exception) { null }
-        }
+        val email =
+            if (isFormRequest(req)) {
+                req.form("email")
+            } else {
+                try {
+                    Json.mapper
+                        .readTree(req.bodyString())
+                        .get("email")
+                        ?.asText()
+                } catch (_: Exception) {
+                    null
+                }
+            }
         if (!email.isNullOrBlank()) {
             val token = passwordResetService.createToken(email)
             if (token != null) {
@@ -367,12 +405,18 @@ class AuthHandler2(
      * Body (form or JSON): token=..., newPassword=...
      */
     fun resetPassword(req: Request): Response {
-        val (token, newPassword) = if (isFormRequest(req)) {
-            Pair(req.form("token"), req.form("newPassword"))
-        } else {
-            val tree = try { Json.mapper.readTree(req.bodyString()) } catch (_: Exception) { null }
-            Pair(tree?.get("token")?.asText(), tree?.get("newPassword")?.asText())
-        }
+        val (token, newPassword) =
+            if (isFormRequest(req)) {
+                Pair(req.form("token"), req.form("newPassword"))
+            } else {
+                val tree =
+                    try {
+                        Json.mapper.readTree(req.bodyString())
+                    } catch (_: Exception) {
+                        null
+                    }
+                Pair(tree?.get("token")?.asText(), tree?.get("newPassword")?.asText())
+            }
 
         if (token.isNullOrBlank()) {
             return Response(Status.BAD_REQUEST)
@@ -398,7 +442,11 @@ class AuthHandler2(
     }
 
     private fun clientIp(req: Request): String? =
-        req.header("X-Forwarded-For")?.split(",")?.firstOrNull()?.trim()
+        req
+            .header("X-Forwarded-For")
+            ?.split(",")
+            ?.firstOrNull()
+            ?.trim()
             ?: req.header("X-Real-IP")
 
     private fun isFormRequest(req: Request): Boolean {
@@ -464,12 +512,16 @@ class AuthHandler2(
         return null
     }
 
-    private fun applyPreferenceCookies(response: Response, userId: String): Response {
-        val settings = try {
-            userSettingsService.getAll(UUID.fromString(userId))
-        } catch (e: Exception) {
-            return response
-        }
+    private fun applyPreferenceCookies(
+        response: Response,
+        userId: String,
+    ): Response {
+        val settings =
+            try {
+                userSettingsService.getAll(UUID.fromString(userId))
+            } catch (e: Exception) {
+                return response
+            }
         var r = response
         val theme = settings["theme"]
         if (theme != null && ThemeCatalog.isValid(theme)) {
@@ -482,8 +534,8 @@ class AuthHandler2(
         return r
     }
 
-    private fun createAuthCookie(token: String): Cookie {
-        return Cookie(
+    private fun createAuthCookie(token: String): Cookie =
+        Cookie(
             name = "token",
             value = token,
             httpOnly = true,
@@ -491,10 +543,9 @@ class AuthHandler2(
             path = "/",
             maxAge = 60 * 60 * 24 * 7,
         )
-    }
 
-    private fun createLogoutCookie(): Cookie {
-        return Cookie(
+    private fun createLogoutCookie(): Cookie =
+        Cookie(
             name = "token",
             value = "",
             httpOnly = true,
@@ -502,5 +553,4 @@ class AuthHandler2(
             path = "/",
             maxAge = 0,
         )
-    }
 }

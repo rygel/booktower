@@ -13,7 +13,6 @@ import kotlin.test.assertTrue
  */
 @Tag("browser")
 class BookUploadBrowserTest : BrowserTestBase() {
-
     @Test
     fun `book detail page shows upload section before any file is uploaded`() {
         val (page, token) = newAuthenticatedPage("bupload")
@@ -103,8 +102,12 @@ class BookUploadBrowserTest : BrowserTestBase() {
         val failedCdnRequests = mutableListOf<String>()
         page.onResponse { resp ->
             val url = resp.url()
-            if ((url.contains("cdn.jsdelivr.net") || url.contains("cdnjs.cloudflare.com") ||
-                    url.contains("unpkg.com")) && !resp.ok()
+            if ((
+                    url.contains("cdn.jsdelivr.net") ||
+                        url.contains("cdnjs.cloudflare.com") ||
+                        url.contains("unpkg.com")
+                ) &&
+                !resp.ok()
             ) {
                 failedCdnRequests.add(url)
             }
@@ -113,7 +116,8 @@ class BookUploadBrowserTest : BrowserTestBase() {
         val cdnRequests = mutableListOf<String>()
         page.onRequest { req ->
             val url = req.url()
-            if (url.contains("cdn.jsdelivr.net") || url.contains("cdnjs.cloudflare.com") ||
+            if (url.contains("cdn.jsdelivr.net") ||
+                url.contains("cdnjs.cloudflare.com") ||
                 url.contains("unpkg.com")
             ) {
                 cdnRequests.add(url)

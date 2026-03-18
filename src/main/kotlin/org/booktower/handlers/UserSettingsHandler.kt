@@ -11,8 +11,9 @@ import org.slf4j.LoggerFactory
 
 private val logger = LoggerFactory.getLogger("booktower.UserSettingsHandler")
 
-class UserSettingsHandler(private val settingsService: UserSettingsService) {
-
+class UserSettingsHandler(
+    private val settingsService: UserSettingsService,
+) {
     fun getAll(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
         val settings = settingsService.getAll(userId)
@@ -23,10 +24,13 @@ class UserSettingsHandler(private val settingsService: UserSettingsService) {
 
     fun delete(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
-        val key = req.uri.path.split("/").lastOrNull()
-            ?: return Response(Status.BAD_REQUEST)
-                .header("Content-Type", "application/json")
-                .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Setting key is required")))
+        val key =
+            req.uri.path
+                .split("/")
+                .lastOrNull()
+                ?: return Response(Status.BAD_REQUEST)
+                    .header("Content-Type", "application/json")
+                    .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Setting key is required")))
 
         val deleted = settingsService.delete(userId, key)
         return if (deleted) {
@@ -40,22 +44,27 @@ class UserSettingsHandler(private val settingsService: UserSettingsService) {
 
     fun set(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
-        val key = req.uri.path.split("/").lastOrNull()
-            ?: return Response(Status.BAD_REQUEST)
-                .header("Content-Type", "application/json")
-                .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Setting key is required")))
+        val key =
+            req.uri.path
+                .split("/")
+                .lastOrNull()
+                ?: return Response(Status.BAD_REQUEST)
+                    .header("Content-Type", "application/json")
+                    .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Setting key is required")))
 
         val body = req.bodyString()
         // Accept plain text value or JSON string
-        val value = when {
-            body.isBlank() -> null
-            body.startsWith("\"") -> try {
-                Json.mapper.readValue(body, String::class.java)
-            } catch (e: Exception) {
-                body
+        val value =
+            when {
+                body.isBlank() -> null
+                body.startsWith("\"") ->
+                    try {
+                        Json.mapper.readValue(body, String::class.java)
+                    } catch (e: Exception) {
+                        body
+                    }
+                else -> body.trim()
             }
-            else -> body.trim()
-        }
 
         return try {
             settingsService.set(userId, key, value)

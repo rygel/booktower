@@ -7,13 +7,13 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class I18nIntegrationTest : IntegrationTestBase() {
-
     private fun pageWithLang(lang: String): String {
         val token = registerAndGetToken("i18n_$lang")
-        val response = app(
-            Request(Method.GET, "/")
-                .header("Cookie", "token=$token; app_lang=$lang")
-        )
+        val response =
+            app(
+                Request(Method.GET, "/")
+                    .header("Cookie", "token=$token; app_lang=$lang"),
+            )
         assertEquals(200, response.status.code)
         return response.bodyString()
     }
@@ -91,10 +91,11 @@ class I18nIntegrationTest : IntegrationTestBase() {
     @Test
     fun `unsupported language falls back to English`() {
         val token = registerAndGetToken("i18n_xx")
-        val response = app(
-            Request(Method.GET, "/")
-                .header("Cookie", "token=$token; app_lang=xx")
-        )
+        val response =
+            app(
+                Request(Method.GET, "/")
+                    .header("Cookie", "token=$token; app_lang=xx"),
+            )
         assertEquals(200, response.status.code)
         // Should not crash; falls back to English
         val body = response.bodyString()

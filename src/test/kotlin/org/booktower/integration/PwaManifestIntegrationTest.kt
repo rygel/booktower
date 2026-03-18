@@ -8,7 +8,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class PwaManifestIntegrationTest : IntegrationTestBase() {
-
     @Test
     fun `manifest json returns 200 with correct content type`() {
         val response = app(Request(Method.GET, "/manifest.json"))
@@ -53,7 +52,9 @@ class PwaManifestIntegrationTest : IntegrationTestBase() {
         val token = registerAndGetToken("pwa")
         val dashboard = app(Request(Method.GET, "/").header("Cookie", "token=$token"))
         assertEquals(200, dashboard.status.code)
-        assertTrue(dashboard.bodyString().contains("manifest.json"),
-            "Expected dashboard HTML to include manifest link")
+        assertTrue(
+            dashboard.bodyString().contains("manifest.json"),
+            "Expected dashboard HTML to include manifest link",
+        )
     }
 }

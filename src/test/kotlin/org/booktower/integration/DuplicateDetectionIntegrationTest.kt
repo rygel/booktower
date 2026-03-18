@@ -1,7 +1,6 @@
 package org.booktower.integration
 
 import org.booktower.TestFixture
-import org.booktower.config.Json
 import org.booktower.services.DuplicateDetectionService
 import org.http4k.core.Method
 import org.http4k.core.Request
@@ -12,7 +11,6 @@ import java.util.UUID
 import kotlin.test.assertTrue
 
 class DuplicateDetectionIntegrationTest : IntegrationTestBase() {
-
     private val jdbi = TestFixture.database.getJdbi()
     private val duplicateService = DuplicateDetectionService(jdbi)
 
@@ -24,14 +22,21 @@ class DuplicateDetectionIntegrationTest : IntegrationTestBase() {
         fileHash: String? = null,
     ): String {
         val id = UUID.randomUUID().toString()
-        val now = java.time.Instant.now().toString()
+        val now =
+            java.time.Instant
+                .now()
+                .toString()
         jdbi.useHandle<Exception> { h ->
-            h.createUpdate(
-                """INSERT INTO books (id, title, author, isbn, file_hash, library_id, file_path, file_size, added_at)
+            h
+                .createUpdate(
+                    """INSERT INTO books (id, title, author, isbn, file_hash, library_id, file_path, file_size, added_at)
                    VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?)""",
-            )
-                .bind(0, id).bind(1, title).bind(2, author).bind(3, isbn)
-                .bind(4, fileHash).bind(5, libraryId)
+                ).bind(0, id)
+                .bind(1, title)
+                .bind(2, author)
+                .bind(3, isbn)
+                .bind(4, fileHash)
+                .bind(5, libraryId)
                 .bind(6, "/tmp/$id.epub")
                 .bind(7, now)
                 .execute()
@@ -39,25 +44,40 @@ class DuplicateDetectionIntegrationTest : IntegrationTestBase() {
         return id
     }
 
-    private fun createLibraryForUser(userId: UUID, name: String = "Lib"): String {
+    private fun createLibraryForUser(
+        userId: UUID,
+        name: String = "Lib",
+    ): String {
         val id = UUID.randomUUID().toString()
-        val now = java.time.Instant.now().toString()
+        val now =
+            java.time.Instant
+                .now()
+                .toString()
         jdbi.useHandle<Exception> { h ->
-            h.createUpdate(
-                "INSERT INTO libraries (id, name, path, user_id, created_at) VALUES (?, ?, ?, ?, ?)",
-            ).bind(0, id).bind(1, name).bind(2, "/tmp/$id").bind(3, userId.toString()).bind(4, now).execute()
+            h
+                .createUpdate(
+                    "INSERT INTO libraries (id, name, path, user_id, created_at) VALUES (?, ?, ?, ?, ?)",
+                ).bind(0, id)
+                .bind(1, name)
+                .bind(2, "/tmp/$id")
+                .bind(3, userId.toString())
+                .bind(4, now)
+                .execute()
         }
         return id
     }
 
     private fun createUser(): UUID {
         val id = UUID.randomUUID()
-        val now = java.time.Instant.now().toString()
+        val now =
+            java.time.Instant
+                .now()
+                .toString()
         jdbi.useHandle<Exception> { h ->
-            h.createUpdate(
-                "INSERT INTO users (id, username, email, password_hash, created_at, updated_at, is_admin) VALUES (?,?,?,?,?,?,0)",
-            )
-                .bind(0, id.toString())
+            h
+                .createUpdate(
+                    "INSERT INTO users (id, username, email, password_hash, created_at, updated_at, is_admin) VALUES (?,?,?,?,?,?,0)",
+                ).bind(0, id.toString())
                 .bind(1, "duptest_${System.nanoTime()}")
                 .bind(2, "dup_${System.nanoTime()}@test.com")
                 .bind(3, "hash")
@@ -153,9 +173,10 @@ class DuplicateDetectionIntegrationTest : IntegrationTestBase() {
     @Test
     fun `GET api admin duplicates requires admin token`() {
         val token = registerAndGetToken("duptest")
-        val resp = app(
-            Request(Method.GET, "/api/admin/duplicates").header("Cookie", "token=$token"),
-        )
+        val resp =
+            app(
+                Request(Method.GET, "/api/admin/duplicates").header("Cookie", "token=$token"),
+            )
         assertEquals(Status.FORBIDDEN, resp.status)
     }
 }

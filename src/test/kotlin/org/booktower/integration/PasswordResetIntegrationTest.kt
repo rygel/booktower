@@ -15,16 +15,16 @@ import kotlin.test.assertTrue
  * the admin shows it to the user out-of-band.
  */
 class PasswordResetIntegrationTest : IntegrationTestBase() {
-
     // ── POST /auth/forgot-password ────────────────────────────────────────────
 
     @Test
     fun `forgot-password always returns 200 for unknown email`() {
-        val resp = app(
-            Request(Method.POST, "/auth/forgot-password")
-                .header("Content-Type", "application/json")
-                .body("""{"email":"nobody@example.com"}"""),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/auth/forgot-password")
+                    .header("Content-Type", "application/json")
+                    .body("""{"email":"nobody@example.com"}"""),
+            )
         assertEquals(Status.OK, resp.status)
     }
 
@@ -37,11 +37,12 @@ class PasswordResetIntegrationTest : IntegrationTestBase() {
                 .body("""{"username":"$username","email":"$username@test.com","password":"password123"}"""),
         )
 
-        val resp = app(
-            Request(Method.POST, "/auth/forgot-password")
-                .header("Content-Type", "application/json")
-                .body("""{"email":"$username@test.com"}"""),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/auth/forgot-password")
+                    .header("Content-Type", "application/json")
+                    .body("""{"email":"$username@test.com"}"""),
+            )
         assertEquals(Status.OK, resp.status)
         val body = Json.mapper.readTree(resp.bodyString())
         assertNotNull(body.get("message"), "Should return a message field")
@@ -49,11 +50,12 @@ class PasswordResetIntegrationTest : IntegrationTestBase() {
 
     @Test
     fun `forgot-password accepts form submission`() {
-        val resp = app(
-            Request(Method.POST, "/auth/forgot-password")
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .body("email=nobody%40example.com"),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/auth/forgot-password")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("email=nobody%40example.com"),
+            )
         assertEquals(Status.OK, resp.status)
     }
 
@@ -61,11 +63,12 @@ class PasswordResetIntegrationTest : IntegrationTestBase() {
 
     @Test
     fun `reset-password with invalid token returns 400`() {
-        val resp = app(
-            Request(Method.POST, "/auth/reset-password")
-                .header("Content-Type", "application/json")
-                .body("""{"token":"invalid-token-abc","newPassword":"newpass99"}"""),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/auth/reset-password")
+                    .header("Content-Type", "application/json")
+                    .body("""{"token":"invalid-token-abc","newPassword":"newpass99"}"""),
+            )
         assertEquals(Status.BAD_REQUEST, resp.status)
         val body = Json.mapper.readTree(resp.bodyString())
         assertEquals("INVALID_TOKEN", body.get("error")?.asText())
@@ -73,21 +76,23 @@ class PasswordResetIntegrationTest : IntegrationTestBase() {
 
     @Test
     fun `reset-password with missing token returns 400`() {
-        val resp = app(
-            Request(Method.POST, "/auth/reset-password")
-                .header("Content-Type", "application/json")
-                .body("""{"newPassword":"newpass99"}"""),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/auth/reset-password")
+                    .header("Content-Type", "application/json")
+                    .body("""{"newPassword":"newpass99"}"""),
+            )
         assertEquals(Status.BAD_REQUEST, resp.status)
     }
 
     @Test
     fun `reset-password with short password returns 400`() {
-        val resp = app(
-            Request(Method.POST, "/auth/reset-password")
-                .header("Content-Type", "application/json")
-                .body("""{"token":"sometoken","newPassword":"short"}"""),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/auth/reset-password")
+                    .header("Content-Type", "application/json")
+                    .body("""{"token":"sometoken","newPassword":"short"}"""),
+            )
         assertEquals(Status.BAD_REQUEST, resp.status)
         val body = Json.mapper.readTree(resp.bodyString())
         assertTrue(body.get("message")?.asText()?.contains("8") == true, "Should mention 8 characters")
@@ -105,30 +110,33 @@ class PasswordResetIntegrationTest : IntegrationTestBase() {
         )
 
         // We call the service directly via HTTP to trigger token creation (token is logged)
-        val forgotResp = app(
-            Request(Method.POST, "/auth/forgot-password")
-                .header("Content-Type", "application/json")
-                .body("""{"email":"$email"}"""),
-        )
+        val forgotResp =
+            app(
+                Request(Method.POST, "/auth/forgot-password")
+                    .header("Content-Type", "application/json")
+                    .body("""{"email":"$email"}"""),
+            )
         assertEquals(Status.OK, forgotResp.status)
 
         // Since we can't intercept logs from HTTP, verify that login with old password still works
-        val loginResp = app(
-            Request(Method.POST, "/auth/login")
-                .header("Content-Type", "application/json")
-                .body("""{"username":"$username","password":"oldpass123"}"""),
-        )
+        val loginResp =
+            app(
+                Request(Method.POST, "/auth/login")
+                    .header("Content-Type", "application/json")
+                    .body("""{"username":"$username","password":"oldpass123"}"""),
+            )
         assertEquals(Status.OK, loginResp.status, "Old password should still work before reset")
     }
 
     @Test
     fun `reset-password endpoint is rate-limited path (uses authRateLimit filter)`() {
         // Just verify the endpoint exists and returns expected status codes
-        val resp = app(
-            Request(Method.POST, "/auth/reset-password")
-                .header("Content-Type", "application/json")
-                .body("""{"token":"","newPassword":""}"""),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/auth/reset-password")
+                    .header("Content-Type", "application/json")
+                    .body("""{"token":"","newPassword":""}"""),
+            )
         // Should be 400 (validation) not 404
         assertTrue(resp.status != Status.NOT_FOUND, "Endpoint should exist")
     }

@@ -19,8 +19,12 @@ import kotlin.test.assertTrue
  * This test checks that the running application actually uses those translations.
  */
 class I18nRenderingIntegrationTest : IntegrationTestBase() {
-
-    private fun requestWithLang(method: Method, path: String, token: String?, lang: String): org.http4k.core.Response {
+    private fun requestWithLang(
+        method: Method,
+        path: String,
+        token: String?,
+        lang: String,
+    ): org.http4k.core.Response {
         var req = Request(method, path).header("Cookie", "app_lang=$lang")
         if (token != null) req = req.header("Cookie", "token=$token; app_lang=$lang")
         return app(req)
@@ -31,15 +35,19 @@ class I18nRenderingIntegrationTest : IntegrationTestBase() {
     @Test
     fun `login page renders in French`() {
         val body = requestWithLang(Method.GET, "/login", null, "fr").bodyString()
-        assertTrue(body.contains("Se connecter") || body.contains("Connexion") || body.contains("connecter"),
-            "Login page should contain French text. Got: ${body.take(500)}")
+        assertTrue(
+            body.contains("Se connecter") || body.contains("Connexion") || body.contains("connecter"),
+            "Login page should contain French text. Got: ${body.take(500)}",
+        )
     }
 
     @Test
     fun `register page renders in French`() {
         val body = requestWithLang(Method.GET, "/register", null, "fr").bodyString()
-        assertTrue(body.contains("inscrire") || body.contains("compte") || body.contains("Cr"),
-            "Register page should contain French text")
+        assertTrue(
+            body.contains("inscrire") || body.contains("compte") || body.contains("Cr"),
+            "Register page should contain French text",
+        )
     }
 
     @Test
@@ -58,8 +66,10 @@ class I18nRenderingIntegrationTest : IntegrationTestBase() {
 
         val body = requestWithLang(Method.GET, "/books/$bookId", token, "fr").bodyString()
         // action.edit = "Modifier"
-        assertTrue(body.contains("Modifier") || body.contains("Enregistrer") || body.contains("Supprimer"),
-            "Book detail page should contain French action labels")
+        assertTrue(
+            body.contains("Modifier") || body.contains("Enregistrer") || body.contains("Supprimer"),
+            "Book detail page should contain French action labels",
+        )
     }
 
     // ── German locale ─────────────────────────────────────────────────────────
@@ -67,8 +77,10 @@ class I18nRenderingIntegrationTest : IntegrationTestBase() {
     @Test
     fun `login page renders in German`() {
         val body = requestWithLang(Method.GET, "/login", null, "de").bodyString()
-        assertTrue(body.contains("Anmelden") || body.contains("Willkommen") || body.contains("melden"),
-            "Login page should contain German text")
+        assertTrue(
+            body.contains("Anmelden") || body.contains("Willkommen") || body.contains("melden"),
+            "Login page should contain German text",
+        )
     }
 
     @Test
@@ -87,8 +99,10 @@ class I18nRenderingIntegrationTest : IntegrationTestBase() {
 
         val body = requestWithLang(Method.GET, "/books/$bookId", token, "de").bodyString()
         // action.edit = "Bearbeiten", action.delete = "Löschen"
-        assertTrue(body.contains("Bearbeiten") || body.contains("Speichern") || body.contains("chen"),
-            "Book detail page should contain German action labels")
+        assertTrue(
+            body.contains("Bearbeiten") || body.contains("Speichern") || body.contains("chen"),
+            "Book detail page should contain German action labels",
+        )
     }
 
     // ── No missing i18n keys cause template rendering errors ─────────────────
@@ -105,7 +119,7 @@ class I18nRenderingIntegrationTest : IntegrationTestBase() {
     @ParameterizedTest(name = "authenticated pages render without error in {0}")
     @ValueSource(strings = ["en", "fr", "de"])
     fun `authenticated dashboard renders cleanly for all locales`(lang: String) {
-        val token = registerAndGetToken("i18n_${lang}")
+        val token = registerAndGetToken("i18n_$lang")
         val resp = requestWithLang(Method.GET, "/", token, lang)
         assertEquals(Status.OK, resp.status, "Dashboard should render 200 for lang=$lang")
         assertFalse(resp.bodyString().contains("Exception"), "No exception in dashboard for lang=$lang")
@@ -114,7 +128,7 @@ class I18nRenderingIntegrationTest : IntegrationTestBase() {
     @ParameterizedTest(name = "search page renders without error in {0}")
     @ValueSource(strings = ["en", "fr", "de"])
     fun `search page renders cleanly for all locales`(lang: String) {
-        val token = registerAndGetToken("srch_${lang}")
+        val token = registerAndGetToken("srch_$lang")
         val resp = requestWithLang(Method.GET, "/search?q=test", token, lang)
         assertEquals(Status.OK, resp.status, "Search page should render 200 for lang=$lang")
         assertFalse(resp.bodyString().contains("Exception"), "No exception in search for lang=$lang")
@@ -128,19 +142,25 @@ class I18nRenderingIntegrationTest : IntegrationTestBase() {
         "1, fr, ajout",
         "1, de, hinzugef",
     )
-    fun `scan result message substitutes placeholder values`(count: String, lang: String, expectedFragment: String) {
+    fun `scan result message substitutes placeholder values`(
+        count: String,
+        lang: String,
+        expectedFragment: String,
+    ) {
         // The scan result message uses {0}, {1}, {2} placeholders:
         // page.library.scan.result=Scan complete: {0} added, {1} skipped, {2} errors
         // Verify the pattern string itself doesn't leak through as a raw {0} literal
         // by checking templates render scan-related pages without literal {0} tokens.
-        val token = registerAndGetToken("phld_${lang}")
+        val token = registerAndGetToken("phld_$lang")
         val resp = requestWithLang(Method.GET, "/libraries", token, lang)
         assertEquals(Status.OK, resp.status)
         // The raw placeholder strings should not appear literally on a rendered page
         // (they only appear after substitution in response bodies from scan endpoints)
         val body = resp.bodyString()
-        assertFalse(body.contains("{0}") && body.contains("{1}"),
-            "Raw placeholders should not appear literally in rendered library page for lang=$lang")
+        assertFalse(
+            body.contains("{0}") && body.contains("{1}"),
+            "Raw placeholders should not appear literally in rendered library page for lang=$lang",
+        )
     }
 
     // ── Sidebar language switcher ─────────────────────────────────────────────

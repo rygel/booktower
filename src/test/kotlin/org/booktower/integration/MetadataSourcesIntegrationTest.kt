@@ -13,22 +13,30 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class MetadataSourcesIntegrationTest : IntegrationTestBase() {
-
     // Stub that records which source was requested and returns a controlled response
     private var capturedSource: String? = "not-called"
-    private var stubResult: FetchedMetadata? = FetchedMetadata(
-        title = "Stub Title", author = "Stub Author",
-        description = "Stub desc", isbn = "9780000000001",
-        publisher = "Stub Pub", publishedDate = "2024",
-        source = "openlibrary",
-    )
+    private var stubResult: FetchedMetadata? =
+        FetchedMetadata(
+            title = "Stub Title",
+            author = "Stub Author",
+            description = "Stub desc",
+            isbn = "9780000000001",
+            publisher = "Stub Pub",
+            publishedDate = "2024",
+            source = "openlibrary",
+        )
 
-    override fun createMetadataFetchService() = object : MetadataFetchService() {
-        override fun fetchMetadata(title: String, author: String?, source: String?): FetchedMetadata? {
-            capturedSource = source
-            return stubResult
+    override fun createMetadataFetchService() =
+        object : MetadataFetchService() {
+            override fun fetchMetadata(
+                title: String,
+                author: String?,
+                source: String?,
+            ): FetchedMetadata? {
+                capturedSource = source
+                return stubResult
+            }
         }
-    }
 
     @Test
     fun `GET api metadata sources lists all providers`() {
@@ -48,10 +56,11 @@ class MetadataSourcesIntegrationTest : IntegrationTestBase() {
     @Test
     fun `GET api metadata search returns result for valid title`() {
         val token = registerAndGetToken()
-        val resp = app(
-            Request(Method.GET, "/api/metadata/search?title=Dune&author=Frank+Herbert")
-                .header("Cookie", "token=$token"),
-        )
+        val resp =
+            app(
+                Request(Method.GET, "/api/metadata/search?title=Dune&author=Frank+Herbert")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, resp.status)
         val tree = Json.mapper.readTree(resp.bodyString())
         assertEquals("Stub Title", tree.get("title").asText())
@@ -84,10 +93,11 @@ class MetadataSourcesIntegrationTest : IntegrationTestBase() {
     fun `GET api metadata search returns 404 when no result`() {
         val token = registerAndGetToken()
         stubResult = null
-        val resp = app(
-            Request(Method.GET, "/api/metadata/search?title=NoSuchBook")
-                .header("Cookie", "token=$token"),
-        )
+        val resp =
+            app(
+                Request(Method.GET, "/api/metadata/search?title=NoSuchBook")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.NOT_FOUND, resp.status)
     }
 
@@ -109,10 +119,11 @@ class MetadataSourcesIntegrationTest : IntegrationTestBase() {
     @Test
     fun `FetchedMetadata source field is included in response`() {
         val token = registerAndGetToken()
-        val resp = app(
-            Request(Method.GET, "/api/metadata/search?title=Dune")
-                .header("Cookie", "token=$token"),
-        )
+        val resp =
+            app(
+                Request(Method.GET, "/api/metadata/search?title=Dune")
+                    .header("Cookie", "token=$token"),
+            )
         val tree = Json.mapper.readTree(resp.bodyString())
         assertEquals("openlibrary", tree.get("source").asText())
     }

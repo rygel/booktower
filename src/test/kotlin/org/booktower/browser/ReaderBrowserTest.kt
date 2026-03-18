@@ -19,7 +19,6 @@ import kotlin.test.assertTrue
  */
 @Tag("browser")
 class ReaderBrowserTest : BrowserTestBase() {
-
     // ── Script dependency ordering (HTML-level, no browser execution needed) ─────
 
     @Test
@@ -29,15 +28,17 @@ class ReaderBrowserTest : BrowserTestBase() {
         val bookId = createBook(token, libId, "Script Order Test")
         uploadFile(token, bookId, "book.epub", minimalEpubBytes())
 
-        val html = app(
-            org.http4k.core.Request(org.http4k.core.Method.GET, "/books/$bookId/read")
-                .header("Cookie", "token=$token"),
-        ).bodyString()
+        val html =
+            app(
+                org.http4k.core
+                    .Request(org.http4k.core.Method.GET, "/books/$bookId/read")
+                    .header("Cookie", "token=$token"),
+            ).bodyString()
 
         val jszipPos = html.indexOf("jszip")
-        val epubPos  = html.indexOf("epub.js")
+        val epubPos = html.indexOf("epub.js")
         assertTrue(jszipPos > 0, "jszip.min.js script tag should be present")
-        assertTrue(epubPos  > 0, "epub.js script tag should be present")
+        assertTrue(epubPos > 0, "epub.js script tag should be present")
         assertTrue(jszipPos < epubPos, "jszip must be loaded before epub.js (found jszip at $jszipPos, epub.js at $epubPos)")
     }
 
@@ -48,16 +49,21 @@ class ReaderBrowserTest : BrowserTestBase() {
         val bookId = createBook(token, libId, "URLSearchParams Test")
         uploadFile(token, bookId, "book.epub", minimalEpubBytes())
 
-        val html = app(
-            org.http4k.core.Request(org.http4k.core.Method.GET, "/books/$bookId/read")
-                .header("Cookie", "token=$token"),
-        ).bodyString()
+        val html =
+            app(
+                org.http4k.core
+                    .Request(org.http4k.core.Method.GET, "/books/$bookId/read")
+                    .header("Cookie", "token=$token"),
+            ).bodyString()
 
         // The EPUB reader block should use URLSearchParams, not FormData, for progress saves
         val epubScriptStart = html.indexOf("EPUB_URL")
         assertTrue(epubScriptStart > 0, "Should have EPUB reader script block")
         val epubBlock = html.substring(epubScriptStart, epubScriptStart + 2000)
-        assertTrue(epubBlock.contains("URLSearchParams"), "Progress save must use URLSearchParams (not FormData) for application/x-www-form-urlencoded")
+        assertTrue(
+            epubBlock.contains("URLSearchParams"),
+            "Progress save must use URLSearchParams (not FormData) for application/x-www-form-urlencoded",
+        )
         assertFalse(epubBlock.contains("new FormData()"), "FormData sends multipart which req.form() cannot read")
     }
 
@@ -67,12 +73,14 @@ class ReaderBrowserTest : BrowserTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId, "Progress URL-Encoded Test")
 
-        val resp = app(
-            org.http4k.core.Request(org.http4k.core.Method.POST, "/ui/books/$bookId/progress")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .body("currentPage=42"),
-        )
+        val resp =
+            app(
+                org.http4k.core
+                    .Request(org.http4k.core.Method.POST, "/ui/books/$bookId/progress")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("currentPage=42"),
+            )
         assertEquals(200, resp.status.code, "Progress endpoint should accept urlencoded body")
     }
 
@@ -82,7 +90,7 @@ class ReaderBrowserTest : BrowserTestBase() {
     @Timeout(value = 30, unit = TimeUnit.SECONDS)
     fun `epub reader page loads without JS errors`() {
         val (page, token) = newAuthenticatedPage("epuberr")
-        val libId  = createLibrary(token)
+        val libId = createLibrary(token)
         val bookId = createBook(token, libId, "EPUB Error Test")
         uploadFile(token, bookId, "book.epub", minimalEpubBytes())
 
@@ -92,14 +100,15 @@ class ReaderBrowserTest : BrowserTestBase() {
         }
 
         page.navigate("$baseUrl/books/$bookId/read")
-        page.waitForTimeout(3000.0)  // give epub.js time to initialise
+        page.waitForTimeout(3000.0) // give epub.js time to initialise
 
-        val criticalErrors = errors.filter { err ->
-            err.contains("JSZip", ignoreCase = true) ||
-                err.contains("srcdoc", ignoreCase = true) ||
-                err.contains("sandboxed", ignoreCase = true) ||
-                err.contains("allow-scripts", ignoreCase = true)
-        }
+        val criticalErrors =
+            errors.filter { err ->
+                err.contains("JSZip", ignoreCase = true) ||
+                    err.contains("srcdoc", ignoreCase = true) ||
+                    err.contains("sandboxed", ignoreCase = true) ||
+                    err.contains("allow-scripts", ignoreCase = true)
+            }
         assertTrue(
             criticalErrors.isEmpty(),
             "EPUB reader should have no critical JS errors, but got: $criticalErrors\nAll errors: $errors",
@@ -111,7 +120,7 @@ class ReaderBrowserTest : BrowserTestBase() {
     @Test
     fun `epub reader page has JSZip defined globally`() {
         val (page, token) = newAuthenticatedPage("jszipg")
-        val libId  = createLibrary(token)
+        val libId = createLibrary(token)
         val bookId = createBook(token, libId, "JSZip Global Test")
         uploadFile(token, bookId, "book.epub", minimalEpubBytes())
 
@@ -127,7 +136,7 @@ class ReaderBrowserTest : BrowserTestBase() {
     @Test
     fun `epub reader page has epub-viewer element in DOM`() {
         val (page, token) = newAuthenticatedPage("epubdom")
-        val libId  = createLibrary(token)
+        val libId = createLibrary(token)
         val bookId = createBook(token, libId, "EPUB DOM Test")
         uploadFile(token, bookId, "book.epub", minimalEpubBytes())
 
@@ -143,7 +152,7 @@ class ReaderBrowserTest : BrowserTestBase() {
     @Test
     fun `pdf reader page loads without JS errors`() {
         val (page, token) = newAuthenticatedPage("pdferr")
-        val libId  = createLibrary(token)
+        val libId = createLibrary(token)
         val bookId = createBook(token, libId, "PDF Error Test")
         // Upload a minimal valid 1-page PDF
         uploadFile(token, bookId, "book.pdf", minimalPdfBytes())
@@ -156,16 +165,19 @@ class ReaderBrowserTest : BrowserTestBase() {
         page.navigate("$baseUrl/books/$bookId/read")
         page.waitForTimeout(2000.0)
 
-        val criticalErrors = errors.filter { err ->
-            !err.contains("favicon") &&  // ignore favicon 404s
-                !err.contains("icon-") &&
-                err.isNotBlank()
-        }
+        val criticalErrors =
+            errors.filter { err ->
+                !err.contains("favicon") &&
+                    // ignore favicon 404s
+                    !err.contains("icon-") &&
+                    err.isNotBlank()
+            }
         // PDF.js worker errors (missing worker) are expected in headless; filter them
-        val unexpectedErrors = criticalErrors.filter { err ->
-            !err.contains("worker", ignoreCase = true) &&
-                !err.contains("fetch", ignoreCase = true)
-        }
+        val unexpectedErrors =
+            criticalErrors.filter { err ->
+                !err.contains("worker", ignoreCase = true) &&
+                    !err.contains("fetch", ignoreCase = true)
+            }
         assertTrue(
             unexpectedErrors.isEmpty(),
             "PDF reader should have no unexpected JS errors, but got: $unexpectedErrors",
@@ -185,9 +197,10 @@ class ReaderBrowserTest : BrowserTestBase() {
         page.navigate("$baseUrl/auth/login")
         page.waitForTimeout(500.0)
 
-        val criticalErrors = errors.filter { err ->
-            !err.contains("favicon") && !err.contains("icon-")
-        }
+        val criticalErrors =
+            errors.filter { err ->
+                !err.contains("favicon") && !err.contains("icon-")
+            }
         assertTrue(
             criticalErrors.isEmpty(),
             "Login page should have no JS errors, but got: $criticalErrors",
@@ -220,7 +233,7 @@ class ReaderBrowserTest : BrowserTestBase() {
     @Timeout(value = 30, unit = TimeUnit.SECONDS)
     fun `reader page progress save does not return 400`() {
         val (page, token) = newAuthenticatedPage("progsave")
-        val libId  = createLibrary(token)
+        val libId = createLibrary(token)
         val bookId = createBook(token, libId, "Progress Save Test")
         uploadFile(token, bookId, "book.epub", minimalEpubBytes())
 

@@ -10,23 +10,24 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class AsyncScanIntegrationTest : IntegrationTestBase() {
-
     @Test
     fun `async scan requires auth`() {
-        val resp = app(
-            Request(Method.POST, "/api/libraries/00000000-0000-0000-0000-000000000000/scan/async")
-                .header("Content-Type", "application/json"),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/api/libraries/00000000-0000-0000-0000-000000000000/scan/async")
+                    .header("Content-Type", "application/json"),
+            )
         assertEquals(Status.UNAUTHORIZED, resp.status)
     }
 
     @Test
     fun `async scan returns 400 for invalid library id`() {
         val token = registerAndGetToken("scan")
-        val resp = app(
-            Request(Method.POST, "/api/libraries/not-a-uuid/scan/async")
-                .header("Cookie", "token=$token"),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/api/libraries/not-a-uuid/scan/async")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.BAD_REQUEST, resp.status)
     }
 
@@ -35,10 +36,11 @@ class AsyncScanIntegrationTest : IntegrationTestBase() {
         val token = registerAndGetToken("scan")
         val libId = createLibrary(token)
 
-        val resp = app(
-            Request(Method.POST, "/api/libraries/$libId/scan/async")
-                .header("Cookie", "token=$token"),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/api/libraries/$libId/scan/async")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.ACCEPTED, resp.status)
         val body = Json.mapper.readTree(resp.bodyString())
         assertNotNull(body.get("jobId"), "Response should contain jobId")
@@ -56,10 +58,11 @@ class AsyncScanIntegrationTest : IntegrationTestBase() {
         val token = registerAndGetToken("scan")
         val libId = createLibrary(token)
 
-        val resp = app(
-            Request(Method.GET, "/api/libraries/$libId/scan/nonexistent-job-id")
-                .header("Cookie", "token=$token"),
-        )
+        val resp =
+            app(
+                Request(Method.GET, "/api/libraries/$libId/scan/nonexistent-job-id")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.NOT_FOUND, resp.status)
     }
 
@@ -69,30 +72,41 @@ class AsyncScanIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
 
         // Start the job
-        val startResp = app(
-            Request(Method.POST, "/api/libraries/$libId/scan/async")
-                .header("Cookie", "token=$token"),
-        )
+        val startResp =
+            app(
+                Request(Method.POST, "/api/libraries/$libId/scan/async")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.ACCEPTED, startResp.status)
-        val jobId = Json.mapper.readTree(startResp.bodyString()).get("jobId").asText()
+        val jobId =
+            Json.mapper
+                .readTree(startResp.bodyString())
+                .get("jobId")
+                .asText()
 
         // Poll until done (max 3 seconds)
         val deadline = System.currentTimeMillis() + 3000
         var finalState = ""
         while (System.currentTimeMillis() < deadline) {
-            val statusResp = app(
-                Request(Method.GET, "/api/libraries/$libId/scan/$jobId")
-                    .header("Cookie", "token=$token"),
-            )
+            val statusResp =
+                app(
+                    Request(Method.GET, "/api/libraries/$libId/scan/$jobId")
+                        .header("Cookie", "token=$token"),
+                )
             if (statusResp.status == Status.OK) {
                 val node = Json.mapper.readTree(statusResp.bodyString())
                 val state = node.get("state")?.asText() ?: ""
-                if (state == "DONE" || state == "FAILED") { finalState = state; break }
+                if (state == "DONE" || state == "FAILED") {
+                    finalState = state
+                    break
+                }
             }
             Thread.sleep(100)
         }
-        assertTrue(finalState == "DONE" || finalState == "FAILED",
-            "Job should eventually reach DONE or FAILED, got: $finalState")
+        assertTrue(
+            finalState == "DONE" || finalState == "FAILED",
+            "Job should eventually reach DONE or FAILED, got: $finalState",
+        )
     }
 
     @Test
@@ -100,22 +114,30 @@ class AsyncScanIntegrationTest : IntegrationTestBase() {
         val token = registerAndGetToken("scan")
         val libId = createLibrary(token)
 
-        val startResp = app(
-            Request(Method.POST, "/api/libraries/$libId/scan/async")
-                .header("Cookie", "token=$token"),
-        )
-        val jobId = Json.mapper.readTree(startResp.bodyString()).get("jobId").asText()
+        val startResp =
+            app(
+                Request(Method.POST, "/api/libraries/$libId/scan/async")
+                    .header("Cookie", "token=$token"),
+            )
+        val jobId =
+            Json.mapper
+                .readTree(startResp.bodyString())
+                .get("jobId")
+                .asText()
 
         // Check immediately — may be RUNNING or already DONE (fast empty scan)
-        val statusResp = app(
-            Request(Method.GET, "/api/libraries/$libId/scan/$jobId")
-                .header("Cookie", "token=$token"),
-        )
+        val statusResp =
+            app(
+                Request(Method.GET, "/api/libraries/$libId/scan/$jobId")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, statusResp.status)
         val node = Json.mapper.readTree(statusResp.bodyString())
         val state = node.get("state")?.asText()
-        assertTrue(state == "RUNNING" || state == "DONE" || state == "FAILED",
-            "State should be valid, got: $state")
+        assertTrue(
+            state == "RUNNING" || state == "DONE" || state == "FAILED",
+            "State should be valid, got: $state",
+        )
         assertEquals(jobId, node.get("jobId")?.asText())
     }
 }

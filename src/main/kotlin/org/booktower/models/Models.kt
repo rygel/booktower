@@ -66,11 +66,11 @@ data class UpdateLibraryRequest(
 )
 
 data class LibrarySettings(
-    val formatAllowlist: List<String>?,   // null = all formats; e.g. ["pdf","epub"]
-    val metadataSource: String?,          // preferred source slug, null = default
-    val defaultSort: String?,             // e.g. "title","author","added_at", null = default
-    val additionalPaths: List<String>,    // extra scan paths beyond primary
-    val fileNamingPattern: String?,       // e.g. "{author}/{title}" or null = keep original names
+    val formatAllowlist: List<String>?,
+    val metadataSource: String?,
+    val defaultSort: String?,
+    val additionalPaths: List<String>,
+    val fileNamingPattern: String?,
 )
 
 data class UpdateLibrarySettingsRequest(
@@ -107,21 +107,29 @@ data class Book(
 )
 
 enum class BookFormat {
-    EBOOK, PHYSICAL, AUDIOBOOK;
+    EBOOK,
+    PHYSICAL,
+    AUDIOBOOK,
+    ;
 
     companion object {
         fun fromString(s: String?): BookFormat = values().firstOrNull { it.name.equals(s, ignoreCase = true) } ?: EBOOK
     }
 }
 
-enum class BookSortOrder(val sql: String, val label: String) {
+enum class BookSortOrder(
+    val sql: String,
+    val label: String,
+) {
     TITLE("b.title", "sort.title"),
     ADDED("b.added_at DESC, b.title", "sort.added"),
     AUTHOR("COALESCE(b.author, ''), b.title", "sort.author"),
     PUBLISHED_DATE("COALESCE(b.published_date, '') DESC, b.title", "sort.published.date"),
 }
 
-enum class ReadStatus(val label: String) {
+enum class ReadStatus(
+    val label: String,
+) {
     WANT_TO_READ("status.want.to.read"),
     READING("status.reading"),
     FINISHED("status.finished"),
@@ -176,6 +184,7 @@ data class BookDto(
     val communityRating: Double? = null,
     val communityRatingCount: Int? = null,
     val communityRatingSource: String? = null,
+    val contentSnippet: String? = null,
 )
 
 data class ComicMetadataRequest(
@@ -244,6 +253,17 @@ data class UpdateBookRequest(
     val publisher: String? = null,
     val publishedDate: String? = null,
     val pageCount: Int? = null,
+    val subtitle: String? = null,
+    val language: String? = null,
+    val contentRating: String? = null,
+    val ageRating: String? = null,
+    val goodreadsId: String? = null,
+    val hardcoverId: String? = null,
+    val comicvineId: String? = null,
+    val openlibraryId: String? = null,
+    val googleBooksId: String? = null,
+    val amazonId: String? = null,
+    val audibleId: String? = null,
 )
 
 data class MergeBookRequest(
@@ -410,7 +430,7 @@ data class FetchedMetadata(
     val publishedDate: String?,
     val openLibraryCoverId: Long? = null,
     val coverUrl: String? = null,
-    val source: String? = null,         // "openlibrary", "googlebooks", etc.
+    val source: String? = null,
     val pageCount: Int? = null,
     val subtitle: String? = null,
     val language: String? = null,
@@ -471,7 +491,7 @@ data class CreateApiTokenRequest(
 data class CreatedApiTokenResponse(
     val id: String,
     val name: String,
-    val token: String,  // shown only once
+    val token: String,
     val createdAt: String,
 )
 

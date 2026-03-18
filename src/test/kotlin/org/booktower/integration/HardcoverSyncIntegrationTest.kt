@@ -10,7 +10,6 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class HardcoverSyncIntegrationTest : IntegrationTestBase() {
-
     @Test
     fun `GET hardcover status returns not configured when no key set`() {
         val token = registerAndGetToken()
@@ -24,12 +23,13 @@ class HardcoverSyncIntegrationTest : IntegrationTestBase() {
     @Test
     fun `PUT hardcover key stores the key`() {
         val token = registerAndGetToken()
-        val putResp = app(
-            Request(Method.PUT, "/api/user/hardcover/key")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"apiKey":"test-key-123"}"""),
-        )
+        val putResp =
+            app(
+                Request(Method.PUT, "/api/user/hardcover/key")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"apiKey":"test-key-123"}"""),
+            )
         assertEquals(Status.NO_CONTENT, putResp.status)
 
         // Status should now show configured (but connection will fail since test-key is fake)
@@ -42,11 +42,19 @@ class HardcoverSyncIntegrationTest : IntegrationTestBase() {
     @Test
     fun `PUT hardcover key with empty string clears the key`() {
         val token = registerAndGetToken()
-        app(Request(Method.PUT, "/api/user/hardcover/key").header("Cookie", "token=$token")
-            .header("Content-Type", "application/json").body("""{"apiKey":"some-key"}"""))
+        app(
+            Request(Method.PUT, "/api/user/hardcover/key")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/json")
+                .body("""{"apiKey":"some-key"}"""),
+        )
 
-        app(Request(Method.PUT, "/api/user/hardcover/key").header("Cookie", "token=$token")
-            .header("Content-Type", "application/json").body("""{"apiKey":""}"""))
+        app(
+            Request(Method.PUT, "/api/user/hardcover/key")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/json")
+                .body("""{"apiKey":""}"""),
+        )
 
         val statusResp = app(Request(Method.GET, "/api/user/hardcover/status").header("Cookie", "token=$token"))
         val tree = Json.mapper.readTree(statusResp.bodyString())
@@ -69,12 +77,13 @@ class HardcoverSyncIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
 
-        val resp = app(
-            Request(Method.POST, "/api/books/$bookId/hardcover/sync")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"status":"FINISHED"}"""),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/api/books/$bookId/hardcover/sync")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"status":"FINISHED"}"""),
+            )
         // Returns 502 because no API key means sync fails
         assertEquals(Status.BAD_GATEWAY, resp.status)
         val tree = Json.mapper.readTree(resp.bodyString())
@@ -88,12 +97,13 @@ class HardcoverSyncIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
 
-        val resp = app(
-            Request(Method.POST, "/api/books/$bookId/hardcover/sync")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("{}"),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/api/books/$bookId/hardcover/sync")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("{}"),
+            )
         assertEquals(Status.BAD_REQUEST, resp.status)
     }
 

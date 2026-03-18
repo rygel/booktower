@@ -9,9 +9,11 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class LibraryPaginationIntegrationTest : IntegrationTestBase() {
-
-    private fun createBooks(token: String, libId: String, count: Int): List<String> =
-        (1..count).map { i -> createBook(token, libId, "Book $i - ${System.nanoTime()}") }
+    private fun createBooks(
+        token: String,
+        libId: String,
+        count: Int,
+    ): List<String> = (1..count).map { i -> createBook(token, libId, "Book $i - ${System.nanoTime()}") }
 
     @Test
     fun `library page 1 returns 200`() {
@@ -28,7 +30,9 @@ class LibraryPaginationIntegrationTest : IntegrationTestBase() {
         createBooks(token, libId, 3)
 
         val body = app(Request(Method.GET, "/libraries/$libId").header("Cookie", "token=$token")).bodyString()
-        assertFalse(body.contains("pagination.prev") || body.contains("pagination.next") || body.contains("Previous") || body.contains("Next"))
+        assertFalse(
+            body.contains("pagination.prev") || body.contains("pagination.next") || body.contains("Previous") || body.contains("Next"),
+        )
     }
 
     @Test
@@ -74,9 +78,10 @@ class LibraryPaginationIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         createBooks(token, libId, 55)
 
-        val body = app(
-            Request(Method.GET, "/libraries/$libId?page=1&sort=TITLE").header("Cookie", "token=$token"),
-        ).bodyString()
+        val body =
+            app(
+                Request(Method.GET, "/libraries/$libId?page=1&sort=TITLE").header("Cookie", "token=$token"),
+            ).bodyString()
         assertTrue(body.contains("page=2"))
         assertTrue(body.contains("sort=TITLE"))
     }
@@ -87,9 +92,10 @@ class LibraryPaginationIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         createBooks(token, libId, 55)
 
-        val body = app(
-            Request(Method.GET, "/libraries/$libId?page=1&status=READING").header("Cookie", "token=$token"),
-        ).bodyString()
+        val body =
+            app(
+                Request(Method.GET, "/libraries/$libId?page=1&status=READING").header("Cookie", "token=$token"),
+            ).bodyString()
         // pagination links should include status=READING
         assertTrue(body.contains("status=READING"))
     }

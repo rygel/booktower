@@ -8,7 +8,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class LibrarySortIntegrationTest : IntegrationTestBase() {
-
     @Test
     fun `library page renders with default title sort`() {
         val token = registerAndGetToken("sort1")
@@ -32,8 +31,11 @@ class LibrarySortIntegrationTest : IntegrationTestBase() {
         Thread.sleep(10)
         createBook(token, libId, "Second Added")
 
-        val body = app(Request(Method.GET, "/libraries/$libId?sort=ADDED")
-            .header("Cookie", "token=$token")).bodyString()
+        val body =
+            app(
+                Request(Method.GET, "/libraries/$libId?sort=ADDED")
+                    .header("Cookie", "token=$token"),
+            ).bodyString()
         val firstPos = body.indexOf("First Added")
         val secondPos = body.indexOf("Second Added")
         // ADDED sort is DESC, so Second Added should appear before First Added
@@ -45,17 +47,24 @@ class LibrarySortIntegrationTest : IntegrationTestBase() {
         val token = registerAndGetToken("sort3")
         val libId = createLibrary(token)
         // Create via API to set authors
-        app(Request(Method.POST, "/api/books")
-            .header("Cookie", "token=$token")
-            .header("Content-Type", "application/json")
-            .body("""{"title":"Book By Zara","author":"Zara","description":null,"libraryId":"$libId"}"""))
-        app(Request(Method.POST, "/api/books")
-            .header("Cookie", "token=$token")
-            .header("Content-Type", "application/json")
-            .body("""{"title":"Book By Alex","author":"Alex","description":null,"libraryId":"$libId"}"""))
+        app(
+            Request(Method.POST, "/api/books")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/json")
+                .body("""{"title":"Book By Zara","author":"Zara","description":null,"libraryId":"$libId"}"""),
+        )
+        app(
+            Request(Method.POST, "/api/books")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/json")
+                .body("""{"title":"Book By Alex","author":"Alex","description":null,"libraryId":"$libId"}"""),
+        )
 
-        val body = app(Request(Method.GET, "/libraries/$libId?sort=AUTHOR")
-            .header("Cookie", "token=$token")).bodyString()
+        val body =
+            app(
+                Request(Method.GET, "/libraries/$libId?sort=AUTHOR")
+                    .header("Cookie", "token=$token"),
+            ).bodyString()
         val alexPos = body.indexOf("Book By Alex")
         val zaraPos = body.indexOf("Book By Zara")
         assertTrue(alexPos < zaraPos, "Alex should appear before Zara in author sort")
@@ -77,8 +86,11 @@ class LibrarySortIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         createBook(token, libId, "Only Book")
 
-        val response = app(Request(Method.GET, "/libraries/$libId?sort=INVALID")
-            .header("Cookie", "token=$token"))
+        val response =
+            app(
+                Request(Method.GET, "/libraries/$libId?sort=INVALID")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, response.status)
         assertTrue(response.bodyString().contains("Only Book"))
     }
@@ -89,8 +101,11 @@ class LibrarySortIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         createBook(token, libId, "Case Test Book")
 
-        val response = app(Request(Method.GET, "/libraries/$libId?sort=added")
-            .header("Cookie", "token=$token"))
+        val response =
+            app(
+                Request(Method.GET, "/libraries/$libId?sort=added")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, response.status)
         assertTrue(response.bodyString().contains("Case Test Book"))
     }
@@ -100,8 +115,11 @@ class LibrarySortIntegrationTest : IntegrationTestBase() {
         val token = registerAndGetToken("sort7")
         val libId = createLibrary(token)
 
-        val body = app(Request(Method.GET, "/libraries/$libId?sort=AUTHOR")
-            .header("Cookie", "token=$token")).bodyString()
+        val body =
+            app(
+                Request(Method.GET, "/libraries/$libId?sort=AUTHOR")
+                    .header("Cookie", "token=$token"),
+            ).bodyString()
         // The AUTHOR option should have selected attribute nearby
         val authorOptionIdx = body.indexOf("value=\"AUTHOR\"")
         assertTrue(authorOptionIdx >= 0, "AUTHOR option must be present")
