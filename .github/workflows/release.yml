@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - 'v*'        # triggers on v0.1.0, v1.2.3, etc.
+      - 'v[0-9]+.[0-9]+.[0-9]+'    # stable only: v0.5.1, v1.0.0 (not v0.5.1-beta.*)
 
 permissions:
   contents: write   # needed to create GitHub Releases and upload assets
