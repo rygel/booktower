@@ -2,7 +2,16 @@
 
 BookTower supports syncing books and reading progress with Kobo e-readers, KOReader, OPDS catalog clients, and Komga-compatible apps.
 
+> [!CAUTION]
+> **Device sync features are experimental.** The protocols are implemented based on
+> specifications and reverse-engineering, but have **not been tested with real hardware**
+> (physical Kobo e-readers, KOReader on actual devices, etc.). The API endpoints exist
+> and pass integration tests against mocked clients, but real-world behavior may differ.
+> Please report issues if you encounter problems with actual devices.
+
 ## Kobo Sync
+
+> **Status: Experimental** — implemented from protocol analysis, not tested with physical Kobo hardware.
 
 BookTower implements the Kobo sync protocol, allowing Kobo e-readers to download books and sync reading progress directly from your server.
 
@@ -39,6 +48,8 @@ If you enable KEPUB conversion in **Settings > Devices > Kobo**, BookTower serve
 - **Delete device**: `DELETE /api/kobo/devices/{token}` (JWT required)
 
 ## KOReader Sync (kosync)
+
+> **Status: Experimental** — implements the kosync spec, not tested with KOReader on real devices.
 
 BookTower implements the [kosync protocol](https://github.com/koreader/koreader/wiki/Progress-sync), enabling KOReader to sync reading progress across devices.
 
@@ -81,6 +92,8 @@ The response format follows the kosync specification:
 
 ## OPDS Catalog
 
+> **Status: Experimental** — basic catalog and download work in integration tests, but not verified with all listed client apps.
+
 BookTower exposes an [OPDS 1.2](https://specs.opds.io/opds-1.2) catalog for downloading books to any OPDS-compatible reader app.
 
 ### Catalog URL
@@ -122,7 +135,9 @@ For audiobook entries, the OPDS feed includes individual chapter links with appr
 
 ## Komga API Compatibility
 
-BookTower exposes a subset of the [Komga REST API](https://komga.org/docs/api/), allowing Komga-aware manga/comic readers to browse and download books.
+> **Status: Experimental** — implements a minimal subset of the Komga API (read-only library/series/book listing). Not a full Komga replacement. Not tested with Tachiyomi/Paperback on real devices.
+
+BookTower exposes a **minimal read-only subset** of the [Komga REST API](https://komga.org/docs/api/). This is **not** a full Komga replacement — it only provides enough endpoints for comic/manga reader apps (Tachiyomi, Paperback) to list and browse your BookTower libraries as if they were a Komga server. Book downloads, page streaming, and write operations are not implemented.
 
 ### Supported Endpoints
 

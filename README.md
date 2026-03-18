@@ -11,6 +11,21 @@ A self-hosted personal book, audiobook, and comic manager with a built-in reader
 > [!WARNING]
 > This is a new project and still under active development. There may be bugs. Test it with a small set of books before entrusting it with your entire library.
 
+### Feature Maturity
+
+| Area | Status | Notes |
+|------|--------|-------|
+| Core (libraries, books, auth, search) | **Stable** | Covered by 1600+ integration tests |
+| EPUB/PDF/Comic readers | **Stable** | Tested in browser tests |
+| Metadata fetching | **Stable** | OpenLibrary, Google Books, Hardcover, ComicVine, Audible |
+| Kobo / KOReader sync | **Experimental** | Implements protocols but not tested with real hardware |
+| OPDS catalog | **Experimental** | Basic catalog works; not verified with all client apps |
+| Komga API | **Experimental** | Read-only subset; not tested with Tachiyomi/Paperback |
+| OIDC / SSO | **Experimental** | Implements OIDC spec; tested only with mock providers |
+| Hardcover.app sync | **Experimental** | API integration exists; not tested with real accounts |
+| Email delivery | **Experimental** | SMTP sending works; not tested with Kindle/device delivery |
+| Full-text search | **Experimental** | PostgreSQL only; requires `BOOKTOWER_FTS_ENABLED=true` |
+
 ## Features
 
 ### Library Management
@@ -46,12 +61,12 @@ A self-hosted personal book, audiobook, and comic manager with a built-in reader
 - Sidecar metadata file support
 - Filename-based metadata parsing
 
-### Device Sync
+### Device Sync *(experimental)*
 
-- **Kobo** device synchronization
-- **KOReader** sync protocol support
-- **OPDS** catalog feed for e-reader apps
-- **Komga**-compatible API for comic reader apps
+- **Kobo** device synchronization *(not tested with real hardware)*
+- **KOReader** sync protocol support *(not tested with real devices)*
+- **OPDS** catalog feed for e-reader apps *(basic, not verified with all clients)*
+- **Komga**-compatible API for comic reader apps *(read-only subset, not tested with Tachiyomi/Paperback)*
 - Book delivery via email (Send-to-Kindle and similar)
 
 ### User Features
