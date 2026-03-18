@@ -21,11 +21,12 @@ class AuthServiceTest {
 
     @Test
     fun `register creates user and returns token`() {
-        val request = CreateUserRequest(
-            username = "newuser_${System.nanoTime()}",
-            email = "new_${System.nanoTime()}@example.com",
-            password = "password123",
-        )
+        val request =
+            CreateUserRequest(
+                username = "newuser_${System.nanoTime()}",
+                email = "new_${System.nanoTime()}@example.com",
+                password = "password123",
+            )
         val result = authService.register(request)
         assertTrue(result.isSuccess)
         val response = result.getOrThrow()
@@ -88,7 +89,10 @@ class AuthServiceTest {
 
     @Test
     fun `generated token is valid`() {
-        val result = authService.register(CreateUserRequest("tokentest_${System.nanoTime()}", "tt_${System.nanoTime()}@test.com", "password123"))
+        val result =
+            authService.register(
+                CreateUserRequest("tokentest_${System.nanoTime()}", "tt_${System.nanoTime()}@test.com", "password123"),
+            )
         assertNotNull(jwtService.extractUserId(result.getOrThrow().token))
     }
 }

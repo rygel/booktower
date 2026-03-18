@@ -1,8 +1,6 @@
 package org.booktower.handlers
 
-import org.booktower.config.OidcConfig
 import org.booktower.services.AuthService
-import org.booktower.services.JwtService
 import org.booktower.services.OidcService
 import org.http4k.core.Request
 import org.http4k.core.Response
@@ -21,7 +19,6 @@ class OidcHandler(
     private val oidcService: OidcService,
     private val authService: AuthService,
 ) {
-
     /** GET /auth/oidc/login — redirect to the provider's authorization endpoint */
     fun login(req: Request): Response {
         if (!oidcService.config.enabled) {
@@ -55,29 +52,34 @@ class OidcHandler(
             return Response(Status.FOUND).header("Location", "/login?error=oidc_denied")
         }
         if (code.isNullOrBlank()) {
-            return Response(Status.BAD_REQUEST).header("Content-Type", "application/json")
+            return Response(Status.BAD_REQUEST)
+                .header("Content-Type", "application/json")
                 .body("""{"error":"Missing authorization code"}""")
         }
         if (state.isNullOrBlank() || state != cookieState) {
             logger.warn("OIDC state mismatch: expected=$cookieState, got=$state")
-            return Response(Status.BAD_REQUEST).header("Content-Type", "application/json")
+            return Response(Status.BAD_REQUEST)
+                .header("Content-Type", "application/json")
                 .body("""{"error":"Invalid state parameter"}""")
         }
 
-        val userInfo = oidcService.handleCallback(code)
-            ?: return Response(Status.FOUND).header("Location", "/login?error=oidc_failed")
+        val userInfo =
+            oidcService.handleCallback(code)
+                ?: return Response(Status.FOUND).header("Location", "/login?error=oidc_failed")
 
-        val isAdminByGroup = oidcService.config.adminGroupPattern?.let { pattern ->
-            userInfo.groups.any { group -> group.matches(Regex(pattern)) }
-        } ?: false
+        val isAdminByGroup =
+            oidcService.config.adminGroupPattern?.let { pattern ->
+                userInfo.groups.any { group -> group.matches(Regex(pattern)) }
+            } ?: false
 
-        val loginResponse = authService.findOrCreateOidcUser(
-            sub = userInfo.sub,
-            email = userInfo.email,
-            name = userInfo.name,
-            preferredUsername = userInfo.preferredUsername,
-            isAdminByGroup = isAdminByGroup,
-        )
+        val loginResponse =
+            authService.findOrCreateOidcUser(
+                sub = userInfo.sub,
+                email = userInfo.email,
+                name = userInfo.name,
+                preferredUsername = userInfo.preferredUsername,
+                isAdminByGroup = isAdminByGroup,
+            )
 
         logger.info("OIDC login: user ${loginResponse.user.username} (sub=${userInfo.sub})")
         return Response(Status.FOUND)
@@ -89,15 +91,16 @@ class OidcHandler(
     /** GET /api/oidc/status — returns whether OIDC is configured */
     fun status(req: Request): Response {
         val d = if (oidcService.config.enabled) oidcService.getDiscovery() else null
-        val body = org.booktower.config.Json.mapper.writeValueAsString(
-            mapOf(
-                "enabled" to oidcService.config.enabled,
-                "discoveryAvailable" to (d != null),
-                "loginUrl" to if (oidcService.config.enabled) "/auth/oidc/login" else null,
-                "forceOnly" to oidcService.config.forceOnlyMode,
-                "groupMappingEnabled" to (oidcService.config.adminGroupPattern != null),
+        val body =
+            org.booktower.config.Json.mapper.writeValueAsString(
+                mapOf(
+                    "enabled" to oidcService.config.enabled,
+                    "discoveryAvailable" to (d != null),
+                    "loginUrl" to if (oidcService.config.enabled) "/auth/oidc/login" else null,
+                    "forceOnly" to oidcService.config.forceOnlyMode,
+                    "groupMappingEnabled" to (oidcService.config.adminGroupPattern != null),
+                ),
             )
-        )
         return Response(Status.OK).header("Content-Type", "application/json").body(body)
     }
 
@@ -110,32 +113,44 @@ class OidcHandler(
     fun backchannelLogout(req: Request): Response {
         val body = req.bodyString()
         // logout_token may come as form field or JSON
-        val logoutToken = runCatching {
-            if (req.header("Content-Type")?.contains("application/json") == true) {
-                org.booktower.config.Json.mapper.readTree(body).get("logout_token")?.asText()
-            } else {
-                req.form("logout_token")
-            }
-        }.getOrNull() ?: return Response(Status.BAD_REQUEST)
-            .header("Content-Type", "application/json")
-            .body("""{"error":"Missing logout_token"}""")
+        val logoutToken =
+            runCatching {
+                if (req.header("Content-Type")?.contains("application/json") == true) {
+                    org.booktower.config.Json.mapper
+                        .readTree(body)
+                        .get("logout_token")
+                        ?.asText()
+                } else {
+                    req.form("logout_token")
+                }
+            }.getOrNull() ?: return Response(Status.BAD_REQUEST)
+                .header("Content-Type", "application/json")
+                .body("""{"error":"Missing logout_token"}""")
 
         // Extract sub from JWT payload (base64 decode, no signature verification)
-        val sub = runCatching {
-            val parts = logoutToken.split(".")
-            if (parts.size < 2) return@runCatching null
-            val payloadJson = String(java.util.Base64.getUrlDecoder().decode(
-                parts[1].padEnd((parts[1].length + 3) / 4 * 4, '=')
-            ))
-            org.booktower.config.Json.mapper.readTree(payloadJson).get("sub")?.asText()
-        }.getOrNull() ?: return Response(Status.BAD_REQUEST)
-            .header("Content-Type", "application/json")
-            .body("""{"error":"Could not extract sub from logout_token"}""")
+        val sub =
+            runCatching {
+                val parts = logoutToken.split(".")
+                if (parts.size < 2) return@runCatching null
+                val payloadJson =
+                    String(
+                        java.util.Base64.getUrlDecoder().decode(
+                            parts[1].padEnd((parts[1].length + 3) / 4 * 4, '='),
+                        ),
+                    )
+                org.booktower.config.Json.mapper
+                    .readTree(payloadJson)
+                    .get("sub")
+                    ?.asText()
+            }.getOrNull() ?: return Response(Status.BAD_REQUEST)
+                .header("Content-Type", "application/json")
+                .body("""{"error":"Could not extract sub from logout_token"}""")
 
         val revoked = authService.backchannelLogout(sub)
         logger.info("Backchannel logout for sub=$sub, revoked=$revoked tokens")
         // OIDC spec: return 200 OK even if user not found
-        return Response(Status.OK).header("Content-Type", "application/json")
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
             .body("""{"revoked":$revoked}""")
     }
 }

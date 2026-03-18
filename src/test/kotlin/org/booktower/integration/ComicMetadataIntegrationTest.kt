@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class ComicMetadataIntegrationTest : IntegrationTestBase() {
-
     @Test
     fun `GET comic-metadata returns empty defaults for new book`() {
         val token = registerAndGetToken()
@@ -30,12 +29,15 @@ class ComicMetadataIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
 
-        val resp = app(
-            Request(Method.PUT, "/api/books/$bookId/comic-metadata")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"issueNumber":"#42","volumeNumber":"Vol. 1","comicSeries":"Amazing Stories","coverDate":"2024-01","storyArc":"The Beginning"}"""),
-        )
+        val resp =
+            app(
+                Request(Method.PUT, "/api/books/$bookId/comic-metadata")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body(
+                        """{"issueNumber":"#42","volumeNumber":"Vol. 1","comicSeries":"Amazing Stories","coverDate":"2024-01","storyArc":"The Beginning"}""",
+                    ),
+            )
         assertEquals(Status.OK, resp.status)
         val tree = Json.mapper.readTree(resp.bodyString())
         assertEquals("#42", tree.get("issueNumber").asText())
@@ -116,12 +118,13 @@ class ComicMetadataIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
 
-        val resp = app(
-            Request(Method.PUT, "/api/books/$bookId/comic-metadata")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"locations":["New York","Wakanda"]}"""),
-        )
+        val resp =
+            app(
+                Request(Method.PUT, "/api/books/$bookId/comic-metadata")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"locations":["New York","Wakanda"]}"""),
+            )
         assertEquals(Status.OK, resp.status)
         val locs = Json.mapper.readTree(resp.bodyString()).get("locations")
         assertEquals(2, locs.size())

@@ -48,7 +48,11 @@ data class AppConfig(
                 demoMode = System.getenv("BOOKTOWER_DEMO_MODE")?.lowercase() == "true",
                 fts = FtsConfig.load(),
             ).also {
-                logger.info("Loaded configuration: appName=${it.name}, port=${it.port}, autoScanMinutes=${it.autoScanMinutes}, smtpEnabled=${it.smtp.enabled}, registrationOpen=${it.registrationOpen}")
+                logger.info(
+                    "Loaded configuration: appName=${it.name}, port=${it.port}, " +
+                        "autoScanMinutes=${it.autoScanMinutes}, smtpEnabled=${it.smtp.enabled}, " +
+                        "registrationOpen=${it.registrationOpen}",
+                )
             }
         }
     }
@@ -61,14 +65,13 @@ data class DatabaseConfig(
     val driver: String = "org.h2.Driver",
 ) {
     companion object {
-        fun load(config: com.typesafe.config.Config): DatabaseConfig {
-            return DatabaseConfig(
+        fun load(config: com.typesafe.config.Config): DatabaseConfig =
+            DatabaseConfig(
                 url = System.getenv("BOOKTOWER_DB_URL") ?: config.getString("url"),
                 username = System.getenv("BOOKTOWER_DB_USERNAME") ?: config.getString("username"),
                 password = System.getenv("BOOKTOWER_DB_PASSWORD") ?: config.getString("password"),
                 driver = System.getenv("BOOKTOWER_DB_DRIVER") ?: config.getString("driver"),
             )
-        }
     }
 }
 
@@ -81,8 +84,9 @@ data class SecurityConfig(
         private const val DEFAULT_SECRET = "booktower-secret-key-change-in-production"
 
         fun load(config: com.typesafe.config.Config): SecurityConfig {
-            val secret = System.getenv("BOOKTOWER_JWT_SECRET")
-                ?: config.getString("jwt-secret")
+            val secret =
+                System.getenv("BOOKTOWER_JWT_SECRET")
+                    ?: config.getString("jwt-secret")
 
             if (secret == DEFAULT_SECRET) {
                 val isDev = System.getenv("BOOKTOWER_ENV")?.lowercase() != "production"
@@ -110,13 +114,12 @@ data class StorageConfig(
     val tempPath: String,
 ) {
     companion object {
-        fun load(config: com.typesafe.config.Config): StorageConfig {
-            return StorageConfig(
+        fun load(config: com.typesafe.config.Config): StorageConfig =
+            StorageConfig(
                 booksPath = System.getenv("BOOKTOWER_BOOKS_PATH") ?: config.getString("books-path"),
                 coversPath = System.getenv("BOOKTOWER_COVERS_PATH") ?: config.getString("covers-path"),
                 tempPath = System.getenv("BOOKTOWER_TEMP_PATH") ?: config.getString("temp-path"),
             )
-        }
     }
 
     fun ensureDirectories() {
@@ -136,11 +139,16 @@ data class CsrfConfig(
         fun load(config: com.typesafe.config.Config): CsrfConfig {
             val envHosts = System.getenv("BOOKTOWER_CSRF_ALLOWED_HOSTS")
             return CsrfConfig(
-                allowedHosts = if (envHosts != null) {
-                    envHosts.split(",").map { it.trim() }.filter { it.isNotEmpty() }.toSet()
-                } else {
-                    config.getStringList("allowed-hosts").toSet()
-                },
+                allowedHosts =
+                    if (envHosts != null) {
+                        envHosts
+                            .split(",")
+                            .map { it.trim() }
+                            .filter { it.isNotEmpty() }
+                            .toSet()
+                    } else {
+                        config.getStringList("allowed-hosts").toSet()
+                    },
             )
         }
     }
@@ -153,14 +161,13 @@ data class WeblateConfig(
     val enabled: Boolean = false,
 ) {
     companion object {
-        fun load(config: com.typesafe.config.Config): WeblateConfig {
-            return WeblateConfig(
+        fun load(config: com.typesafe.config.Config): WeblateConfig =
+            WeblateConfig(
                 url = config.getString("url"),
                 apiToken = config.getString("api-token"),
                 component = config.getString("component"),
                 enabled = config.getBoolean("enabled"),
             )
-        }
     }
 }
 
@@ -179,17 +186,18 @@ data class OidcConfig(
     val groupsClaim: String = "groups",
 ) {
     companion object {
-        fun load(): OidcConfig = OidcConfig(
-            enabled = System.getenv("OIDC_ISSUER")?.isNotBlank() == true,
-            issuer = System.getenv("OIDC_ISSUER") ?: "",
-            clientId = System.getenv("OIDC_CLIENT_ID") ?: "",
-            clientSecret = System.getenv("OIDC_CLIENT_SECRET") ?: "",
-            redirectUri = System.getenv("OIDC_REDIRECT_URI") ?: "",
-            scope = System.getenv("OIDC_SCOPE") ?: "openid email profile",
-            forceOnlyMode = System.getenv("OIDC_FORCE_ONLY")?.lowercase() == "true",
-            adminGroupPattern = System.getenv("OIDC_ADMIN_GROUP_PATTERN")?.takeIf { it.isNotBlank() },
-            groupsClaim = System.getenv("OIDC_GROUPS_CLAIM") ?: "groups",
-        )
+        fun load(): OidcConfig =
+            OidcConfig(
+                enabled = System.getenv("OIDC_ISSUER")?.isNotBlank() == true,
+                issuer = System.getenv("OIDC_ISSUER") ?: "",
+                clientId = System.getenv("OIDC_CLIENT_ID") ?: "",
+                clientSecret = System.getenv("OIDC_CLIENT_SECRET") ?: "",
+                redirectUri = System.getenv("OIDC_REDIRECT_URI") ?: "",
+                scope = System.getenv("OIDC_SCOPE") ?: "openid email profile",
+                forceOnlyMode = System.getenv("OIDC_FORCE_ONLY")?.lowercase() == "true",
+                adminGroupPattern = System.getenv("OIDC_ADMIN_GROUP_PATTERN")?.takeIf { it.isNotBlank() },
+                groupsClaim = System.getenv("OIDC_GROUPS_CLAIM") ?: "groups",
+            )
     }
 }
 
@@ -198,10 +206,11 @@ data class MetadataConfig(
     val comicvineApiKey: String = "",
 ) {
     companion object {
-        fun load(): MetadataConfig = MetadataConfig(
-            hardcoverApiKey = System.getenv("BOOKTOWER_HARDCOVER_API_KEY") ?: "",
-            comicvineApiKey = System.getenv("BOOKTOWER_COMICVINE_API_KEY") ?: "",
-        )
+        fun load(): MetadataConfig =
+            MetadataConfig(
+                hardcoverApiKey = System.getenv("BOOKTOWER_HARDCOVER_API_KEY") ?: "",
+                comicvineApiKey = System.getenv("BOOKTOWER_COMICVINE_API_KEY") ?: "",
+            )
     }
 }
 
@@ -210,10 +219,11 @@ data class FtsConfig(
     val throttleMs: Long = 300,
 ) {
     companion object {
-        fun load(): FtsConfig = FtsConfig(
-            enabled = System.getenv("BOOKTOWER_FTS_ENABLED")?.lowercase() == "true",
-            throttleMs = System.getenv("BOOKTOWER_FTS_THROTTLE_MS")?.toLongOrNull() ?: 300L,
-        )
+        fun load(): FtsConfig =
+            FtsConfig(
+                enabled = System.getenv("BOOKTOWER_FTS_ENABLED")?.lowercase() == "true",
+                throttleMs = System.getenv("BOOKTOWER_FTS_THROTTLE_MS")?.toLongOrNull() ?: 300L,
+            )
     }
 }
 
@@ -228,13 +238,14 @@ data class SmtpConfig(
     val enabled: Boolean get() = host.isNotBlank() && from.isNotBlank()
 
     companion object {
-        fun load(): SmtpConfig = SmtpConfig(
-            host = System.getenv("BOOKTOWER_SMTP_HOST") ?: "",
-            port = System.getenv("BOOKTOWER_SMTP_PORT")?.toIntOrNull() ?: 587,
-            username = System.getenv("BOOKTOWER_SMTP_USER") ?: "",
-            password = System.getenv("BOOKTOWER_SMTP_PASS") ?: "",
-            from = System.getenv("BOOKTOWER_SMTP_FROM") ?: "",
-            tls = System.getenv("BOOKTOWER_SMTP_TLS")?.lowercase() != "false",
-        )
+        fun load(): SmtpConfig =
+            SmtpConfig(
+                host = System.getenv("BOOKTOWER_SMTP_HOST") ?: "",
+                port = System.getenv("BOOKTOWER_SMTP_PORT")?.toIntOrNull() ?: 587,
+                username = System.getenv("BOOKTOWER_SMTP_USER") ?: "",
+                password = System.getenv("BOOKTOWER_SMTP_PASS") ?: "",
+                from = System.getenv("BOOKTOWER_SMTP_FROM") ?: "",
+                tls = System.getenv("BOOKTOWER_SMTP_TLS")?.lowercase() != "false",
+            )
     }
 }

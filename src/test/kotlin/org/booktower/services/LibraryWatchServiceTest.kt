@@ -25,16 +25,24 @@ class LibraryWatchServiceTest {
     fun setup() {
         // Create a test user
         jdbi.useHandle<Exception> { handle ->
-            handle.createUpdate(
-                "INSERT INTO users (id, username, email, password_hash, created_at, updated_at, is_admin) VALUES (?,?,?,?,?,?,0)",
-            )
-                .bind(0, userId.toString())
+            handle
+                .createUpdate(
+                    "INSERT INTO users (id, username, email, password_hash, created_at, updated_at, is_admin) VALUES (?,?,?,?,?,?,0)",
+                ).bind(0, userId.toString())
                 .bind(1, "watchtest_${System.nanoTime()}")
                 .bind(2, "wt_${System.nanoTime()}@test.com")
                 .bind(3, "hash")
-                .bind(4, java.time.Instant.now().toString())
-                .bind(5, java.time.Instant.now().toString())
-                .execute()
+                .bind(
+                    4,
+                    java.time.Instant
+                        .now()
+                        .toString(),
+                ).bind(
+                    5,
+                    java.time.Instant
+                        .now()
+                        .toString(),
+                ).execute()
         }
         watchService.start()
     }
@@ -66,12 +74,14 @@ class LibraryWatchServiceTest {
         // macOS WatchService uses polling (up to ~10s per poll interval); allow extra time.
         Thread.sleep(5000)
 
-        val books = jdbi.withHandle<List<String>, Exception> { handle ->
-            handle.createQuery("SELECT title FROM books WHERE library_id = ?")
-                .bind(0, library.id)
-                .mapTo(String::class.java)
-                .list()
-        }
+        val books =
+            jdbi.withHandle<List<String>, Exception> { handle ->
+                handle
+                    .createQuery("SELECT title FROM books WHERE library_id = ?")
+                    .bind(0, library.id)
+                    .mapTo(String::class.java)
+                    .list()
+            }
         assertTrue(books.any { it.contains("newbook") }, "Expected newbook to be scanned in, got: $books")
     }
 
@@ -86,13 +96,15 @@ class LibraryWatchServiceTest {
         epub.writeBytes(ByteArray(50) { 0 })
         libraryService.scanLibrary(userId, libId)
 
-        val bookId = jdbi.withHandle<String?, Exception> { handle ->
-            handle.createQuery("SELECT id FROM books WHERE library_id = ? AND file_path = ?")
-                .bind(0, library.id)
-                .bind(1, epub.absolutePath)
-                .mapTo(String::class.java)
-                .firstOrNull()
-        }
+        val bookId =
+            jdbi.withHandle<String?, Exception> { handle ->
+                handle
+                    .createQuery("SELECT id FROM books WHERE library_id = ? AND file_path = ?")
+                    .bind(0, library.id)
+                    .bind(1, epub.absolutePath)
+                    .mapTo(String::class.java)
+                    .firstOrNull()
+            }
         assertNotNull(bookId, "Book should exist after scan")
 
         watchService.registerLibrary(userId, libId, dir.absolutePath)
@@ -102,12 +114,14 @@ class LibraryWatchServiceTest {
 
         Thread.sleep(2000)
 
-        val missing = jdbi.withHandle<String?, Exception> { handle ->
-            handle.createQuery("SELECT CAST(file_missing AS VARCHAR) FROM books WHERE id = ?")
-                .bind(0, bookId)
-                .mapTo(String::class.java)
-                .firstOrNull()
-        }
+        val missing =
+            jdbi.withHandle<String?, Exception> { handle ->
+                handle
+                    .createQuery("SELECT CAST(file_missing AS VARCHAR) FROM books WHERE id = ?")
+                    .bind(0, bookId)
+                    .mapTo(String::class.java)
+                    .firstOrNull()
+            }
         assertTrue(missing == "TRUE" || missing == "true" || missing == "1", "Book should be marked as missing, got: $missing")
     }
 
@@ -123,12 +137,14 @@ class LibraryWatchServiceTest {
 
         Thread.sleep(1500)
 
-        val count = jdbi.withHandle<Int, Exception> { handle ->
-            handle.createQuery("SELECT COUNT(*) FROM books WHERE library_id = ?")
-                .bind(0, library.id)
-                .mapTo(Int::class.java)
-                .first()
-        }
+        val count =
+            jdbi.withHandle<Int, Exception> { handle ->
+                handle
+                    .createQuery("SELECT COUNT(*) FROM books WHERE library_id = ?")
+                    .bind(0, library.id)
+                    .mapTo(Int::class.java)
+                    .first()
+            }
         assertEquals(0, count, "Non-book files should not be scanned in")
     }
 }

@@ -4,7 +4,7 @@ import org.booktower.TestFixture
 import org.booktower.config.Json
 import org.booktower.config.SmtpConfig
 import org.booktower.config.WeblateConfig
-import org.booktower.filters.GlobalErrorFilter
+import org.booktower.filters.globalErrorFilter
 import org.booktower.handlers.AppHandler
 import org.booktower.models.LoginResponse
 import org.booktower.services.AdminService
@@ -14,8 +14,8 @@ import org.booktower.services.ApiTokenService
 import org.booktower.services.AuthService
 import org.booktower.services.AuthorInfo
 import org.booktower.services.AuthorMetadataService
-import org.booktower.services.BookmarkService
 import org.booktower.services.BookService
+import org.booktower.services.BookmarkService
 import org.booktower.services.ComicService
 import org.booktower.services.EmailService
 import org.booktower.services.EpubMetadataService
@@ -41,26 +41,28 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 class AuthorMetadataIntegrationTest {
-
     private val config = TestFixture.config
     private val jdbi = TestFixture.database.getJdbi()
 
     // Stub that returns canned data without making real HTTP calls
-    private val stubAuthorService = object : AuthorMetadataService() {
-        override fun fetch(name: String): AuthorInfo? = when {
-            name.equals("Frank Herbert", ignoreCase = true) -> AuthorInfo(
-                name = "Frank Herbert",
-                bio = "American science fiction author best known for Dune.",
-                photoUrl = "https://covers.openlibrary.org/a/olid/OL26320A-L.jpg",
-                birthDate = "1920-10-08",
-                deathDate = "1986-02-11",
-                workCount = 42,
-                topWork = "Dune",
-            )
-            name.equals("Unknown Author", ignoreCase = true) -> null
-            else -> null
+    private val stubAuthorService =
+        object : AuthorMetadataService() {
+            override fun fetch(name: String): AuthorInfo? =
+                when {
+                    name.equals("Frank Herbert", ignoreCase = true) ->
+                        AuthorInfo(
+                            name = "Frank Herbert",
+                            bio = "American science fiction author best known for Dune.",
+                            photoUrl = "https://covers.openlibrary.org/a/olid/OL26320A-L.jpg",
+                            birthDate = "1920-10-08",
+                            deathDate = "1986-02-11",
+                            workCount = 42,
+                            topWork = "Dune",
+                        )
+                    name.equals("Unknown Author", ignoreCase = true) -> null
+                    else -> null
+                }
         }
-    }
 
     private lateinit var app: HttpHandler
 
@@ -90,38 +92,64 @@ class AuthorMetadataIntegrationTest {
         val comicService = ComicService()
         val goodreadsImportService = GoodreadsImportService(bookService)
         val seedService = SeedService(bookService, libraryService, config.storage.coversPath, config.storage.booksPath)
-        val appHandler = AppHandler(
-            authService, libraryService, bookService, bookmarkService,
-            userSettingsService, pdfMetadataService, epubMetadataService, adminService, jwtService, config.storage,
-            TestFixture.templateRenderer,
-            WeblateHandler(WeblateConfig("", "", "", false)),
-            analyticsService, annotationService, metadataFetchService, magicShelfService,
-            passwordResetService, EmailService(SmtpConfig("", 587, "", "", "", true)),
-            "http://localhost:9999", true,
-            apiTokenService, exportService, comicService, goodreadsImportService,
-            readingSessionService, seedService,
-            null, null, null, null, null, null, stubAuthorService,
-        )
-        return GlobalErrorFilter().then(appHandler.routes())
+        val appHandler =
+            AppHandler(
+                authService,
+                libraryService,
+                bookService,
+                bookmarkService,
+                userSettingsService,
+                pdfMetadataService,
+                epubMetadataService,
+                adminService,
+                jwtService,
+                config.storage,
+                TestFixture.templateRenderer,
+                WeblateHandler(WeblateConfig("", "", "", false)),
+                analyticsService,
+                annotationService,
+                metadataFetchService,
+                magicShelfService,
+                passwordResetService,
+                EmailService(SmtpConfig("", 587, "", "", "", true)),
+                "http://localhost:9999",
+                true,
+                apiTokenService,
+                exportService,
+                comicService,
+                goodreadsImportService,
+                readingSessionService,
+                seedService,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                stubAuthorService,
+            )
+        return globalErrorFilter().then(appHandler.routes())
     }
 
     private fun registerAndGetToken(): String {
         val u = "author_${System.nanoTime()}"
-        val resp = app(
-            Request(Method.POST, "/auth/register")
-                .header("Content-Type", "application/json")
-                .body("""{"username":"$u","email":"$u@test.com","password":"password123"}"""),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/auth/register")
+                    .header("Content-Type", "application/json")
+                    .body("""{"username":"$u","email":"$u@test.com","password":"password123"}"""),
+            )
         return Json.mapper.readValue(resp.bodyString(), LoginResponse::class.java).token
     }
 
     @Test
     fun `GET api authors name metadata returns author info`() {
         val token = registerAndGetToken()
-        val resp = app(
-            Request(Method.GET, "/api/authors/Frank%20Herbert/metadata")
-                .header("Cookie", "token=$token"),
-        )
+        val resp =
+            app(
+                Request(Method.GET, "/api/authors/Frank%20Herbert/metadata")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, resp.status)
         val tree = Json.mapper.readTree(resp.bodyString())
         assertEquals("Frank Herbert", tree.get("name").asText())
@@ -134,10 +162,11 @@ class AuthorMetadataIntegrationTest {
     @Test
     fun `GET api authors name metadata includes bio and photoUrl`() {
         val token = registerAndGetToken()
-        val resp = app(
-            Request(Method.GET, "/api/authors/Frank%20Herbert/metadata")
-                .header("Cookie", "token=$token"),
-        )
+        val resp =
+            app(
+                Request(Method.GET, "/api/authors/Frank%20Herbert/metadata")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, resp.status)
         val tree = Json.mapper.readTree(resp.bodyString())
         assert(tree.get("bio").asText().isNotBlank()) { "bio should be non-blank" }
@@ -147,10 +176,11 @@ class AuthorMetadataIntegrationTest {
     @Test
     fun `GET api authors name metadata returns 404 for unknown author`() {
         val token = registerAndGetToken()
-        val resp = app(
-            Request(Method.GET, "/api/authors/Unknown%20Author/metadata")
-                .header("Cookie", "token=$token"),
-        )
+        val resp =
+            app(
+                Request(Method.GET, "/api/authors/Unknown%20Author/metadata")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.NOT_FOUND, resp.status)
     }
 

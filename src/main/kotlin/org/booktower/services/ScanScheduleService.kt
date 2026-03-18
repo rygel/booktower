@@ -13,9 +13,10 @@ class ScanScheduleService(
     private val libraryService: LibraryService,
     val intervalMinutes: Long,
 ) {
-    private val executor = Executors.newSingleThreadScheduledExecutor { r ->
-        Thread(r, "scan-scheduler").also { it.isDaemon = true }
-    }
+    private val executor =
+        Executors.newSingleThreadScheduledExecutor { r ->
+            Thread(r, "scan-scheduler").also { it.isDaemon = true }
+        }
 
     fun start() {
         if (intervalMinutes <= 0) {
@@ -34,27 +35,31 @@ class ScanScheduleService(
 
     private fun scanAll() {
         logger.info("Auto-scan triggered")
-        val pairs = try {
-            jdbi.withHandle<List<Pair<UUID, UUID>>, Exception> { handle ->
-                handle.createQuery("SELECT user_id, id FROM libraries")
-                    .map { rs, _ ->
-                        Pair(
-                            UUID.fromString(rs.getString("user_id")),
-                            UUID.fromString(rs.getString("id")),
-                        )
-                    }.list()
+        val pairs =
+            try {
+                jdbi.withHandle<List<Pair<UUID, UUID>>, Exception> { handle ->
+                    handle
+                        .createQuery("SELECT user_id, id FROM libraries")
+                        .map { rs, _ ->
+                            Pair(
+                                UUID.fromString(rs.getString("user_id")),
+                                UUID.fromString(rs.getString("id")),
+                            )
+                        }.list()
+                }
+            } catch (e: Exception) {
+                logger.error("Auto-scan: failed to load libraries", e)
+                return
             }
-        } catch (e: Exception) {
-            logger.error("Auto-scan: failed to load libraries", e)
-            return
-        }
 
         var added = 0
         var skipped = 0
         for ((userId, libId) in pairs) {
             runCatching { libraryService.scanLibrary(userId, libId) }
-                .onSuccess { result -> added += result.added; skipped += result.skipped }
-                .onFailure { e -> logger.warn("Auto-scan failed for library $libId: ${e.message}") }
+                .onSuccess { result ->
+                    added += result.added
+                    skipped += result.skipped
+                }.onFailure { e -> logger.warn("Auto-scan failed for library $libId: ${e.message}") }
         }
         logger.info("Auto-scan complete: +$added added, $skipped skipped across ${pairs.size} libraries")
     }

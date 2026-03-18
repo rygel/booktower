@@ -30,9 +30,12 @@ class FtsService(
             ftsLog.info("Full-text search disabled (set BOOKTOWER_FTS_ENABLED=true to enable)")
             return
         }
-        val isPostgres = jdbi.withHandle<Boolean, Exception> { h ->
-            h.connection.metaData.databaseProductName.lowercase().contains("postgresql")
-        }
+        val isPostgres =
+            jdbi.withHandle<Boolean, Exception> { h ->
+                h.connection.metaData.databaseProductName
+                    .lowercase()
+                    .contains("postgresql")
+            }
         if (!isPostgres) {
             ftsLog.warn("BOOKTOWER_FTS_ENABLED=true but database is not PostgreSQL — FTS disabled")
             return
@@ -46,31 +49,42 @@ class FtsService(
 
     fun enqueue(bookId: String) {
         jdbi.useHandle<Exception> { h ->
-            h.createUpdate(
-                "INSERT INTO book_content (book_id, status) VALUES (?, 'pending') " +
-                "ON CONFLICT (book_id) DO NOTHING",
-            ).bind(0, bookId).execute()
+            h
+                .createUpdate(
+                    "INSERT INTO book_content (book_id, status) VALUES (?, 'pending') " +
+                        "ON CONFLICT (book_id) DO NOTHING",
+                ).bind(0, bookId)
+                .execute()
         }
     }
 
-    fun indexBook(bookId: String, filePath: String, format: String): Boolean {
+    fun indexBook(
+        bookId: String,
+        filePath: String,
+        format: String,
+    ): Boolean {
         val file = File(filePath)
         if (!file.exists()) {
             markFailed(bookId, "File not found: $filePath")
             return false
         }
-        val content = when (format.lowercase()) {
-            "epub" -> EpubTextExtractor.extract(file)
-            "pdf"  -> PdfTextExtractor.extract(file)
-            else   -> { markFailed(bookId, "Unsupported format: $format"); return false }
-        }
+        val content =
+            when (format.lowercase()) {
+                "epub" -> EpubTextExtractor.extract(file)
+                "pdf" -> PdfTextExtractor.extract(file)
+                else -> {
+                    markFailed(bookId, "Unsupported format: $format")
+                    return false
+                }
+            }
         if (content == null) {
             markFailed(bookId, "Text extraction returned null")
             return false
         }
         jdbi.useHandle<Exception> { h ->
-            h.createUpdate(
-                """
+            h
+                .createUpdate(
+                    """
                 INSERT INTO book_content (book_id, content, status, indexed_at)
                 VALUES (?, ?, 'indexed', ?)
                 ON CONFLICT (book_id) DO UPDATE
@@ -79,20 +93,31 @@ class FtsService(
                       indexed_at = EXCLUDED.indexed_at,
                       error_msg = NULL
                 """,
-            ).bind(0, bookId).bind(1, content).bind(2, Instant.now().toString()).execute()
+                ).bind(0, bookId)
+                .bind(1, content)
+                .bind(2, Instant.now().toString())
+                .execute()
         }
         return true
     }
 
-    fun search(query: String, allowedBookIds: Collection<String>? = null): List<FtsMatch> {
+    fun search(
+        query: String,
+        allowedBookIds: Collection<String>? = null,
+    ): List<FtsMatch> {
         if (!active || query.isBlank()) return emptyList()
         return try {
             jdbi.withHandle<List<FtsMatch>, Exception> { h ->
-                val bookIdFilter = if (!allowedBookIds.isNullOrEmpty()) {
-                    "AND bc.book_id IN (${allowedBookIds.joinToString(",") { "?" }})"
-                } else ""
-                val q = h.createQuery(
-                    """
+                val bookIdFilter =
+                    if (!allowedBookIds.isNullOrEmpty()) {
+                        "AND bc.book_id IN (${allowedBookIds.joinToString(",") { "?" }})"
+                    } else {
+                        ""
+                    }
+                val q =
+                    h
+                        .createQuery(
+                            """
                     SELECT bc.book_id,
                            ts_headline('english', bc.content,
                                plainto_tsquery('english', :q),
@@ -106,16 +131,17 @@ class FtsService(
                     ORDER BY rank DESC
                     LIMIT 50
                     """,
-                ).bind("q", query)
+                        ).bind("q", query)
                 var idx = 0
                 allowedBookIds?.forEach { q.bind(idx++, it) }
-                q.map { row ->
-                    FtsMatch(
-                        bookId  = row.getColumn("book_id", String::class.java),
-                        snippet = row.getColumn("snippet", String::class.java) ?: "",
-                        rank    = (row.getColumn("rank", java.lang.Float::class.java) ?: 0f).toFloat(),
-                    )
-                }.list()
+                q
+                    .map { row ->
+                        FtsMatch(
+                            bookId = row.getColumn("book_id", String::class.java),
+                            snippet = row.getColumn("snippet", String::class.java) ?: "",
+                            rank = (row.getColumn("rank", java.lang.Float::class.java) ?: 0f).toFloat(),
+                        )
+                    }.list()
             }
         } catch (e: Exception) {
             ftsLog.warn("FTS search error: ${e.message}")
@@ -125,8 +151,9 @@ class FtsService(
 
     fun fetchPending(limit: Int = 5): List<PendingBook> =
         jdbi.withHandle<List<PendingBook>, Exception> { h ->
-            h.createQuery(
-                """
+            h
+                .createQuery(
+                    """
                 SELECT bc.book_id, b.file_path,
                        CASE
                            WHEN LOWER(b.file_path) LIKE '%.epub' THEN 'epub'
@@ -138,30 +165,37 @@ class FtsService(
                 WHERE bc.status = 'pending'
                 LIMIT ?
                 """,
-            ).bind(0, limit)
+                ).bind(0, limit)
                 .map { row ->
                     PendingBook(
-                        bookId   = row.getColumn("book_id", String::class.java),
+                        bookId = row.getColumn("book_id", String::class.java),
                         filePath = row.getColumn("file_path", String::class.java) ?: "",
-                        format   = row.getColumn("format", String::class.java) ?: "unknown",
+                        format = row.getColumn("format", String::class.java) ?: "unknown",
                     )
                 }.list()
         }
 
     fun countByStatus(): Map<String, Long> =
         jdbi.withHandle<Map<String, Long>, Exception> { h ->
-            h.createQuery("SELECT status, COUNT(*) AS n FROM book_content GROUP BY status")
+            h
+                .createQuery("SELECT status, COUNT(*) AS n FROM book_content GROUP BY status")
                 .map { row ->
                     (row.getColumn("status", String::class.java) ?: "unknown") to
                         ((row.getColumn("n", Long::class.java)) ?: 0L)
                 }.associate { it }
         }
 
-    private fun markFailed(bookId: String, msg: String) {
+    private fun markFailed(
+        bookId: String,
+        msg: String,
+    ) {
         jdbi.useHandle<Exception> { h ->
-            h.createUpdate(
-                "UPDATE book_content SET status = 'failed', error_msg = ? WHERE book_id = ?",
-            ).bind(0, msg.take(500)).bind(1, bookId).execute()
+            h
+                .createUpdate(
+                    "UPDATE book_content SET status = 'failed', error_msg = ? WHERE book_id = ?",
+                ).bind(0, msg.take(500))
+                .bind(1, bookId)
+                .execute()
         }
     }
 

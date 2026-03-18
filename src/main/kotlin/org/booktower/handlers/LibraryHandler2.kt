@@ -23,9 +23,10 @@ private val logger = LoggerFactory.getLogger("booktower.LibraryHandler")
 
 // In-memory job registry — keyed by jobId. Survives restarts only within the JVM lifetime.
 private val scanJobs = ConcurrentHashMap<String, ScanJobStatus>()
-private val scanExecutor = Executors.newCachedThreadPool { r ->
-    Thread(r, "scan-worker").also { it.isDaemon = true }
-}
+private val scanExecutor =
+    Executors.newCachedThreadPool { r ->
+        Thread(r, "scan-worker").also { it.isDaemon = true }
+    }
 
 private val ALLOWED_ICON_EXTENSIONS = setOf("jpg", "jpeg", "png", "webp", "svg")
 private const val MAX_ICON_SIZE = 2L * 1024 * 1024 // 2 MB
@@ -73,9 +74,10 @@ class LibraryHandler2(
         val userId = AuthenticatedUser.from(req)
         val pathParts = req.uri.path.split("/")
         // path: /api/libraries/{id}/scan  → second to last segment is the id
-        val libraryId = pathParts.getOrNull(pathParts.size - 2)?.let {
-            runCatching { UUID.fromString(it) }.getOrNull()
-        }
+        val libraryId =
+            pathParts.getOrNull(pathParts.size - 2)?.let {
+                runCatching { UUID.fromString(it) }.getOrNull()
+            }
 
         if (libraryId == null) {
             return Response(Status.BAD_REQUEST)
@@ -98,9 +100,10 @@ class LibraryHandler2(
         val userId = AuthenticatedUser.from(req)
         val pathParts = req.uri.path.split("/")
         // path: /api/libraries/{id}/scan/async  → index [size-3] is the id
-        val libraryId = pathParts.getOrNull(pathParts.size - 3)?.let {
-            runCatching { UUID.fromString(it) }.getOrNull()
-        }
+        val libraryId =
+            pathParts.getOrNull(pathParts.size - 3)?.let {
+                runCatching { UUID.fromString(it) }.getOrNull()
+            }
 
         if (libraryId == null) {
             return Response(Status.BAD_REQUEST)
@@ -115,24 +118,26 @@ class LibraryHandler2(
         scanExecutor.submit {
             try {
                 val result = libraryService.scanLibrary(userId, libraryId)
-                scanJobs[jobId] = ScanJobStatus(
-                    jobId = jobId,
-                    libraryId = libraryId.toString(),
-                    state = ScanJobState.DONE,
-                    added = result.added,
-                    skipped = result.skipped,
-                    errors = result.errors,
-                )
+                scanJobs[jobId] =
+                    ScanJobStatus(
+                        jobId = jobId,
+                        libraryId = libraryId.toString(),
+                        state = ScanJobState.DONE,
+                        added = result.added,
+                        skipped = result.skipped,
+                        errors = result.errors,
+                    )
                 bgTaskId?.let { taskService?.complete(it, "+${result.added} added, ${result.skipped} skipped, ${result.errors} errors") }
                 logger.info("Async scan job $jobId done: +${result.added} added")
             } catch (e: Exception) {
                 logger.error("Async scan job $jobId failed", e)
-                scanJobs[jobId] = ScanJobStatus(
-                    jobId = jobId,
-                    libraryId = libraryId.toString(),
-                    state = ScanJobState.FAILED,
-                    message = e.message,
-                )
+                scanJobs[jobId] =
+                    ScanJobStatus(
+                        jobId = jobId,
+                        libraryId = libraryId.toString(),
+                        state = ScanJobState.FAILED,
+                        message = e.message,
+                    )
                 bgTaskId?.let { taskService?.fail(it, e.message) }
             }
         }
@@ -146,10 +151,11 @@ class LibraryHandler2(
     fun scanStatus(req: Request): Response {
         val pathParts = req.uri.path.split("/")
         val jobId = pathParts.lastOrNull() ?: return Response(Status.BAD_REQUEST)
-        val job = scanJobs[jobId]
-            ?: return Response(Status.NOT_FOUND)
-                .header("Content-Type", "application/json")
-                .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "Job not found")))
+        val job =
+            scanJobs[jobId]
+                ?: return Response(Status.NOT_FOUND)
+                    .header("Content-Type", "application/json")
+                    .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "Job not found")))
         return Response(Status.OK)
             .header("Content-Type", "application/json")
             .body(Json.mapper.writeValueAsString(job))
@@ -181,14 +187,16 @@ class LibraryHandler2(
     /** GET /api/libraries/{id}/settings */
     fun getSettings(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
-        val libraryId = req.uri.path.split("/").let { parts ->
-            parts.getOrNull(parts.size - 2)?.let { runCatching { UUID.fromString(it) }.getOrNull() }
-        } ?: return Response(Status.BAD_REQUEST)
-            .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Invalid library ID")))
+        val libraryId =
+            req.uri.path.split("/").let { parts ->
+                parts.getOrNull(parts.size - 2)?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+            } ?: return Response(Status.BAD_REQUEST)
+                .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Invalid library ID")))
 
-        val settings = libraryService.getSettings(userId, libraryId)
-            ?: return Response(Status.NOT_FOUND)
-                .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "Library not found")))
+        val settings =
+            libraryService.getSettings(userId, libraryId)
+                ?: return Response(Status.NOT_FOUND)
+                    .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "Library not found")))
 
         return Response(Status.OK)
             .header("Content-Type", "application/json")
@@ -198,24 +206,27 @@ class LibraryHandler2(
     /** PUT /api/libraries/{id}/settings */
     fun updateSettings(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
-        val libraryId = req.uri.path.split("/").let { parts ->
-            parts.getOrNull(parts.size - 2)?.let { runCatching { UUID.fromString(it) }.getOrNull() }
-        } ?: return Response(Status.BAD_REQUEST)
-            .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Invalid library ID")))
+        val libraryId =
+            req.uri.path.split("/").let { parts ->
+                parts.getOrNull(parts.size - 2)?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+            } ?: return Response(Status.BAD_REQUEST)
+                .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Invalid library ID")))
 
-        val request = runCatching {
-            Json.mapper.readValue(req.bodyString(), UpdateLibrarySettingsRequest::class.java)
-        }.getOrNull() ?: return Response(Status.BAD_REQUEST)
-            .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Invalid request body")))
+        val request =
+            runCatching {
+                Json.mapper.readValue(req.bodyString(), UpdateLibrarySettingsRequest::class.java)
+            }.getOrNull() ?: return Response(Status.BAD_REQUEST)
+                .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Invalid request body")))
 
-        val updated = runCatching { libraryService.updateSettings(userId, libraryId, request) }
-            .getOrElse { e ->
-                return Response(Status.BAD_REQUEST)
-                    .header("Content-Type", "application/json")
-                    .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", e.message ?: "Invalid settings")))
-            }
-            ?: return Response(Status.NOT_FOUND)
-                .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "Library not found")))
+        val updated =
+            runCatching { libraryService.updateSettings(userId, libraryId, request) }
+                .getOrElse { e ->
+                    return Response(Status.BAD_REQUEST)
+                        .header("Content-Type", "application/json")
+                        .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", e.message ?: "Invalid settings")))
+                }
+                ?: return Response(Status.NOT_FOUND)
+                    .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "Library not found")))
 
         return Response(Status.OK)
             .header("Content-Type", "application/json")
@@ -225,11 +236,12 @@ class LibraryHandler2(
     /** POST /api/libraries/{id}/organize */
     fun organize(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
-        val libraryId = req.uri.path.split("/").let { parts ->
-            parts.getOrNull(parts.size - 2)?.let { runCatching { UUID.fromString(it) }.getOrNull() }
-        } ?: return Response(Status.BAD_REQUEST)
-            .header("Content-Type", "application/json")
-            .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Invalid library ID")))
+        val libraryId =
+            req.uri.path.split("/").let { parts ->
+                parts.getOrNull(parts.size - 2)?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+            } ?: return Response(Status.BAD_REQUEST)
+                .header("Content-Type", "application/json")
+                .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Invalid library ID")))
 
         val result = libraryService.organizeFiles(userId, libraryId)
         return Response(Status.OK)
@@ -240,26 +252,32 @@ class LibraryHandler2(
     /** POST /api/libraries/{id}/icon — upload an icon image */
     fun uploadIcon(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
-        val libraryId = req.uri.path.split("/").let { parts ->
-            parts.getOrNull(parts.size - 2)?.let { runCatching { UUID.fromString(it) }.getOrNull() }
-        } ?: return badRequest("Invalid library ID")
+        val libraryId =
+            req.uri.path.split("/").let { parts ->
+                parts.getOrNull(parts.size - 2)?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+            } ?: return badRequest("Invalid library ID")
 
-        val storage = storageConfig ?: return Response(Status.SERVICE_UNAVAILABLE)
-            .header("Content-Type", "application/json")
-            .body(Json.mapper.writeValueAsString(ErrorResponse("SERVICE_UNAVAILABLE", "Storage not configured")))
+        val storage =
+            storageConfig ?: return Response(Status.SERVICE_UNAVAILABLE)
+                .header("Content-Type", "application/json")
+                .body(Json.mapper.writeValueAsString(ErrorResponse("SERVICE_UNAVAILABLE", "Storage not configured")))
 
         val filename = req.header("X-Filename")?.trim()
         if (filename.isNullOrBlank()) return badRequest("X-Filename header is required")
 
         val ext = filename.substringAfterLast('.', "").lowercase()
-        if (ext !in ALLOWED_ICON_EXTENSIONS) return badRequest("Unsupported image type '$ext'. Allowed: ${ALLOWED_ICON_EXTENSIONS.joinToString()}")
+        if (ext !in ALLOWED_ICON_EXTENSIONS) {
+            return badRequest(
+                "Unsupported image type '$ext'. Allowed: ${ALLOWED_ICON_EXTENSIONS.joinToString()}",
+            )
+        }
 
         val bytes = req.body.stream.readBytes()
         if (bytes.isEmpty()) return badRequest("File body is empty")
         if (bytes.size > MAX_ICON_SIZE) return badRequest("Icon exceeds maximum size of 2 MB")
 
         val iconsDir = File(storage.coversPath, "library-icons")
-        if (!iconsDir.exists()) iconsDir.mkdirs()
+        if (!iconsDir.exists() && !iconsDir.mkdirs()) logger.warn("Could not create directory: ${iconsDir.absolutePath}")
 
         val iconFilename = "$libraryId.$ext"
         val destFile = File(iconsDir, iconFilename)
@@ -267,7 +285,7 @@ class LibraryHandler2(
 
         val updated = libraryService.updateIconPath(userId, libraryId, "library-icons/$iconFilename")
         if (!updated) {
-            destFile.delete()
+            if (!destFile.delete()) logger.warn("Could not delete file: ${destFile.absolutePath}")
             return Response(Status.NOT_FOUND)
                 .header("Content-Type", "application/json")
                 .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "Library not found")))
@@ -282,33 +300,39 @@ class LibraryHandler2(
     /** GET /api/libraries/{id}/icon — serve the icon image */
     fun getIcon(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
-        val libraryId = req.uri.path.split("/").let { parts ->
-            parts.getOrNull(parts.size - 2)?.let { runCatching { UUID.fromString(it) }.getOrNull() }
-        } ?: return Response(Status.BAD_REQUEST)
-            .header("Content-Type", "application/json")
-            .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Invalid library ID")))
-
-        val storage = storageConfig ?: return Response(Status.SERVICE_UNAVAILABLE)
-            .header("Content-Type", "application/json")
-            .body(Json.mapper.writeValueAsString(ErrorResponse("SERVICE_UNAVAILABLE", "Storage not configured")))
-
-        val iconPath = libraryService.getIconPath(userId, libraryId)
-            ?: return Response(Status.NOT_FOUND)
+        val libraryId =
+            req.uri.path.split("/").let { parts ->
+                parts.getOrNull(parts.size - 2)?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+            } ?: return Response(Status.BAD_REQUEST)
                 .header("Content-Type", "application/json")
-                .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "No icon set for this library")))
+                .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Invalid library ID")))
+
+        val storage =
+            storageConfig ?: return Response(Status.SERVICE_UNAVAILABLE)
+                .header("Content-Type", "application/json")
+                .body(Json.mapper.writeValueAsString(ErrorResponse("SERVICE_UNAVAILABLE", "Storage not configured")))
+
+        val iconPath =
+            libraryService.getIconPath(userId, libraryId)
+                ?: return Response(Status.NOT_FOUND)
+                    .header("Content-Type", "application/json")
+                    .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "No icon set for this library")))
 
         val file = File(storage.coversPath, iconPath)
-        if (!file.exists() || !file.isFile) return Response(Status.NOT_FOUND)
-            .header("Content-Type", "application/json")
-            .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "Icon file not found")))
-
-        val contentType = when (file.extension.lowercase()) {
-            "jpg", "jpeg" -> "image/jpeg"
-            "png" -> "image/png"
-            "webp" -> "image/webp"
-            "svg" -> "image/svg+xml"
-            else -> "application/octet-stream"
+        if (!file.exists() || !file.isFile) {
+            return Response(Status.NOT_FOUND)
+                .header("Content-Type", "application/json")
+                .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "Icon file not found")))
         }
+
+        val contentType =
+            when (file.extension.lowercase()) {
+                "jpg", "jpeg" -> "image/jpeg"
+                "png" -> "image/png"
+                "webp" -> "image/webp"
+                "svg" -> "image/svg+xml"
+                else -> "application/octet-stream"
+            }
 
         return Response(Status.OK)
             .header("Content-Type", contentType)
@@ -320,26 +344,32 @@ class LibraryHandler2(
     /** DELETE /api/libraries/{id}/icon — remove the icon */
     fun deleteIcon(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
-        val libraryId = req.uri.path.split("/").let { parts ->
-            parts.getOrNull(parts.size - 2)?.let { runCatching { UUID.fromString(it) }.getOrNull() }
-        } ?: return badRequest("Invalid library ID")
+        val libraryId =
+            req.uri.path.split("/").let { parts ->
+                parts.getOrNull(parts.size - 2)?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+            } ?: return badRequest("Invalid library ID")
 
         val storage = storageConfig
         val existingPath = libraryService.getIconPath(userId, libraryId)
         if (existingPath != null && storage != null) {
-            File(storage.coversPath, existingPath).delete()
+            val iconFile = File(storage.coversPath, existingPath)
+            if (!iconFile.delete()) logger.warn("Could not delete file: ${iconFile.absolutePath}")
         }
 
         val updated = libraryService.updateIconPath(userId, libraryId, null)
-        return if (updated) Response(Status.NO_CONTENT)
-        else Response(Status.NOT_FOUND)
-            .header("Content-Type", "application/json")
-            .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "Library not found")))
+        return if (updated) {
+            Response(Status.NO_CONTENT)
+        } else {
+            Response(Status.NOT_FOUND)
+                .header("Content-Type", "application/json")
+                .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "Library not found")))
+        }
     }
 
-    private fun badRequest(message: String) = Response(Status.BAD_REQUEST)
-        .header("Content-Type", "application/json")
-        .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", message)))
+    private fun badRequest(message: String) =
+        Response(Status.BAD_REQUEST)
+            .header("Content-Type", "application/json")
+            .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", message)))
 
     private fun validateCreateLibraryRequest(request: CreateLibraryRequest): String? {
         if (request.name.isBlank()) {

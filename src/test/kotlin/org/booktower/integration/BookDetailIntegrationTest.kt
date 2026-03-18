@@ -8,7 +8,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class BookDetailIntegrationTest : IntegrationTestBase() {
-
     // ── Breadcrumb ─────────────────────────────────────────────────────────────
 
     @Test
@@ -50,8 +49,10 @@ class BookDetailIntegrationTest : IntegrationTestBase() {
         val bookId = createBook(token, libId, "Deletable Book")
 
         val body = app(Request(Method.GET, "/books/$bookId").header("Cookie", "token=$token")).bodyString()
-        assertTrue(body.contains("hx-delete=\"/ui/books/$bookId\""),
-            "Book detail page should have delete button wired to HTMX delete")
+        assertTrue(
+            body.contains("hx-delete=\"/ui/books/$bookId\""),
+            "Book detail page should have delete button wired to HTMX delete",
+        )
     }
 
     @Test

@@ -8,15 +8,17 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class EmailChangeIntegrationTest : IntegrationTestBase() {
-
-    private fun changeEmail(token: String, newEmail: String, currentPassword: String): org.http4k.core.Response {
-        return app(
+    private fun changeEmail(
+        token: String,
+        newEmail: String,
+        currentPassword: String,
+    ): org.http4k.core.Response =
+        app(
             Request(Method.POST, "/api/auth/change-email")
                 .header("Cookie", "token=$token")
                 .header("Content-Type", "application/json")
                 .body("""{"currentPassword":"$currentPassword","newEmail":"$newEmail"}"""),
         )
-    }
 
     @Test
     fun `change email returns 200 with valid credentials`() {
@@ -36,11 +38,12 @@ class EmailChangeIntegrationTest : IntegrationTestBase() {
 
     @Test
     fun `change email fails without authentication`() {
-        val response = app(
-            Request(Method.POST, "/api/auth/change-email")
-                .header("Content-Type", "application/json")
-                .body("""{"currentPassword":"password123","newEmail":"x@example.com"}"""),
-        )
+        val response =
+            app(
+                Request(Method.POST, "/api/auth/change-email")
+                    .header("Content-Type", "application/json")
+                    .body("""{"currentPassword":"password123","newEmail":"x@example.com"}"""),
+            )
         assertEquals(Status.UNAUTHORIZED, response.status)
     }
 
@@ -92,12 +95,13 @@ class EmailChangeIntegrationTest : IntegrationTestBase() {
     @Test
     fun `change email with empty body returns 400`() {
         val token = registerAndGetToken("em7")
-        val response = app(
-            Request(Method.POST, "/api/auth/change-email")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body(""),
-        )
+        val response =
+            app(
+                Request(Method.POST, "/api/auth/change-email")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body(""),
+            )
         assertEquals(Status.BAD_REQUEST, response.status)
     }
 

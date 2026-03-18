@@ -8,8 +8,9 @@ import org.http4k.core.Request
 import org.http4k.core.Response
 import org.http4k.core.Status
 
-class BackgroundTaskHandler(private val taskService: BackgroundTaskService) {
-
+class BackgroundTaskHandler(
+    private val taskService: BackgroundTaskService,
+) {
     /** GET /api/tasks — returns the authenticated user's task list */
     fun list(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
@@ -22,10 +23,13 @@ class BackgroundTaskHandler(private val taskService: BackgroundTaskService) {
     /** DELETE /api/tasks/{id} — dismisses a completed or failed task */
     fun dismiss(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
-        val taskId = req.uri.path.split("/").lastOrNull()
-            ?: return Response(Status.BAD_REQUEST)
-                .header("Content-Type", "application/json")
-                .body(Json.mapper.writeValueAsString(ErrorResponse("BAD_REQUEST", "Missing task ID")))
+        val taskId =
+            req.uri.path
+                .split("/")
+                .lastOrNull()
+                ?: return Response(Status.BAD_REQUEST)
+                    .header("Content-Type", "application/json")
+                    .body(Json.mapper.writeValueAsString(ErrorResponse("BAD_REQUEST", "Missing task ID")))
         return if (taskService.dismiss(taskId, userId)) {
             Response(Status.NO_CONTENT)
         } else {

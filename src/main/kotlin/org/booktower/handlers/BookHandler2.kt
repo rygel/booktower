@@ -31,9 +31,17 @@ class BookHandler2(
         val ratingGte = req.query("ratingGte")?.toIntOrNull()
         val formatFilter = req.query("format")?.takeIf { it.isNotBlank() }
 
-        val bookList = bookService.getBooks(userId, libraryId, page, pageSize,
-            statusFilter = statusFilter, tagFilter = tagFilter,
-            ratingGte = ratingGte, formatFilter = formatFilter)
+        val bookList =
+            bookService.getBooks(
+                userId,
+                libraryId,
+                page,
+                pageSize,
+                statusFilter = statusFilter,
+                tagFilter = tagFilter,
+                ratingGte = ratingGte,
+                formatFilter = formatFilter,
+            )
         return Response(Status.OK)
             .header("Content-Type", "application/json")
             .body(Json.mapper.writeValueAsString(bookList))
@@ -125,9 +133,14 @@ class BookHandler2(
 
     fun delete(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
-        val bookId = req.uri.path.split("/").lastOrNull()?.let { id ->
-            try { UUID.fromString(id) } catch (e: IllegalArgumentException) { null }
-        }
+        val bookId =
+            req.uri.path.split("/").lastOrNull()?.let { id ->
+                try {
+                    UUID.fromString(id)
+                } catch (e: IllegalArgumentException) {
+                    null
+                }
+            }
 
         if (bookId == null) {
             return Response(Status.BAD_REQUEST)
@@ -149,9 +162,14 @@ class BookHandler2(
 
     fun update(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
-        val bookId = req.uri.path.split("/").lastOrNull()?.let { id ->
-            try { UUID.fromString(id) } catch (e: IllegalArgumentException) { null }
-        }
+        val bookId =
+            req.uri.path.split("/").lastOrNull()?.let { id ->
+                try {
+                    UUID.fromString(id)
+                } catch (e: IllegalArgumentException) {
+                    null
+                }
+            }
 
         if (bookId == null) {
             return Response(Status.BAD_REQUEST)
@@ -190,9 +208,14 @@ class BookHandler2(
         val userId = AuthenticatedUser.from(req)
         val pathParts = req.uri.path.split("/")
         // path: /api/books/{id}/progress  → parts[-1]="progress", parts[-2]=id
-        val bookId = pathParts.dropLast(1).lastOrNull()?.let { id ->
-            try { UUID.fromString(id) } catch (e: IllegalArgumentException) { null }
-        }
+        val bookId =
+            pathParts.dropLast(1).lastOrNull()?.let { id ->
+                try {
+                    UUID.fromString(id)
+                } catch (e: IllegalArgumentException) {
+                    null
+                }
+            }
 
         if (bookId == null) {
             return Response(Status.BAD_REQUEST)
@@ -228,9 +251,19 @@ class BookHandler2(
 
     fun sessions(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
-        val bookId = req.uri.path.split("/").dropLast(1).lastOrNull()
-            ?.let { try { UUID.fromString(it) } catch (e: IllegalArgumentException) { null } }
-            ?: return Response(Status.BAD_REQUEST)
+        val bookId =
+            req.uri.path
+                .split("/")
+                .dropLast(1)
+                .lastOrNull()
+                ?.let {
+                    try {
+                        UUID.fromString(it)
+                    } catch (e: IllegalArgumentException) {
+                        null
+                    }
+                }
+                ?: return Response(Status.BAD_REQUEST)
         val limit = req.query("limit")?.toIntOrNull()?.coerceIn(1, 100) ?: 20
         val sessions = readingSessionService?.getSessionsForBook(userId, bookId, limit) ?: emptyList()
         return Response(Status.OK)

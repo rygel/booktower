@@ -4,7 +4,7 @@ import org.booktower.TestFixture
 import org.booktower.config.Json
 import org.booktower.config.SmtpConfig
 import org.booktower.config.WeblateConfig
-import org.booktower.filters.GlobalErrorFilter
+import org.booktower.filters.globalErrorFilter
 import org.booktower.handlers.AppHandler
 import org.booktower.models.LoginResponse
 import org.booktower.services.AdminService
@@ -12,8 +12,8 @@ import org.booktower.services.AnalyticsService
 import org.booktower.services.AnnotationService
 import org.booktower.services.ApiTokenService
 import org.booktower.services.AuthService
-import org.booktower.services.BookmarkService
 import org.booktower.services.BookService
+import org.booktower.services.BookmarkService
 import org.booktower.services.ComicService
 import org.booktower.services.EmailService
 import org.booktower.services.EpubMetadataService
@@ -42,7 +42,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 class KOReaderSyncIntegrationTest {
-
     private val config = TestFixture.config
     private val jdbi = TestFixture.database.getJdbi()
 
@@ -70,35 +69,73 @@ class KOReaderSyncIntegrationTest {
         val goodreadsImportService = GoodreadsImportService(bookService)
         val seedService = SeedService(bookService, libraryService, config.storage.coversPath, config.storage.booksPath)
         val koReaderSyncService = KOReaderSyncService(jdbi, bookService)
-        val appHandler = AppHandler(
-            authService, libraryService, bookService, bookmarkService,
-            userSettingsService, pdfMetadataService, epubMetadataService, adminService, jwtService, config.storage,
-            TestFixture.templateRenderer,
-            WeblateHandler(WeblateConfig("", "", "", false)),
-            analyticsService, annotationService, MetadataFetchService(), magicShelfService,
-            passwordResetService, EmailService(SmtpConfig("", 587, "", "", "", false)),
-            "http://localhost:9999", true,
-            apiTokenService, exportService, comicService, goodreadsImportService,
-            readingSessionService, seedService,
-            null, null, null, null, null, null, null, null, null, null, null, null,
-            null, koReaderSyncService,
-        )
-        app = GlobalErrorFilter().then(appHandler.routes())
+        val appHandler =
+            AppHandler(
+                authService,
+                libraryService,
+                bookService,
+                bookmarkService,
+                userSettingsService,
+                pdfMetadataService,
+                epubMetadataService,
+                adminService,
+                jwtService,
+                config.storage,
+                TestFixture.templateRenderer,
+                WeblateHandler(WeblateConfig("", "", "", false)),
+                analyticsService,
+                annotationService,
+                MetadataFetchService(),
+                magicShelfService,
+                passwordResetService,
+                EmailService(SmtpConfig("", 587, "", "", "", false)),
+                "http://localhost:9999",
+                true,
+                apiTokenService,
+                exportService,
+                comicService,
+                goodreadsImportService,
+                readingSessionService,
+                seedService,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                koReaderSyncService,
+            )
+        app = globalErrorFilter().then(appHandler.routes())
     }
 
     private fun registerAndToken(): String {
         val u = "kr_${System.nanoTime()}"
-        val r = app(Request(Method.POST, "/auth/register").header("Content-Type", "application/json")
-            .body("""{"username":"$u","email":"$u@test.com","password":"pass1234"}"""))
+        val r =
+            app(
+                Request(Method.POST, "/auth/register")
+                    .header("Content-Type", "application/json")
+                    .body("""{"username":"$u","email":"$u@test.com","password":"pass1234"}"""),
+            )
         return Json.mapper.readValue(r.bodyString(), LoginResponse::class.java).token
     }
 
     @Test
     fun `POST api koreader devices registers device`() {
         val token = registerAndToken()
-        val resp = app(Request(Method.POST, "/api/koreader/devices")
-            .header("Cookie", "token=$token").header("Content-Type", "application/json")
-            .body("""{"deviceName":"My KOReader"}"""))
+        val resp =
+            app(
+                Request(Method.POST, "/api/koreader/devices")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"deviceName":"My KOReader"}"""),
+            )
         assertEquals(Status.CREATED, resp.status)
         val tree = Json.mapper.readTree(resp.bodyString())
         assertNotNull(tree.get("token")?.asText())
@@ -108,9 +145,12 @@ class KOReaderSyncIntegrationTest {
     @Test
     fun `GET api koreader devices lists devices`() {
         val token = registerAndToken()
-        app(Request(Method.POST, "/api/koreader/devices")
-            .header("Cookie", "token=$token").header("Content-Type", "application/json")
-            .body("""{"deviceName":"Dev A"}"""))
+        app(
+            Request(Method.POST, "/api/koreader/devices")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/json")
+                .body("""{"deviceName":"Dev A"}"""),
+        )
         val resp = app(Request(Method.GET, "/api/koreader/devices").header("Cookie", "token=$token"))
         assertEquals(Status.OK, resp.status)
         val arr = Json.mapper.readTree(resp.bodyString())
@@ -120,14 +160,25 @@ class KOReaderSyncIntegrationTest {
     @Test
     fun `PUT koreader token syncs progress push returns 200`() {
         val token = registerAndToken()
-        val regResp = app(Request(Method.POST, "/api/koreader/devices")
-            .header("Cookie", "token=$token").header("Content-Type", "application/json")
-            .body("""{"deviceName":"KOReader"}"""))
-        val deviceToken = Json.mapper.readTree(regResp.bodyString()).get("token").asText()
+        val regResp =
+            app(
+                Request(Method.POST, "/api/koreader/devices")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"deviceName":"KOReader"}"""),
+            )
+        val deviceToken =
+            Json.mapper
+                .readTree(regResp.bodyString())
+                .get("token")
+                .asText()
 
-        val resp = app(Request(Method.PUT, "/koreader/$deviceToken/syncs/progress")
-            .header("Content-Type", "application/json")
-            .body("""{"document":"nonexistent-hash","progress":"0","percentage":0.0,"device":"KOReader","device_id":"kr1"}"""))
+        val resp =
+            app(
+                Request(Method.PUT, "/koreader/$deviceToken/syncs/progress")
+                    .header("Content-Type", "application/json")
+                    .body("""{"document":"nonexistent-hash","progress":"0","percentage":0.0,"device":"KOReader","device_id":"kr1"}"""),
+            )
         // Even if book not found, service returns false but handler returns 200 (best-effort)
         assertEquals(Status.OK, resp.status)
     }
@@ -135,10 +186,18 @@ class KOReaderSyncIntegrationTest {
     @Test
     fun `GET koreader progress returns 404 for unknown document`() {
         val token = registerAndToken()
-        val regResp = app(Request(Method.POST, "/api/koreader/devices")
-            .header("Cookie", "token=$token").header("Content-Type", "application/json")
-            .body("""{"deviceName":"KOReader"}"""))
-        val deviceToken = Json.mapper.readTree(regResp.bodyString()).get("token").asText()
+        val regResp =
+            app(
+                Request(Method.POST, "/api/koreader/devices")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"deviceName":"KOReader"}"""),
+            )
+        val deviceToken =
+            Json.mapper
+                .readTree(regResp.bodyString())
+                .get("token")
+                .asText()
 
         val resp = app(Request(Method.GET, "/koreader/$deviceToken/syncs/progress/unknown-document-hash"))
         assertEquals(Status.NOT_FOUND, resp.status)
@@ -147,7 +206,7 @@ class KOReaderSyncIntegrationTest {
     @Test
     fun `koreader endpoints return 503 when service not configured`() {
         // IntegrationTestBase app doesn't have KOReaderSyncService wired
-        val base = KoboSyncIntegrationTest::class.java  // just to confirm service is absent
+        val base = KoboSyncIntegrationTest::class.java // just to confirm service is absent
         // We already have the service wired in this test class, so test with invalid token
         val resp = app(Request(Method.GET, "/koreader/bad-token/syncs/progress/doc"))
         assertEquals(Status.UNAUTHORIZED, resp.status)
@@ -155,8 +214,12 @@ class KOReaderSyncIntegrationTest {
 
     @Test
     fun `POST api koreader devices requires authentication`() {
-        val resp = app(Request(Method.POST, "/api/koreader/devices")
-            .header("Content-Type", "application/json").body("""{"deviceName":"x"}"""))
+        val resp =
+            app(
+                Request(Method.POST, "/api/koreader/devices")
+                    .header("Content-Type", "application/json")
+                    .body("""{"deviceName":"x"}"""),
+            )
         assertEquals(Status.UNAUTHORIZED, resp.status)
     }
 }

@@ -14,7 +14,6 @@ import kotlin.test.assertTrue
  * should return 503 Service Unavailable with an error body.
  */
 class WeblateIntegrationTest : IntegrationTestBase() {
-
     @Test
     fun `pull returns 503 when weblate is disabled`() {
         val r = app(Request(Method.POST, "/api/weblate/pull"))

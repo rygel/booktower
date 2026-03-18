@@ -9,13 +9,18 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class StarRatingIntegrationTest : IntegrationTestBase() {
-
-    private fun setRating(token: String, bookId: String, rating: Int?) {
+    private fun setRating(
+        token: String,
+        bookId: String,
+        rating: Int?,
+    ) {
         val body = if (rating != null) "rating=$rating" else "rating="
-        app(Request(Method.POST, "/ui/books/$bookId/rating")
-            .header("Cookie", "token=$token")
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .body(body))
+        app(
+            Request(Method.POST, "/ui/books/$bookId/rating")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .body(body),
+        )
     }
 
     @Test
@@ -23,10 +28,13 @@ class StarRatingIntegrationTest : IntegrationTestBase() {
         val token = registerAndGetToken("sr1")
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
-        val response = app(Request(Method.POST, "/ui/books/$bookId/rating")
-            .header("Cookie", "token=$token")
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .body("rating=4"))
+        val response =
+            app(
+                Request(Method.POST, "/ui/books/$bookId/rating")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("rating=4"),
+            )
         assertEquals(Status.OK, response.status)
     }
 
@@ -117,10 +125,12 @@ class StarRatingIntegrationTest : IntegrationTestBase() {
         // Set valid rating first
         setRating(token, bookId, 3)
         // Try to set invalid rating (6)
-        app(Request(Method.POST, "/ui/books/$bookId/rating")
-            .header("Cookie", "token=$token")
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .body("rating=6"))
+        app(
+            Request(Method.POST, "/ui/books/$bookId/rating")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .body("rating=6"),
+        )
         // Rating should be cleared (6 is treated as out of range → delete)
         val body = app(Request(Method.GET, "/books/$bookId").header("Cookie", "token=$token")).bodyString()
         assertTrue(body.contains("currentRating = 0"), "Out-of-range rating (6) should clear the rating")
@@ -128,9 +138,12 @@ class StarRatingIntegrationTest : IntegrationTestBase() {
 
     @Test
     fun `rating requires authentication`() {
-        val response = app(Request(Method.POST, "/ui/books/some-id/rating")
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .body("rating=3"))
+        val response =
+            app(
+                Request(Method.POST, "/ui/books/some-id/rating")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("rating=3"),
+            )
         assertEquals(Status.UNAUTHORIZED, response.status)
     }
 }

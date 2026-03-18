@@ -4,15 +4,15 @@ import org.booktower.TestFixture
 import org.booktower.config.Json
 import org.booktower.config.SmtpConfig
 import org.booktower.config.WeblateConfig
-import org.booktower.filters.GlobalErrorFilter
+import org.booktower.filters.globalErrorFilter
 import org.booktower.handlers.AppHandler
 import org.booktower.services.AdminService
 import org.booktower.services.AnalyticsService
 import org.booktower.services.AnnotationService
 import org.booktower.services.ApiTokenService
 import org.booktower.services.AuthService
-import org.booktower.services.BookmarkService
 import org.booktower.services.BookService
+import org.booktower.services.BookmarkService
 import org.booktower.services.ComicService
 import org.booktower.services.EmailService
 import org.booktower.services.EpubMetadataService
@@ -40,7 +40,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class JournalIntegrationTest {
-
     private val config = TestFixture.config
     private val jdbi = TestFixture.database.getJdbi()
 
@@ -65,52 +64,95 @@ class JournalIntegrationTest {
         val goodreadsImportService = GoodreadsImportService(bookService)
         val seedService = SeedService(bookService, libraryService, config.storage.coversPath, config.storage.booksPath)
         val journalService = JournalService(jdbi)
-        val appHandler = AppHandler(
-            authService, libraryService, bookService, bookmarkService,
-            userSettingsService, pdfMetadataService, epubMetadataService, adminService, jwtService, config.storage,
-            TestFixture.templateRenderer,
-            WeblateHandler(WeblateConfig("", "", "", false)),
-            analyticsService, annotationService, MetadataFetchService(), magicShelfService,
-            passwordResetService,
-            EmailService(SmtpConfig("", 587, "", "", "", true)),
-            "http://localhost:9999",
-            true,
-            apiTokenService, exportService, comicService, goodreadsImportService, readingSessionService, seedService,
-            null, null, null, null, journalService,
-        )
-        return GlobalErrorFilter().then(appHandler.routes())
+        val appHandler =
+            AppHandler(
+                authService,
+                libraryService,
+                bookService,
+                bookmarkService,
+                userSettingsService,
+                pdfMetadataService,
+                epubMetadataService,
+                adminService,
+                jwtService,
+                config.storage,
+                TestFixture.templateRenderer,
+                WeblateHandler(WeblateConfig("", "", "", false)),
+                analyticsService,
+                annotationService,
+                MetadataFetchService(),
+                magicShelfService,
+                passwordResetService,
+                EmailService(SmtpConfig("", 587, "", "", "", true)),
+                "http://localhost:9999",
+                true,
+                apiTokenService,
+                exportService,
+                comicService,
+                goodreadsImportService,
+                readingSessionService,
+                seedService,
+                null,
+                null,
+                null,
+                null,
+                journalService,
+            )
+        return globalErrorFilter().then(appHandler.routes())
     }
 
     // ── helpers ──────────────────────────────────────────────────────────────
 
-    private fun registerAndLogin(app: HttpHandler, prefix: String = "jrn"): String {
+    private fun registerAndLogin(
+        app: HttpHandler,
+        prefix: String = "jrn",
+    ): String {
         val name = "${prefix}_${System.nanoTime()}"
-        val resp = app(
-            Request(Method.POST, "/auth/register")
-                .header("Content-Type", "application/json")
-                .body("""{"username":"$name","email":"$name@test.com","password":"password123"}"""),
-        )
-        return Json.mapper.readTree(resp.bodyString()).get("token").asText()
+        val resp =
+            app(
+                Request(Method.POST, "/auth/register")
+                    .header("Content-Type", "application/json")
+                    .body("""{"username":"$name","email":"$name@test.com","password":"password123"}"""),
+            )
+        return Json.mapper
+            .readTree(resp.bodyString())
+            .get("token")
+            .asText()
     }
 
-    private fun createLibrary(app: HttpHandler, token: String): String {
-        val resp = app(
-            Request(Method.POST, "/api/libraries")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"name":"JrnLib_${System.nanoTime()}","path":"./data/test-${System.nanoTime()}"}"""),
-        )
-        return Json.mapper.readTree(resp.bodyString()).get("id").asText()
+    private fun createLibrary(
+        app: HttpHandler,
+        token: String,
+    ): String {
+        val resp =
+            app(
+                Request(Method.POST, "/api/libraries")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"name":"JrnLib_${System.nanoTime()}","path":"./data/test-${System.nanoTime()}"}"""),
+            )
+        return Json.mapper
+            .readTree(resp.bodyString())
+            .get("id")
+            .asText()
     }
 
-    private fun createBook(app: HttpHandler, token: String, libId: String): String {
-        val resp = app(
-            Request(Method.POST, "/api/books")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"title":"Journal Book","author":null,"description":null,"libraryId":"$libId"}"""),
-        )
-        return Json.mapper.readTree(resp.bodyString()).get("id").asText()
+    private fun createBook(
+        app: HttpHandler,
+        token: String,
+        libId: String,
+    ): String {
+        val resp =
+            app(
+                Request(Method.POST, "/api/books")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"title":"Journal Book","author":null,"description":null,"libraryId":"$libId"}"""),
+            )
+        return Json.mapper
+            .readTree(resp.bodyString())
+            .get("id")
+            .asText()
     }
 
     // ── end-to-end tests ─────────────────────────────────────────────────────
@@ -128,12 +170,13 @@ class JournalIntegrationTest {
         assertEquals(0, Json.mapper.readTree(listResp.bodyString()).size())
 
         // 2. Create entry
-        val createResp = app(
-            Request(Method.POST, "/api/books/$bookId/journal")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"title":"Chapter 1 thoughts","content":"Really loved the opening scene."}"""),
-        )
+        val createResp =
+            app(
+                Request(Method.POST, "/api/books/$bookId/journal")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"title":"Chapter 1 thoughts","content":"Really loved the opening scene."}"""),
+            )
         assertEquals(Status.CREATED, createResp.status)
         val created = Json.mapper.readTree(createResp.bodyString())
         val entryId = created.get("id").asText()
@@ -147,22 +190,24 @@ class JournalIntegrationTest {
         assertEquals(entryId, entries[0].get("id").asText())
 
         // 4. Update entry
-        val updateResp = app(
-            Request(Method.PUT, "/api/books/$bookId/journal/$entryId")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"title":"Updated title","content":"Updated content here."}"""),
-        )
+        val updateResp =
+            app(
+                Request(Method.PUT, "/api/books/$bookId/journal/$entryId")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"title":"Updated title","content":"Updated content here."}"""),
+            )
         assertEquals(Status.OK, updateResp.status)
         val updated = Json.mapper.readTree(updateResp.bodyString())
         assertEquals("Updated title", updated.get("title").asText())
         assertEquals("Updated content here.", updated.get("content").asText())
 
         // 5. Delete entry
-        val delResp = app(
-            Request(Method.DELETE, "/api/books/$bookId/journal/$entryId")
-                .header("Cookie", "token=$token"),
-        )
+        val delResp =
+            app(
+                Request(Method.DELETE, "/api/books/$bookId/journal/$entryId")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.NO_CONTENT, delResp.status)
 
         // 6. List is empty again
@@ -180,12 +225,14 @@ class JournalIntegrationTest {
 
         app(
             Request(Method.POST, "/api/books/$bookId1/journal")
-                .header("Cookie", "token=$token").header("Content-Type", "application/json")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/json")
                 .body("""{"title":null,"content":"Note for book 1"}"""),
         )
         app(
             Request(Method.POST, "/api/books/$bookId2/journal")
-                .header("Cookie", "token=$token").header("Content-Type", "application/json")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/json")
                 .body("""{"title":null,"content":"Note for book 2"}"""),
         )
 
@@ -205,11 +252,13 @@ class JournalIntegrationTest {
         val libId = createLibrary(app, token)
         val bookId = createBook(app, token, libId)
 
-        val resp = app(
-            Request(Method.POST, "/api/books/$bookId/journal")
-                .header("Cookie", "token=$token").header("Content-Type", "application/json")
-                .body("""{"title":"t","content":""}"""),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/api/books/$bookId/journal")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"title":"t","content":""}"""),
+            )
         assertEquals(Status.BAD_REQUEST, resp.status)
     }
 
@@ -221,17 +270,24 @@ class JournalIntegrationTest {
         val libId = createLibrary(app, tokenA)
         val bookId = createBook(app, tokenA, libId)
 
-        val createResp = app(
-            Request(Method.POST, "/api/books/$bookId/journal")
-                .header("Cookie", "token=$tokenA").header("Content-Type", "application/json")
-                .body("""{"title":null,"content":"Private note"}"""),
-        )
-        val entryId = Json.mapper.readTree(createResp.bodyString()).get("id").asText()
+        val createResp =
+            app(
+                Request(Method.POST, "/api/books/$bookId/journal")
+                    .header("Cookie", "token=$tokenA")
+                    .header("Content-Type", "application/json")
+                    .body("""{"title":null,"content":"Private note"}"""),
+            )
+        val entryId =
+            Json.mapper
+                .readTree(createResp.bodyString())
+                .get("id")
+                .asText()
 
         // User B tries to delete user A's entry — should get 404 (not found for that user)
-        val delResp = app(
-            Request(Method.DELETE, "/api/books/$bookId/journal/$entryId").header("Cookie", "token=$tokenB"),
-        )
+        val delResp =
+            app(
+                Request(Method.DELETE, "/api/books/$bookId/journal/$entryId").header("Cookie", "token=$tokenB"),
+            )
         assertEquals(Status.NOT_FOUND, delResp.status)
 
         // Entry still exists for user A

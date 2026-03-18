@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class FilterPresetIntegrationTest : IntegrationTestBase() {
-
     private val sampleFilters = """{"status":"READ","tags":["sci-fi"],"ratingGte":4}"""
 
     @Test
@@ -23,12 +22,13 @@ class FilterPresetIntegrationTest : IntegrationTestBase() {
     @Test
     fun `POST creates a preset`() {
         val token = registerAndGetToken()
-        val resp = app(
-            Request(Method.POST, "/api/user/filter-presets")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"name":"My Sci-Fi","filters":$sampleFilters}"""),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/api/user/filter-presets")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"name":"My Sci-Fi","filters":$sampleFilters}"""),
+            )
         assertEquals(Status.CREATED, resp.status)
         val tree = Json.mapper.readTree(resp.bodyString())
         assertEquals("My Sci-Fi", tree.get("name").asText())
@@ -38,50 +38,78 @@ class FilterPresetIntegrationTest : IntegrationTestBase() {
     @Test
     fun `GET specific preset returns it`() {
         val token = registerAndGetToken()
-        val createResp = app(
-            Request(Method.POST, "/api/user/filter-presets")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"name":"Reading List","filters":$sampleFilters}"""),
-        )
-        val id = Json.mapper.readTree(createResp.bodyString()).get("id").asText()
+        val createResp =
+            app(
+                Request(Method.POST, "/api/user/filter-presets")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"name":"Reading List","filters":$sampleFilters}"""),
+            )
+        val id =
+            Json.mapper
+                .readTree(createResp.bodyString())
+                .get("id")
+                .asText()
 
         val getResp = app(Request(Method.GET, "/api/user/filter-presets/$id").header("Cookie", "token=$token"))
         assertEquals(Status.OK, getResp.status)
-        assertEquals("Reading List", Json.mapper.readTree(getResp.bodyString()).get("name").asText())
+        assertEquals(
+            "Reading List",
+            Json.mapper
+                .readTree(getResp.bodyString())
+                .get("name")
+                .asText(),
+        )
     }
 
     @Test
     fun `PUT updates a preset`() {
         val token = registerAndGetToken()
-        val createResp = app(
-            Request(Method.POST, "/api/user/filter-presets")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"name":"Old Name","filters":"{}"}"""),
-        )
-        val id = Json.mapper.readTree(createResp.bodyString()).get("id").asText()
+        val createResp =
+            app(
+                Request(Method.POST, "/api/user/filter-presets")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"name":"Old Name","filters":"{}"}"""),
+            )
+        val id =
+            Json.mapper
+                .readTree(createResp.bodyString())
+                .get("id")
+                .asText()
 
-        val putResp = app(
-            Request(Method.PUT, "/api/user/filter-presets/$id")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"name":"New Name","filters":$sampleFilters}"""),
-        )
+        val putResp =
+            app(
+                Request(Method.PUT, "/api/user/filter-presets/$id")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"name":"New Name","filters":$sampleFilters}"""),
+            )
         assertEquals(Status.OK, putResp.status)
-        assertEquals("New Name", Json.mapper.readTree(putResp.bodyString()).get("name").asText())
+        assertEquals(
+            "New Name",
+            Json.mapper
+                .readTree(putResp.bodyString())
+                .get("name")
+                .asText(),
+        )
     }
 
     @Test
     fun `DELETE removes preset`() {
         val token = registerAndGetToken()
-        val createResp = app(
-            Request(Method.POST, "/api/user/filter-presets")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"name":"To Delete","filters":"{}"}"""),
-        )
-        val id = Json.mapper.readTree(createResp.bodyString()).get("id").asText()
+        val createResp =
+            app(
+                Request(Method.POST, "/api/user/filter-presets")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"name":"To Delete","filters":"{}"}"""),
+            )
+        val id =
+            Json.mapper
+                .readTree(createResp.bodyString())
+                .get("id")
+                .asText()
 
         val delResp = app(Request(Method.DELETE, "/api/user/filter-presets/$id").header("Cookie", "token=$token"))
         assertEquals(Status.NO_CONTENT, delResp.status)
@@ -93,12 +121,13 @@ class FilterPresetIntegrationTest : IntegrationTestBase() {
     @Test
     fun `POST with blank name returns 400`() {
         val token = registerAndGetToken()
-        val resp = app(
-            Request(Method.POST, "/api/user/filter-presets")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"name":"","filters":"{}"}"""),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/api/user/filter-presets")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"name":"","filters":"{}"}"""),
+            )
         assertEquals(Status.BAD_REQUEST, resp.status)
     }
 

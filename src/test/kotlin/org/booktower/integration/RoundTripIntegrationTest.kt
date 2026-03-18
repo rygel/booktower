@@ -2,11 +2,12 @@ package org.booktower.integration
 
 import org.booktower.TestFixture
 import org.booktower.config.Json
-import org.booktower.filters.CsrfFilter
-import org.booktower.filters.GlobalErrorFilter
-import org.booktower.filters.RequestLoggingFilter
-import org.booktower.filters.StaticCacheFilter
+import org.booktower.config.SmtpConfig
 import org.booktower.config.WeblateConfig
+import org.booktower.filters.csrfFilter
+import org.booktower.filters.globalErrorFilter
+import org.booktower.filters.requestLoggingFilter
+import org.booktower.filters.staticCacheFilter
 import org.booktower.handlers.AppHandler
 import org.booktower.models.LibraryDto
 import org.booktower.models.LoginResponse
@@ -14,28 +15,27 @@ import org.booktower.services.AdminService
 import org.booktower.services.AnalyticsService
 import org.booktower.services.AnnotationService
 import org.booktower.services.AuthService
-import org.booktower.services.MetadataFetchService
+import org.booktower.services.BookService
 import org.booktower.services.BookmarkService
+import org.booktower.services.EmailService
 import org.booktower.services.EpubMetadataService
 import org.booktower.services.GoodreadsImportService
-import org.booktower.services.ReadingSessionService
-import org.booktower.config.SmtpConfig
-import org.booktower.services.EmailService
-import org.booktower.services.SeedService
-import org.booktower.services.PdfMetadataService
-import org.booktower.services.UserSettingsService
-import org.booktower.services.BookService
 import org.booktower.services.JwtService
 import org.booktower.services.LibraryService
+import org.booktower.services.MetadataFetchService
+import org.booktower.services.PdfMetadataService
+import org.booktower.services.ReadingSessionService
+import org.booktower.services.SeedService
+import org.booktower.services.UserSettingsService
 import org.booktower.weblate.WeblateHandler
 import org.http4k.client.JettyClient
 import org.http4k.core.Method
 import org.http4k.core.Request
+import org.http4k.core.Response
 import org.http4k.core.Status
+import org.http4k.core.Status.Companion.OK
 import org.http4k.core.then
 import org.http4k.routing.bind
-import org.http4k.core.Response
-import org.http4k.core.Status.Companion.OK
 import org.http4k.routing.routes
 import org.http4k.server.Jetty
 import org.http4k.server.asServer
@@ -70,34 +70,48 @@ class RoundTripIntegrationTest {
         val annotationService = AnnotationService(jdbi)
         val metadataFetchService = MetadataFetchService()
         val epubMetadataService = EpubMetadataService(jdbi, config.storage.coversPath)
-        val appHandler = AppHandler(
-            authService, libraryService, bookService, bookmarkService,
-            userSettingsService, pdfMetadataService, epubMetadataService, adminService, jwtService,
-            config.storage, TestFixture.templateRenderer, WeblateHandler(WeblateConfig("", "", "", false)),
-            analyticsService, annotationService, metadataFetchService,
-            org.booktower.services.MagicShelfService(jdbi, bookService),
-            org.booktower.services.PasswordResetService(jdbi),
-            EmailService(SmtpConfig("", 587, "", "", "", true)),
-            "http://localhost:9999",
-            true,
-            org.booktower.services.ApiTokenService(jdbi),
-            org.booktower.services.ExportService(jdbi),
-            org.booktower.services.ComicService(),
-            org.booktower.services.GoodreadsImportService(bookService),
-            readingSessionService,
-            SeedService(bookService, libraryService, config.storage.coversPath, config.storage.booksPath),
-        )
+        val appHandler =
+            AppHandler(
+                authService,
+                libraryService,
+                bookService,
+                bookmarkService,
+                userSettingsService,
+                pdfMetadataService,
+                epubMetadataService,
+                adminService,
+                jwtService,
+                config.storage,
+                TestFixture.templateRenderer,
+                WeblateHandler(WeblateConfig("", "", "", false)),
+                analyticsService,
+                annotationService,
+                metadataFetchService,
+                org.booktower.services.MagicShelfService(jdbi, bookService),
+                org.booktower.services.PasswordResetService(jdbi),
+                EmailService(SmtpConfig("", 587, "", "", "", true)),
+                "http://localhost:9999",
+                true,
+                org.booktower.services.ApiTokenService(jdbi),
+                org.booktower.services.ExportService(jdbi),
+                org.booktower.services.ComicService(),
+                org.booktower.services.GoodreadsImportService(bookService),
+                readingSessionService,
+                SeedService(bookService, libraryService, config.storage.coversPath, config.storage.booksPath),
+            )
 
-        val app = routes(
-            "/health" bind Method.GET to { Response(OK).body("OK") },
-            appHandler.routes(),
-        )
+        val app =
+            routes(
+                "/health" bind Method.GET to { Response(OK).body("OK") },
+                appHandler.routes(),
+            )
 
-        val filteredApp = GlobalErrorFilter()
-            .then(RequestLoggingFilter())
-            .then(CsrfFilter(config.csrf.allowedHosts))
-            .then(StaticCacheFilter())
-            .then(app)
+        val filteredApp =
+            globalErrorFilter()
+                .then(requestLoggingFilter())
+                .then(csrfFilter(config.csrf.allowedHosts))
+                .then(staticCacheFilter())
+                .then(app)
 
         server = filteredApp.asServer(Jetty(0)).start()
         port = server.port()
@@ -114,11 +128,12 @@ class RoundTripIntegrationTest {
     private fun uniqueUser() = "rt_${System.nanoTime()}"
 
     private fun registerUser(username: String): String {
-        val response = client(
-            Request(Method.POST, url("/auth/register"))
-                .header("Content-Type", "application/json")
-                .body("""{"username":"$username","email":"$username@test.com","password":"password123"}"""),
-        )
+        val response =
+            client(
+                Request(Method.POST, url("/auth/register"))
+                    .header("Content-Type", "application/json")
+                    .body("""{"username":"$username","email":"$username@test.com","password":"password123"}"""),
+            )
         return Json.mapper.readValue(response.bodyString(), LoginResponse::class.java).token
     }
 
@@ -140,11 +155,12 @@ class RoundTripIntegrationTest {
     @Test
     fun `register via JSON over HTTP returns 201 with Set-Cookie`() {
         val username = uniqueUser()
-        val response = client(
-            Request(Method.POST, url("/auth/register"))
-                .header("Content-Type", "application/json")
-                .body("""{"username":"$username","email":"$username@test.com","password":"password123"}"""),
-        )
+        val response =
+            client(
+                Request(Method.POST, url("/auth/register"))
+                    .header("Content-Type", "application/json")
+                    .body("""{"username":"$username","email":"$username@test.com","password":"password123"}"""),
+            )
 
         assertEquals(Status.CREATED, response.status)
         val setCookie = response.header("Set-Cookie")
@@ -158,11 +174,12 @@ class RoundTripIntegrationTest {
         val username = uniqueUser()
         registerUser(username)
 
-        val response = client(
-            Request(Method.POST, url("/auth/login"))
-                .header("Content-Type", "application/json")
-                .body("""{"username":"$username","password":"password123"}"""),
-        )
+        val response =
+            client(
+                Request(Method.POST, url("/auth/login"))
+                    .header("Content-Type", "application/json")
+                    .body("""{"username":"$username","password":"password123"}"""),
+            )
 
         assertEquals(Status.OK, response.status)
         assertNotNull(response.header("Set-Cookie"))
@@ -178,10 +195,11 @@ class RoundTripIntegrationTest {
     @Test
     fun `protected endpoint works with cookie over HTTP`() {
         val token = registerUser(uniqueUser())
-        val response = client(
-            Request(Method.GET, url("/api/libraries"))
-                .header("Cookie", "token=$token"),
-        )
+        val response =
+            client(
+                Request(Method.GET, url("/api/libraries"))
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, response.status)
     }
 
@@ -189,49 +207,54 @@ class RoundTripIntegrationTest {
     fun `full CRUD flow over HTTP`() {
         val token = registerUser(uniqueUser())
 
-        val createResponse = client(
-            Request(Method.POST, url("/api/libraries"))
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"name":"HTTP Lib","path":"./data/test-http-${System.nanoTime()}"}"""),
-        )
+        val createResponse =
+            client(
+                Request(Method.POST, url("/api/libraries"))
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"name":"HTTP Lib","path":"./data/test-http-${System.nanoTime()}"}"""),
+            )
         assertEquals(Status.CREATED, createResponse.status)
         val library = Json.mapper.readValue(createResponse.bodyString(), LibraryDto::class.java)
 
-        val listResponse = client(
-            Request(Method.GET, url("/api/libraries"))
-                .header("Cookie", "token=$token"),
-        )
+        val listResponse =
+            client(
+                Request(Method.GET, url("/api/libraries"))
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, listResponse.status)
         val libraries = Json.mapper.readValue(listResponse.bodyString(), Array<LibraryDto>::class.java)
         assertTrue(libraries.any { it.id == library.id })
 
-        val deleteResponse = client(
-            Request(Method.DELETE, url("/api/libraries/${library.id}"))
-                .header("Cookie", "token=$token"),
-        )
+        val deleteResponse =
+            client(
+                Request(Method.DELETE, url("/api/libraries/${library.id}"))
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, deleteResponse.status)
     }
 
     @Test
     fun `CSRF filter blocks request from foreign origin over HTTP`() {
-        val response = client(
-            Request(Method.POST, url("/auth/login"))
-                .header("Content-Type", "application/json")
-                .header("Origin", "http://evil.com")
-                .body("""{"username":"x","password":"y"}"""),
-        )
+        val response =
+            client(
+                Request(Method.POST, url("/auth/login"))
+                    .header("Content-Type", "application/json")
+                    .header("Origin", "http://evil.com")
+                    .body("""{"username":"x","password":"y"}"""),
+            )
         assertEquals(Status.FORBIDDEN, response.status)
     }
 
     @Test
     fun `CSRF filter allows request from localhost over HTTP`() {
-        val response = client(
-            Request(Method.POST, url("/auth/login"))
-                .header("Content-Type", "application/json")
-                .header("Origin", "http://localhost:$port")
-                .body("""{"username":"nonexistent","password":"password123"}"""),
-        )
+        val response =
+            client(
+                Request(Method.POST, url("/auth/login"))
+                    .header("Content-Type", "application/json")
+                    .header("Origin", "http://localhost:$port")
+                    .body("""{"username":"nonexistent","password":"password123"}"""),
+            )
         // Should not be 403 (CSRF blocked) - 401 means it got through the CSRF filter
         assertEquals(Status.UNAUTHORIZED, response.status)
     }
@@ -248,11 +271,12 @@ class RoundTripIntegrationTest {
         val username = uniqueUser()
         registerUser(username)
 
-        val response = client(
-            Request(Method.POST, url("/auth/login"))
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .body("username=$username&password=password123"),
-        )
+        val response =
+            client(
+                Request(Method.POST, url("/auth/login"))
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("username=$username&password=password123"),
+            )
 
         // Jetty client follows redirects by default, so we may get 200 (the index page)
         // The important thing is we got a response and it has the auth cookie
@@ -269,12 +293,13 @@ class RoundTripIntegrationTest {
     fun `concurrent requests over HTTP do not interfere`() {
         val tokens = (1..3).map { registerUser(uniqueUser()) }
 
-        val responses = tokens.map { token ->
-            client(
-                Request(Method.GET, url("/api/libraries"))
-                    .header("Cookie", "token=$token"),
-            )
-        }
+        val responses =
+            tokens.map { token ->
+                client(
+                    Request(Method.GET, url("/api/libraries"))
+                        .header("Cookie", "token=$token"),
+                )
+            }
 
         responses.forEach { response ->
             assertEquals(Status.OK, response.status)

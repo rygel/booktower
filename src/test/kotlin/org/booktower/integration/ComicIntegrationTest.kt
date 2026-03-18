@@ -10,23 +10,22 @@ import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Path
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
-import kotlin.io.path.writeBytes
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class ComicIntegrationTest : IntegrationTestBase() {
-
     @Test
     fun `comic pages endpoint returns pageCount 0 for book without file`() {
         val token = registerAndGetToken("comic")
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
 
-        val resp = app(
-            Request(Method.GET, "/api/books/$bookId/comic/pages")
-                .header("Cookie", "token=$token"),
-        )
+        val resp =
+            app(
+                Request(Method.GET, "/api/books/$bookId/comic/pages")
+                    .header("Cookie", "token=$token"),
+            )
         // file_path stored as empty string → pageCount is 0, endpoint still returns 200
         assertEquals(Status.OK, resp.status)
         val body = Json.mapper.readTree(resp.bodyString())
@@ -39,10 +38,11 @@ class ComicIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
 
-        val resp = app(
-            Request(Method.GET, "/api/books/$bookId/comic/0")
-                .header("Cookie", "token=$token"),
-        )
+        val resp =
+            app(
+                Request(Method.GET, "/api/books/$bookId/comic/0")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.NOT_FOUND, resp.status)
     }
 
@@ -59,7 +59,9 @@ class ComicIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `ComicService reads CBZ page count correctly`(@TempDir tmpDir: Path) {
+    fun `ComicService reads CBZ page count correctly`(
+        @TempDir tmpDir: Path,
+    ) {
         val cbz = tmpDir.resolve("test.cbz")
         ZipOutputStream(cbz.toFile().outputStream()).use { zos ->
             listOf("001.jpg", "002.png", "003.jpg").forEach { name ->
@@ -75,7 +77,9 @@ class ComicIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `ComicService lists CBZ pages sorted by name`(@TempDir tmpDir: Path) {
+    fun `ComicService lists CBZ pages sorted by name`(
+        @TempDir tmpDir: Path,
+    ) {
         val cbz = tmpDir.resolve("sorted.cbz")
         ZipOutputStream(cbz.toFile().outputStream()).use { zos ->
             listOf("003.jpg", "001.png", "002.jpg").forEach { name ->
@@ -94,7 +98,9 @@ class ComicIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `ComicService reads specific CBZ page bytes`(@TempDir tmpDir: Path) {
+    fun `ComicService reads specific CBZ page bytes`(
+        @TempDir tmpDir: Path,
+    ) {
         val cbz = tmpDir.resolve("pages.cbz")
         val pageData = byteArrayOf(0xFF.toByte(), 0xD8.toByte(), 0xAB.toByte(), 0xCD.toByte())
         ZipOutputStream(cbz.toFile().outputStream()).use { zos ->
@@ -110,7 +116,9 @@ class ComicIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `ComicService returns null for out-of-range page`(@TempDir tmpDir: Path) {
+    fun `ComicService returns null for out-of-range page`(
+        @TempDir tmpDir: Path,
+    ) {
         val cbz = tmpDir.resolve("one.cbz")
         ZipOutputStream(cbz.toFile().outputStream()).use { zos ->
             zos.putNextEntry(ZipEntry("001.jpg"))

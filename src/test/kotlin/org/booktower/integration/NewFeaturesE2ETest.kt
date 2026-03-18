@@ -17,23 +17,32 @@ import kotlin.test.assertTrue
  * rendered HTML (not just the JSON API response).
  */
 class NewFeaturesE2ETest : IntegrationTestBase() {
-
     // ── Helpers ────────────────────────────────────────────────────────────────
 
-    private fun setStatus(token: String, bookId: String, status: String) {
-        val resp = app(
-            Request(Method.POST, "/ui/books/$bookId/status")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .body("status=$status"),
-        )
+    private fun setStatus(
+        token: String,
+        bookId: String,
+        status: String,
+    ) {
+        val resp =
+            app(
+                Request(Method.POST, "/ui/books/$bookId/status")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("status=$status"),
+            )
         assertEquals(Status.OK, resp.status, "setStatus($status) should return 200")
     }
 
-    private fun editBook(token: String, bookId: String, fields: Map<String, String>): Status {
-        val body = fields.entries.joinToString("&") { (k, v) ->
-            "${k}=${java.net.URLEncoder.encode(v, "UTF-8")}"
-        }
+    private fun editBook(
+        token: String,
+        bookId: String,
+        fields: Map<String, String>,
+    ): Status {
+        val body =
+            fields.entries.joinToString("&") { (k, v) ->
+                "$k=${java.net.URLEncoder.encode(v, "UTF-8")}"
+            }
         return app(
             Request(Method.POST, "/ui/books/$bookId/meta")
                 .header("Cookie", "token=$token")
@@ -42,10 +51,12 @@ class NewFeaturesE2ETest : IntegrationTestBase() {
         ).status
     }
 
-    private fun dashboardHtml(token: String) =
-        app(Request(Method.GET, "/").header("Cookie", "token=$token")).bodyString()
+    private fun dashboardHtml(token: String) = app(Request(Method.GET, "/").header("Cookie", "token=$token")).bodyString()
 
-    private fun bookHtml(token: String, bookId: String): String {
+    private fun bookHtml(
+        token: String,
+        bookId: String,
+    ): String {
         val resp = app(Request(Method.GET, "/books/$bookId").header("Cookie", "token=$token"))
         assertEquals(Status.OK, resp.status, "Book detail page should return 200")
         return resp.bodyString()
@@ -66,8 +77,11 @@ class NewFeaturesE2ETest : IntegrationTestBase() {
         // Dashboard renders correctly and the library page shows a READING badge.
         // (The dashboard's "My Libraries" section shows library cards, not book cards,
         //  so book-status-badge appears on the library page rather than the dashboard.)
-        assertEquals(Status.OK, app(Request(Method.GET, "/").header("Cookie", "token=$token")).status,
-            "Dashboard must render without error after setting READING status")
+        assertEquals(
+            Status.OK,
+            app(Request(Method.GET, "/").header("Cookie", "token=$token")).status,
+            "Dashboard must render without error after setting READING status",
+        )
 
         val libHtml = app(Request(Method.GET, "/libraries/$libId").header("Cookie", "token=$token")).bodyString()
         assertTrue(libHtml.contains("book-status-badge"), "Library page must show READING badge on book card")
@@ -92,8 +106,11 @@ class NewFeaturesE2ETest : IntegrationTestBase() {
         assertFalse(libHtmlFinished.contains("ri-book-open-line"), "READING icon must not appear after marking finished")
 
         // Dashboard still renders cleanly
-        assertEquals(Status.OK, app(Request(Method.GET, "/").header("Cookie", "token=$token")).status,
-            "Dashboard must render without error after status transition")
+        assertEquals(
+            Status.OK,
+            app(Request(Method.GET, "/").header("Cookie", "token=$token")).status,
+            "Dashboard must render without error after status transition",
+        )
     }
 
     @Test
@@ -112,8 +129,11 @@ class NewFeaturesE2ETest : IntegrationTestBase() {
         assertTrue(libHtml.contains("ri-bookmark-line"), "WANT_TO_READ badge should appear for book1")
 
         // Dashboard renders cleanly with both statuses set
-        assertEquals(Status.OK, app(Request(Method.GET, "/").header("Cookie", "token=$token")).status,
-            "Dashboard must render without error when books have mixed statuses")
+        assertEquals(
+            Status.OK,
+            app(Request(Method.GET, "/").header("Cookie", "token=$token")).status,
+            "Dashboard must render without error when books have mixed statuses",
+        )
     }
 
     @Test
@@ -137,8 +157,10 @@ class NewFeaturesE2ETest : IntegrationTestBase() {
         // Library page must show no status badge — progress was recorded but no status set
         val libHtml = app(Request(Method.GET, "/libraries/$libId").header("Cookie", "token=$token")).bodyString()
         assertTrue(libHtml.contains("Progress Only"), "Book must appear on library page")
-        assertFalse(libHtml.contains("book-status-badge"),
-            "No status badge should appear on library page when only progress is recorded")
+        assertFalse(
+            libHtml.contains("book-status-badge"),
+            "No status badge should appear on library page when only progress is recorded",
+        )
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -165,11 +187,15 @@ class NewFeaturesE2ETest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId, "Series Member")
 
-        editBook(token, bookId, mapOf(
-            "title" to "Series Member",
-            "series" to "Dune",
-            "seriesIndex" to "1",
-        ))
+        editBook(
+            token,
+            bookId,
+            mapOf(
+                "title" to "Series Member",
+                "series" to "Dune",
+                "seriesIndex" to "1",
+            ),
+        )
 
         val html = bookHtml(token, bookId)
         // Template renders: <a href="/series/Dune">Dune</a> #1
@@ -184,26 +210,39 @@ class NewFeaturesE2ETest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId, "The Way of Kings")
 
-        editBook(token, bookId, mapOf(
-            "title" to "The Way of Kings",
-            "series" to "The Stormlight Archive",
-            "seriesIndex" to "1",
-        ))
+        editBook(
+            token,
+            bookId,
+            mapOf(
+                "title" to "The Way of Kings",
+                "series" to "The Stormlight Archive",
+                "seriesIndex" to "1",
+            ),
+        )
 
         // Series browser: GET /series lists all series
-        val seriesListHtml = app(
-            Request(Method.GET, "/series").header("Cookie", "token=$token"),
-        ).bodyString()
-        assertTrue(seriesListHtml.contains("The Stormlight Archive"),
-            "Series browser must list the newly assigned series")
+        val seriesListHtml =
+            app(
+                Request(Method.GET, "/series").header("Cookie", "token=$token"),
+            ).bodyString()
+        assertTrue(
+            seriesListHtml.contains("The Stormlight Archive"),
+            "Series browser must list the newly assigned series",
+        )
 
         // Series page: GET /series/{name} lists books in the series
-        val seriesName = java.net.URLEncoder.encode("The Stormlight Archive", "UTF-8").replace("+", "%20")
-        val seriesPageHtml = app(
-            Request(Method.GET, "/series/$seriesName").header("Cookie", "token=$token"),
-        ).bodyString()
-        assertTrue(seriesPageHtml.contains("The Way of Kings"),
-            "Series page must show the book assigned to that series")
+        val seriesName =
+            java.net.URLEncoder
+                .encode("The Stormlight Archive", "UTF-8")
+                .replace("+", "%20")
+        val seriesPageHtml =
+            app(
+                Request(Method.GET, "/series/$seriesName").header("Cookie", "token=$token"),
+            ).bodyString()
+        assertTrue(
+            seriesPageHtml.contains("The Way of Kings"),
+            "Series page must show the book assigned to that series",
+        )
     }
 
     @Test
@@ -221,8 +260,10 @@ class NewFeaturesE2ETest : IntegrationTestBase() {
         editBook(token, bookId, mapOf("title" to "Orphaned Book"))
 
         val afterHtml = app(Request(Method.GET, "/series").header("Cookie", "token=$token")).bodyString()
-        assertFalse(afterHtml.contains("Temp Series"),
-            "Series browser must not show series after all books have it cleared")
+        assertFalse(
+            afterHtml.contains("Temp Series"),
+            "Series browser must not show series after all books have it cleared",
+        )
     }
 
     @Test
@@ -235,10 +276,14 @@ class NewFeaturesE2ETest : IntegrationTestBase() {
 
         val html = bookHtml(token, bookId)
         // ISBN appears in the read-only metadata row (ri-barcode-line icon) and in the edit form input
-        assertTrue(html.contains("9780743273565"),
-            "Saved ISBN must appear in the book detail page (metadata row + edit form)")
-        assertTrue(html.contains("ri-barcode-line"),
-            "ISBN barcode icon must appear in the metadata row when ISBN is set")
+        assertTrue(
+            html.contains("9780743273565"),
+            "Saved ISBN must appear in the book detail page (metadata row + edit form)",
+        )
+        assertTrue(
+            html.contains("ri-barcode-line"),
+            "ISBN barcode icon must appear in the metadata row when ISBN is set",
+        )
     }
 
     @Test
@@ -250,10 +295,14 @@ class NewFeaturesE2ETest : IntegrationTestBase() {
         editBook(token, bookId, mapOf("title" to "Publisher Book", "publisher" to "Tor Books"))
 
         val html = bookHtml(token, bookId)
-        assertTrue(html.contains("Tor Books"),
-            "Saved publisher must appear in the book detail page (metadata row + edit form)")
-        assertTrue(html.contains("ri-building-line"),
-            "Publisher building icon must appear in the metadata row when publisher is set")
+        assertTrue(
+            html.contains("Tor Books"),
+            "Saved publisher must appear in the book detail page (metadata row + edit form)",
+        )
+        assertTrue(
+            html.contains("ri-building-line"),
+            "Publisher building icon must appear in the metadata row when publisher is set",
+        )
     }
 
     @Test
@@ -265,10 +314,14 @@ class NewFeaturesE2ETest : IntegrationTestBase() {
         editBook(token, bookId, mapOf("title" to "Dated Book", "publishedDate" to "1997-06-26"))
 
         val html = bookHtml(token, bookId)
-        assertTrue(html.contains("1997-06-26"),
-            "Saved publishedDate must appear in the book detail page (metadata row + edit form)")
-        assertTrue(html.contains("ri-calendar-event-line"),
-            "Published date calendar icon must appear in the metadata row when date is set")
+        assertTrue(
+            html.contains("1997-06-26"),
+            "Saved publishedDate must appear in the book detail page (metadata row + edit form)",
+        )
+        assertTrue(
+            html.contains("ri-calendar-event-line"),
+            "Published date calendar icon must appear in the metadata row when date is set",
+        )
     }
 
     @Test
@@ -278,29 +331,37 @@ class NewFeaturesE2ETest : IntegrationTestBase() {
         val bookId = createBook(token, libId, "Multi Edit Book")
 
         // First edit — set all fields
-        editBook(token, bookId, mapOf(
-            "title" to "Multi Edit Book",
-            "author" to "Author One",
-            "isbn" to "9780743273565",
-            "publisher" to "Scribner",
-            "publishedDate" to "2000-09-11",
-            "pageCount" to "541",
-            "series" to "Summer Series",
-            "seriesIndex" to "3",
-        ))
+        editBook(
+            token,
+            bookId,
+            mapOf(
+                "title" to "Multi Edit Book",
+                "author" to "Author One",
+                "isbn" to "9780743273565",
+                "publisher" to "Scribner",
+                "publishedDate" to "2000-09-11",
+                "pageCount" to "541",
+                "series" to "Summer Series",
+                "seriesIndex" to "3",
+            ),
+        )
 
         // Second edit — only change title; other fields must be sent to avoid being cleared
         // This simulates the real browser behaviour: form sends all field values each time
-        editBook(token, bookId, mapOf(
-            "title" to "Multi Edit Book Revised",
-            "author" to "Author One",
-            "isbn" to "9780743273565",
-            "publisher" to "Scribner",
-            "publishedDate" to "2000-09-11",
-            "pageCount" to "541",
-            "series" to "Summer Series",
-            "seriesIndex" to "3",
-        ))
+        editBook(
+            token,
+            bookId,
+            mapOf(
+                "title" to "Multi Edit Book Revised",
+                "author" to "Author One",
+                "isbn" to "9780743273565",
+                "publisher" to "Scribner",
+                "publishedDate" to "2000-09-11",
+                "pageCount" to "541",
+                "series" to "Summer Series",
+                "seriesIndex" to "3",
+            ),
+        )
 
         val html = bookHtml(token, bookId)
         assertTrue(html.contains("Multi Edit Book Revised"), "Updated title must appear")
@@ -327,9 +388,10 @@ class NewFeaturesE2ETest : IntegrationTestBase() {
         )
 
         // Library page should show the progress bar (144/288 = 50%)
-        val libHtml = app(
-            Request(Method.GET, "/libraries/$libId").header("Cookie", "token=$token"),
-        ).bodyString()
+        val libHtml =
+            app(
+                Request(Method.GET, "/libraries/$libId").header("Cookie", "token=$token"),
+            ).bodyString()
         assertTrue(libHtml.contains("50"), "Book card should show ~50% progress after 144/288 pages")
     }
 
@@ -342,15 +404,21 @@ class NewFeaturesE2ETest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId, "Regression Book")
 
-        editBook(token, bookId, mapOf(
-            "title" to "Regression Book",
-            "series" to "Fix Series",
-            "seriesIndex" to "2",
-        ))
+        editBook(
+            token,
+            bookId,
+            mapOf(
+                "title" to "Regression Book",
+                "series" to "Fix Series",
+                "seriesIndex" to "2",
+            ),
+        )
 
         val html = bookHtml(token, bookId)
-        assertTrue(html.contains("Fix Series"),
-            "Series must appear in rendered book detail after the handler parse fix")
+        assertTrue(
+            html.contains("Fix Series"),
+            "Series must appear in rendered book detail after the handler parse fix",
+        )
         assertTrue(html.contains("#2"), "Series index must appear in rendered book detail")
     }
 }

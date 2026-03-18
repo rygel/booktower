@@ -10,15 +10,21 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class EnhancedKoboSyncIntegrationTest : IntegrationTestBase() {
-
-    private fun registerDevice(token: String, deviceName: String = "TestKobo"): String {
-        val resp = app(
-            Request(Method.POST, "/api/kobo/devices")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"deviceName":"$deviceName"}"""),
-        )
-        return Json.mapper.readTree(resp.bodyString()).get("token").asText()
+    private fun registerDevice(
+        token: String,
+        deviceName: String = "TestKobo",
+    ): String {
+        val resp =
+            app(
+                Request(Method.POST, "/api/kobo/devices")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"deviceName":"$deviceName"}"""),
+            )
+        return Json.mapper
+            .readTree(resp.bodyString())
+            .get("token")
+            .asText()
     }
 
     @Test
@@ -52,10 +58,11 @@ class EnhancedKoboSyncIntegrationTest : IntegrationTestBase() {
         // Wait a ms to ensure timestamp diff, then sync again with that token
         // Use a timestamp 48 hours in the future to safely exceed any timezone offset in H2
         val futureToken = (System.currentTimeMillis() + 48L * 3600 * 1000).toString()
-        val deltaResp = app(
-            Request(Method.POST, "/kobo/$devToken/v1/library/sync")
-                .header("X-Kobo-Sync-Token", futureToken),
-        )
+        val deltaResp =
+            app(
+                Request(Method.POST, "/kobo/$devToken/v1/library/sync")
+                    .header("X-Kobo-Sync-Token", futureToken),
+            )
         assertEquals(Status.OK, deltaResp.status)
         val body = Json.mapper.readTree(deltaResp.bodyString())
         assertTrue(body.get("BookEntitlements").isArray)
@@ -72,10 +79,11 @@ class EnhancedKoboSyncIntegrationTest : IntegrationTestBase() {
 
         // Use epoch as old token — all books are newer
         val oldToken = "0"
-        val resp = app(
-            Request(Method.POST, "/kobo/$devToken/v1/library/sync")
-                .header("X-Kobo-Sync-Token", oldToken),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/kobo/$devToken/v1/library/sync")
+                    .header("X-Kobo-Sync-Token", oldToken),
+            )
         assertEquals(Status.OK, resp.status)
         val body = Json.mapper.readTree(resp.bodyString())
         assertEquals(1, body.get("BookEntitlements").size())
@@ -112,11 +120,12 @@ class EnhancedKoboSyncIntegrationTest : IntegrationTestBase() {
                 "LocationType": "CFI"
             }
         }"""
-        val resp = app(
-            Request(Method.PUT, "/kobo/$devToken/v1/library/$bookId/reading-state")
-                .header("Content-Type", "application/json")
-                .body(stateBody),
-        )
+        val resp =
+            app(
+                Request(Method.PUT, "/kobo/$devToken/v1/library/$bookId/reading-state")
+                    .header("Content-Type", "application/json")
+                    .body(stateBody),
+            )
         assertEquals(Status.OK, resp.status)
         val body = Json.mapper.readTree(resp.bodyString())
         assertEquals("RequestAccepted", body.get("RequestResult").asText())
@@ -124,8 +133,10 @@ class EnhancedKoboSyncIntegrationTest : IntegrationTestBase() {
         // Now verify the location appears in the sync response
         val syncResp = app(Request(Method.POST, "/kobo/$devToken/v1/library/sync"))
         val books = Json.mapper.readTree(syncResp.bodyString()).get("BookEntitlements")
-        val theBook = (0 until books.size()).map { books[it] }
-            .firstOrNull { it.get("EntitlementId").asText() == bookId }
+        val theBook =
+            (0 until books.size())
+                .map { books[it] }
+                .firstOrNull { it.get("EntitlementId").asText() == bookId }
         assertNotNull(theBook)
         val bookmark = theBook!!.path("NewEntitlement").path("ReadingState").path("CurrentBookmark")
         assertEquals("epubcfi(/6/4[chap01]!/4/2/10/2/1:0)", bookmark.get("Location").asText())
@@ -139,11 +150,12 @@ class EnhancedKoboSyncIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId, "Pct Book")
 
-        val resp = app(
-            Request(Method.PUT, "/kobo/$devToken/v1/library/$bookId/reading-state")
-                .header("Content-Type", "application/json")
-                .body("""{"CurrentBookmark":{"ContentSourceProgressPercent":0.25,"Location":"50","LocationType":"PageNumber"}}"""),
-        )
+        val resp =
+            app(
+                Request(Method.PUT, "/kobo/$devToken/v1/library/$bookId/reading-state")
+                    .header("Content-Type", "application/json")
+                    .body("""{"CurrentBookmark":{"ContentSourceProgressPercent":0.25,"Location":"50","LocationType":"PageNumber"}}"""),
+            )
         assertEquals(Status.OK, resp.status)
     }
 

@@ -14,7 +14,6 @@ import kotlin.test.assertNull
  * Uses IntegrationTestBase (stub MetadataFetchService already in place).
  */
 class FilenameMetadataIntegrationTest : IntegrationTestBase() {
-
     @Test
     fun `apply-filename-metadata extracts author and title from book file path`() {
         val token = registerAndGetToken()
@@ -23,17 +22,22 @@ class FilenameMetadataIntegrationTest : IntegrationTestBase() {
         // Create a book; its filePath will be blank/default, so metadata comes from title parse
         // We manipulate the DB directly to set a recognizable file_path
         val bookId = createBook(token, libId, "Placeholder")
-        val jdbi = org.booktower.TestFixture.database.getJdbi()
+        val jdbi =
+            org.booktower.TestFixture.database
+                .getJdbi()
         jdbi.useHandle<Exception> { h ->
-            h.createUpdate("UPDATE books SET file_path = ? WHERE id = ?")
+            h
+                .createUpdate("UPDATE books SET file_path = ? WHERE id = ?")
                 .bind(0, "/books/Frank Herbert - Dune (Dune Chronicles 1).epub")
-                .bind(1, bookId).execute()
+                .bind(1, bookId)
+                .execute()
         }
 
-        val resp = app(
-            Request(Method.POST, "/api/books/$bookId/apply-filename-metadata")
-                .header("Cookie", "token=$token"),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/api/books/$bookId/apply-filename-metadata")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, resp.status)
         val tree = Json.mapper.readTree(resp.bodyString())
         val extracted = tree.get("extracted")
@@ -44,9 +48,10 @@ class FilenameMetadataIntegrationTest : IntegrationTestBase() {
         assertEquals(1.0, extracted.get("seriesIndex").asDouble())
 
         // Verify DB was updated
-        val book = Json.mapper.readTree(
-            app(Request(Method.GET, "/api/books/$bookId").header("Cookie", "token=$token")).bodyString(),
-        )
+        val book =
+            Json.mapper.readTree(
+                app(Request(Method.GET, "/api/books/$bookId").header("Cookie", "token=$token")).bodyString(),
+            )
         assertEquals("Dune", book.get("title").asText())
         assertEquals("Frank Herbert", book.get("author").asText())
     }
@@ -56,16 +61,22 @@ class FilenameMetadataIntegrationTest : IntegrationTestBase() {
         val token = registerAndGetToken()
         val libId = createLibrary(token)
         val bookId = createBook(token, libId, "Placeholder2")
-        val jdbi = org.booktower.TestFixture.database.getJdbi()
+        val jdbi =
+            org.booktower.TestFixture.database
+                .getJdbi()
         jdbi.useHandle<Exception> { h ->
-            h.createUpdate("UPDATE books SET file_path = ? WHERE id = ?")
-                .bind(0, "/books/The Hobbit.pdf").bind(1, bookId).execute()
+            h
+                .createUpdate("UPDATE books SET file_path = ? WHERE id = ?")
+                .bind(0, "/books/The Hobbit.pdf")
+                .bind(1, bookId)
+                .execute()
         }
 
-        val resp = app(
-            Request(Method.POST, "/api/books/$bookId/apply-filename-metadata")
-                .header("Cookie", "token=$token"),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/api/books/$bookId/apply-filename-metadata")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, resp.status)
         val extracted = Json.mapper.readTree(resp.bodyString()).get("extracted")
         assertEquals("The Hobbit", extracted.get("title").asText())
@@ -75,10 +86,11 @@ class FilenameMetadataIntegrationTest : IntegrationTestBase() {
     @Test
     fun `apply-filename-metadata returns 404 for unknown book`() {
         val token = registerAndGetToken()
-        val resp = app(
-            Request(Method.POST, "/api/books/00000000-0000-0000-0000-000000000000/apply-filename-metadata")
-                .header("Cookie", "token=$token"),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/api/books/00000000-0000-0000-0000-000000000000/apply-filename-metadata")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.NOT_FOUND, resp.status)
     }
 

@@ -15,12 +15,13 @@ class FtsIndexWorker(
     private val pollIntervalMs: Long = 10_000,
 ) {
     private val running = AtomicBoolean(false)
-    private val executor = Executors.newSingleThreadExecutor { r ->
-        Thread(r, "fts-indexer").also {
-            it.isDaemon = true
-            it.priority = Thread.MIN_PRIORITY
+    private val executor =
+        Executors.newSingleThreadExecutor { r ->
+            Thread(r, "fts-indexer").also {
+                it.isDaemon = true
+                it.priority = Thread.MIN_PRIORITY
+            }
         }
-    }
 
     fun start() {
         if (!ftsService.isActive()) {
@@ -73,12 +74,13 @@ class FtsIndexWorker(
             if (batch.isEmpty()) break
             for (book in batch) {
                 if (!running.get()) break
-                val ok = runCatching {
-                    ftsService.indexBook(book.bookId, book.filePath, book.format)
-                }.getOrElse { e ->
-                    workerLog.warn("FTS indexing failed for ${book.bookId}: ${e.message}")
-                    false
-                }
+                val ok =
+                    runCatching {
+                        ftsService.indexBook(book.bookId, book.filePath, book.format)
+                    }.getOrElse { e ->
+                        workerLog.warn("FTS indexing failed for ${book.bookId}: ${e.message}")
+                        false
+                    }
                 if (ok) done++ else failed++
                 workerLog.debug("FTS indexed ${book.bookId} ok=$ok ($done done, $failed failed)")
                 if (throttleMs > 0 && running.get()) Thread.sleep(throttleMs)

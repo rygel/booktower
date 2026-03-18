@@ -4,7 +4,7 @@ import org.booktower.TestFixture
 import org.booktower.config.Json
 import org.booktower.config.SmtpConfig
 import org.booktower.config.WeblateConfig
-import org.booktower.filters.GlobalErrorFilter
+import org.booktower.filters.globalErrorFilter
 import org.booktower.handlers.AppHandler
 import org.booktower.models.LoginResponse
 import org.booktower.services.AdminService
@@ -13,10 +13,10 @@ import org.booktower.services.AnalyticsService
 import org.booktower.services.AnnotationService
 import org.booktower.services.ApiTokenService
 import org.booktower.services.AuthService
-import org.booktower.services.BookmarkService
 import org.booktower.services.BookService
-import org.booktower.services.CoverCandidate
+import org.booktower.services.BookmarkService
 import org.booktower.services.ComicService
+import org.booktower.services.CoverCandidate
 import org.booktower.services.EmailService
 import org.booktower.services.EpubMetadataService
 import org.booktower.services.ExportService
@@ -43,7 +43,6 @@ import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Path
 
 class AlternativeCoverIntegrationTest {
-
     @TempDir
     lateinit var coversDir: Path
 
@@ -51,17 +50,25 @@ class AlternativeCoverIntegrationTest {
     private val jdbi = TestFixture.database.getJdbi()
 
     // Stub: returns two canned candidates; downloadBytes returns fake PNG bytes
-    private val stubCoverService = object : AlternativeCoverService() {
-        override fun fetchCandidates(title: String, author: String?, isbn: String?): List<CoverCandidate> =
-            listOf(
-                CoverCandidate("https://covers.openlibrary.org/b/isbn/9780441013593-L.jpg", "openlibrary"),
-                CoverCandidate("https://books.google.com/cover?id=abc123", "googlebooks"),
-            )
+    private val stubCoverService =
+        object : AlternativeCoverService() {
+            override fun fetchCandidates(
+                title: String,
+                author: String?,
+                isbn: String?,
+            ): List<CoverCandidate> =
+                listOf(
+                    CoverCandidate("https://covers.openlibrary.org/b/isbn/9780441013593-L.jpg", "openlibrary"),
+                    CoverCandidate("https://books.google.com/cover?id=abc123", "googlebooks"),
+                )
 
-        override fun downloadBytes(url: String): ByteArray? =
-            if (url.startsWith("https://")) byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47) // PNG magic
-            else null
-    }
+            override fun downloadBytes(url: String): ByteArray? =
+                if (url.startsWith("https://")) {
+                    byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47)
+                } else {
+                    null
+                }
+        }
 
     private lateinit var app: HttpHandler
 
@@ -92,46 +99,83 @@ class AlternativeCoverIntegrationTest {
         val seedService = SeedService(bookService, libraryService, coversDir.toString(), config.storage.booksPath)
         // Build a StorageConfig that points covers to our temp dir
         val storage = config.storage.copy(coversPath = coversDir.toString())
-        val appHandler = AppHandler(
-            authService, libraryService, bookService, bookmarkService,
-            userSettingsService, pdfMetadataService, epubMetadataService, adminService, jwtService, storage,
-            TestFixture.templateRenderer,
-            WeblateHandler(WeblateConfig("", "", "", false)),
-            analyticsService, annotationService, MetadataFetchService(), magicShelfService,
-            passwordResetService, EmailService(SmtpConfig("", 587, "", "", "", true)),
-            "http://localhost:9999", true,
-            apiTokenService, exportService, comicService, goodreadsImportService,
-            readingSessionService, seedService,
-            null, null, null, null, null, null, null, null, stubCoverService,
-        )
-        return GlobalErrorFilter().then(appHandler.routes())
+        val appHandler =
+            AppHandler(
+                authService,
+                libraryService,
+                bookService,
+                bookmarkService,
+                userSettingsService,
+                pdfMetadataService,
+                epubMetadataService,
+                adminService,
+                jwtService,
+                storage,
+                TestFixture.templateRenderer,
+                WeblateHandler(WeblateConfig("", "", "", false)),
+                analyticsService,
+                annotationService,
+                MetadataFetchService(),
+                magicShelfService,
+                passwordResetService,
+                EmailService(SmtpConfig("", 587, "", "", "", true)),
+                "http://localhost:9999",
+                true,
+                apiTokenService,
+                exportService,
+                comicService,
+                goodreadsImportService,
+                readingSessionService,
+                seedService,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                stubCoverService,
+            )
+        return globalErrorFilter().then(appHandler.routes())
     }
 
     private fun registerAndGetToken(prefix: String = "cov"): String {
         val u = "${prefix}_${System.nanoTime()}"
-        val resp = app(
-            Request(Method.POST, "/auth/register")
-                .header("Content-Type", "application/json")
-                .body("""{"username":"$u","email":"$u@test.com","password":"password123"}"""),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/auth/register")
+                    .header("Content-Type", "application/json")
+                    .body("""{"username":"$u","email":"$u@test.com","password":"password123"}"""),
+            )
         return Json.mapper.readValue(resp.bodyString(), LoginResponse::class.java).token
     }
 
     private fun createLibraryAndBook(token: String): Pair<String, String> {
-        val libResp = app(
-            Request(Method.POST, "/api/libraries")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"name":"CovLib ${System.nanoTime()}","path":"./data/cov-${System.nanoTime()}"}"""),
-        )
-        val libId = Json.mapper.readTree(libResp.bodyString()).get("id").asText()
-        val bookResp = app(
-            Request(Method.POST, "/api/books")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"title":"Dune","author":"Frank Herbert","description":null,"libraryId":"$libId"}"""),
-        )
-        val bookId = Json.mapper.readTree(bookResp.bodyString()).get("id").asText()
+        val libResp =
+            app(
+                Request(Method.POST, "/api/libraries")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"name":"CovLib ${System.nanoTime()}","path":"./data/cov-${System.nanoTime()}"}"""),
+            )
+        val libId =
+            Json.mapper
+                .readTree(libResp.bodyString())
+                .get("id")
+                .asText()
+        val bookResp =
+            app(
+                Request(Method.POST, "/api/books")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"title":"Dune","author":"Frank Herbert","description":null,"libraryId":"$libId"}"""),
+            )
+        val bookId =
+            Json.mapper
+                .readTree(bookResp.bodyString())
+                .get("id")
+                .asText()
         return libId to bookId
     }
 
@@ -140,10 +184,11 @@ class AlternativeCoverIntegrationTest {
         val token = registerAndGetToken()
         val (_, bookId) = createLibraryAndBook(token)
 
-        val resp = app(
-            Request(Method.GET, "/api/books/$bookId/covers/alternatives")
-                .header("Cookie", "token=$token"),
-        )
+        val resp =
+            app(
+                Request(Method.GET, "/api/books/$bookId/covers/alternatives")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, resp.status)
         val covers = Json.mapper.readTree(resp.bodyString()).get("covers")
         assertEquals(2, covers.size())
@@ -156,12 +201,13 @@ class AlternativeCoverIntegrationTest {
         val token = registerAndGetToken()
         val (_, bookId) = createLibraryAndBook(token)
 
-        val resp = app(
-            Request(Method.POST, "/api/books/$bookId/cover/apply-url")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"url":"https://covers.openlibrary.org/b/isbn/9780441013593-L.jpg"}"""),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/api/books/$bookId/cover/apply-url")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"url":"https://covers.openlibrary.org/b/isbn/9780441013593-L.jpg"}"""),
+            )
         assertEquals(Status.OK, resp.status)
         val tree = Json.mapper.readTree(resp.bodyString())
         assert(tree.get("coverUrl").asText().startsWith("/covers/")) { "coverUrl should start with /covers/" }
@@ -172,12 +218,13 @@ class AlternativeCoverIntegrationTest {
         val token = registerAndGetToken()
         val (_, bookId) = createLibraryAndBook(token)
 
-        val resp = app(
-            Request(Method.POST, "/api/books/$bookId/cover/apply-url")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{}"""),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/api/books/$bookId/cover/apply-url")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{}"""),
+            )
         assertEquals(Status.BAD_REQUEST, resp.status)
     }
 
@@ -191,11 +238,12 @@ class AlternativeCoverIntegrationTest {
 
     @Test
     fun `POST api books id cover apply-url requires authentication`() {
-        val resp = app(
-            Request(Method.POST, "/api/books/some-id/cover/apply-url")
-                .header("Content-Type", "application/json")
-                .body("""{"url":"https://example.com/cover.jpg"}"""),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/api/books/some-id/cover/apply-url")
+                    .header("Content-Type", "application/json")
+                    .body("""{"url":"https://example.com/cover.jpg"}"""),
+            )
         assertEquals(Status.UNAUTHORIZED, resp.status)
     }
 }

@@ -6,7 +6,9 @@ import org.http4k.core.Request
 import org.http4k.core.Response
 import org.http4k.core.Status
 
-class WeblateHandler(private val config: WeblateConfig) {
+class WeblateHandler(
+    private val config: WeblateConfig,
+) {
     private val bridge: WeblateBridge? by lazy {
         if (config.enabled && config.url.isNotBlank() && config.apiToken.isNotBlank()) {
             WeblateBridge(config.url, config.apiToken, config.component, java.io.File("src/main/resources"))
@@ -55,7 +57,8 @@ class WeblateHandler(private val config: WeblateConfig) {
         }
     }
 
-    private fun unavailable() = Response(Status.SERVICE_UNAVAILABLE)
-        .header("Content-Type", "application/json")
-        .body(Json.mapper.writeValueAsString(mapOf("error" to "Weblate integration not enabled")))
+    private fun unavailable() =
+        Response(Status.SERVICE_UNAVAILABLE)
+            .header("Content-Type", "application/json")
+            .body(Json.mapper.writeValueAsString(mapOf("error" to "Weblate integration not enabled")))
 }

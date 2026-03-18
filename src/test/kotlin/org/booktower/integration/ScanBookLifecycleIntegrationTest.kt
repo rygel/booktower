@@ -23,7 +23,6 @@ import kotlin.test.assertTrue
  * tests verify that scan-created books behave identically to manually-created ones.
  */
 class ScanBookLifecycleIntegrationTest : IntegrationTestBase() {
-
     private val tempDirs = mutableListOf<File>()
 
     @AfterEach
@@ -37,25 +36,40 @@ class ScanBookLifecycleIntegrationTest : IntegrationTestBase() {
     private fun realPdfBytes(pages: Int = 2): ByteArray {
         val doc = PDDocument()
         repeat(pages) { doc.addPage(PDPage()) }
-        return ByteArrayOutputStream().also { doc.save(it); doc.close() }.toByteArray()
+        return ByteArrayOutputStream()
+            .also {
+                doc.save(it)
+                doc.close()
+            }.toByteArray()
     }
 
-    private fun createLibraryWithPath(token: String, path: String): String {
-        val resp = app(
-            Request(Method.POST, "/api/libraries")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"name":"ScanLib ${System.nanoTime()}","path":"${path.replace("\\", "\\\\")}"}"""),
-        )
+    private fun createLibraryWithPath(
+        token: String,
+        path: String,
+    ): String {
+        val resp =
+            app(
+                Request(Method.POST, "/api/libraries")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"name":"ScanLib ${System.nanoTime()}","path":"${path.replace("\\", "\\\\")}"}"""),
+            )
         assertEquals(Status.CREATED, resp.status)
-        return Json.mapper.readTree(resp.bodyString()).get("id").asText()
+        return Json.mapper
+            .readTree(resp.bodyString())
+            .get("id")
+            .asText()
     }
 
-    private fun scan(token: String, libId: String): ScanResult {
-        val resp = app(
-            Request(Method.POST, "/api/libraries/$libId/scan")
-                .header("Cookie", "token=$token"),
-        )
+    private fun scan(
+        token: String,
+        libId: String,
+    ): ScanResult {
+        val resp =
+            app(
+                Request(Method.POST, "/api/libraries/$libId/scan")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, resp.status)
         return Json.mapper.readValue(resp.bodyString(), ScanResult::class.java)
     }
@@ -74,10 +88,11 @@ class ScanBookLifecycleIntegrationTest : IntegrationTestBase() {
         assertEquals(1, result.added)
         val bookId = result.books[0].id
 
-        val dlResp = app(
-            Request(Method.GET, "/api/books/$bookId/file")
-                .header("Cookie", "token=$token"),
-        )
+        val dlResp =
+            app(
+                Request(Method.GET, "/api/books/$bookId/file")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, dlResp.status, "scanned book should be downloadable")
         assertTrue(dlResp.bodyString().isNotEmpty(), "downloaded body should not be empty")
     }
@@ -95,19 +110,21 @@ class ScanBookLifecycleIntegrationTest : IntegrationTestBase() {
 
         // Upload a new PDF to replace the scanned one
         val newPdfBytes = realPdfBytes(3)
-        val uploadResp = app(
-            Request(Method.POST, "/api/books/$bookId/upload")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/octet-stream")
-                .header("X-Filename", "updated.pdf")
-                .body(ByteArrayInputStream(newPdfBytes)),
-        )
+        val uploadResp =
+            app(
+                Request(Method.POST, "/api/books/$bookId/upload")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/octet-stream")
+                    .header("X-Filename", "updated.pdf")
+                    .body(ByteArrayInputStream(newPdfBytes)),
+            )
         assertEquals(Status.OK, uploadResp.status, "upload to scanned book should succeed")
 
-        val dlResp = app(
-            Request(Method.GET, "/api/books/$bookId/file")
-                .header("Cookie", "token=$token"),
-        )
+        val dlResp =
+            app(
+                Request(Method.GET, "/api/books/$bookId/file")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, dlResp.status)
     }
 
@@ -121,18 +138,20 @@ class ScanBookLifecycleIntegrationTest : IntegrationTestBase() {
         val libId = createLibraryWithPath(token, dir.absolutePath)
         val bookId = scan(token, libId).books[0].id
 
-        val progressResp = app(
-            Request(Method.POST, "/ui/books/$bookId/progress")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .body("currentPage=42"),
-        )
+        val progressResp =
+            app(
+                Request(Method.POST, "/ui/books/$bookId/progress")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("currentPage=42"),
+            )
         assertEquals(Status.OK, progressResp.status)
 
-        val bookResp = app(
-            Request(Method.GET, "/api/books/$bookId")
-                .header("Cookie", "token=$token"),
-        )
+        val bookResp =
+            app(
+                Request(Method.GET, "/api/books/$bookId")
+                    .header("Cookie", "token=$token"),
+            )
         assertTrue(bookResp.bodyString().contains("42"), "progress should be recorded for scanned book")
     }
 
@@ -146,18 +165,20 @@ class ScanBookLifecycleIntegrationTest : IntegrationTestBase() {
         val libId = createLibraryWithPath(token, dir.absolutePath)
         val bookId = scan(token, libId).books[0].id
 
-        val bmResp = app(
-            Request(Method.POST, "/api/bookmarks")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"bookId":"$bookId","page":7,"title":"Scan Bookmark","note":null}"""),
-        )
+        val bmResp =
+            app(
+                Request(Method.POST, "/api/bookmarks")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"bookId":"$bookId","page":7,"title":"Scan Bookmark","note":null}"""),
+            )
         assertEquals(Status.CREATED, bmResp.status)
 
-        val listResp = app(
-            Request(Method.GET, "/api/bookmarks?bookId=$bookId")
-                .header("Cookie", "token=$token"),
-        )
+        val listResp =
+            app(
+                Request(Method.GET, "/api/bookmarks?bookId=$bookId")
+                    .header("Cookie", "token=$token"),
+            )
         assertTrue(listResp.bodyString().contains("Scan Bookmark"))
     }
 
@@ -171,15 +192,18 @@ class ScanBookLifecycleIntegrationTest : IntegrationTestBase() {
         val libId = createLibraryWithPath(token, dir.absolutePath)
         val bookId = scan(token, libId).books[0].id
 
-        val pageResp = app(
-            Request(Method.GET, "/books/$bookId")
-                .header("Cookie", "token=$token"),
-        )
+        val pageResp =
+            app(
+                Request(Method.GET, "/books/$bookId")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, pageResp.status)
         val body = pageResp.bodyString()
         // Title should be derived from filename
-        assertTrue(body.contains("my rendered book") || body.contains("my_rendered_book"),
-            "Book title should appear on detail page. Body snippet: ${body.take(500)}")
+        assertTrue(
+            body.contains("my rendered book") || body.contains("my_rendered_book"),
+            "Book title should appear on detail page. Body snippet: ${body.take(500)}",
+        )
     }
 
     // ── Scan → delete book → confirm gone ────────────────────────────────────
@@ -235,10 +259,11 @@ class ScanBookLifecycleIntegrationTest : IntegrationTestBase() {
 
         // Both books should be individually accessible
         result.books.forEach { book ->
-            val pageResp = app(
-                Request(Method.GET, "/books/${book.id}")
-                    .header("Cookie", "token=$token"),
-            )
+            val pageResp =
+                app(
+                    Request(Method.GET, "/books/${book.id}")
+                        .header("Cookie", "token=$token"),
+                )
             assertEquals(Status.OK, pageResp.status, "book ${book.title} page should render")
         }
     }

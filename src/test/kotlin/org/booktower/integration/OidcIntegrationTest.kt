@@ -10,7 +10,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class OidcIntegrationTest : IntegrationTestBase() {
-
     private val forceOnlyApp by lazy { buildApp(oidcForceOnly = true) }
 
     @Test
@@ -33,11 +32,12 @@ class OidcIntegrationTest : IntegrationTestBase() {
 
     @Test
     fun `force-only mode blocks local login`() {
-        val response = forceOnlyApp(
-            Request(Method.POST, "/auth/login")
-                .header("Content-Type", "application/json")
-                .body("""{"username":"someone","password":"password123"}""")
-        )
+        val response =
+            forceOnlyApp(
+                Request(Method.POST, "/auth/login")
+                    .header("Content-Type", "application/json")
+                    .body("""{"username":"someone","password":"password123"}"""),
+            )
         assertEquals(403, response.status.code)
         val body = response.bodyString()
         assertTrue(body.contains("OIDC_FORCE_ONLY"), "Expected OIDC_FORCE_ONLY error, got: $body")
@@ -53,22 +53,24 @@ class OidcIntegrationTest : IntegrationTestBase() {
     @Test
     fun `backchannel logout with unknown sub returns 200`() {
         val logoutToken = buildFakeLogoutToken("unknown-sub-xyz")
-        val response = forceOnlyApp(
-            Request(Method.POST, "/auth/oidc/backchannel-logout")
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .body("logout_token=$logoutToken")
-        )
+        val response =
+            forceOnlyApp(
+                Request(Method.POST, "/auth/oidc/backchannel-logout")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("logout_token=$logoutToken"),
+            )
         assertEquals(200, response.status.code)
     }
 
     @Test
     fun `backchannel logout with known user revokes tokens`() {
         val logoutToken = buildFakeLogoutToken("test-sub-123")
-        val response = forceOnlyApp(
-            Request(Method.POST, "/auth/oidc/backchannel-logout")
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .body("logout_token=$logoutToken")
-        )
+        val response =
+            forceOnlyApp(
+                Request(Method.POST, "/auth/oidc/backchannel-logout")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("logout_token=$logoutToken"),
+            )
         assertEquals(200, response.status.code)
         val body = Json.mapper.readTree(response.bodyString())
         assertNotNull(body.get("revoked"))
@@ -76,11 +78,12 @@ class OidcIntegrationTest : IntegrationTestBase() {
 
     @Test
     fun `backchannel logout with malformed token returns 400 or 200`() {
-        val response = forceOnlyApp(
-            Request(Method.POST, "/auth/oidc/backchannel-logout")
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .body("logout_token=not.a.valid.jwt.at.all")
-        )
+        val response =
+            forceOnlyApp(
+                Request(Method.POST, "/auth/oidc/backchannel-logout")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("logout_token=not.a.valid.jwt.at.all"),
+            )
         assertTrue(response.status.code in listOf(200, 400))
     }
 
@@ -96,19 +99,26 @@ class OidcIntegrationTest : IntegrationTestBase() {
     @Test
     fun `backchannel logout accepts JSON body`() {
         val logoutToken = buildFakeLogoutToken("json-sub-456")
-        val response = forceOnlyApp(
-            Request(Method.POST, "/auth/oidc/backchannel-logout")
-                .header("Content-Type", "application/json")
-                .body("""{"logout_token":"$logoutToken"}""")
-        )
+        val response =
+            forceOnlyApp(
+                Request(Method.POST, "/auth/oidc/backchannel-logout")
+                    .header("Content-Type", "application/json")
+                    .body("""{"logout_token":"$logoutToken"}"""),
+            )
         assertEquals(200, response.status.code)
     }
 
     private fun buildFakeLogoutToken(sub: String): String {
-        val header = Base64.getUrlEncoder().withoutPadding()
-            .encodeToString("""{"alg":"RS256","typ":"JWT"}""".toByteArray())
-        val payload = Base64.getUrlEncoder().withoutPadding()
-            .encodeToString("""{"sub":"$sub","iat":1700000000}""".toByteArray())
+        val header =
+            Base64
+                .getUrlEncoder()
+                .withoutPadding()
+                .encodeToString("""{"alg":"RS256","typ":"JWT"}""".toByteArray())
+        val payload =
+            Base64
+                .getUrlEncoder()
+                .withoutPadding()
+                .encodeToString("""{"sub":"$sub","iat":1700000000}""".toByteArray())
         return "$header.$payload.fakesignature"
     }
 }

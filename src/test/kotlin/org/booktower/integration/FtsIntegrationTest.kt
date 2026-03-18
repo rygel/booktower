@@ -24,14 +24,14 @@ import java.util.UUID
 @Testcontainers
 @EnabledIfSystemProperty(named = "fts.integration", matches = "true")
 class FtsIntegrationTest {
-
     companion object {
         @Container
         @JvmStatic
-        val postgres: PostgreSQLContainer<*> = PostgreSQLContainer("postgres:16-alpine")
-            .withDatabaseName("booktower_fts_test")
-            .withUsername("test")
-            .withPassword("test")
+        val postgres: PostgreSQLContainer<*> =
+            PostgreSQLContainer("postgres:16-alpine")
+                .withDatabaseName("booktower_fts_test")
+                .withUsername("test")
+                .withPassword("test")
 
         private lateinit var database: Database
         private lateinit var ftsService: FtsService
@@ -41,23 +41,25 @@ class FtsIntegrationTest {
         @JvmStatic
         fun setup() {
             postgres.start()
-            database = Database.connect(
-                DatabaseConfig(
-                    url      = postgres.jdbcUrl,
-                    username = postgres.username,
-                    password = postgres.password,
-                    driver   = "org.postgresql.Driver",
-                ),
-            )
+            database =
+                Database.connect(
+                    DatabaseConfig(
+                        url = postgres.jdbcUrl,
+                        username = postgres.username,
+                        password = postgres.password,
+                        driver = "org.postgresql.Driver",
+                    ),
+                )
             ftsService = FtsService(database.getJdbi(), enabled = true)
             ftsService.initialize()
             assertTrue(ftsService.isActive(), "FTS should be active on PostgreSQL")
 
-            worker = FtsIndexWorker(
-                ftsService            = ftsService,
-                backgroundTaskService = BackgroundTaskService(),
-                throttleMs            = 0,
-            )
+            worker =
+                FtsIndexWorker(
+                    ftsService = ftsService,
+                    backgroundTaskService = BackgroundTaskService(),
+                    throttleMs = 0,
+                )
 
             // Seed a test book row (books table required by FK)
             database.getJdbi().useHandle<Exception> { h ->
@@ -87,12 +89,16 @@ class FtsIntegrationTest {
                     )
                     """,
                 )
-                val userId  = UUID.randomUUID().toString()
-                val libId   = UUID.randomUUID().toString()
+                val userId = UUID.randomUUID().toString()
+                val libId = UUID.randomUUID().toString()
                 h.execute("INSERT INTO users (id, username, email, password_hash) VALUES ('$userId','t','t@t','x')")
                 h.execute("INSERT INTO libraries (id, user_id, name, path) VALUES ('$libId','$userId','L','/tmp')")
-                h.execute("INSERT INTO books (id, library_id, title, file_path, file_size, added_at, updated_at) VALUES ('book-001','$libId','Dune','/tmp/dune.epub',1000,NOW(),NOW())")
-                h.execute("INSERT INTO books (id, library_id, title, file_path, file_size, added_at, updated_at) VALUES ('book-002','$libId','Foundation','/tmp/foundation.epub',1000,NOW(),NOW())")
+                h.execute(
+                    "INSERT INTO books (id, library_id, title, file_path, file_size, added_at, updated_at) VALUES ('book-001','$libId','Dune','/tmp/dune.epub',1000,NOW(),NOW())",
+                )
+                h.execute(
+                    "INSERT INTO books (id, library_id, title, file_path, file_size, added_at, updated_at) VALUES ('book-002','$libId','Foundation','/tmp/foundation.epub',1000,NOW(),NOW())",
+                )
             }
         }
 
@@ -110,13 +116,13 @@ class FtsIntegrationTest {
         database.getJdbi().useHandle<Exception> { h ->
             h.execute(
                 "INSERT INTO book_content (book_id, content, status, indexed_at) " +
-                "VALUES ('book-001', 'The spice must flow on the desert planet Arrakis', 'pending', NOW()) " +
-                "ON CONFLICT (book_id) DO UPDATE SET content = EXCLUDED.content, status = 'pending'",
+                    "VALUES ('book-001', 'The spice must flow on the desert planet Arrakis', 'pending', NOW()) " +
+                    "ON CONFLICT (book_id) DO UPDATE SET content = EXCLUDED.content, status = 'pending'",
             )
             h.execute(
                 "INSERT INTO book_content (book_id, content, status, indexed_at) " +
-                "VALUES ('book-002', 'The Galactic Empire spans a million worlds of the galaxy', 'pending', NOW()) " +
-                "ON CONFLICT (book_id) DO UPDATE SET content = EXCLUDED.content, status = 'pending'",
+                    "VALUES ('book-002', 'The Galactic Empire spans a million worlds of the galaxy', 'pending', NOW()) " +
+                    "ON CONFLICT (book_id) DO UPDATE SET content = EXCLUDED.content, status = 'pending'",
             )
             // Manually trigger tsvector update by setting status to indexed
             h.execute("UPDATE book_content SET status = 'indexed' WHERE book_id IN ('book-001','book-002')")

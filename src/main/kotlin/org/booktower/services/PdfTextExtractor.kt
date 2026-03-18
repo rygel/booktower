@@ -8,12 +8,13 @@ import java.io.File
 private val pdfExtractLog = LoggerFactory.getLogger("booktower.PdfTextExtractor")
 
 object PdfTextExtractor {
-    fun extract(file: File): String? = try {
-        Loader.loadPDF(file).use { doc ->
-            PDFTextStripper().getText(doc).take(2_000_000)
+    fun extract(file: File): String? =
+        try {
+            Loader.loadPDF(file).use { doc ->
+                PDFTextStripper().getText(doc).take(2_000_000)
+            }
+        } catch (e: Exception) {
+            pdfExtractLog.warn("PDF text extraction failed for ${file.name}: ${e.message}")
+            null
         }
-    } catch (e: Exception) {
-        pdfExtractLog.warn("PDF text extraction failed for ${file.name}: ${e.message}")
-        null
-    }
 }

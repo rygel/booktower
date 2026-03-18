@@ -14,11 +14,14 @@ import kotlin.test.assertTrue
  * packed-encoding roundtrip (trackIndex * 1_000_000 + offsetSeconds).
  */
 class AudiobookReaderUiTest : IntegrationTestBase() {
+    private fun minimalMp3() = byteArrayOf(0xFF.toByte(), 0xFB.toByte(), 0x90.toByte(), 0x00.toByte()) + ByteArray(416)
 
-    private fun minimalMp3() =
-        byteArrayOf(0xFF.toByte(), 0xFB.toByte(), 0x90.toByte(), 0x00.toByte()) + ByteArray(416)
-
-    private fun uploadChapter(token: String, bookId: String, trackIndex: Int, title: String = "Chapter ${trackIndex + 1}") {
+    private fun uploadChapter(
+        token: String,
+        bookId: String,
+        trackIndex: Int,
+        title: String = "Chapter ${trackIndex + 1}",
+    ) {
         val mp3 = minimalMp3()
         app(
             Request(Method.POST, "/api/books/$bookId/chapters")
@@ -149,7 +152,7 @@ class AudiobookReaderUiTest : IntegrationTestBase() {
         uploadChapter(token, bookId, 0)
         uploadChapter(token, bookId, 1)
 
-        val packed = 1 * 1_000_000 + 150  // track 1 at 150 seconds
+        val packed = 1 * 1_000_000 + 150 // track 1 at 150 seconds
 
         app(
             Request(Method.POST, "/ui/books/$bookId/progress")
@@ -257,8 +260,11 @@ class AudiobookReaderUiTest : IntegrationTestBase() {
 // ── book.kte progress card tests ──────────────────────────────────────────────
 
 class AudiobookBookPageTest : IntegrationTestBase() {
-
-    private fun uploadChapter(token: String, bookId: String, trackIndex: Int) {
+    private fun uploadChapter(
+        token: String,
+        bookId: String,
+        trackIndex: Int,
+    ) {
         val mp3 = byteArrayOf(0xFF.toByte(), 0xFB.toByte(), 0x90.toByte(), 0x00.toByte()) + ByteArray(416)
         app(
             Request(Method.POST, "/api/books/$bookId/chapters")
@@ -464,8 +470,11 @@ class AudiobookBookPageTest : IntegrationTestBase() {
 // ── book card headphone badge (library grid) ──────────────────────────────────
 
 class AudiobookLibraryCardTest : IntegrationTestBase() {
-
-    private fun uploadChapter(token: String, bookId: String, trackIndex: Int) {
+    private fun uploadChapter(
+        token: String,
+        bookId: String,
+        trackIndex: Int,
+    ) {
         val mp3 = byteArrayOf(0xFF.toByte(), 0xFB.toByte(), 0x90.toByte(), 0x00.toByte()) + ByteArray(416)
         app(
             Request(Method.POST, "/api/books/$bookId/chapters")

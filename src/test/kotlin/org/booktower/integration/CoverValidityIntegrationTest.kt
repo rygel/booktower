@@ -23,7 +23,6 @@ import kotlin.test.assertTrue
  * Complements CoverIntegrationTest which only checks status codes and Content-Type.
  */
 class CoverValidityIntegrationTest : IntegrationTestBase() {
-
     /** Build a minimal but valid multi-page PDF with some content on the first page. */
     private fun pdfWithContent(pageCount: Int = 2): ByteArray {
         val doc = PDDocument()
@@ -41,17 +40,26 @@ class CoverValidityIntegrationTest : IntegrationTestBase() {
                 }
             }
         }
-        return ByteArrayOutputStream().also { doc.save(it); doc.close() }.toByteArray()
+        return ByteArrayOutputStream()
+            .also {
+                doc.save(it)
+                doc.close()
+            }.toByteArray()
     }
 
-    private fun uploadPdf(token: String, bookId: String, bytes: ByteArray) {
-        val resp = app(
-            Request(Method.POST, "/api/books/$bookId/upload")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/octet-stream")
-                .header("X-Filename", "test.pdf")
-                .body(ByteArrayInputStream(bytes)),
-        )
+    private fun uploadPdf(
+        token: String,
+        bookId: String,
+        bytes: ByteArray,
+    ) {
+        val resp =
+            app(
+                Request(Method.POST, "/api/books/$bookId/upload")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/octet-stream")
+                    .header("X-Filename", "test.pdf")
+                    .body(ByteArrayInputStream(bytes)),
+            )
         assertEquals(Status.OK, resp.status, "PDF upload should succeed")
     }
 
@@ -107,8 +115,10 @@ class CoverValidityIntegrationTest : IntegrationTestBase() {
         val resp = app(Request(Method.GET, "/covers/$bookId.jpg"))
         assertEquals(Status.OK, resp.status)
         val contentType = resp.header("Content-Type") ?: ""
-        assertTrue(contentType.contains("image/jpeg"),
-            "Content-Type should be image/jpeg, got: $contentType")
+        assertTrue(
+            contentType.contains("image/jpeg"),
+            "Content-Type should be image/jpeg, got: $contentType",
+        )
     }
 
     @Test
@@ -123,8 +133,10 @@ class CoverValidityIntegrationTest : IntegrationTestBase() {
         val resp = app(Request(Method.GET, "/covers/$bookId.jpg"))
         assertEquals(Status.OK, resp.status)
         val cacheControl = resp.header("Cache-Control") ?: ""
-        assertTrue(cacheControl.contains("max-age"),
-            "Cover should include Cache-Control: max-age, got: $cacheControl")
+        assertTrue(
+            cacheControl.contains("max-age"),
+            "Cover should include Cache-Control: max-age, got: $cacheControl",
+        )
     }
 
     // ── Cover URL reflected in book DTO ──────────────────────────────────────
@@ -141,8 +153,10 @@ class CoverValidityIntegrationTest : IntegrationTestBase() {
         val bookResp = app(Request(Method.GET, "/api/books/$bookId").header("Cookie", "token=$token"))
         assertEquals(Status.OK, bookResp.status)
         val body = bookResp.bodyString()
-        assertTrue(body.contains("/covers/$bookId.jpg"),
-            "book DTO should contain coverUrl pointing to /covers/$bookId.jpg")
+        assertTrue(
+            body.contains("/covers/$bookId.jpg"),
+            "book DTO should contain coverUrl pointing to /covers/$bookId.jpg",
+        )
     }
 
     @Test
@@ -157,8 +171,10 @@ class CoverValidityIntegrationTest : IntegrationTestBase() {
         val pageResp = app(Request(Method.GET, "/books/$bookId").header("Cookie", "token=$token"))
         assertEquals(Status.OK, pageResp.status)
         val html = pageResp.bodyString()
-        assertTrue(html.contains("/covers/$bookId.jpg"),
-            "Book detail page should render <img> pointing to /covers/$bookId.jpg")
+        assertTrue(
+            html.contains("/covers/$bookId.jpg"),
+            "Book detail page should render <img> pointing to /covers/$bookId.jpg",
+        )
     }
 
     // ── Second upload regenerates cover ──────────────────────────────────────

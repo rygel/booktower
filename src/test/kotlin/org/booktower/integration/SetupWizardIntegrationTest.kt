@@ -10,7 +10,6 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class SetupWizardIntegrationTest : IntegrationTestBase() {
-
     @Test
     fun `GET setup status shows all steps incomplete for new user`() {
         val token = registerAndGetToken()
@@ -28,10 +27,11 @@ class SetupWizardIntegrationTest : IntegrationTestBase() {
     @Test
     fun `POST complete step marks it done`() {
         val token = registerAndGetToken()
-        val resp = app(
-            Request(Method.POST, "/api/setup/steps/profile/complete")
-                .header("Cookie", "token=$token"),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/api/setup/steps/profile/complete")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, resp.status)
         val tree = Json.mapper.readTree(resp.bodyString())
         assertEquals("profile", tree.get("step").asText())
@@ -54,19 +54,30 @@ class SetupWizardIntegrationTest : IntegrationTestBase() {
         val token = registerAndGetToken()
         val resp = app(Request(Method.POST, "/api/setup/complete").header("Cookie", "token=$token"))
         assertEquals(Status.OK, resp.status)
-        assertTrue(Json.mapper.readTree(resp.bodyString()).get("completed").asBoolean())
+        assertTrue(
+            Json.mapper
+                .readTree(resp.bodyString())
+                .get("completed")
+                .asBoolean(),
+        )
 
         val statusResp = app(Request(Method.GET, "/api/setup/status").header("Cookie", "token=$token"))
-        assertTrue(Json.mapper.readTree(statusResp.bodyString()).get("completed").asBoolean())
+        assertTrue(
+            Json.mapper
+                .readTree(statusResp.bodyString())
+                .get("completed")
+                .asBoolean(),
+        )
     }
 
     @Test
     fun `POST invalid step returns 400`() {
         val token = registerAndGetToken()
-        val resp = app(
-            Request(Method.POST, "/api/setup/steps/unknown/complete")
-                .header("Cookie", "token=$token"),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/api/setup/steps/unknown/complete")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.BAD_REQUEST, resp.status)
     }
 
@@ -77,7 +88,12 @@ class SetupWizardIntegrationTest : IntegrationTestBase() {
         app(Request(Method.POST, "/api/setup/complete").header("Cookie", "token=$token1"))
 
         val resp2 = app(Request(Method.GET, "/api/setup/status").header("Cookie", "token=$token2"))
-        assertFalse(Json.mapper.readTree(resp2.bodyString()).get("completed").asBoolean())
+        assertFalse(
+            Json.mapper
+                .readTree(resp2.bodyString())
+                .get("completed")
+                .asBoolean(),
+        )
     }
 
     @Test

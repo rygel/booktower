@@ -4,7 +4,7 @@ import org.booktower.TestFixture
 import org.booktower.config.Json
 import org.booktower.config.SmtpConfig
 import org.booktower.config.WeblateConfig
-import org.booktower.filters.GlobalErrorFilter
+import org.booktower.filters.globalErrorFilter
 import org.booktower.handlers.AppHandler
 import org.booktower.models.LoginResponse
 import org.booktower.services.AdminService
@@ -12,8 +12,8 @@ import org.booktower.services.AnalyticsService
 import org.booktower.services.AnnotationService
 import org.booktower.services.ApiTokenService
 import org.booktower.services.AuthService
-import org.booktower.services.BookmarkService
 import org.booktower.services.BookService
+import org.booktower.services.BookmarkService
 import org.booktower.services.ComicService
 import org.booktower.services.EmailService
 import org.booktower.services.EpubMetadataService
@@ -26,8 +26,8 @@ import org.booktower.services.MagicShelfService
 import org.booktower.services.MetadataFetchService
 import org.booktower.services.PasswordResetService
 import org.booktower.services.PdfMetadataService
-import org.booktower.services.ReadingSessionService
 import org.booktower.services.ReaderPreferencesService
+import org.booktower.services.ReadingSessionService
 import org.booktower.services.SeedService
 import org.booktower.services.UserSettingsService
 import org.booktower.weblate.WeblateHandler
@@ -44,7 +44,6 @@ import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Path
 
 class FontIntegrationTest {
-
     @TempDir
     lateinit var fontsDir: Path
 
@@ -75,26 +74,63 @@ class FontIntegrationTest {
         val seedService = SeedService(bookService, libraryService, config.storage.coversPath, config.storage.booksPath)
         val fontService = FontService(jdbi, fontsDir.toString())
         val readerPreferencesService = ReaderPreferencesService(userSettingsService)
-        val appHandler = AppHandler(
-            authService, libraryService, bookService, bookmarkService,
-            userSettingsService, pdfMetadataService, epubMetadataService, adminService, jwtService, config.storage,
-            TestFixture.templateRenderer,
-            WeblateHandler(WeblateConfig("", "", "", false)),
-            analyticsService, annotationService, MetadataFetchService(), magicShelfService,
-            passwordResetService, EmailService(SmtpConfig("", 587, "", "", "", false)),
-            "http://localhost:9999", true,
-            apiTokenService, exportService, comicService, goodreadsImportService,
-            readingSessionService, seedService,
-            null, null, null, null, null, null, null, null, null, null, null, null,
-            null, null, null, fontService, readerPreferencesService,
-        )
-        app = GlobalErrorFilter().then(appHandler.routes())
+        val appHandler =
+            AppHandler(
+                authService,
+                libraryService,
+                bookService,
+                bookmarkService,
+                userSettingsService,
+                pdfMetadataService,
+                epubMetadataService,
+                adminService,
+                jwtService,
+                config.storage,
+                TestFixture.templateRenderer,
+                WeblateHandler(WeblateConfig("", "", "", false)),
+                analyticsService,
+                annotationService,
+                MetadataFetchService(),
+                magicShelfService,
+                passwordResetService,
+                EmailService(SmtpConfig("", 587, "", "", "", false)),
+                "http://localhost:9999",
+                true,
+                apiTokenService,
+                exportService,
+                comicService,
+                goodreadsImportService,
+                readingSessionService,
+                seedService,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                fontService,
+                readerPreferencesService,
+            )
+        app = globalErrorFilter().then(appHandler.routes())
     }
 
     private fun registerAndToken(): String {
         val u = "font_${System.nanoTime()}"
-        val r = app(Request(Method.POST, "/auth/register").header("Content-Type", "application/json")
-            .body("""{"username":"$u","email":"$u@test.com","password":"pass1234"}"""))
+        val r =
+            app(
+                Request(Method.POST, "/auth/register")
+                    .header("Content-Type", "application/json")
+                    .body("""{"username":"$u","email":"$u@test.com","password":"pass1234"}"""),
+            )
         return Json.mapper.readValue(r.bodyString(), LoginResponse::class.java).token
     }
 
@@ -111,10 +147,13 @@ class FontIntegrationTest {
     fun `POST api fonts uploads a font file`() {
         val token = registerAndToken()
         val fakeFont = ByteArray(128) { it.toByte() }
-        val resp = app(Request(Method.POST, "/api/fonts")
-            .header("Cookie", "token=$token")
-            .header("Content-Disposition", """attachment; filename="MyFont.ttf"""")
-            .body(fakeFont.inputStream()))
+        val resp =
+            app(
+                Request(Method.POST, "/api/fonts")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Disposition", """attachment; filename="MyFont.ttf"""")
+                    .body(fakeFont.inputStream()),
+            )
         assertEquals(Status.CREATED, resp.status)
         val tree = Json.mapper.readTree(resp.bodyString())
         assertTrue(tree.get("id")?.asText()?.isNotBlank() == true)
@@ -126,10 +165,12 @@ class FontIntegrationTest {
     fun `GET api fonts lists uploaded fonts`() {
         val token = registerAndToken()
         val fakeFont = ByteArray(64) { 0x41 }
-        app(Request(Method.POST, "/api/fonts")
-            .header("Cookie", "token=$token")
-            .header("Content-Disposition", """attachment; filename="TestFont.otf"""")
-            .body(fakeFont.inputStream()))
+        app(
+            Request(Method.POST, "/api/fonts")
+                .header("Cookie", "token=$token")
+                .header("Content-Disposition", """attachment; filename="TestFont.otf"""")
+                .body(fakeFont.inputStream()),
+        )
         val resp = app(Request(Method.GET, "/api/fonts").header("Cookie", "token=$token"))
         assertEquals(Status.OK, resp.status)
         val arr = Json.mapper.readTree(resp.bodyString())
@@ -141,11 +182,18 @@ class FontIntegrationTest {
     fun `DELETE api fonts removes the font`() {
         val token = registerAndToken()
         val fakeFont = ByteArray(64) { 0x42 }
-        val upload = app(Request(Method.POST, "/api/fonts")
-            .header("Cookie", "token=$token")
-            .header("Content-Disposition", """attachment; filename="ToDelete.woff"""")
-            .body(fakeFont.inputStream()))
-        val fontId = Json.mapper.readTree(upload.bodyString()).get("id").asText()
+        val upload =
+            app(
+                Request(Method.POST, "/api/fonts")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Disposition", """attachment; filename="ToDelete.woff"""")
+                    .body(fakeFont.inputStream()),
+            )
+        val fontId =
+            Json.mapper
+                .readTree(upload.bodyString())
+                .get("id")
+                .asText()
 
         val del = app(Request(Method.DELETE, "/api/fonts/$fontId").header("Cookie", "token=$token"))
         assertEquals(Status.NO_CONTENT, del.status)
@@ -158,10 +206,13 @@ class FontIntegrationTest {
     @Test
     fun `POST api fonts rejects unsupported extension`() {
         val token = registerAndToken()
-        val resp = app(Request(Method.POST, "/api/fonts")
-            .header("Cookie", "token=$token")
-            .header("Content-Disposition", """attachment; filename="script.exe"""")
-            .body(ByteArray(64).inputStream()))
+        val resp =
+            app(
+                Request(Method.POST, "/api/fonts")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Disposition", """attachment; filename="script.exe"""")
+                    .body(ByteArray(64).inputStream()),
+            )
         assertEquals(Status.BAD_REQUEST, resp.status)
     }
 
@@ -169,11 +220,18 @@ class FontIntegrationTest {
     fun `GET fonts userId filename serves the font file`() {
         val token = registerAndToken()
         val fakeFont = ByteArray(100) { 0x50 }
-        val upload = app(Request(Method.POST, "/api/fonts")
-            .header("Cookie", "token=$token")
-            .header("Content-Disposition", """attachment; filename="Serve.ttf"""")
-            .body(fakeFont.inputStream()))
-        val url = Json.mapper.readTree(upload.bodyString()).get("url").asText()
+        val upload =
+            app(
+                Request(Method.POST, "/api/fonts")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Disposition", """attachment; filename="Serve.ttf"""")
+                    .body(fakeFont.inputStream()),
+            )
+        val url =
+            Json.mapper
+                .readTree(upload.bodyString())
+                .get("url")
+                .asText()
         val resp = app(Request(Method.GET, url))
         assertEquals(Status.OK, resp.status)
         assertEquals("font/ttf", resp.header("Content-Type"))

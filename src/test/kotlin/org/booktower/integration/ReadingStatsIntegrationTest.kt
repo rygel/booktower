@@ -10,7 +10,6 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class ReadingStatsIntegrationTest : IntegrationTestBase() {
-
     @Test
     fun `GET reading stats returns valid structure for new user`() {
         val token = registerAndGetToken()
@@ -46,10 +45,12 @@ class ReadingStatsIntegrationTest : IntegrationTestBase() {
         val bookId = createBook(token, libId)
 
         // Update reading progress to generate a session
-        app(Request(Method.POST, "/api/books/$bookId/progress")
-            .header("Cookie", "token=$token")
-            .header("Content-Type", "application/json")
-            .body("""{"page":50,"pageCount":200}"""))
+        app(
+            Request(Method.POST, "/api/books/$bookId/progress")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/json")
+                .body("""{"page":50,"pageCount":200}"""),
+        )
 
         val resp = app(Request(Method.GET, "/api/stats/reading").header("Cookie", "token=$token"))
         val tree = Json.mapper.readTree(resp.bodyString())
@@ -71,9 +72,12 @@ class ReadingStatsIntegrationTest : IntegrationTestBase() {
 
         val libId = createLibrary(token1)
         val bookId = createBook(token1, libId)
-        app(Request(Method.POST, "/api/books/$bookId/progress")
-            .header("Cookie", "token=$token1").header("Content-Type", "application/json")
-            .body("""{"page":100,"pageCount":200}"""))
+        app(
+            Request(Method.POST, "/api/books/$bookId/progress")
+                .header("Cookie", "token=$token1")
+                .header("Content-Type", "application/json")
+                .body("""{"page":100,"pageCount":200}"""),
+        )
 
         // User 2 should still have 0 stats
         val resp2 = app(Request(Method.GET, "/api/stats/reading").header("Cookie", "token=$token2"))
