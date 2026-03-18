@@ -3,6 +3,7 @@
 @import org.booktower.models.BookDto
 @import org.booktower.models.LibraryDto
 @param username: String?
+@param gravatarHash: String = ""
 @param libraries: List<LibraryDto>
 @param recentBooks: List<BookDto>
 @param recentlyAddedBooks: List<BookDto>
@@ -20,7 +21,7 @@
 @param booksFinishedThisYear: Int = 0
 @param year: Int = 2026
 
-@template.components.layout(title="${i18n.translate("page.dashboard.title")} - BookTower", username=username, currentPage="home",
+@template.components.layout(title="${i18n.translate("page.dashboard.title")} - BookTower", username=username, gravatarHash=gravatarHash, currentPage="home",
     themeCss=themeCss, currentTheme=currentTheme, lang=lang, themes=themes, i18n=i18n, searchQuery="", isAdmin=isAdmin, content = @`
 <div class="page-container" style="max-width:64rem;">
 

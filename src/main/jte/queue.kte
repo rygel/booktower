@@ -2,6 +2,7 @@
 @import org.booktower.model.ThemeDefinition
 @import org.booktower.models.BookDto
 @param username: String?
+@param gravatarHash: String = ""
 @param books: List<BookDto>
 @param total: Int
 @param currentPage: Int = 1
@@ -13,7 +14,7 @@
 @param i18n: I18nService
 @param isAdmin: Boolean = false
 
-@template.components.layout(title="${i18n.translate("page.queue.title")} - BookTower", username=username, currentPage="queue",
+@template.components.layout(title="${i18n.translate("page.queue.title")} - BookTower", username=username, gravatarHash=gravatarHash, currentPage="queue",
     themeCss=themeCss, currentTheme=currentTheme, lang=lang, themes=themes, i18n=i18n, searchQuery="", isAdmin=isAdmin, content = @`
 <div style="padding:2rem; max-width:72rem; margin:0 auto;">
 

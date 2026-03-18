@@ -4,6 +4,7 @@
 @import org.booktower.models.MagicShelfDto
 @import org.booktower.models.ShelfRuleType
 @param username: String?
+@param gravatarHash: String = ""
 @param libraries: List<LibraryDto>
 @param shelves: List<MagicShelfDto>
 @param themeCss: String
@@ -13,7 +14,7 @@
 @param i18n: I18nService
 @param isAdmin: Boolean = false
 
-@template.components.layout(title="${i18n.translate("page.libraries.title")} - BookTower", username=username, currentPage="libraries",
+@template.components.layout(title="${i18n.translate("page.libraries.title")} - BookTower", username=username, gravatarHash=gravatarHash, currentPage="libraries",
     themeCss=themeCss, currentTheme=currentTheme, lang=lang, themes=themes, i18n=i18n, searchQuery="", isAdmin=isAdmin, content = @`
 <div style="padding:2rem;">
 

@@ -53,13 +53,15 @@ class PageHandler(
     fun libraries(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
         val ctx = WebContext(req)
+        val (username, gravatarHash) = userDisplayInfo(userId)
         val libraries = libraryService.getLibraries(userId)
         val shelves = magicShelfService.getShelves(userId)
         return htmlOk(
             templateRenderer.render(
                 "libraries.kte",
                 mapOf(
-                    "username" to null,
+                    "username" to username,
+                    "gravatarHash" to gravatarHash,
                     "libraries" to libraries,
                     "shelves" to shelves,
                     "themeCss" to ctx.themeCss,
@@ -77,6 +79,7 @@ class PageHandler(
     fun magicShelf(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
         val ctx = WebContext(req)
+        val (username, gravatarHash) = userDisplayInfo(userId)
         val shelfId = req.lastPathSegment().toUuidOrNull() ?: return Response(Status.NOT_FOUND)
         val shelf = magicShelfService.getShelf(userId, shelfId) ?: return Response(Status.NOT_FOUND)
         val books = magicShelfService.resolveBooks(userId, shelf)
@@ -84,7 +87,8 @@ class PageHandler(
             templateRenderer.render(
                 "shelf.kte",
                 mapOf(
-                    "username" to null,
+                    "username" to username,
+                    "gravatarHash" to gravatarHash,
                     "shelf" to shelf,
                     "books" to books,
                     "themeCss" to ctx.themeCss,
@@ -163,6 +167,7 @@ class PageHandler(
     fun library(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
         val ctx = WebContext(req)
+        val (username, gravatarHash) = userDisplayInfo(userId)
         val libId = req.lastPathSegment().toUuidOrNull() ?: return Response(Status.NOT_FOUND)
         val library = libraryService.getLibrary(userId, libId) ?: return Response(Status.NOT_FOUND)
         val sortParam = req.query("sort")
@@ -206,7 +211,8 @@ class PageHandler(
             templateRenderer.render(
                 "library.kte",
                 mapOf(
-                    "username" to null,
+                    "username" to username,
+                    "gravatarHash" to gravatarHash,
                     "library" to library,
                     "books" to result.getBooks(),
                     "currentSort" to sortBy.name,
@@ -233,6 +239,7 @@ class PageHandler(
     fun book(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
         val ctx = WebContext(req)
+        val (username, gravatarHash) = userDisplayInfo(userId)
         val bookId = req.lastPathSegment().toUuidOrNull() ?: return Response(Status.NOT_FOUND)
         val book = bookService.getBook(userId, bookId) ?: return Response(Status.NOT_FOUND)
         val bookmarks = bookmarkService.getBookmarks(userId, bookId)
@@ -243,7 +250,8 @@ class PageHandler(
             templateRenderer.render(
                 "book.kte",
                 mapOf(
-                    "username" to null,
+                    "username" to username,
+                    "gravatarHash" to gravatarHash,
                     "book" to book,
                     "libraryName" to libraryName,
                     "libraries" to libraries,
@@ -365,6 +373,7 @@ class PageHandler(
     fun search(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
         val ctx = WebContext(req)
+        val (username, gravatarHash) = userDisplayInfo(userId)
         val query = req.query("q") ?: ""
         val page = req.query("page")?.toIntOrNull() ?: 1
         val libId = req.query("libId")?.takeIf { it.isNotBlank() }
@@ -380,7 +389,8 @@ class PageHandler(
             templateRenderer.render(
                 "search.kte",
                 mapOf(
-                    "username" to null,
+                    "username" to username,
+                    "gravatarHash" to gravatarHash,
                     "query" to query,
                     "books" to (result?.getBooks() ?: emptyList<Any>()),
                     "total" to (result?.total ?: 0),
@@ -403,6 +413,7 @@ class PageHandler(
     fun dashboard(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
         val ctx = WebContext(req)
+        val (username, gravatarHash) = userDisplayInfo(userId)
         val libraries = libraryService.getLibraries(userId)
         val recentBooks = bookService.getRecentBooks(userId, 6)
         val recentlyAddedBooks = bookService.getRecentlyAddedBooks(userId, 6)
@@ -419,7 +430,8 @@ class PageHandler(
             templateRenderer.render(
                 "dashboard.kte",
                 mapOf(
-                    "username" to null,
+                    "username" to username,
+                    "gravatarHash" to gravatarHash,
                     "libraries" to libraries,
                     "recentBooks" to recentBooks,
                     "recentlyAddedBooks" to recentlyAddedBooks,
@@ -463,7 +475,8 @@ class PageHandler(
             templateRenderer.render(
                 "profile.kte",
                 mapOf(
-                    "username" to null,
+                    "username" to (user?.username),
+                    "gravatarHash" to (user?.email?.let { gravatarHash(it) } ?: ""),
                     "userEmail" to (user?.email ?: ""),
                     "userUsername" to (user?.username ?: ""),
                     "memberSince" to (user?.createdAt?.toString()?.take(10) ?: ""),
@@ -483,13 +496,15 @@ class PageHandler(
     fun analytics(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
         val ctx = WebContext(req)
+        val (username, gravatarHash) = userDisplayInfo(userId)
         val summary = analyticsService.getSummary(userId)
         val recentSessions = readingSessionService?.getRecentSessions(userId, 20) ?: emptyList()
         return htmlOk(
             templateRenderer.render(
                 "analytics.kte",
                 mapOf(
-                    "username" to null,
+                    "username" to username,
+                    "gravatarHash" to gravatarHash,
                     "summary" to summary,
                     "recentSessions" to recentSessions,
                     "themeCss" to ctx.themeCss,
@@ -755,6 +770,7 @@ class PageHandler(
     fun queue(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
         val ctx = WebContext(req)
+        val (username, gravatarHash) = userDisplayInfo(userId)
         val page = req.query("page")?.toIntOrNull() ?: 1
         val result =
             bookService.getBooks(
@@ -770,7 +786,8 @@ class PageHandler(
             templateRenderer.render(
                 "queue.kte",
                 mapOf(
-                    "username" to null,
+                    "username" to username,
+                    "gravatarHash" to gravatarHash,
                     "books" to result.getBooks(),
                     "total" to result.total,
                     "currentPage" to result.page,
@@ -790,12 +807,14 @@ class PageHandler(
     fun authorList(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
         val ctx = WebContext(req)
+        val (username, gravatarHash) = userDisplayInfo(userId)
         val authors = bookService.getAuthors(userId)
         return htmlOk(
             templateRenderer.render(
                 "author-list.kte",
                 mapOf(
-                    "username" to null,
+                    "username" to username,
+                    "gravatarHash" to gravatarHash,
                     "authors" to authors,
                     "themeCss" to ctx.themeCss,
                     "currentTheme" to ctx.theme,
@@ -812,6 +831,7 @@ class PageHandler(
     fun author(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
         val ctx = WebContext(req)
+        val (username, gravatarHash) = userDisplayInfo(userId)
         val name =
             req
                 .lastPathSegment()
@@ -822,7 +842,8 @@ class PageHandler(
             templateRenderer.render(
                 "author.kte",
                 mapOf(
-                    "username" to null,
+                    "username" to username,
+                    "gravatarHash" to gravatarHash,
                     "authorName" to name,
                     "books" to books,
                     "themeCss" to ctx.themeCss,
@@ -840,12 +861,14 @@ class PageHandler(
     fun seriesList(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
         val ctx = WebContext(req)
+        val (username, gravatarHash) = userDisplayInfo(userId)
         val series = bookService.getSeries(userId)
         return htmlOk(
             templateRenderer.render(
                 "series-list.kte",
                 mapOf(
-                    "username" to null,
+                    "username" to username,
+                    "gravatarHash" to gravatarHash,
                     "series" to series,
                     "themeCss" to ctx.themeCss,
                     "currentTheme" to ctx.theme,
@@ -862,6 +885,7 @@ class PageHandler(
     fun series(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
         val ctx = WebContext(req)
+        val (username, gravatarHash) = userDisplayInfo(userId)
         val name =
             req
                 .lastPathSegment()
@@ -872,7 +896,8 @@ class PageHandler(
             templateRenderer.render(
                 "series.kte",
                 mapOf(
-                    "username" to null,
+                    "username" to username,
+                    "gravatarHash" to gravatarHash,
                     "seriesName" to name,
                     "books" to books,
                     "themeCss" to ctx.themeCss,
@@ -890,12 +915,14 @@ class PageHandler(
     fun tagList(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
         val ctx = WebContext(req)
+        val (username, gravatarHash) = userDisplayInfo(userId)
         val tags = bookService.getTagsWithCounts(userId)
         return htmlOk(
             templateRenderer.render(
                 "tag-list.kte",
                 mapOf(
-                    "username" to null,
+                    "username" to username,
+                    "gravatarHash" to gravatarHash,
                     "tags" to tags,
                     "themeCss" to ctx.themeCss,
                     "currentTheme" to ctx.theme,
@@ -912,6 +939,7 @@ class PageHandler(
     fun tag(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
         val ctx = WebContext(req)
+        val (username, gravatarHash) = userDisplayInfo(userId)
         val name =
             req
                 .lastPathSegment()
@@ -922,7 +950,8 @@ class PageHandler(
             templateRenderer.render(
                 "tag.kte",
                 mapOf(
-                    "username" to null,
+                    "username" to username,
+                    "gravatarHash" to gravatarHash,
                     "tagName" to name,
                     "books" to books,
                     "themeCss" to ctx.themeCss,
@@ -942,6 +971,18 @@ class PageHandler(
         val token = req.cookie("token")?.value ?: return null
         val userId = jwtService.extractUserId(token) ?: return null
         return if (authService.getUserById(userId) != null) userId else null
+    }
+
+    /** Returns the username and Gravatar hash for the authenticated user. */
+    private fun userDisplayInfo(userId: UUID): Pair<String?, String> {
+        val user = authService.getUserById(userId)
+        return Pair(user?.username, user?.email?.let { gravatarHash(it) } ?: "")
+    }
+
+    private fun gravatarHash(email: String): String {
+        val md = java.security.MessageDigest.getInstance("MD5")
+        return md.digest(email.trim().lowercase().toByteArray())
+            .joinToString("") { "%02x".format(it) }
     }
 
     private fun authIsAdmin(req: Request): Boolean {

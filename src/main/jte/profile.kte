@@ -2,6 +2,7 @@
 @import org.booktower.model.ThemeDefinition
 @import org.booktower.models.LibraryDto
 @param username: String?
+@param gravatarHash: String = ""
 @param userEmail: String
 @param userUsername: String
 @param memberSince: String
@@ -14,7 +15,7 @@
 @param i18n: I18nService
 @param isAdmin: Boolean = false
 
-@template.components.layout(title="${i18n.translate("page.profile.title")} - BookTower", username=username, currentPage="profile",
+@template.components.layout(title="${i18n.translate("page.profile.title")} - BookTower", username=username, gravatarHash=gravatarHash, currentPage="profile",
     themeCss=themeCss, currentTheme=currentTheme, lang=lang, themes=themes, i18n=i18n, searchQuery="", isAdmin=isAdmin, content = @`
 <div class="page-container" style="max-width:36rem;">
     <h1 class="page-title flex-center gap-sm" style="font-size:1.25rem;">

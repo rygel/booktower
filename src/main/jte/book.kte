@@ -6,6 +6,7 @@
 @import org.booktower.models.LibraryDto
 @import org.booktower.models.ReadStatus
 @param username: String?
+@param gravatarHash: String = ""
 @param book: BookDto
 @param libraryName: String?
 @param libraries: List<LibraryDto>
@@ -18,7 +19,7 @@
 @param isAdmin: Boolean = false
 @param chapters: List<BookFileDto> = emptyList()
 
-@template.components.layout(title="${book.title} - BookTower", username=username, currentPage="library",
+@template.components.layout(title="${book.title} - BookTower", username=username, gravatarHash=gravatarHash, currentPage="library",
     themeCss=themeCss, currentTheme=currentTheme, lang=lang, themes=themes, i18n=i18n, searchQuery="", isAdmin=isAdmin, content = @`
 <div style="padding:2rem; max-width:56rem; margin:0 auto;">
 
