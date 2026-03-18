@@ -16,15 +16,15 @@
 
 @template.components.layout(title="${i18n.translate("page.profile.title")} - BookTower", username=username, currentPage="profile",
     themeCss=themeCss, currentTheme=currentTheme, lang=lang, themes=themes, i18n=i18n, searchQuery="", isAdmin=isAdmin, content = @`
-<div style="padding:2rem; max-width:36rem; margin:0 auto;">
-    <h1 style="font-size:1.25rem; font-weight:700; color:var(--bt-text); margin-bottom:1.5rem; display:flex; align-items:center; gap:0.625rem;">
+<div class="page-container" style="max-width:36rem;">
+    <h1 class="page-title flex-center gap-sm" style="font-size:1.25rem;">
         <i class="ri-user-settings-line" style="color:var(--bt-accent-dim);"></i>
         ${i18n.translate("page.profile.title")}
     </h1>
 
     <!-- Account Information -->
-    <div class="card" style="padding:1.5rem; margin-bottom:1.25rem;">
-        <h2 style="font-size:0.9rem; font-weight:600; color:var(--bt-text-dim); margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem;">
+    <div class="card card-padding-lg" style=" margin-bottom:1.25rem;">
+        <h2 class="section-title flex-center gap-sm" style="font-size:0.9rem; color:var(--bt-text-dim); margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem;">
             <i class="ri-user-line" style="color:var(--bt-accent-dim);"></i>
             ${i18n.translate("page.profile.account.info")}
         </h2>
@@ -39,8 +39,8 @@
     </div>
 
     <!-- Reading Analytics toggle -->
-    <div class="card" style="padding:1.5rem; margin-bottom:1.25rem;">
-        <h2 style="font-size:0.9rem; font-weight:600; color:var(--bt-text-dim); margin-bottom:0.5rem; display:flex; align-items:center; gap:0.5rem;">
+    <div class="card card-padding-lg" style=" margin-bottom:1.25rem;">
+        <h2 class="section-title flex-center gap-sm" style="font-size:0.9rem; color:var(--bt-text-dim); margin-bottom:0.5rem; display:flex; align-items:center; gap:0.5rem;">
             <i class="ri-bar-chart-2-line" style="color:var(--bt-accent-dim);"></i>
             ${i18n.translate("page.profile.analytics")}
         </h2>
@@ -60,8 +60,8 @@
     </div>
 
     <!-- Change Email -->
-    <div class="card" style="padding:1.5rem; margin-bottom:1.25rem;">
-        <h2 style="font-size:0.9rem; font-weight:600; color:var(--bt-text-dim); margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem;">
+    <div class="card card-padding-lg" style=" margin-bottom:1.25rem;">
+        <h2 class="section-title flex-center gap-sm" style="font-size:0.9rem; color:var(--bt-text-dim); margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem;">
             <i class="ri-mail-settings-line" style="color:var(--bt-accent-dim);"></i>
             ${i18n.translate("page.profile.change.email")}
         </h2>
@@ -83,8 +83,8 @@
     </div>
 
     <!-- API Tokens -->
-    <div class="card" style="padding:1.5rem; margin-bottom:1.25rem;">
-        <h2 style="font-size:0.9rem; font-weight:600; color:var(--bt-text-dim); margin-bottom:0.5rem; display:flex; align-items:center; gap:0.5rem;">
+    <div class="card card-padding-lg" style=" margin-bottom:1.25rem;">
+        <h2 class="section-title flex-center gap-sm" style="font-size:0.9rem; color:var(--bt-text-dim); margin-bottom:0.5rem; display:flex; align-items:center; gap:0.5rem;">
             <i class="ri-key-2-line" style="color:var(--bt-accent-dim);"></i>
             ${i18n.translate("page.profile.api.tokens")}
         </h2>
@@ -106,8 +106,8 @@
     </div>
 
     <!-- Data Export -->
-    <div class="card" style="padding:1.5rem; margin-bottom:1.25rem;">
-        <h2 style="font-size:0.9rem; font-weight:600; color:var(--bt-text-dim); margin-bottom:0.5rem; display:flex; align-items:center; gap:0.5rem;">
+    <div class="card card-padding-lg" style=" margin-bottom:1.25rem;">
+        <h2 class="section-title flex-center gap-sm" style="font-size:0.9rem; color:var(--bt-text-dim); margin-bottom:0.5rem; display:flex; align-items:center; gap:0.5rem;">
             <i class="ri-database-2-line" style="color:var(--bt-accent-dim);"></i>
             ${i18n.translate("page.profile.export")}
         </h2>
@@ -118,8 +118,8 @@
     </div>
 
     <!-- Goodreads Import -->
-    <div class="card" style="padding:1.5rem; margin-bottom:1.25rem;">
-        <h2 style="font-size:0.9rem; font-weight:600; color:var(--bt-text-dim); margin-bottom:0.5rem; display:flex; align-items:center; gap:0.5rem;">
+    <div class="card card-padding-lg" style=" margin-bottom:1.25rem;">
+        <h2 class="section-title flex-center gap-sm" style="font-size:0.9rem; color:var(--bt-text-dim); margin-bottom:0.5rem; display:flex; align-items:center; gap:0.5rem;">
             <i class="ri-upload-2-line" style="color:var(--bt-accent-dim);"></i>
             ${i18n.translate("page.profile.import.goodreads")}
         </h2>
@@ -145,8 +145,8 @@
     </div>
 
     <!-- Change Password -->
-    <div class="card" style="padding:1.5rem;">
-        <h2 style="font-size:0.9rem; font-weight:600; color:var(--bt-text-dim); margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem;">
+    <div class="card card-padding-lg" style="">
+        <h2 class="section-title flex-center gap-sm" style="font-size:0.9rem; color:var(--bt-text-dim); margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem;">
             <i class="ri-lock-password-line" style="color:var(--bt-accent-dim);"></i>
             ${i18n.translate("page.profile.change.password")}
         </h2>

@@ -77,29 +77,39 @@ class Fb2ReaderService {
     ) {
         if (node !is Element) return
         when (node.nodeName.substringAfterLast(':')) {
-            "body" -> node.childNodes.forEach { processSection(it, sb, depth) }
+            "body" -> {
+                node.childNodes.forEach { processSection(it, sb, depth) }
+            }
+
             "section" -> {
                 sb.append("<section>")
                 node.childNodes.forEach { processSection(it, sb, depth + 1) }
                 sb.append("</section>")
             }
+
             "title" -> {
                 val tag = if (depth < 1) "h2" else "h3"
                 sb.append("<$tag>")
                 node.childNodes.forEach { processInline(it, sb) }
                 sb.append("</$tag>\n")
             }
+
             "p" -> {
                 sb.append("<p>")
                 node.childNodes.forEach { processInline(it, sb) }
                 sb.append("</p>\n")
             }
-            "empty-line" -> sb.append("<br>\n")
+
+            "empty-line" -> {
+                sb.append("<br>\n")
+            }
+
             "epigraph" -> {
                 sb.append("<div class=\"epigraph\">")
                 node.childNodes.forEach { processSection(it, sb, depth) }
                 sb.append("</div>\n")
             }
+
             "poem" -> {
                 sb.append("<div class=\"poem\">")
                 node.childNodes.forEach { child ->
@@ -115,6 +125,7 @@ class Fb2ReaderService {
                 }
                 sb.append("</div>\n")
             }
+
             "cite" -> {
                 sb.append("<blockquote>")
                 node.childNodes.forEach { processSection(it, sb, depth) }
@@ -129,7 +140,10 @@ class Fb2ReaderService {
         sb: StringBuilder,
     ) {
         when (node.nodeType) {
-            Node.TEXT_NODE -> sb.append(escapeHtml(node.nodeValue ?: ""))
+            Node.TEXT_NODE -> {
+                sb.append(escapeHtml(node.nodeValue ?: ""))
+            }
+
             Node.ELEMENT_NODE -> {
                 val tag = (node as Element).nodeName.substringAfterLast(':')
                 when (tag) {
@@ -138,19 +152,27 @@ class Fb2ReaderService {
                         node.childNodes.forEach { processInline(it, sb) }
                         sb.append("</strong>")
                     }
+
                     "emphasis" -> {
                         sb.append("<em>")
                         node.childNodes.forEach { processInline(it, sb) }
                         sb.append("</em>")
                     }
+
                     "p" -> {
                         sb.append("<p>")
                         node.childNodes.forEach { processInline(it, sb) }
                         sb.append("</p>")
                     }
+
                     // render link text only
-                    "a" -> node.childNodes.forEach { processInline(it, sb) }
-                    else -> node.childNodes.forEach { processInline(it, sb) }
+                    "a" -> {
+                        node.childNodes.forEach { processInline(it, sb) }
+                    }
+
+                    else -> {
+                        node.childNodes.forEach { processInline(it, sb) }
+                    }
                 }
             }
         }

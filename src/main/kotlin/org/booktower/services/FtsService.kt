@@ -70,8 +70,14 @@ class FtsService(
         }
         val content =
             when (format.lowercase()) {
-                "epub" -> EpubTextExtractor.extract(file)
-                "pdf" -> PdfTextExtractor.extract(file)
+                "epub" -> {
+                    EpubTextExtractor.extract(file)
+                }
+
+                "pdf" -> {
+                    PdfTextExtractor.extract(file)
+                }
+
                 else -> {
                     markFailed(bookId, "Unsupported format: $format")
                     return false

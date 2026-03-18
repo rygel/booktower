@@ -31,9 +31,17 @@ class LibraryService(
         return jdbi
             .withHandle<List<LibraryDto>, Exception> { handle ->
                 handle
-                    .createQuery("SELECT * FROM libraries WHERE user_id = ? ORDER BY name")
-                    .bind(0, userId.toString())
-                    .map { row -> mapLibrary(handle, row) }
+                    .createQuery(
+                        """
+                        SELECT l.*, COALESCE(bc.cnt, 0) AS book_count
+                        FROM libraries l
+                        LEFT JOIN (SELECT library_id, COUNT(*) AS cnt FROM books GROUP BY library_id) bc
+                            ON bc.library_id = l.id
+                        WHERE l.user_id = ?
+                        ORDER BY l.name
+                        """,
+                    ).bind(0, userId.toString())
+                    .map { row -> mapLibraryFromRow(row) }
                     .list()
             }.let { all ->
                 if (accessibleIds == null) {
@@ -52,35 +60,29 @@ class LibraryService(
         if (accessibleIds != null && libraryId.toString() !in accessibleIds) return null
         return jdbi.withHandle<LibraryDto?, Exception> { handle ->
             handle
-                .createQuery("SELECT * FROM libraries WHERE user_id = ? AND id = ?")
-                .bind(0, userId.toString())
+                .createQuery(
+                    """
+                    SELECT l.*, COALESCE(bc.cnt, 0) AS book_count
+                    FROM libraries l
+                    LEFT JOIN (SELECT library_id, COUNT(*) AS cnt FROM books GROUP BY library_id) bc
+                        ON bc.library_id = l.id
+                    WHERE l.user_id = ? AND l.id = ?
+                    """,
+                ).bind(0, userId.toString())
                 .bind(1, libraryId.toString())
-                .map { row -> mapLibrary(handle, row) }
+                .map { row -> mapLibraryFromRow(row) }
                 .firstOrNull()
         }
     }
 
-    private fun mapLibrary(
-        handle: org.jdbi.v3.core.Handle,
-        row: RowView,
-    ): LibraryDto {
-        val libId = UUID.fromString(row.getColumn("id", String::class.java))
-        val count =
-            handle
-                .createQuery("SELECT COUNT(*) FROM books WHERE library_id = ?")
-                .bind(0, libId.toString())
-                .mapTo(java.lang.Integer::class.java)
-                .first()
-                ?.toInt() ?: 0
-
-        return LibraryDto(
-            id = libId.toString(),
+    private fun mapLibraryFromRow(row: RowView): LibraryDto =
+        LibraryDto(
+            id = row.getColumn("id", String::class.java),
             name = row.getColumn("name", String::class.java),
             path = row.getColumn("path", String::class.java),
-            bookCount = count,
+            bookCount = (row.getColumn("book_count", java.lang.Integer::class.java) ?: 0).toInt(),
             createdAt = row.getColumn("created_at", String::class.java),
         )
-    }
 
     fun createLibrary(
         userId: UUID,

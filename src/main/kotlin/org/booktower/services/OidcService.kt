@@ -156,14 +156,21 @@ open class OidcService(
             val groups =
                 root.get(groupsClaim)?.let { node ->
                     when {
-                        node.isArray -> node.map { it.asText() }.filter { it.isNotBlank() }
-                        node.isTextual ->
+                        node.isArray -> {
+                            node.map { it.asText() }.filter { it.isNotBlank() }
+                        }
+
+                        node.isTextual -> {
                             node
                                 .asText()
                                 .split(",")
                                 .map { it.trim() }
                                 .filter { it.isNotBlank() }
-                        else -> emptyList()
+                        }
+
+                        else -> {
+                            emptyList()
+                        }
                     }
                 } ?: emptyList()
             OidcUserInfo(

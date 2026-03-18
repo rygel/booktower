@@ -29,11 +29,7 @@
 <div style="padding:2rem;">
 
     <!-- Breadcrumb -->
-    <nav style="font-size:0.8rem; color:var(--bt-subtle); margin-bottom:1.5rem; display:flex; align-items:center; gap:0.375rem;">
-        <a href="/libraries" style="color:var(--bt-accent-dim); text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${i18n.translate("nav.libraries")}</a>
-        <i class="ri-arrow-right-s-line"></i>
-        <span style="color:var(--bt-text-dim); font-weight:500;">${library.name}</span>
-    </nav>
+    @template.components.breadcrumb(items = listOf(i18n.translate("nav.libraries") to "/libraries", library.name to null))
 
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.75rem; flex-wrap:wrap; gap:1rem;">
         <div>
@@ -122,59 +118,51 @@
     </div>
 
     <!-- Add Book Modal -->
-    <div id="add-book-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); align-items:center; justify-content:center; z-index:50;"
-         onclick="if(event.target===this)this.style.display='none'">
-        <div class="modal-panel" style="padding:1.5rem; width:100%; max-width:28rem; border-radius:0.75rem; border:1px solid var(--bt-border);" onclick="event.stopPropagation()">
-            <h2 style="font-size:1.125rem; font-weight:700; color:var(--bt-text); margin-bottom:1.25rem;">${i18n.translate("page.library.modal.title")}</h2>
-            <form
-                hx-post="/ui/libraries/${library.id}/books"
-                hx-target="#books-grid"
-                hx-swap="afterbegin"
-                hx-on:htmx:after-request="if(event.detail.successful){document.getElementById('add-book-modal').style.display='none';this.reset();document.getElementById('no-books-hint').style.display='none'}"
-            >
-                <div style="display:flex; flex-direction:column; gap:1rem;">
-                    <div>
-                        <label style="display:block; font-size:0.8rem; font-weight:500; color:var(--bt-muted); margin-bottom:0.375rem;">${i18n.translate("field.title")}</label>
-                        <input type="text" name="title" required placeholder="${i18n.translate("placeholder.book.title")}"
-                            style="width:100%; border-radius:0.5rem; border:1px solid; padding:0.5rem 0.75rem; font-size:0.875rem; box-sizing:border-box;">
-                    </div>
-                    <div>
-                        <label style="display:block; font-size:0.8rem; font-weight:500; color:var(--bt-muted); margin-bottom:0.375rem;">${i18n.translate("field.author")} <span style="color:var(--bt-subtle);">${i18n.translate("label.optional")}</span></label>
-                        <input type="text" name="author" placeholder="${i18n.translate("placeholder.author.name")}"
-                            style="width:100%; border-radius:0.5rem; border:1px solid; padding:0.5rem 0.75rem; font-size:0.875rem; box-sizing:border-box;">
-                    </div>
-                    <div style="display:flex; gap:0.75rem; padding-top:0.5rem;">
-                        <button type="submit" class="btn-primary" style="flex:1;">${i18n.translate("action.add")}</button>
-                        <button type="button" class="btn-secondary" style="flex:1;"
-                            onclick="document.getElementById('add-book-modal').style.display='none'">${i18n.translate("action.cancel")}</button>
-                    </div>
+    @template.components.modal(id = "add-book-modal", title = i18n.translate("page.library.modal.title"), content = @`
+        <form
+            hx-post="/ui/libraries/${library.id}/books"
+            hx-target="#books-grid"
+            hx-swap="afterbegin"
+            hx-on:htmx:after-request="if(event.detail.successful){document.getElementById('add-book-modal').style.display='none';this.reset();document.getElementById('no-books-hint').style.display='none'}"
+        >
+            <div style="display:flex; flex-direction:column; gap:1rem;">
+                <div>
+                    <label style="display:block; font-size:0.8rem; font-weight:500; color:var(--bt-muted); margin-bottom:0.375rem;">${i18n.translate("field.title")}</label>
+                    <input type="text" name="title" required placeholder="${i18n.translate("placeholder.book.title")}"
+                        style="width:100%; border-radius:0.5rem; border:1px solid; padding:0.5rem 0.75rem; font-size:0.875rem; box-sizing:border-box;">
                 </div>
-            </form>
-        </div>
-    </div>
+                <div>
+                    <label style="display:block; font-size:0.8rem; font-weight:500; color:var(--bt-muted); margin-bottom:0.375rem;">${i18n.translate("field.author")} <span style="color:var(--bt-subtle);">${i18n.translate("label.optional")}</span></label>
+                    <input type="text" name="author" placeholder="${i18n.translate("placeholder.author.name")}"
+                        style="width:100%; border-radius:0.5rem; border:1px solid; padding:0.5rem 0.75rem; font-size:0.875rem; box-sizing:border-box;">
+                </div>
+                <div style="display:flex; gap:0.75rem; padding-top:0.5rem;">
+                    <button type="submit" class="btn-primary" style="flex:1;">${i18n.translate("action.add")}</button>
+                    <button type="button" class="btn-secondary" style="flex:1;"
+                        onclick="document.getElementById('add-book-modal').style.display='none'">${i18n.translate("action.cancel")}</button>
+                </div>
+            </div>
+        </form>
+    `)
 
     <!-- Rename Library Modal -->
-    <div id="rename-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); align-items:center; justify-content:center; z-index:50;"
-         onclick="if(event.target===this)this.style.display='none'">
-        <div class="modal-panel" style="padding:1.5rem; width:100%; max-width:24rem; border-radius:0.75rem; border:1px solid var(--bt-border);" onclick="event.stopPropagation()">
-            <h2 style="font-size:1.125rem; font-weight:700; color:var(--bt-text); margin-bottom:1.25rem;">${i18n.translate("page.library.rename.title")}</h2>
-            <form
-                hx-post="/ui/libraries/${library.id}/rename"
-                hx-swap="none"
-                hx-on:htmx:after-request="if(event.detail.successful && event.detail.xhr.getResponseHeader('HX-Redirect')){window.location.href=event.detail.xhr.getResponseHeader('HX-Redirect')}"
-            >
-                <div style="display:flex; flex-direction:column; gap:1rem;">
-                    <input type="text" name="name" value="${library.name}" required maxlength="100"
-                        style="width:100%; border-radius:0.5rem; border:1px solid; padding:0.5rem 0.75rem; font-size:0.875rem; box-sizing:border-box;">
-                    <div style="display:flex; gap:0.75rem;">
-                        <button type="submit" class="btn-primary" style="flex:1;">${i18n.translate("action.rename")}</button>
-                        <button type="button" class="btn-secondary" style="flex:1;"
-                            onclick="document.getElementById('rename-modal').style.display='none'">${i18n.translate("action.cancel")}</button>
-                    </div>
+    @template.components.modal(id = "rename-modal", title = i18n.translate("page.library.rename.title"), content = @`
+        <form
+            hx-post="/ui/libraries/${library.id}/rename"
+            hx-swap="none"
+            hx-on:htmx:after-request="if(event.detail.successful && event.detail.xhr.getResponseHeader('HX-Redirect')){window.location.href=event.detail.xhr.getResponseHeader('HX-Redirect')}"
+        >
+            <div style="display:flex; flex-direction:column; gap:1rem;">
+                <input type="text" name="name" value="${library.name}" required maxlength="100"
+                    style="width:100%; border-radius:0.5rem; border:1px solid; padding:0.5rem 0.75rem; font-size:0.875rem; box-sizing:border-box;">
+                <div style="display:flex; gap:0.75rem;">
+                    <button type="submit" class="btn-primary" style="flex:1;">${i18n.translate("action.rename")}</button>
+                    <button type="button" class="btn-secondary" style="flex:1;"
+                        onclick="document.getElementById('rename-modal').style.display='none'">${i18n.translate("action.cancel")}</button>
                 </div>
-            </form>
-        </div>
-    </div>
+            </div>
+        </form>
+    `)
 
     <!-- Books grid -->
     <div id="books-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:1rem;">
@@ -196,39 +184,7 @@
     @endif
 
     <!-- Pagination -->
-    @if(totalPages > 1)
-        <div style="display:flex; align-items:center; justify-content:center; gap:0.5rem; margin-top:2rem; flex-wrap:wrap;">
-            @if(currentPage > 1)
-                <a href="/libraries/${library.id}?page=${currentPage - 1}&sort=${currentSort}&status=${currentStatus}&tag=${currentTag}&rating=${currentRating}"
-                   style="display:inline-flex; align-items:center; gap:0.25rem; padding:0.4rem 0.75rem; border-radius:0.5rem; border:1px solid var(--bt-border-input); background:var(--bt-surface); color:var(--bt-muted); text-decoration:none; font-size:0.8rem; transition:border-color 0.15s;"
-                   onmouseover="this.style.borderColor='var(--bt-accent)'" onmouseout="this.style.borderColor='var(--bt-border-input)'">
-                    <i class="ri-arrow-left-s-line"></i> ${i18n.translate("pagination.prev")}
-                </a>
-            @endif
-
-            @for(p in 1..totalPages)
-                @if(p == currentPage)
-                    <span style="display:inline-flex; align-items:center; justify-content:center; width:2rem; height:2rem; border-radius:0.5rem; background:var(--bt-accent); color:#fff; font-size:0.8rem; font-weight:600;">${p}</span>
-                @elseif(p == 1 || p == totalPages || (p >= currentPage - 2 && p <= currentPage + 2))
-                    <a href="/libraries/${library.id}?page=${p}&sort=${currentSort}&status=${currentStatus}&tag=${currentTag}&rating=${currentRating}"
-                       style="display:inline-flex; align-items:center; justify-content:center; width:2rem; height:2rem; border-radius:0.5rem; border:1px solid var(--bt-border-input); background:var(--bt-surface); color:var(--bt-muted); text-decoration:none; font-size:0.8rem; transition:border-color 0.15s;"
-                       onmouseover="this.style.borderColor='var(--bt-accent)'" onmouseout="this.style.borderColor='var(--bt-border-input)'">${p}</a>
-                @elseif(p == currentPage - 3 || p == currentPage + 3)
-                    <span style="color:var(--bt-subtle); font-size:0.8rem;">…</span>
-                @endif
-            @endfor
-
-            @if(currentPage < totalPages)
-                <a href="/libraries/${library.id}?page=${currentPage + 1}&sort=${currentSort}&status=${currentStatus}&tag=${currentTag}&rating=${currentRating}"
-                   style="display:inline-flex; align-items:center; gap:0.25rem; padding:0.4rem 0.75rem; border-radius:0.5rem; border:1px solid var(--bt-border-input); background:var(--bt-surface); color:var(--bt-muted); text-decoration:none; font-size:0.8rem; transition:border-color 0.15s;"
-                   onmouseover="this.style.borderColor='var(--bt-accent)'" onmouseout="this.style.borderColor='var(--bt-border-input)'">
-                    ${i18n.translate("pagination.next")} <i class="ri-arrow-right-s-line"></i>
-                </a>
-            @endif
-
-            <span style="font-size:0.75rem; color:var(--bt-subtle); margin-left:0.5rem;">${i18n.translate("pagination.summary", currentPage, totalPages, totalBooks)}</span>
-        </div>
-    @endif
+    @template.components.pagination(currentPage = currentPage, totalPages = totalPages, totalItems = totalBooks, baseUrl = "/libraries/${library.id}?sort=${currentSort}&status=${currentStatus}&tag=${currentTag}&rating=${currentRating}", i18n = i18n)
 
 </div>
 
