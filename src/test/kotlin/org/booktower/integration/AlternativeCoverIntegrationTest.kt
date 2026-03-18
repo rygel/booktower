@@ -148,11 +148,19 @@ class AlternativeCoverIntegrationTest {
         val settingsHandler = UserSettingsHandler(userSettingsService)
         val adminHandler =
             AdminHandler(
-                adminService, TestFixture.templateRenderer, passwordResetService, seedService,
+                adminService,
+                TestFixture.templateRenderer,
+                passwordResetService,
+                seedService,
                 EmailService(
                     SmtpConfig("", 587, "", "", "", true),
                 ),
-                "http://localhost:9999", null, null, null, null, null,
+                "http://localhost:9999",
+                null,
+                null,
+                null,
+                null,
+                null,
             )
         val pageHandler =
             PageHandler(jwtService, authService, libraryService, bookService, bookmarkService, userSettingsService, analyticsService, annotationService, MetadataFetchService(), magicShelfService, TestFixture.templateRenderer, readingSessionService, null)
@@ -179,9 +187,27 @@ class AlternativeCoverIntegrationTest {
         val pageRouter = PageRouter(filters, pageHandler, adminHandler, jwtService, TestFixture.templateRenderer, true)
         val bookApiRouter =
             BookApiRouter(
-                filters, bookHandler, bulkBookHandler, bookmarkHandler, fileHandler,
-                bookService, comicService, storage, magicShelfService,
-                null, null, null, stubCoverService, null, null, null, null, null, null, null, null,
+                filters,
+                bookHandler,
+                bulkBookHandler,
+                bookmarkHandler,
+                fileHandler,
+                bookService,
+                comicService,
+                storage,
+                magicShelfService,
+                null,
+                null,
+                null,
+                stubCoverService,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
             )
         val libraryApiRouter = LibraryApiRouter(filters, libraryHandler, libraryService, null, null)
         val userApiRouter =
@@ -225,7 +251,11 @@ class AlternativeCoverIntegrationTest {
                     .header("Content-Type", "application/json")
                     .body("""{"name":"CovLib ${System.nanoTime()}","path":"./data/cov-${System.nanoTime()}"}"""),
             )
-        val libId = Json.mapper.readTree(libResp.bodyString()).get("id").asText()
+        val libId =
+            Json.mapper
+                .readTree(libResp.bodyString())
+                .get("id")
+                .asText()
         val bookResp =
             app(
                 Request(Method.POST, "/api/books")
@@ -233,7 +263,11 @@ class AlternativeCoverIntegrationTest {
                     .header("Content-Type", "application/json")
                     .body("""{"title":"Dune","author":"Frank Herbert","description":null,"libraryId":"$libId"}"""),
             )
-        val bookId = Json.mapper.readTree(bookResp.bodyString()).get("id").asText()
+        val bookId =
+            Json.mapper
+                .readTree(bookResp.bodyString())
+                .get("id")
+                .asText()
         return libId to bookId
     }
 

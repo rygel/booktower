@@ -223,8 +223,7 @@ class LibraryHealthIntegrationTest {
                 h
                     .createUpdate(
                         "INSERT INTO users (id,username,email,password_hash,created_at,updated_at,is_admin) VALUES (?,?,?,?,?,?,0)",
-                    )
-                    .bind(0, uid.toString())
+                    ).bind(0, uid.toString())
                     .bind(1, uname)
                     .bind(2, "$uname@t.com")
                     .bind(3, "h")

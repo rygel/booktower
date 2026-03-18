@@ -184,8 +184,7 @@ fun buildTestApp(
     val duplicateDetectionService = DuplicateDetectionService(jdbi)
     val geoIpService =
         object : GeoIpService() {
-            override fun lookup(ip: String): GeoLocation =
-                GeoLocation(countryCode = "US", countryName = "United States", city = "Test City")
+            override fun lookup(ip: String): GeoLocation = GeoLocation(countryCode = "US", countryName = "United States", city = "Test City")
         }
     val audit = auditService ?: org.booktower.services.AuditService(jdbi, geoIpService)
     val oidcService = if (oidcForceOnly) OidcService(OidcConfig(enabled = true, forceOnlyMode = true)) else null
@@ -212,15 +211,33 @@ fun buildTestApp(
     val settingsHandler = UserSettingsHandler(userSettingsService)
     val adminHandler =
         AdminHandler(
-            adminService, TestFixture.templateRenderer, passwordResetService, seedService,
-            EmailService(SmtpConfig("", 587, "", "", "", true)), "http://localhost:9999",
-            duplicateDetectionService, audit, userPermissionsService, libraryAccessService, comicPageHashService,
+            adminService,
+            TestFixture.templateRenderer,
+            passwordResetService,
+            seedService,
+            EmailService(SmtpConfig("", 587, "", "", "", true)),
+            "http://localhost:9999",
+            duplicateDetectionService,
+            audit,
+            userPermissionsService,
+            libraryAccessService,
+            comicPageHashService,
         )
     val pageHandler =
         PageHandler(
-            jwt, auth, lib, book, bookmarkService,
-            userSettingsService, analyticsService, annotationService, metaFetch,
-            magicShelfService, TestFixture.templateRenderer, readingSessionService, null,
+            jwt,
+            auth,
+            lib,
+            book,
+            bookmarkService,
+            userSettingsService,
+            analyticsService,
+            annotationService,
+            metaFetch,
+            magicShelfService,
+            TestFixture.templateRenderer,
+            readingSessionService,
+            null,
         )
     val bgTaskHandler = BackgroundTaskHandler(bgTaskService)
     val journalHandler = JournalHandler(journal)
@@ -251,21 +268,47 @@ fun buildTestApp(
     val pageRouter = PageRouter(filters, pageHandler, adminHandler, jwt, TestFixture.templateRenderer, registrationOpen)
     val bookApiRouter =
         BookApiRouter(
-            filters, bookHandler, bulkBookHandler, bookmarkHandler, fileHandler,
-            book, comicService, config.storage, magicShelfService,
-            fontHandler, readerPrefsHandler, journalHandler,
-            null, bookDeliveryService, recommendationService,
-            bookFilesService, comicMetadataService, communityRatingService,
-            bookReviewService, bookNotebookService, duplicateDetectionService,
+            filters,
+            bookHandler,
+            bulkBookHandler,
+            bookmarkHandler,
+            fileHandler,
+            book,
+            comicService,
+            config.storage,
+            magicShelfService,
+            fontHandler,
+            readerPrefsHandler,
+            journalHandler,
+            null,
+            bookDeliveryService,
+            recommendationService,
+            bookFilesService,
+            comicMetadataService,
+            communityRatingService,
+            bookReviewService,
+            bookNotebookService,
+            duplicateDetectionService,
         )
     val libraryApiRouter = LibraryApiRouter(filters, libraryHandler, lib, libraryHealthService, bookDropService)
     val userApiRouter =
         UserApiRouter(
-            filters, settingsHandler, book, userSettingsService,
-            readingStatsService, hardcoverSyncService, opdsCredentialsService,
-            contentRestrictionsService, filterPresetService, telemetryService,
-            bookDeliveryService, notificationService, bgTaskHandler, apiTokenHandler,
-            exportHandler, goodreadsImportHandler,
+            filters,
+            settingsHandler,
+            book,
+            userSettingsService,
+            readingStatsService,
+            hardcoverSyncService,
+            opdsCredentialsService,
+            contentRestrictionsService,
+            filterPresetService,
+            telemetryService,
+            bookDeliveryService,
+            notificationService,
+            bgTaskHandler,
+            apiTokenHandler,
+            exportHandler,
+            goodreadsImportHandler,
         )
     val adminApiRouter =
         AdminApiRouter(
@@ -307,9 +350,18 @@ fun buildTestApp(
     // ── Compose ──────────────────────────────────────────────────────────
     val appHandler =
         AppHandler(
-            fileHandler, config.storage, demoMode,
-            authRouter, oidcRouter, pageRouter, bookApiRouter, libraryApiRouter,
-            userApiRouter, adminApiRouter, metadataApiRouter, audiobookApiRouter,
+            fileHandler,
+            config.storage,
+            demoMode,
+            authRouter,
+            oidcRouter,
+            pageRouter,
+            bookApiRouter,
+            libraryApiRouter,
+            userApiRouter,
+            adminApiRouter,
+            metadataApiRouter,
+            audiobookApiRouter,
             deviceSyncRouter,
         )
     return globalErrorFilter().then(DemoModeFilter(demoMode)).then(appHandler.routes())

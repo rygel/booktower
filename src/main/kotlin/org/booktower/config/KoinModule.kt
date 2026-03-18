@@ -213,14 +213,34 @@ val appModule =
         single { UserSettingsHandler(get()) }
         single {
             AdminHandler(
-                get(), get(), get(), get(), get(), get<AppConfig>().baseUrl,
-                get(), get(), get(), get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get<AppConfig>().baseUrl,
+                get(),
+                get(),
+                get(),
+                get(),
                 get<org.booktower.services.ComicPageHashService>(),
             )
         }
         single {
             PageHandler(
-                get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
             )
         }
         single { BackgroundTaskHandler(get()) }
@@ -365,10 +385,18 @@ val appModule =
         // ── AppHandler (composes routers) ────────────────────────────────────
         single {
             AppHandler(
-                get<FileHandler>(), get<AppConfig>().storage, get<AppConfig>().demoMode,
-                get<AuthRouter>(), get<OidcRouter>(), get<PageRouter>(),
-                get<BookApiRouter>(), get<LibraryApiRouter>(), get<UserApiRouter>(),
-                get<AdminApiRouter>(), get<MetadataApiRouter>(), get<AudiobookApiRouter>(),
+                get<FileHandler>(),
+                get<AppConfig>().storage,
+                get<AppConfig>().demoMode,
+                get<AuthRouter>(),
+                get<OidcRouter>(),
+                get<PageRouter>(),
+                get<BookApiRouter>(),
+                get<LibraryApiRouter>(),
+                get<UserApiRouter>(),
+                get<AdminApiRouter>(),
+                get<MetadataApiRouter>(),
+                get<AudiobookApiRouter>(),
                 get<DeviceSyncRouter>(),
             )
         }
