@@ -1,5 +1,6 @@
 package org.booktower.routers
 
+import org.booktower.filters.AuthenticatedUser
 import org.booktower.handlers.AdminHandler
 import org.booktower.handlers.BackgroundTaskHandler
 import org.booktower.services.BulkCoverService
@@ -11,7 +12,6 @@ import org.booktower.services.TelemetryService
 import org.booktower.services.UpdateEmailProviderRequest
 import org.booktower.services.UpdateScheduledTaskRequest
 import org.booktower.weblate.WeblateHandler
-import org.booktower.filters.AuthenticatedUser
 import org.http4k.core.Method
 import org.http4k.core.Request
 import org.http4k.core.Response
