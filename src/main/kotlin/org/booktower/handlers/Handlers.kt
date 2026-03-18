@@ -216,7 +216,15 @@ class AppHandler(
     private val exportHandler = ExportHandler(exportService, jwtService)
     private val goodreadsImportHandler = GoodreadsImportHandler(goodreadsImportService, jwtService)
     private val bulkBookHandler = BulkBookHandler(bookService)
-    private val authFilter = jwtAuthFilter(jwtService) { userId: java.util.UUID -> authService.getUserById(userId) != null }
+    // Cache user-exists checks for 30 seconds to avoid a DB lookup on every authenticated request
+    private val userExistsCache =
+        com.github.benmanes.caffeine.cache.Caffeine.newBuilder()
+            .maximumSize(1_000)
+            .expireAfterWrite(30, java.util.concurrent.TimeUnit.SECONDS)
+            .build<java.util.UUID, Boolean>()
+    private val authFilter = jwtAuthFilter(jwtService) { userId: java.util.UUID ->
+        userExistsCache.get(userId) { authService.getUserById(it) != null }!!
+    }
     private val adminFilter = authFilter.then(adminFilter())
     private val authRateLimit = RateLimitFilter(maxRequests = 10, windowSeconds = 60)
 
