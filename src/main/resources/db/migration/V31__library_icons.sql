@@ -1,1 +1,0 @@
-ALTER TABLE libraries ADD COLUMN icon_path VARCHAR(255);

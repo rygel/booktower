@@ -243,9 +243,14 @@ val appModule =
         single {
             val jwtService = get<JwtService>()
             val authService = get<AuthService>()
+            val userExistsCache =
+                com.github.benmanes.caffeine.cache.Caffeine.newBuilder()
+                    .maximumSize(1_000)
+                    .expireAfterWrite(30, java.util.concurrent.TimeUnit.SECONDS)
+                    .build<java.util.UUID, Boolean>()
             val authFilter =
                 jwtAuthFilter(jwtService) { userId: java.util.UUID ->
-                    authService.getUserById(userId) != null
+                    userExistsCache.get(userId) { authService.getUserById(it) != null }!!
                 }
             FilterSet(
                 auth = authFilter,
