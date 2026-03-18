@@ -59,7 +59,7 @@
         <ktlint.version>3.5.0</ktlint.version>
         <sonar-scanner.version>4.10.0.2812</sonar-scanner.version>
         <duplicate-finder.version>2.0.1</duplicate-finder.version>
-        <forbidden-apis.version>3.9</forbidden-apis.version>
+        <forbidden-apis.version>3.10</forbidden-apis.version>
         
         <!-- SonarQube Properties (Override via -D or settings.xml) -->
         <sonar.host.url>http://localhost:9000</sonar.host.url>
