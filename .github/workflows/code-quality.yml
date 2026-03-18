@@ -33,7 +33,7 @@ jobs:
         run: mvn detekt:check
 
       - name: Upload Detekt report
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: detekt-reports
@@ -62,7 +62,7 @@ jobs:
         run: mvn checkstyle:check
 
       - name: Upload Checkstyle report
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: checkstyle-reports
@@ -91,7 +91,7 @@ jobs:
         run: mvn pmd:check
 
       - name: Upload PMD report
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: pmd-reports
@@ -120,7 +120,7 @@ jobs:
         run: mvn spotbugs:check
 
       - name: Upload SpotBugs report
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: spotbugs-reports
@@ -149,7 +149,7 @@ jobs:
         run: mvn test jacoco:report
 
       - name: Upload coverage report
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: jacoco-reports

@@ -1,48 +1,147 @@
 # BookTower
 
-A self-hosted personal digital library manager built with Kotlin, http4k, and HTMX.
+A self-hosted personal book, audiobook, and comic manager with a built-in reader and rich metadata support.
+
+[![Version](https://img.shields.io/badge/version-0.5.2-blue)](https://github.com/rygel/booktower/releases)
+[![License](https://img.shields.io/badge/license-AGPL--3.0-green)](LICENSE)
+[![Docker](https://img.shields.io/badge/docker-ghcr.io%2Frygel%2Fbooktower-blue)](https://ghcr.io/rygel/booktower)
+
+<!-- ![BookTower Screenshot](docs/screenshot.png) -->
+
+> [!WARNING]
+> This is a new project and still under active development. There may be bugs. Test it with a small set of books before entrusting it with your entire library.
+
+### Feature Maturity
+
+| Area | Status | Notes |
+|------|--------|-------|
+| Core (libraries, books, auth, search) | **Stable** | Covered by 1600+ integration tests |
+| EPUB/PDF/Comic readers | **Stable** | Tested in browser tests |
+| Metadata fetching | **Stable** | OpenLibrary, Google Books, Hardcover, ComicVine, Audible |
+| Kobo / KOReader sync | **Experimental** | Implements protocols but not tested with real hardware |
+| OPDS catalog | **Experimental** | Basic catalog works; not verified with all client apps |
+| Komga API | **Experimental** | Read-only subset; not tested with Tachiyomi/Paperback |
+| OIDC / SSO | **Experimental** | Implements OIDC spec; tested only with mock providers |
+| Hardcover.app sync | **Experimental** | API integration exists; not tested with real accounts |
+| Email delivery | **Experimental** | SMTP sending works; not tested with Kindle/device delivery |
+| Full-text search | **Experimental** | PostgreSQL only; requires `BOOKTOWER_FTS_ENABLED=true` |
 
 ## Features
 
-- **Library management** — organize books into named libraries with folder-backed storage
-- **Book reader** — in-browser PDF, EPUB, and comic (CBZ/CBR) reader with bookmarks, annotations, and reading progress
-- **Metadata** — automatic PDF metadata extraction and cover generation; manual metadata editing with online fetch
-- **Reading analytics** — daily page tracking, streaks, finished-book counts, and reading goals
-- **Bulk operations** — select multiple books to move, delete, tag, or change status at once
-- **Smart shelves** — auto-populated virtual shelves driven by status, tag, or minimum rating rules
-- **Multi-user** — user registration, admin panel, per-user settings and data isolation
-- **Themes** — multiple color themes, persisted per user
-- **Internationalization** — English, French, and German; locale switching via sidebar; Weblate integration for translation management
-- **API tokens** — Bearer token support for OPDS and programmatic access
-- **Data export** — download all reading data as JSON
-- **Auto-scan** — background folder scanning on a configurable interval
-- **Password reset** — self-hosted token-based password reset flow
+### Library Management
+
+- Organize books into named libraries with folder-backed storage
+- Bulk operations: move, delete, tag, or change status for multiple books at once
+- Smart shelves with auto-population driven by status, tag, or minimum rating rules
+- Filter presets for saved search configurations
+- Book drop: drag-and-drop file upload into libraries
+- Auto-scan: background folder scanning on a configurable interval
+- Library health checks and duplicate detection
+- Calibre format conversion support
+- Full-text search with FTS indexing
+
+### Reading
+
+- **EPUB** reader with customizable fonts, themes, margins, and RTL support
+- **PDF** reader with in-browser viewing and text extraction
+- **Comic** reader (CBZ/CBR) with page hash navigation
+- **FB2** reader
+- **DJVU** support
+- **Audiobook** playback with listening sessions, bookmarks, and progress tracking
+- Reader preferences per user (font family, font size, theme, layout)
+
+### Metadata
+
+- Fetch metadata from **OpenLibrary**, **Google Books**, **Hardcover**, **ComicVine**, and **Audible**
+- Automatic metadata extraction from EPUB, PDF, comic, and audiobook files
+- Metadata proposals: review and accept/reject fetched metadata before applying
+- Metadata locks: prevent automatic overwrites of manually curated fields
+- Author metadata enrichment
+- Alternative cover management and bulk cover fetching
+- Sidecar metadata file support
+- Filename-based metadata parsing
+
+### Device Sync *(experimental)*
+
+- **Kobo** device synchronization *(not tested with real hardware)*
+- **KOReader** sync protocol support *(not tested with real devices)*
+- **OPDS** catalog feed for e-reader apps *(basic, not verified with all clients)*
+- **Komga**-compatible API for comic reader apps *(read-only subset, not tested with Tachiyomi/Paperback)*
+- Book delivery via email (Send-to-Kindle and similar)
+
+### User Features
+
+- Bookmarks and annotations
+- Reading journals
+- Notebooks per book
+- Reviews and community ratings
+- Reading goals with progress tracking
+- Reading sessions with daily page tracking and streaks
+- Listening sessions with listening stats and heatmaps
+- Recommendations engine
+- Smart shelves (auto-populated virtual collections)
+- Content restrictions support
+
+### Analytics
+
+- Reading statistics: pages read, books finished, daily streaks
+- Listening statistics for audiobooks
+- Reading heatmaps
+- Per-library and per-user analytics
+
+### Admin
+
+- Multi-user support with registration and user management
+- Per-user permissions and library access control
+- Scheduled background tasks with monitoring
+- Audit log for administrative actions
+- Demo mode for showcasing without modifications
+- Notification system
+
+### Integrations
+
+- **Hardcover.app** reading activity sync
+- **Goodreads** library import
+- **Weblate** integration for community translation management
+- Email delivery service (configurable SMTP provider)
+- OPDS credentials management
+
+### Security
+
+- JWT authentication with configurable session timeout
+- OIDC / SSO support for single sign-on
+- CSRF protection
+- Rate limiting
+- API tokens for programmatic and OPDS access
+- Password reset flow
+- Request logging and GeoIP tracking
+
+### Self-Hosting
+
+- **Docker** images (linux/amd64, linux/arm64)
+- Native binaries for Linux (x64/arm64), macOS (x64/arm64), and Windows (x64)
+- Fat JAR for any JVM platform
+- PostgreSQL for production, H2 for zero-config development
+- Demo mode and quickstart mode for easy evaluation
+- Gzip response compression
+- Caffeine caching for JWT and user lookups
+
+### Internationalization
+
+10 languages supported: English, French, German, Spanish, Portuguese, Italian, Dutch, Polish, Japanese, and Chinese.
 
 ## Quick Start
 
-```bash
-# Run with defaults (H2 in-memory database, ./data for storage)
-mvn exec:java -Dexec.mainClass="org.booktower.BookTowerAppKt"
-
-# Or use the dev script
-bash dev.sh
-```
-
-Open `http://localhost:8080` and register an account.
-
-### Docker
+### Docker (recommended)
 
 ```yaml
 services:
   booktower:
-    image: booktower:latest
+    image: ghcr.io/rygel/booktower:latest
     ports:
-      - "8080:8080"
+      - "9999:9999"
     environment:
-      BOOKTOWER_DB_URL: jdbc:h2:file:/data/booktower;AUTO_SERVER=TRUE
       BOOKTOWER_JWT_SECRET: change-me-in-production
-      BOOKTOWER_BOOKS_PATH: /data/books
-      BOOKTOWER_COVERS_PATH: /data/covers
       BOOKTOWER_ENV: production
     volumes:
       - booktower_data:/data
@@ -51,21 +150,36 @@ volumes:
   booktower_data:
 ```
 
-## Technology Stack
+```bash
+docker compose up -d
+```
 
-| Layer | Technology |
-|---|---|
-| Language | Kotlin 1.9 |
-| HTTP framework | http4k |
-| Templates | JTE (`.kte`) |
-| Frontend interactivity | HTMX |
-| Database | H2 (file or in-memory) |
-| Migrations | Flyway |
-| SQL access | JDBI 3 |
-| DI | Koin |
-| Auth | JWT (cookie) + SHA-256 hashed API tokens |
-| Build | Maven |
-| Testing | JUnit 5 — 833 tests |
+Open `http://localhost:9999` and register your first account.
+
+### Fat JAR
+
+Download the latest release JAR from [Releases](https://github.com/rygel/booktower/releases), then:
+
+```bash
+java -jar booktower-0.5.2.jar
+```
+
+### Native Binary
+
+Download the native binary for your platform from [Releases](https://github.com/rygel/booktower/releases):
+
+| Platform       | Binary                          |
+|----------------|---------------------------------|
+| Linux x64      | `booktower-linux-x64`           |
+| Linux arm64    | `booktower-linux-arm64`         |
+| macOS x64      | `booktower-macos-x64`           |
+| macOS arm64    | `booktower-macos-arm64`         |
+| Windows x64    | `booktower-windows-x64.exe`     |
+
+```bash
+chmod +x booktower-linux-x64
+./booktower-linux-x64
+```
 
 ## Configuration
 
@@ -74,66 +188,53 @@ All settings can be overridden with environment variables. See [docs/CONFIGURATI
 | Variable | Default | Description |
 |---|---|---|
 | `BOOKTOWER_HOST` | `0.0.0.0` | Bind address |
-| `BOOKTOWER_PORT` | `8080` | HTTP port |
+| `BOOKTOWER_PORT` | `9999` | HTTP port |
+| `BOOKTOWER_ENV` | — | Set to `production` to enforce JWT secret |
 | `BOOKTOWER_JWT_SECRET` | *(dev default)* | **Change in production** |
-| `BOOKTOWER_DB_URL` | H2 in-memory | JDBC URL |
+| `BOOKTOWER_DB_URL` | H2 file-backed | JDBC URL (H2 or PostgreSQL) |
+| `BOOKTOWER_DB_USERNAME` | `sa` | Database username |
+| `BOOKTOWER_DB_PASSWORD` | — | Database password |
+| `BOOKTOWER_DB_DRIVER` | `org.h2.Driver` | JDBC driver class |
 | `BOOKTOWER_BOOKS_PATH` | `./data/books` | Book file storage |
 | `BOOKTOWER_COVERS_PATH` | `./data/covers` | Cover image storage |
-| `BOOKTOWER_AUTO_SCAN_MINUTES` | `60` | Folder scan interval (0 = off) |
-| `BOOKTOWER_ENV` | — | Set to `production` to enforce JWT secret |
 
-## Development
+### PostgreSQL example
 
 ```bash
-# Compile
-mvn compile
-
-# Run all tests
-mvn test
-
-# Run a specific test class
-mvn test -Dtest=BookServiceTest
-
-# Start the server
-mvn exec:java -Dexec.mainClass="org.booktower.BookTowerAppKt"
+export BOOKTOWER_DB_URL=jdbc:postgresql://localhost:5432/booktower
+export BOOKTOWER_DB_USERNAME=booktower
+export BOOKTOWER_DB_PASSWORD=secret
+export BOOKTOWER_DB_DRIVER=org.postgresql.Driver
 ```
 
-## Project Structure
+## Tech Stack
 
-```
-booktower/
-├── src/
-│   ├── main/
-│   │   ├── kotlin/org/booktower/
-│   │   │   ├── config/         # AppConfig, Database, Koin module
-│   │   │   ├── filters/        # Auth filter, CSRF filter
-│   │   │   ├── handlers/       # HTTP request handlers
-│   │   │   ├── model/          # Theme catalog, theme definitions
-│   │   │   ├── models/         # DTOs and request/response models
-│   │   │   ├── services/       # Business logic
-│   │   │   └── web/            # WebContext (i18n, theme helpers)
-│   │   ├── jte/                # JTE templates (.kte)
-│   │   │   └── components/     # Reusable template fragments
-│   │   └── resources/
-│   │       ├── db/migration/   # Flyway SQL migrations (V1–V9)
-│   │       ├── messages*.properties  # i18n strings
-│   │       ├── static/         # CSS and JS assets
-│   │       └── themes.json     # Theme definitions
-│   └── test/
-│       └── kotlin/org/booktower/
-│           ├── handlers/       # Handler + template rendering tests
-│           ├── integration/    # Full-stack integration tests
-│           └── services/       # Service unit tests
-├── docs/                       # Documentation
-├── data/                       # Runtime data (books, covers, DB)
-└── pom.xml
-```
+| Layer | Technology |
+|---|---|
+| Language | Kotlin |
+| HTTP framework | http4k |
+| Templates | JTE (`.kte`) |
+| Frontend interactivity | HTMX |
+| Database | H2 (dev) / PostgreSQL (prod) |
+| Migrations | Flyway |
+| SQL access | JDBI 3 |
+| Dependency injection | Koin |
+| Caching | Caffeine |
+| Build | Maven |
 
 ## Documentation
 
 - [Configuration reference](docs/CONFIGURATION.md)
 - [API reference](docs/API.md)
 - [Deployment guide](docs/DEPLOYMENT.md)
+- [Architecture overview](docs/BACKEND_ARCHITECTURE.md)
+- [Quick start guide](docs/QUICKSTART.md)
+
+## Contributing
+
+Contributions are welcome! Please open an issue to discuss proposed changes before submitting a pull request.
+
+Translation contributions are managed through Weblate integration. See the project documentation for details on adding or improving translations.
 
 ## License
 
