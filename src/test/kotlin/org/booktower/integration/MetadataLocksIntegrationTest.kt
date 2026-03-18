@@ -9,15 +9,17 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class MetadataLocksIntegrationTest : IntegrationTestBase() {
-
     @Test
     fun `GET metadata-locks returns empty list by default`() {
         val token = registerAndGetToken()
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
 
-        val resp = app(Request(Method.GET, "/api/books/$bookId/metadata-locks")
-            .header("Cookie", "token=$token"))
+        val resp =
+            app(
+                Request(Method.GET, "/api/books/$bookId/metadata-locks")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, resp.status)
         val tree = Json.mapper.readTree(resp.bodyString())
         assertTrue(tree.get("lockedFields")?.isArray == true)
@@ -30,10 +32,13 @@ class MetadataLocksIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
 
-        val resp = app(Request(Method.PUT, "/api/books/$bookId/metadata-locks")
-            .header("Cookie", "token=$token")
-            .header("Content-Type", "application/json")
-            .body("""{"lockedFields":["title","author","isbn"]}"""))
+        val resp =
+            app(
+                Request(Method.PUT, "/api/books/$bookId/metadata-locks")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"lockedFields":["title","author","isbn"]}"""),
+            )
         assertEquals(Status.OK, resp.status)
         val tree = Json.mapper.readTree(resp.bodyString())
         val fields = tree.get("lockedFields").map { it.asText() }.toSet()
@@ -48,12 +53,18 @@ class MetadataLocksIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
 
-        app(Request(Method.PUT, "/api/books/$bookId/metadata-locks")
-            .header("Cookie", "token=$token").header("Content-Type", "application/json")
-            .body("""{"lockedFields":["title","description"]}"""))
+        app(
+            Request(Method.PUT, "/api/books/$bookId/metadata-locks")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/json")
+                .body("""{"lockedFields":["title","description"]}"""),
+        )
 
-        val resp = app(Request(Method.GET, "/api/books/$bookId/metadata-locks")
-            .header("Cookie", "token=$token"))
+        val resp =
+            app(
+                Request(Method.GET, "/api/books/$bookId/metadata-locks")
+                    .header("Cookie", "token=$token"),
+            )
         val tree = Json.mapper.readTree(resp.bodyString())
         val fields = tree.get("lockedFields").map { it.asText() }.toSet()
         assertTrue("title" in fields)
@@ -66,15 +77,24 @@ class MetadataLocksIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
 
-        app(Request(Method.PUT, "/api/books/$bookId/metadata-locks")
-            .header("Cookie", "token=$token").header("Content-Type", "application/json")
-            .body("""{"lockedFields":["title","author"]}"""))
-        app(Request(Method.PUT, "/api/books/$bookId/metadata-locks")
-            .header("Cookie", "token=$token").header("Content-Type", "application/json")
-            .body("""{"lockedFields":["isbn"]}"""))
+        app(
+            Request(Method.PUT, "/api/books/$bookId/metadata-locks")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/json")
+                .body("""{"lockedFields":["title","author"]}"""),
+        )
+        app(
+            Request(Method.PUT, "/api/books/$bookId/metadata-locks")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/json")
+                .body("""{"lockedFields":["isbn"]}"""),
+        )
 
-        val resp = app(Request(Method.GET, "/api/books/$bookId/metadata-locks")
-            .header("Cookie", "token=$token"))
+        val resp =
+            app(
+                Request(Method.GET, "/api/books/$bookId/metadata-locks")
+                    .header("Cookie", "token=$token"),
+            )
         val tree = Json.mapper.readTree(resp.bodyString())
         assertEquals(1, tree.get("lockedFields").size())
         assertEquals("isbn", tree.get("lockedFields").get(0).asText())
@@ -86,9 +106,12 @@ class MetadataLocksIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
 
-        app(Request(Method.PUT, "/api/books/$bookId/metadata-locks")
-            .header("Cookie", "token=$token").header("Content-Type", "application/json")
-            .body("""{"lockedFields":["publisher"]}"""))
+        app(
+            Request(Method.PUT, "/api/books/$bookId/metadata-locks")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/json")
+                .body("""{"lockedFields":["publisher"]}"""),
+        )
 
         val resp = app(Request(Method.GET, "/api/books/$bookId").header("Cookie", "token=$token"))
         val tree = Json.mapper.readTree(resp.bodyString())

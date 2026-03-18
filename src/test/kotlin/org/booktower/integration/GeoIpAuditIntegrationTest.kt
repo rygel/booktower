@@ -1,6 +1,5 @@
 package org.booktower.integration
 
-import org.booktower.config.Json
 import org.booktower.services.AuditService
 import org.booktower.services.GeoIpService
 import org.booktower.services.GeoLocation
@@ -13,12 +12,14 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
 
 class GeoIpAuditIntegrationTest : IntegrationTestBase() {
-
     private fun auditService(): AuditService {
-        val jdbi = org.booktower.TestFixture.database.getJdbi()
-        val geoIp = object : GeoIpService() {
-            override fun lookup(ip: String) = GeoLocation("US", "United States", "Test City")
-        }
+        val jdbi =
+            org.booktower.TestFixture.database
+                .getJdbi()
+        val geoIp =
+            object : GeoIpService() {
+                override fun lookup(ip: String) = GeoLocation("US", "United States", "Test City")
+            }
         return AuditService(jdbi, geoIp)
     }
 
@@ -33,12 +34,13 @@ class GeoIpAuditIntegrationTest : IntegrationTestBase() {
         )
 
         // Login with spoofed IP
-        val resp = app(
-            Request(Method.POST, "/auth/login")
-                .header("Content-Type", "application/json")
-                .header("X-Forwarded-For", "203.0.113.42")
-                .body("""{"username":"$username","password":"password123"}"""),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/auth/login")
+                    .header("Content-Type", "application/json")
+                    .header("X-Forwarded-For", "203.0.113.42")
+                    .body("""{"username":"$username","password":"password123"}"""),
+            )
         assertEquals(Status.OK, resp.status)
 
         // Read audit log directly via AuditService

@@ -40,25 +40,28 @@ class HardcoverSyncService(
     private val jdbi: Jdbi,
     private val userSettingsService: UserSettingsService,
 ) {
-    private val http = HttpClient.newBuilder()
-        .connectTimeout(Duration.ofSeconds(8))
-        .followRedirects(HttpClient.Redirect.NORMAL)
-        .build()
+    private val http =
+        HttpClient
+            .newBuilder()
+            .connectTimeout(Duration.ofSeconds(8))
+            .followRedirects(HttpClient.Redirect.NORMAL)
+            .build()
 
     private val apiUrl = "https://api.hardcover.app/v1/graphql"
     private val apiKeySettingKey = "hardcover_api_key"
 
     // ── API key management ────────────────────────────────────────────────────
 
-    fun setApiKey(userId: UUID, apiKey: String) {
+    fun setApiKey(
+        userId: UUID,
+        apiKey: String,
+    ) {
         userSettingsService.set(userId, apiKeySettingKey, apiKey.ifBlank { null })
     }
 
-    fun hasApiKey(userId: UUID): Boolean =
-        userSettingsService.get(userId, apiKeySettingKey)?.isNotBlank() == true
+    fun hasApiKey(userId: UUID): Boolean = userSettingsService.get(userId, apiKeySettingKey)?.isNotBlank() == true
 
-    private fun getApiKey(userId: UUID): String? =
-        userSettingsService.get(userId, apiKeySettingKey)?.takeIf { it.isNotBlank() }
+    private fun getApiKey(userId: UUID): String? = userSettingsService.get(userId, apiKeySettingKey)?.takeIf { it.isNotBlank() }
 
     // ── Connection test ───────────────────────────────────────────────────────
 
@@ -67,7 +70,12 @@ class HardcoverSyncService(
         val key = getApiKey(userId) ?: return null
         return try {
             val result = graphql(key, """query { me { username } }""", emptyMap())
-            result?.path("data")?.path("me")?.path("username")?.asText()?.takeIf { it.isNotBlank() }
+            result
+                ?.path("data")
+                ?.path("me")
+                ?.path("username")
+                ?.asText()
+                ?.takeIf { it.isNotBlank() }
         } catch (e: Exception) {
             hcLogger.warn("Hardcover connection test failed for user $userId: ${e.message}")
             null
@@ -76,12 +84,16 @@ class HardcoverSyncService(
 
     // ── Book mapping ──────────────────────────────────────────────────────────
 
-    fun getMapping(userId: UUID, bookId: UUID): HardcoverBookMapping? =
+    fun getMapping(
+        userId: UUID,
+        bookId: UUID,
+    ): HardcoverBookMapping? =
         jdbi.withHandle<HardcoverBookMapping?, Exception> { h ->
-            h.createQuery(
-                "SELECT * FROM hardcover_book_mappings WHERE user_id = ? AND book_id = ?",
-            )
-                .bind(0, userId.toString()).bind(1, bookId.toString())
+            h
+                .createQuery(
+                    "SELECT * FROM hardcover_book_mappings WHERE user_id = ? AND book_id = ?",
+                ).bind(0, userId.toString())
+                .bind(1, bookId.toString())
                 .map { row ->
                     HardcoverBookMapping(
                         userId = userId,
@@ -93,22 +105,37 @@ class HardcoverSyncService(
                 }.firstOrNull()
         }
 
-    fun saveMapping(userId: UUID, bookId: UUID, hardcoverBookId: Int, hardcoverEditionId: Int?) {
+    fun saveMapping(
+        userId: UUID,
+        bookId: UUID,
+        hardcoverBookId: Int,
+        hardcoverEditionId: Int?,
+    ) {
         val now = Instant.now().toString()
         val existing = getMapping(userId, bookId)
         if (existing != null) {
             jdbi.useHandle<Exception> { h ->
-                h.createUpdate(
-                    "UPDATE hardcover_book_mappings SET hardcover_book_id = ?, hardcover_edition_id = ?, last_synced_at = ? WHERE user_id = ? AND book_id = ?",
-                ).bind(0, hardcoverBookId).bind(1, hardcoverEditionId).bind(2, now)
-                    .bind(3, userId.toString()).bind(4, bookId.toString()).execute()
+                h
+                    .createUpdate(
+                        "UPDATE hardcover_book_mappings SET hardcover_book_id = ?, hardcover_edition_id = ?, last_synced_at = ? WHERE user_id = ? AND book_id = ?",
+                    ).bind(0, hardcoverBookId)
+                    .bind(1, hardcoverEditionId)
+                    .bind(2, now)
+                    .bind(3, userId.toString())
+                    .bind(4, bookId.toString())
+                    .execute()
             }
         } else {
             jdbi.useHandle<Exception> { h ->
-                h.createUpdate(
-                    "INSERT INTO hardcover_book_mappings (user_id, book_id, hardcover_book_id, hardcover_edition_id, last_synced_at) VALUES (?, ?, ?, ?, ?)",
-                ).bind(0, userId.toString()).bind(1, bookId.toString())
-                    .bind(2, hardcoverBookId).bind(3, hardcoverEditionId).bind(4, now).execute()
+                h
+                    .createUpdate(
+                        "INSERT INTO hardcover_book_mappings (user_id, book_id, hardcover_book_id, hardcover_edition_id, last_synced_at) VALUES (?, ?, ?, ?, ?)",
+                    ).bind(0, userId.toString())
+                    .bind(1, bookId.toString())
+                    .bind(2, hardcoverBookId)
+                    .bind(3, hardcoverEditionId)
+                    .bind(4, now)
+                    .execute()
             }
         }
     }
@@ -119,13 +146,26 @@ class HardcoverSyncService(
      * Searches Hardcover for a book by ISBN or title+author, returns the Hardcover book ID.
      * Caches the result in the mapping table.
      */
-    fun findOrMapHardcoverBook(userId: UUID, bookId: UUID, isbn: String?, title: String, author: String?): Int? {
+    fun findOrMapHardcoverBook(
+        userId: UUID,
+        bookId: UUID,
+        isbn: String?,
+        title: String,
+        author: String?,
+    ): Int? {
         getMapping(userId, bookId)?.let { return it.hardcoverBookId }
         val key = getApiKey(userId) ?: return null
         return try {
-            val hcId: Int = (if (!isbn.isNullOrBlank()) searchByIsbn(key, isbn) else null
-                ?: searchByTitle(key, title, author))
-                ?: return null
+            val hcId: Int =
+                (
+                    if (!isbn.isNullOrBlank()) {
+                        searchByIsbn(key, isbn)
+                    } else {
+                        null
+                            ?: searchByTitle(key, title, author)
+                    }
+                )
+                    ?: return null
             saveMapping(userId, bookId, hcId, null)
             hcId
         } catch (e: Exception) {
@@ -134,42 +174,75 @@ class HardcoverSyncService(
         }
     }
 
-    private fun searchByIsbn(key: String, isbn: String): Int? {
-        val result = graphql(
-            key,
-            """query(${"$"}isbn: String!) { books(where: { editions: { isbn_13: { _eq: ${"$"}isbn } } }, limit: 1) { id } }""",
-            mapOf("isbn" to isbn),
-        ) ?: return null
-        return result.path("data").path("books").takeIf { it.isArray && it.size() > 0 }?.get(0)?.get("id")?.asInt()
+    private fun searchByIsbn(
+        key: String,
+        isbn: String,
+    ): Int? {
+        val result =
+            graphql(
+                key,
+                """query(${"$"}isbn: String!) { books(where: { editions: { isbn_13: { _eq: ${"$"}isbn } } }, limit: 1) { id } }""",
+                mapOf("isbn" to isbn),
+            ) ?: return null
+        return result
+            .path("data")
+            .path("books")
+            .takeIf { it.isArray && it.size() > 0 }
+            ?.get(0)
+            ?.get("id")
+            ?.asInt()
     }
 
-    private fun searchByTitle(key: String, title: String, author: String?): Int? {
+    private fun searchByTitle(
+        key: String,
+        title: String,
+        author: String?,
+    ): Int? {
         val q = if (!author.isNullOrBlank()) "$title $author" else title
-        val result = graphql(
-            key,
-            """query(${"$"}q: String!) { search(query: ${"$"}q, query_type: BOOK, per_page: 1) { results { hits { document { id } } } } }""",
-            mapOf("q" to q),
-        ) ?: return null
-        return result.path("data").path("search").path("results").path("hits")
-            .takeIf { it.isArray && it.size() > 0 }?.get(0)?.path("document")?.get("id")?.asInt()
+        val result =
+            graphql(
+                key,
+                """query(${"$"}q: String!) { search(query: ${"$"}q, query_type: BOOK, per_page: 1) { results { hits { document { id } } } } }""",
+                mapOf("q" to q),
+            ) ?: return null
+        return result
+            .path("data")
+            .path("search")
+            .path("results")
+            .path("hits")
+            .takeIf { it.isArray && it.size() > 0 }
+            ?.get(0)
+            ?.path("document")
+            ?.get("id")
+            ?.asInt()
     }
 
     /**
      * Syncs a book's status to Hardcover. Returns a result indicating success.
      * [status] is one of: WANT_TO_READ, READING, FINISHED, ABANDONED.
      */
-    fun syncBookStatus(userId: UUID, bookId: UUID, isbn: String?, title: String, author: String?, status: String): HardcoverSyncResult {
-        val key = getApiKey(userId)
-            ?: return HardcoverSyncResult(false, null, "No Hardcover API key configured")
-        val hcId = findOrMapHardcoverBook(userId, bookId, isbn, title, author)
-            ?: return HardcoverSyncResult(false, null, "Book not found on Hardcover")
-        val hcStatus = when (status.uppercase()) {
-            "WANT_TO_READ" -> HardcoverStatus.WANT_TO_READ
-            "READING" -> HardcoverStatus.CURRENTLY_READING
-            "FINISHED" -> HardcoverStatus.READ
-            "ABANDONED" -> HardcoverStatus.DID_NOT_FINISH
-            else -> return HardcoverSyncResult(false, hcId, "Unknown status: $status")
-        }
+    fun syncBookStatus(
+        userId: UUID,
+        bookId: UUID,
+        isbn: String?,
+        title: String,
+        author: String?,
+        status: String,
+    ): HardcoverSyncResult {
+        val key =
+            getApiKey(userId)
+                ?: return HardcoverSyncResult(false, null, "No Hardcover API key configured")
+        val hcId =
+            findOrMapHardcoverBook(userId, bookId, isbn, title, author)
+                ?: return HardcoverSyncResult(false, null, "Book not found on Hardcover")
+        val hcStatus =
+            when (status.uppercase()) {
+                "WANT_TO_READ" -> HardcoverStatus.WANT_TO_READ
+                "READING" -> HardcoverStatus.CURRENTLY_READING
+                "FINISHED" -> HardcoverStatus.READ
+                "ABANDONED" -> HardcoverStatus.DID_NOT_FINISH
+                else -> return HardcoverSyncResult(false, hcId, "Unknown status: $status")
+            }
         return try {
             graphql(
                 key,
@@ -189,11 +262,20 @@ class HardcoverSyncService(
     /**
      * Syncs current reading progress (page) to Hardcover.
      */
-    fun syncProgress(userId: UUID, bookId: UUID, isbn: String?, title: String, author: String?, currentPage: Int): HardcoverSyncResult {
-        val key = getApiKey(userId)
-            ?: return HardcoverSyncResult(false, null, "No Hardcover API key configured")
-        val hcId = findOrMapHardcoverBook(userId, bookId, isbn, title, author)
-            ?: return HardcoverSyncResult(false, null, "Book not found on Hardcover")
+    fun syncProgress(
+        userId: UUID,
+        bookId: UUID,
+        isbn: String?,
+        title: String,
+        author: String?,
+        currentPage: Int,
+    ): HardcoverSyncResult {
+        val key =
+            getApiKey(userId)
+                ?: return HardcoverSyncResult(false, null, "No Hardcover API key configured")
+        val hcId =
+            findOrMapHardcoverBook(userId, bookId, isbn, title, author)
+                ?: return HardcoverSyncResult(false, null, "Book not found on Hardcover")
         return try {
             graphql(
                 key,
@@ -211,16 +293,22 @@ class HardcoverSyncService(
 
     // ── GraphQL helper ────────────────────────────────────────────────────────
 
-    private fun graphql(apiKey: String, query: String, variables: Map<String, Any?>): com.fasterxml.jackson.databind.JsonNode? {
+    private fun graphql(
+        apiKey: String,
+        query: String,
+        variables: Map<String, Any?>,
+    ): com.fasterxml.jackson.databind.JsonNode? {
         val body = hcMapper.writeValueAsString(mapOf("query" to query, "variables" to variables))
-        val req = HttpRequest.newBuilder()
-            .uri(URI.create(apiUrl))
-            .timeout(Duration.ofSeconds(10))
-            .header("Content-Type", "application/json")
-            .header("Authorization", "Bearer $apiKey")
-            .header("User-Agent", "BookTower/1.0")
-            .POST(HttpRequest.BodyPublishers.ofString(body))
-            .build()
+        val req =
+            HttpRequest
+                .newBuilder()
+                .uri(URI.create(apiUrl))
+                .timeout(Duration.ofSeconds(10))
+                .header("Content-Type", "application/json")
+                .header("Authorization", "Bearer $apiKey")
+                .header("User-Agent", "BookTower/1.0")
+                .POST(HttpRequest.BodyPublishers.ofString(body))
+                .build()
         val resp = http.send(req, HttpResponse.BodyHandlers.ofString())
         if (resp.statusCode() != 200) {
             hcLogger.warn("Hardcover GraphQL returned HTTP ${resp.statusCode()}")

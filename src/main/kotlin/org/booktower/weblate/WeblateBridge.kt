@@ -64,7 +64,8 @@ class WeblateBridge(
         val url = "$weblateUrl/api/translations/$component/messages/$language/file/"
 
         val request =
-            HttpRequest.newBuilder()
+            HttpRequest
+                .newBuilder()
                 .uri(URI.create(url))
                 .header("Authorization", "Token $apiToken")
                 .GET()
@@ -95,7 +96,8 @@ class WeblateBridge(
         }
 
         val request =
-            HttpRequest.newBuilder()
+            HttpRequest
+                .newBuilder()
                 .uri(URI.create(url))
                 .header("Authorization", "Token $apiToken")
                 .header("Content-Type", "application/x-www-form-urlencoded")
@@ -133,12 +135,13 @@ class WeblateBridge(
         }
     }
 
-    fun getTranslationStatus(): WeblateStatus? {
-        return try {
+    fun getTranslationStatus(): WeblateStatus? =
+        try {
             val url = "$weblateUrl/api/components/$component/"
 
             val request =
-                HttpRequest.newBuilder()
+                HttpRequest
+                    .newBuilder()
                     .uri(URI.create(url))
                     .header("Authorization", "Token $apiToken")
                     .GET()
@@ -155,7 +158,6 @@ class WeblateBridge(
             logger.error("Failed to get translation status: ${e.message}")
             null
         }
-    }
 
     private fun parseStatus(json: String): WeblateStatus {
         val translated = json.extract("\"translated_words\":(\\d+)")?.toIntOrNull() ?: 0
@@ -169,9 +171,7 @@ class WeblateBridge(
         )
     }
 
-    private fun String.extract(pattern: String): String? {
-        return Regex(pattern).find(this)?.groupValues?.getOrNull(1)
-    }
+    private fun String.extract(pattern: String): String? = Regex(pattern).find(this)?.groupValues?.getOrNull(1)
 
     data class WeblateStatus(
         val translatedWords: Int,
@@ -191,12 +191,11 @@ class WeblateBridge(
             apiToken: String?,
             component: String?,
             translationsDir: String,
-        ): WeblateBridge? {
-            return if (!weblateUrl.isNullOrBlank() && !apiToken.isNullOrBlank() && !component.isNullOrBlank()) {
+        ): WeblateBridge? =
+            if (!weblateUrl.isNullOrBlank() && !apiToken.isNullOrBlank() && !component.isNullOrBlank()) {
                 WeblateBridge(weblateUrl, apiToken, component, File(translationsDir))
             } else {
                 null
             }
-        }
     }
 }

@@ -16,24 +16,32 @@ private val VALID_METADATA_SOURCES = setOf("openlibrary", "googlebooks", "hardco
 
 private val logger = LoggerFactory.getLogger("booktower.LibraryService")
 
-private val SCANNABLE_EXTENSIONS = setOf("pdf", "epub", "mobi", "azw3", "cbz", "cbr", "fb2", "djvu", "mp3", "m4b", "m4a", "ogg", "flac", "aac")
+private val SCANNABLE_EXTENSIONS =
+    setOf("pdf", "epub", "mobi", "azw3", "cbz", "cbr", "fb2", "djvu", "mp3", "m4b", "m4a", "ogg", "flac", "aac")
 
 class LibraryService(
     private val jdbi: Jdbi,
     private val pdfMetadataService: PdfMetadataService,
     private val libraryAccessService: LibraryAccessService? = null,
+    private val ftsService: org.booktower.services.FtsService? = null,
+    private val comicPageHashService: ComicPageHashService? = null,
 ) {
     fun getLibraries(userId: UUID): List<LibraryDto> {
         val accessibleIds = libraryAccessService?.getAccessibleLibraryIds(userId)
-        return jdbi.withHandle<List<LibraryDto>, Exception> { handle ->
-            handle.createQuery("SELECT * FROM libraries WHERE user_id = ? ORDER BY name")
-                .bind(0, userId.toString())
-                .map { row -> mapLibrary(handle, row) }
-                .list()
-        }.let { all ->
-            if (accessibleIds == null) all
-            else all.filter { it.id in accessibleIds }
-        }
+        return jdbi
+            .withHandle<List<LibraryDto>, Exception> { handle ->
+                handle
+                    .createQuery("SELECT * FROM libraries WHERE user_id = ? ORDER BY name")
+                    .bind(0, userId.toString())
+                    .map { row -> mapLibrary(handle, row) }
+                    .list()
+            }.let { all ->
+                if (accessibleIds == null) {
+                    all
+                } else {
+                    all.filter { it.id in accessibleIds }
+                }
+            }
     }
 
     fun getLibrary(
@@ -43,7 +51,8 @@ class LibraryService(
         val accessibleIds = libraryAccessService?.getAccessibleLibraryIds(userId)
         if (accessibleIds != null && libraryId.toString() !in accessibleIds) return null
         return jdbi.withHandle<LibraryDto?, Exception> { handle ->
-            handle.createQuery("SELECT * FROM libraries WHERE user_id = ? AND id = ?")
+            handle
+                .createQuery("SELECT * FROM libraries WHERE user_id = ? AND id = ?")
                 .bind(0, userId.toString())
                 .bind(1, libraryId.toString())
                 .map { row -> mapLibrary(handle, row) }
@@ -57,10 +66,12 @@ class LibraryService(
     ): LibraryDto {
         val libId = UUID.fromString(row.getColumn("id", String::class.java))
         val count =
-            handle.createQuery("SELECT COUNT(*) FROM books WHERE library_id = ?")
+            handle
+                .createQuery("SELECT COUNT(*) FROM books WHERE library_id = ?")
                 .bind(0, libId.toString())
                 .mapTo(java.lang.Integer::class.java)
-                .first()?.toInt() ?: 0
+                .first()
+                ?.toInt() ?: 0
 
         return LibraryDto(
             id = libId.toString(),
@@ -84,7 +95,8 @@ class LibraryService(
         }
 
         jdbi.useHandle<Exception> { handle ->
-            handle.createUpdate("INSERT INTO libraries (id, user_id, name, path, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)")
+            handle
+                .createUpdate("INSERT INTO libraries (id, user_id, name, path, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)")
                 .bind(0, libId.toString())
                 .bind(1, userId.toString())
                 .bind(2, request.name)
@@ -99,11 +111,16 @@ class LibraryService(
         return LibraryDto(libId.toString(), request.name, request.path, 0, now.toString())
     }
 
-    fun renameLibrary(userId: UUID, libraryId: UUID, request: UpdateLibraryRequest): LibraryDto? {
+    fun renameLibrary(
+        userId: UUID,
+        libraryId: UUID,
+        request: UpdateLibraryRequest,
+    ): LibraryDto? {
         val library = getLibrary(userId, libraryId) ?: return null
 
         jdbi.useHandle<Exception> { handle ->
-            handle.createUpdate("UPDATE libraries SET name = ?, updated_at = ? WHERE id = ? AND user_id = ?")
+            handle
+                .createUpdate("UPDATE libraries SET name = ?, updated_at = ? WHERE id = ? AND user_id = ?")
                 .bind(0, request.name)
                 .bind(1, Instant.now().toString())
                 .bind(2, libraryId.toString())
@@ -115,9 +132,13 @@ class LibraryService(
         return library.copy(name = request.name)
     }
 
-    fun scanLibrary(userId: UUID, libraryId: UUID): ScanResult {
-        val library = getLibrary(userId, libraryId)
-            ?: return ScanResult(0, 0, 0, emptyList())
+    fun scanLibrary(
+        userId: UUID,
+        libraryId: UUID,
+    ): ScanResult {
+        val library =
+            getLibrary(userId, libraryId)
+                ?: return ScanResult(0, 0, 0, emptyList())
 
         val dir = File(library.path)
         if (!dir.exists() || !dir.isDirectory) {
@@ -125,25 +146,27 @@ class LibraryService(
             return ScanResult(0, 0, 0, emptyList())
         }
 
-        val existingPaths = jdbi.withHandle<Set<String>, Exception> { handle ->
-            handle.createQuery(
-                """
+        val existingPaths =
+            jdbi.withHandle<Set<String>, Exception> { handle ->
+                handle
+                    .createQuery(
+                        """
                 SELECT b.file_path FROM books b
                 INNER JOIN libraries l ON b.library_id = l.id
                 WHERE l.user_id = ? AND b.file_path <> ''
                 """,
-            )
-                .bind(0, userId.toString())
-                .mapTo(String::class.java)
-                .set()
-        }
+                    ).bind(0, userId.toString())
+                    .mapTo(String::class.java)
+                    .set()
+            }
 
         var added = 0
         var skipped = 0
         var errors = 0
         val addedBooks = mutableListOf<BookDto>()
 
-        dir.walkTopDown()
+        dir
+            .walkTopDown()
             .filter { it.isFile }
             .filter { it.extension.lowercase() in SCANNABLE_EXTENSIONS }
             .forEach { file ->
@@ -155,18 +178,19 @@ class LibraryService(
                 try {
                     val now = Instant.now()
                     val bookId = UUID.randomUUID()
-                    val title = file.nameWithoutExtension
-                        .replace(Regex("[_\\-]+"), " ")
-                        .trim()
+                    val title =
+                        file.nameWithoutExtension
+                            .replace(Regex("[_\\-]+"), " ")
+                            .trim()
 
                     jdbi.useHandle<Exception> { handle ->
-                        handle.createUpdate(
-                            """
+                        handle
+                            .createUpdate(
+                                """
                             INSERT INTO books (id, library_id, title, author, description, file_path, file_size, added_at, updated_at)
                             VALUES (?, ?, ?, NULL, NULL, ?, ?, ?, ?)
                             """,
-                        )
-                            .bind(0, bookId.toString())
+                            ).bind(0, bookId.toString())
                             .bind(1, library.id)
                             .bind(2, title)
                             .bind(3, absolutePath)
@@ -185,11 +209,26 @@ class LibraryService(
                     if (sidecar != null) {
                         val updates = mutableListOf<String>()
                         val bindings = mutableListOf<Any?>()
-                        sidecar.title?.let { updates += "title = ?"; bindings += it }
-                        sidecar.author?.let { updates += "author = ?"; bindings += it }
-                        sidecar.description?.let { updates += "description = ?"; bindings += it }
-                        sidecar.isbn?.let { updates += "isbn = ?"; bindings += it }
-                        sidecar.publisher?.let { updates += "publisher = ?"; bindings += it }
+                        sidecar.title?.let {
+                            updates += "title = ?"
+                            bindings += it
+                        }
+                        sidecar.author?.let {
+                            updates += "author = ?"
+                            bindings += it
+                        }
+                        sidecar.description?.let {
+                            updates += "description = ?"
+                            bindings += it
+                        }
+                        sidecar.isbn?.let {
+                            updates += "isbn = ?"
+                            bindings += it
+                        }
+                        sidecar.publisher?.let {
+                            updates += "publisher = ?"
+                            bindings += it
+                        }
                         if (updates.isNotEmpty()) {
                             bindings += bookId.toString()
                             jdbi.useHandle<Exception> { h ->
@@ -201,19 +240,24 @@ class LibraryService(
                         }
                     }
 
-                    val book = BookDto(
-                        id = bookId.toString(),
-                        libraryId = library.id,
-                        title = title,
-                        author = null,
-                        description = null,
-                        coverUrl = null,
-                        pageCount = null,
-                        fileSize = file.length(),
-                        addedAt = now.toString(),
-                        progress = null,
-                    )
+                    val book =
+                        BookDto(
+                            id = bookId.toString(),
+                            libraryId = library.id,
+                            title = title,
+                            author = null,
+                            description = null,
+                            coverUrl = null,
+                            pageCount = null,
+                            fileSize = file.length(),
+                            addedAt = now.toString(),
+                            progress = null,
+                        )
                     addedBooks += book
+                    ftsService?.enqueue(bookId.toString())
+                    if (file.extension.lowercase() in setOf("cbz", "cbr")) {
+                        comicPageHashService?.enqueue(bookId.toString())
+                    }
                     added++
                     logger.info("Scan imported: $absolutePath as book $title")
                 } catch (e: Exception) {
@@ -240,20 +284,29 @@ class LibraryService(
         return true
     }
 
-    fun getIconPath(userId: UUID, libraryId: UUID): String? {
+    fun getIconPath(
+        userId: UUID,
+        libraryId: UUID,
+    ): String? {
         getLibrary(userId, libraryId) ?: return null
         return jdbi.withHandle<String?, Exception> { h ->
-            h.createQuery("SELECT icon_path FROM libraries WHERE id = ?")
+            h
+                .createQuery("SELECT icon_path FROM libraries WHERE id = ?")
                 .bind(0, libraryId.toString())
                 .mapTo(String::class.java)
                 .firstOrNull()
         }
     }
 
-    fun updateIconPath(userId: UUID, libraryId: UUID, iconPath: String?): Boolean {
+    fun updateIconPath(
+        userId: UUID,
+        libraryId: UUID,
+        iconPath: String?,
+    ): Boolean {
         getLibrary(userId, libraryId) ?: return false
         jdbi.useHandle<Exception> { h ->
-            h.createUpdate("UPDATE libraries SET icon_path = ?, updated_at = ? WHERE id = ? AND user_id = ?")
+            h
+                .createUpdate("UPDATE libraries SET icon_path = ?, updated_at = ? WHERE id = ? AND user_id = ?")
                 .bind(0, iconPath)
                 .bind(1, Instant.now().toString())
                 .bind(2, libraryId.toString())
@@ -263,23 +316,32 @@ class LibraryService(
         return true
     }
 
-    fun getSettings(userId: UUID, libraryId: UUID): LibrarySettings? {
+    fun getSettings(
+        userId: UUID,
+        libraryId: UUID,
+    ): LibrarySettings? {
         getLibrary(userId, libraryId) ?: return null
         return jdbi.withHandle<LibrarySettings, Exception> { h ->
-            val row = h.createQuery(
-                "SELECT format_allowlist, metadata_source, default_sort, file_naming_pattern FROM libraries WHERE id = ?",
-            )
-                .bind(0, libraryId.toString())
-                .mapToMap()
-                .firstOrNull() ?: return@withHandle LibrarySettings(null, null, null, emptyList(), null)
+            val row =
+                h
+                    .createQuery(
+                        "SELECT format_allowlist, metadata_source, default_sort, file_naming_pattern FROM libraries WHERE id = ?",
+                    ).bind(0, libraryId.toString())
+                    .mapToMap()
+                    .firstOrNull() ?: return@withHandle LibrarySettings(null, null, null, emptyList(), null)
 
-            val allowlist = (row["format_allowlist"] as? String)
-                ?.split(",")?.map { it.trim() }?.filter { it.isNotBlank() }
+            val allowlist =
+                (row["format_allowlist"] as? String)
+                    ?.split(",")
+                    ?.map { it.trim() }
+                    ?.filter { it.isNotBlank() }
 
-            val paths = h.createQuery("SELECT path FROM library_paths WHERE library_id = ? ORDER BY added_at")
-                .bind(0, libraryId.toString())
-                .mapTo(String::class.java)
-                .list()
+            val paths =
+                h
+                    .createQuery("SELECT path FROM library_paths WHERE library_id = ? ORDER BY added_at")
+                    .bind(0, libraryId.toString())
+                    .mapTo(String::class.java)
+                    .list()
 
             LibrarySettings(
                 formatAllowlist = allowlist,
@@ -291,7 +353,11 @@ class LibraryService(
         }
     }
 
-    fun updateSettings(userId: UUID, libraryId: UUID, request: UpdateLibrarySettingsRequest): LibrarySettings? {
+    fun updateSettings(
+        userId: UUID,
+        libraryId: UUID,
+        request: UpdateLibrarySettingsRequest,
+    ): LibrarySettings? {
         getLibrary(userId, libraryId) ?: return null
 
         request.metadataSource?.let {
@@ -301,16 +367,17 @@ class LibraryService(
             require(it in VALID_SORT_FIELDS) { "Invalid sort field: $it" }
         }
 
-        val allowlistStr = request.formatAllowlist
-            ?.map { it.lowercase().trimStart('.') }
-            ?.filter { it.isNotBlank() }
-            ?.joinToString(",")
+        val allowlistStr =
+            request.formatAllowlist
+                ?.map { it.lowercase().trimStart('.') }
+                ?.filter { it.isNotBlank() }
+                ?.joinToString(",")
 
         jdbi.useHandle<Exception> { h ->
-            h.createUpdate(
-                "UPDATE libraries SET format_allowlist = ?, metadata_source = ?, default_sort = ?, file_naming_pattern = ?, updated_at = ? WHERE id = ? AND user_id = ?",
-            )
-                .bind(0, allowlistStr)
+            h
+                .createUpdate(
+                    "UPDATE libraries SET format_allowlist = ?, metadata_source = ?, default_sort = ?, file_naming_pattern = ?, updated_at = ? WHERE id = ? AND user_id = ?",
+                ).bind(0, allowlistStr)
                 .bind(1, request.metadataSource)
                 .bind(2, request.defaultSort)
                 .bind(3, request.fileNamingPattern)
@@ -320,12 +387,15 @@ class LibraryService(
                 .execute()
 
             if (request.additionalPaths != null) {
-                h.createUpdate("DELETE FROM library_paths WHERE library_id = ?")
-                    .bind(0, libraryId.toString()).execute()
+                h
+                    .createUpdate("DELETE FROM library_paths WHERE library_id = ?")
+                    .bind(0, libraryId.toString())
+                    .execute()
                 val now = Instant.now().toString()
                 for (path in request.additionalPaths) {
                     if (path.isBlank()) continue
-                    h.createUpdate("INSERT INTO library_paths (id, library_id, path, added_at) VALUES (?, ?, ?, ?)")
+                    h
+                        .createUpdate("INSERT INTO library_paths (id, library_id, path, added_at) VALUES (?, ?, ?, ?)")
                         .bind(0, UUID.randomUUID().toString())
                         .bind(1, libraryId.toString())
                         .bind(2, path)
@@ -339,14 +409,19 @@ class LibraryService(
     }
 
     /** All paths to scan for this library: primary + additional. */
-    fun allScanPaths(userId: UUID, libraryId: UUID): List<String> {
+    fun allScanPaths(
+        userId: UUID,
+        libraryId: UUID,
+    ): List<String> {
         val library = getLibrary(userId, libraryId) ?: return emptyList()
-        val extra = jdbi.withHandle<List<String>, Exception> { h ->
-            h.createQuery("SELECT path FROM library_paths WHERE library_id = ? ORDER BY added_at")
-                .bind(0, libraryId.toString())
-                .mapTo(String::class.java)
-                .list()
-        }
+        val extra =
+            jdbi.withHandle<List<String>, Exception> { h ->
+                h
+                    .createQuery("SELECT path FROM library_paths WHERE library_id = ? ORDER BY added_at")
+                    .bind(0, libraryId.toString())
+                    .mapTo(String::class.java)
+                    .list()
+            }
         return listOf(library.path) + extra
     }
 
@@ -356,23 +431,28 @@ class LibraryService(
      * Files are moved within the library's primary path. Sub-directories are created as needed.
      * Returns an [OrganizeResult] summarising what happened.
      */
-    fun organizeFiles(userId: UUID, libraryId: UUID): OrganizeResult {
+    fun organizeFiles(
+        userId: UUID,
+        libraryId: UUID,
+    ): OrganizeResult {
         val library = getLibrary(userId, libraryId) ?: return OrganizeResult(0, 0, 0, emptyList())
         val settings = getSettings(userId, libraryId)
-        val pattern = settings?.fileNamingPattern
-            ?: return OrganizeResult(0, 0, 0, listOf("No file_naming_pattern configured for this library"))
+        val pattern =
+            settings?.fileNamingPattern
+                ?: return OrganizeResult(0, 0, 0, listOf("No file_naming_pattern configured for this library"))
 
-        val books = jdbi.withHandle<List<Map<String, Any?>>, Exception> { h ->
-            h.createQuery(
-                """
+        val books =
+            jdbi.withHandle<List<Map<String, Any?>>, Exception> { h ->
+                h
+                    .createQuery(
+                        """
                 SELECT id, title, author, publisher, published_date, isbn, file_path
                 FROM books WHERE library_id = ? AND file_path IS NOT NULL AND file_path <> ''
                 """,
-            )
-                .bind(0, libraryId.toString())
-                .mapToMap()
-                .list()
-        }
+                    ).bind(0, libraryId.toString())
+                    .mapToMap()
+                    .list()
+            }
 
         var moved = 0
         var skipped = 0
@@ -383,7 +463,10 @@ class LibraryService(
         for (book in books) {
             val currentPath = book["file_path"] as? String ?: continue
             val currentFile = File(currentPath)
-            if (!currentFile.exists()) { skipped++; continue }
+            if (!currentFile.exists()) {
+                skipped++
+                continue
+            }
 
             val ext = currentFile.extension
             val title = sanitizeSegment(book["title"] as? String ?: "Unknown")
@@ -392,26 +475,37 @@ class LibraryService(
             val publisher = sanitizeSegment(book["publisher"] as? String ?: "Unknown")
             val isbn = sanitizeSegment(book["isbn"] as? String ?: "")
 
-            val resolved = pattern
-                .replace("{title}", title)
-                .replace("{author}", author)
-                .replace("{year}", year)
-                .replace("{publisher}", publisher)
-                .replace("{isbn}", isbn)
-                .replace("{ext}", ext)
-                .replace("{series}", "")
-                .replace("{seriesIndex}", "")
+            val resolved =
+                pattern
+                    .replace("{title}", title)
+                    .replace("{author}", author)
+                    .replace("{year}", year)
+                    .replace("{publisher}", publisher)
+                    .replace("{isbn}", isbn)
+                    .replace("{ext}", ext)
+                    .replace("{series}", "")
+                    .replace("{seriesIndex}", "")
 
             val targetRelative = if (resolved.endsWith(".$ext") || ext.isEmpty()) resolved else "$resolved.$ext"
             val targetFile = File(libraryRoot, targetRelative)
 
-            if (targetFile.absolutePath == currentFile.absolutePath) { skipped++; continue }
+            if (targetFile.absolutePath == currentFile.absolutePath) {
+                skipped++
+                continue
+            }
 
             try {
-                targetFile.parentFile?.mkdirs()
+                targetFile.parentFile?.let {
+                    if (!it.mkdirs() && !it.exists()) {
+                        logger.warn(
+                            "Could not create directory: ${it.absolutePath}",
+                        )
+                    }
+                }
                 if (currentFile.renameTo(targetFile)) {
                     jdbi.useHandle<Exception> { h ->
-                        h.createUpdate("UPDATE books SET file_path = ?, updated_at = ? WHERE id = ?")
+                        h
+                            .createUpdate("UPDATE books SET file_path = ?, updated_at = ? WHERE id = ?")
                             .bind(0, targetFile.absolutePath)
                             .bind(1, Instant.now().toString())
                             .bind(2, book["id"].toString())
@@ -435,6 +529,9 @@ class LibraryService(
     }
 
     private fun sanitizeSegment(value: String): String =
-        value.replace(UNSAFE_PATH_CHARS, "_").trim().take(120).trimEnd('.')
+        value
+            .replace(UNSAFE_PATH_CHARS, "_")
+            .trim()
+            .take(120)
+            .trimEnd('.')
 }
-

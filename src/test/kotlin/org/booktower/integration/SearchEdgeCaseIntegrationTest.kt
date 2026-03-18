@@ -14,7 +14,6 @@ import kotlin.test.assertTrue
  * description-field search, multi-library aggregation, and special-character safety.
  */
 class SearchEdgeCaseIntegrationTest : IntegrationTestBase() {
-
     private fun addBook(
         token: String,
         libId: String,
@@ -32,11 +31,15 @@ class SearchEdgeCaseIntegrationTest : IntegrationTestBase() {
         )
     }
 
-    private fun search(token: String, q: String): BookListDto {
-        val resp = app(
-            Request(Method.GET, "/api/search?q=$q")
-                .header("Cookie", "token=$token"),
-        )
+    private fun search(
+        token: String,
+        q: String,
+    ): BookListDto {
+        val resp =
+            app(
+                Request(Method.GET, "/api/search?q=$q")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, resp.status)
         return Json.mapper.readValue(resp.bodyString(), BookListDto::class.java)
     }
@@ -124,10 +127,11 @@ class SearchEdgeCaseIntegrationTest : IntegrationTestBase() {
         addBook(token, libId, "Normal Book", null)
 
         // A raw '%' in the query should not expand to SQL wildcard behavior
-        val resp = app(
-            Request(Method.GET, "/api/search?q=%25%25%25")
-                .header("Cookie", "token=$token"),
-        )
+        val resp =
+            app(
+                Request(Method.GET, "/api/search?q=%25%25%25")
+                    .header("Cookie", "token=$token"),
+            )
         // Must not 500 — result may be 0 or N, but must be valid JSON
         assertTrue(resp.status.code != 500, "Search with percent chars must not 500")
         val results = Json.mapper.readValue(resp.bodyString(), BookListDto::class.java)
@@ -154,10 +158,11 @@ class SearchEdgeCaseIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         addBook(token, libId, "O'Brien's Story", "Patrick O'Brien")
 
-        val resp = app(
-            Request(Method.GET, "/api/search?q=O%27Brien")
-                .header("Cookie", "token=$token"),
-        )
+        val resp =
+            app(
+                Request(Method.GET, "/api/search?q=O%27Brien")
+                    .header("Cookie", "token=$token"),
+            )
         assertTrue(resp.status.code != 500, "Single quote in search must not cause SQL error")
         val results = Json.mapper.readValue(resp.bodyString(), BookListDto::class.java)
         assertTrue(results.total >= 1, "Book with apostrophe in title should be findable")
@@ -169,10 +174,12 @@ class SearchEdgeCaseIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         addBook(token, libId, "Normal Book", null)
 
-        val resp = app(
-            Request(Method.GET, "/api/search?q=%5C")  // URL-encoded backslash
-                .header("Cookie", "token=$token"),
-        )
+        // URL-encoded backslash
+        val resp =
+            app(
+                Request(Method.GET, "/api/search?q=%5C")
+                    .header("Cookie", "token=$token"),
+            )
         assertTrue(resp.status.code != 500, "Backslash in search query must not crash")
     }
 
@@ -181,10 +188,11 @@ class SearchEdgeCaseIntegrationTest : IntegrationTestBase() {
     @Test
     fun `search with whitespace-only query after trimming returns 400`() {
         val token = registerAndGetToken("se_empty1")
-        val resp = app(
-            Request(Method.GET, "/api/search?q=++++")
-                .header("Cookie", "token=$token"),
-        )
+        val resp =
+            app(
+                Request(Method.GET, "/api/search?q=++++")
+                    .header("Cookie", "token=$token"),
+            )
         // A blank query (after trimming) should be rejected
         assertEquals(Status.BAD_REQUEST, resp.status, "Blank-after-trim query should return 400")
     }
@@ -196,10 +204,11 @@ class SearchEdgeCaseIntegrationTest : IntegrationTestBase() {
         addBook(token, libId, "Normal Book", null)
 
         val longQuery = "a".repeat(500)
-        val resp = app(
-            Request(Method.GET, "/api/search?q=$longQuery")
-                .header("Cookie", "token=$token"),
-        )
+        val resp =
+            app(
+                Request(Method.GET, "/api/search?q=$longQuery")
+                    .header("Cookie", "token=$token"),
+            )
         assertTrue(resp.status.code in listOf(200, 400), "Very long query must not 500")
     }
 }

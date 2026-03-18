@@ -17,34 +17,49 @@ import kotlin.test.assertTrue
  * creation, deletion, and cascading scenarios.
  */
 class AnnotationBookmarkCoexistenceTest : IntegrationTestBase() {
-
     private val mapper = ObjectMapper()
 
-    private fun addBookmark(token: String, bookId: String, page: Int, title: String = "Mark"): String {
-        val r = app(
-            Request(Method.POST, "/api/bookmarks")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"bookId":"$bookId","page":$page,"title":"$title","note":null}"""),
-        )
+    private fun addBookmark(
+        token: String,
+        bookId: String,
+        page: Int,
+        title: String = "Mark",
+    ): String {
+        val r =
+            app(
+                Request(Method.POST, "/api/bookmarks")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"bookId":"$bookId","page":$page,"title":"$title","note":null}"""),
+            )
         return Json.mapper.readValue(r.bodyString(), BookmarkDto::class.java).id
     }
 
-    private fun addAnnotation(token: String, bookId: String, page: Int, text: String): String {
-        val r = app(
-            Request(Method.POST, "/ui/books/$bookId/annotations")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .body("page=$page&selectedText=${java.net.URLEncoder.encode(text, "UTF-8")}&color=yellow"),
-        )
+    private fun addAnnotation(
+        token: String,
+        bookId: String,
+        page: Int,
+        text: String,
+    ): String {
+        val r =
+            app(
+                Request(Method.POST, "/ui/books/$bookId/annotations")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("page=$page&selectedText=${java.net.URLEncoder.encode(text, "UTF-8")}&color=yellow"),
+            )
         return mapper.readTree(r.bodyString()).get("id").asText()
     }
 
-    private fun getAnnotations(token: String, bookId: String) =
-        app(Request(Method.GET, "/ui/books/$bookId/annotations").header("Cookie", "token=$token")).bodyString()
+    private fun getAnnotations(
+        token: String,
+        bookId: String,
+    ) = app(Request(Method.GET, "/ui/books/$bookId/annotations").header("Cookie", "token=$token")).bodyString()
 
-    private fun getBookmarks(token: String, bookId: String) =
-        app(Request(Method.GET, "/api/bookmarks?bookId=$bookId").header("Cookie", "token=$token")).bodyString()
+    private fun getBookmarks(
+        token: String,
+        bookId: String,
+    ) = app(Request(Method.GET, "/api/bookmarks?bookId=$bookId").header("Cookie", "token=$token")).bodyString()
 
     // ── Creation coexistence ─────────────────────────────────────────────────
 
@@ -93,8 +108,10 @@ class AnnotationBookmarkCoexistenceTest : IntegrationTestBase() {
 
         app(Request(Method.DELETE, "/api/bookmarks/$bmId").header("Cookie", "token=$token"))
 
-        assertTrue(getAnnotations(token, bookId).contains("survive the bookmark delete"),
-            "annotation should survive bookmark deletion")
+        assertTrue(
+            getAnnotations(token, bookId).contains("survive the bookmark delete"),
+            "annotation should survive bookmark deletion",
+        )
     }
 
     @Test
@@ -108,10 +125,14 @@ class AnnotationBookmarkCoexistenceTest : IntegrationTestBase() {
 
         app(Request(Method.DELETE, "/ui/annotations/$anId").header("Cookie", "token=$token"))
 
-        assertTrue(getBookmarks(token, bookId).contains(bmId),
-            "bookmark should survive annotation deletion")
-        assertFalse(getAnnotations(token, bookId).contains("annotation to delete"),
-            "deleted annotation should not appear")
+        assertTrue(
+            getBookmarks(token, bookId).contains(bmId),
+            "bookmark should survive annotation deletion",
+        )
+        assertFalse(
+            getAnnotations(token, bookId).contains("annotation to delete"),
+            "deleted annotation should not appear",
+        )
     }
 
     // ── Cascading book deletion ──────────────────────────────────────────────
@@ -128,10 +149,11 @@ class AnnotationBookmarkCoexistenceTest : IntegrationTestBase() {
         app(Request(Method.DELETE, "/api/books/$bookId").header("Cookie", "token=$token"))
 
         // Annotation endpoint returns 404/401 for deleted book — just verify it's gone from list
-        val bookResp = app(
-            Request(Method.GET, "/api/books/$bookId")
-                .header("Cookie", "token=$token"),
-        )
+        val bookResp =
+            app(
+                Request(Method.GET, "/api/books/$bookId")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.NOT_FOUND, bookResp.status, "deleted book should be gone")
 
         // Bookmarks for the deleted book should return empty (book scoped → not found)
@@ -171,9 +193,13 @@ class AnnotationBookmarkCoexistenceTest : IntegrationTestBase() {
         addAnnotation(tokenA, bookA, 10, "User A annotation")
 
         // User B's book has none
-        assertFalse(getBookmarks(tokenB, bookB).contains("User A bookmark"),
-            "B should not see A's bookmarks")
-        assertFalse(getAnnotations(tokenB, bookB).contains("User A annotation"),
-            "B should not see A's annotations")
+        assertFalse(
+            getBookmarks(tokenB, bookB).contains("User A bookmark"),
+            "B should not see A's bookmarks",
+        )
+        assertFalse(
+            getAnnotations(tokenB, bookB).contains("User A annotation"),
+            "B should not see A's annotations",
+        )
     }
 }

@@ -11,23 +11,27 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class ScheduledTaskIntegrationTest : IntegrationTestBase() {
-
     private fun adminToken(): String {
         val username = "admin_${System.nanoTime()}"
-        val resp = app(
-            Request(Method.POST, "/auth/register")
-                .header("Content-Type", "application/json")
-                .body("""{"username":"$username","email":"$username@test.com","password":"password123"}"""),
-        )
-        val userId = Json.mapper.readValue(resp.bodyString(), LoginResponse::class.java).user.id
+        val resp =
+            app(
+                Request(Method.POST, "/auth/register")
+                    .header("Content-Type", "application/json")
+                    .body("""{"username":"$username","email":"$username@test.com","password":"password123"}"""),
+            )
+        val userId =
+            Json.mapper
+                .readValue(resp.bodyString(), LoginResponse::class.java)
+                .user.id
         TestFixture.database.getJdbi().useHandle<Exception> { h ->
             h.createUpdate("UPDATE users SET is_admin = true WHERE id = ?").bind(0, userId).execute()
         }
-        val loginResp = app(
-            Request(Method.POST, "/auth/login")
-                .header("Content-Type", "application/json")
-                .body("""{"username":"$username","password":"password123"}"""),
-        )
+        val loginResp =
+            app(
+                Request(Method.POST, "/auth/login")
+                    .header("Content-Type", "application/json")
+                    .body("""{"username":"$username","password":"password123"}"""),
+            )
         return Json.mapper.readValue(loginResp.bodyString(), LoginResponse::class.java).token
     }
 
@@ -44,12 +48,13 @@ class ScheduledTaskIntegrationTest : IntegrationTestBase() {
     @Test
     fun `POST creates a scheduled task`() {
         val token = adminToken()
-        val resp = app(
-            Request(Method.POST, "/api/admin/scheduled-tasks")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body(validTask),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/api/admin/scheduled-tasks")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body(validTask),
+            )
         assertEquals(Status.CREATED, resp.status)
         val tree = Json.mapper.readTree(resp.bodyString())
         assertEquals("Nightly Scan", tree.get("name").asText())
@@ -61,20 +66,26 @@ class ScheduledTaskIntegrationTest : IntegrationTestBase() {
     @Test
     fun `PUT updates a scheduled task`() {
         val token = adminToken()
-        val createResp = app(
-            Request(Method.POST, "/api/admin/scheduled-tasks")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body(validTask),
-        )
-        val id = Json.mapper.readTree(createResp.bodyString()).get("id").asText()
+        val createResp =
+            app(
+                Request(Method.POST, "/api/admin/scheduled-tasks")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body(validTask),
+            )
+        val id =
+            Json.mapper
+                .readTree(createResp.bodyString())
+                .get("id")
+                .asText()
 
-        val putResp = app(
-            Request(Method.PUT, "/api/admin/scheduled-tasks/$id")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"name":"Daily Scan","enabled":false}"""),
-        )
+        val putResp =
+            app(
+                Request(Method.PUT, "/api/admin/scheduled-tasks/$id")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"name":"Daily Scan","enabled":false}"""),
+            )
         assertEquals(Status.OK, putResp.status)
         val tree = Json.mapper.readTree(putResp.bodyString())
         assertEquals("Daily Scan", tree.get("name").asText())
@@ -84,13 +95,18 @@ class ScheduledTaskIntegrationTest : IntegrationTestBase() {
     @Test
     fun `DELETE removes a scheduled task`() {
         val token = adminToken()
-        val createResp = app(
-            Request(Method.POST, "/api/admin/scheduled-tasks")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body(validTask),
-        )
-        val id = Json.mapper.readTree(createResp.bodyString()).get("id").asText()
+        val createResp =
+            app(
+                Request(Method.POST, "/api/admin/scheduled-tasks")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body(validTask),
+            )
+        val id =
+            Json.mapper
+                .readTree(createResp.bodyString())
+                .get("id")
+                .asText()
 
         val delResp = app(Request(Method.DELETE, "/api/admin/scheduled-tasks/$id").header("Cookie", "token=$token"))
         assertEquals(Status.NO_CONTENT, delResp.status)
@@ -99,13 +115,18 @@ class ScheduledTaskIntegrationTest : IntegrationTestBase() {
     @Test
     fun `POST trigger returns history id`() {
         val token = adminToken()
-        val createResp = app(
-            Request(Method.POST, "/api/admin/scheduled-tasks")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body(validTask),
-        )
-        val id = Json.mapper.readTree(createResp.bodyString()).get("id").asText()
+        val createResp =
+            app(
+                Request(Method.POST, "/api/admin/scheduled-tasks")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body(validTask),
+            )
+        val id =
+            Json.mapper
+                .readTree(createResp.bodyString())
+                .get("id")
+                .asText()
 
         val triggerResp = app(Request(Method.POST, "/api/admin/scheduled-tasks/$id/trigger").header("Cookie", "token=$token"))
         assertEquals(Status.OK, triggerResp.status)
@@ -115,13 +136,18 @@ class ScheduledTaskIntegrationTest : IntegrationTestBase() {
     @Test
     fun `GET history returns task run records`() {
         val token = adminToken()
-        val createResp = app(
-            Request(Method.POST, "/api/admin/scheduled-tasks")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body(validTask),
-        )
-        val id = Json.mapper.readTree(createResp.bodyString()).get("id").asText()
+        val createResp =
+            app(
+                Request(Method.POST, "/api/admin/scheduled-tasks")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body(validTask),
+            )
+        val id =
+            Json.mapper
+                .readTree(createResp.bodyString())
+                .get("id")
+                .asText()
         app(Request(Method.POST, "/api/admin/scheduled-tasks/$id/trigger").header("Cookie", "token=$token"))
 
         val histResp = app(Request(Method.GET, "/api/admin/scheduled-tasks/$id/history").header("Cookie", "token=$token"))
@@ -134,24 +160,26 @@ class ScheduledTaskIntegrationTest : IntegrationTestBase() {
     @Test
     fun `POST with invalid task type returns 400`() {
         val token = adminToken()
-        val resp = app(
-            Request(Method.POST, "/api/admin/scheduled-tasks")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"name":"Bad","taskType":"nonexistent","cronExpression":"* * * * *"}"""),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/api/admin/scheduled-tasks")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"name":"Bad","taskType":"nonexistent","cronExpression":"* * * * *"}"""),
+            )
         assertEquals(Status.BAD_REQUEST, resp.status)
     }
 
     @Test
     fun `POST with invalid cron expression returns 400`() {
         val token = adminToken()
-        val resp = app(
-            Request(Method.POST, "/api/admin/scheduled-tasks")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"name":"Bad","taskType":"library.scan.all","cronExpression":"not-a-cron"}"""),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/api/admin/scheduled-tasks")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"name":"Bad","taskType":"library.scan.all","cronExpression":"not-a-cron"}"""),
+            )
         assertEquals(Status.BAD_REQUEST, resp.status)
     }
 

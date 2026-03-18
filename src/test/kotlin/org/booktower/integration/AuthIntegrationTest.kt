@@ -1,49 +1,39 @@
 package org.booktower.integration
 
-import org.booktower.TestFixture
 import org.booktower.config.Json
-import org.booktower.config.TemplateRenderer
-import org.booktower.filters.GlobalErrorFilter
-import org.booktower.handlers.AppHandler
-import org.booktower.models.ErrorResponse
 import org.booktower.models.LoginResponse
-import org.booktower.services.AuthService
-import org.booktower.services.BookmarkService
-import org.booktower.services.PdfMetadataService
-import org.booktower.services.UserSettingsService
-import org.booktower.services.BookService
-import org.booktower.services.JwtService
-import org.booktower.services.LibraryService
-import org.http4k.core.HttpHandler
 import org.http4k.core.Method
 import org.http4k.core.Request
 import org.http4k.core.Status
 import org.http4k.core.cookie.cookies
-import org.http4k.core.then
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class AuthIntegrationTest : IntegrationTestBase() {
-
     private fun uniqueUser() = "user_${System.nanoTime()}"
 
-    private fun registerJson(username: String, email: String = "$username@test.com", password: String = "password123"): String =
-        """{"username":"$username","email":"$email","password":"$password"}"""
+    private fun registerJson(
+        username: String,
+        email: String = "$username@test.com",
+        password: String = "password123",
+    ): String = """{"username":"$username","email":"$email","password":"$password"}"""
 
-    private fun loginJson(username: String, password: String = "password123"): String =
-        """{"username":"$username","password":"$password"}"""
+    private fun loginJson(
+        username: String,
+        password: String = "password123",
+    ): String = """{"username":"$username","password":"$password"}"""
 
     @Test
     fun `register returns 201 with token and user data`() {
         val username = uniqueUser()
-        val response = app(
-            Request(Method.POST, "/auth/register")
-                .header("Content-Type", "application/json")
-                .body(registerJson(username)),
-        )
+        val response =
+            app(
+                Request(Method.POST, "/auth/register")
+                    .header("Content-Type", "application/json")
+                    .body(registerJson(username)),
+            )
 
         assertEquals(Status.CREATED, response.status)
         val body = Json.mapper.readValue(response.bodyString(), LoginResponse::class.java)
@@ -55,11 +45,12 @@ class AuthIntegrationTest : IntegrationTestBase() {
 
     @Test
     fun `register sets httpOnly cookie`() {
-        val response = app(
-            Request(Method.POST, "/auth/register")
-                .header("Content-Type", "application/json")
-                .body(registerJson(uniqueUser())),
-        )
+        val response =
+            app(
+                Request(Method.POST, "/auth/register")
+                    .header("Content-Type", "application/json")
+                    .body(registerJson(uniqueUser())),
+            )
 
         val cookie = response.cookies().find { it.name == "token" }
         assertNotNull(cookie)
@@ -71,11 +62,12 @@ class AuthIntegrationTest : IntegrationTestBase() {
         val username = uniqueUser()
         app(Request(Method.POST, "/auth/register").header("Content-Type", "application/json").body(registerJson(username)))
 
-        val response = app(
-            Request(Method.POST, "/auth/register")
-                .header("Content-Type", "application/json")
-                .body(registerJson(username, "${username}_2@test.com")),
-        )
+        val response =
+            app(
+                Request(Method.POST, "/auth/register")
+                    .header("Content-Type", "application/json")
+                    .body(registerJson(username, "${username}_2@test.com")),
+            )
 
         assertTrue(response.status.code >= 400, "Expected error status but got ${response.status}")
         assertTrue(response.bodyString().isNotBlank())
@@ -89,11 +81,12 @@ class AuthIntegrationTest : IntegrationTestBase() {
 
     @Test
     fun `register with short username returns 400`() {
-        val response = app(
-            Request(Method.POST, "/auth/register")
-                .header("Content-Type", "application/json")
-                .body("""{"username":"ab","email":"ab@test.com","password":"password123"}"""),
-        )
+        val response =
+            app(
+                Request(Method.POST, "/auth/register")
+                    .header("Content-Type", "application/json")
+                    .body("""{"username":"ab","email":"ab@test.com","password":"password123"}"""),
+            )
 
         assertEquals(Status.BAD_REQUEST, response.status)
         assertTrue(response.bodyString().contains("VALIDATION_ERROR"))
@@ -101,33 +94,36 @@ class AuthIntegrationTest : IntegrationTestBase() {
 
     @Test
     fun `register with short password returns 400`() {
-        val response = app(
-            Request(Method.POST, "/auth/register")
-                .header("Content-Type", "application/json")
-                .body("""{"username":"${uniqueUser()}","email":"x@test.com","password":"short"}"""),
-        )
+        val response =
+            app(
+                Request(Method.POST, "/auth/register")
+                    .header("Content-Type", "application/json")
+                    .body("""{"username":"${uniqueUser()}","email":"x@test.com","password":"short"}"""),
+            )
 
         assertEquals(Status.BAD_REQUEST, response.status)
     }
 
     @Test
     fun `register with invalid email returns 400`() {
-        val response = app(
-            Request(Method.POST, "/auth/register")
-                .header("Content-Type", "application/json")
-                .body("""{"username":"${uniqueUser()}","email":"not-an-email","password":"password123"}"""),
-        )
+        val response =
+            app(
+                Request(Method.POST, "/auth/register")
+                    .header("Content-Type", "application/json")
+                    .body("""{"username":"${uniqueUser()}","email":"not-an-email","password":"password123"}"""),
+            )
 
         assertEquals(Status.BAD_REQUEST, response.status)
     }
 
     @Test
     fun `register with special chars in username returns 400`() {
-        val response = app(
-            Request(Method.POST, "/auth/register")
-                .header("Content-Type", "application/json")
-                .body("""{"username":"user@name!","email":"x@test.com","password":"password123"}"""),
-        )
+        val response =
+            app(
+                Request(Method.POST, "/auth/register")
+                    .header("Content-Type", "application/json")
+                    .body("""{"username":"user@name!","email":"x@test.com","password":"password123"}"""),
+            )
 
         assertEquals(Status.BAD_REQUEST, response.status)
     }
@@ -137,11 +133,12 @@ class AuthIntegrationTest : IntegrationTestBase() {
         val username = uniqueUser()
         app(Request(Method.POST, "/auth/register").header("Content-Type", "application/json").body(registerJson(username)))
 
-        val response = app(
-            Request(Method.POST, "/auth/login")
-                .header("Content-Type", "application/json")
-                .body(loginJson(username)),
-        )
+        val response =
+            app(
+                Request(Method.POST, "/auth/login")
+                    .header("Content-Type", "application/json")
+                    .body(loginJson(username)),
+            )
 
         assertEquals(Status.OK, response.status)
         val body = Json.mapper.readValue(response.bodyString(), LoginResponse::class.java)
@@ -155,11 +152,12 @@ class AuthIntegrationTest : IntegrationTestBase() {
         val username = uniqueUser()
         app(Request(Method.POST, "/auth/register").header("Content-Type", "application/json").body(registerJson(username)))
 
-        val response = app(
-            Request(Method.POST, "/auth/login")
-                .header("Content-Type", "application/json")
-                .body(loginJson(username, "wrongpassword")),
-        )
+        val response =
+            app(
+                Request(Method.POST, "/auth/login")
+                    .header("Content-Type", "application/json")
+                    .body(loginJson(username, "wrongpassword")),
+            )
 
         assertEquals(Status.UNAUTHORIZED, response.status)
         assertTrue(response.bodyString().contains("INVALID_CREDENTIALS"))
@@ -167,11 +165,12 @@ class AuthIntegrationTest : IntegrationTestBase() {
 
     @Test
     fun `login with non-existent user returns 401`() {
-        val response = app(
-            Request(Method.POST, "/auth/login")
-                .header("Content-Type", "application/json")
-                .body(loginJson("nonexistent_${System.nanoTime()}")),
-        )
+        val response =
+            app(
+                Request(Method.POST, "/auth/login")
+                    .header("Content-Type", "application/json")
+                    .body(loginJson("nonexistent_${System.nanoTime()}")),
+            )
 
         assertEquals(Status.UNAUTHORIZED, response.status)
     }
@@ -200,11 +199,12 @@ class AuthIntegrationTest : IntegrationTestBase() {
         val email = "$username@test.com"
         app(Request(Method.POST, "/auth/register").header("Content-Type", "application/json").body(registerJson(username, email)))
 
-        val response = app(
-            Request(Method.POST, "/auth/login")
-                .header("Content-Type", "application/json")
-                .body("""{"username":"$email","password":"password123"}"""),
-        )
+        val response =
+            app(
+                Request(Method.POST, "/auth/login")
+                    .header("Content-Type", "application/json")
+                    .body("""{"username":"$email","password":"password123"}"""),
+            )
         assertEquals(Status.OK, response.status)
         val body = Json.mapper.readValue(response.bodyString(), LoginResponse::class.java)
         assertEquals(username, body.user.username)
@@ -216,11 +216,12 @@ class AuthIntegrationTest : IntegrationTestBase() {
         val email = "$username@test.com"
         app(Request(Method.POST, "/auth/register").header("Content-Type", "application/json").body(registerJson(username, email)))
 
-        val response = app(
-            Request(Method.POST, "/auth/login")
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .body("username=${email.replace("@", "%40")}&password=password123"),
-        )
+        val response =
+            app(
+                Request(Method.POST, "/auth/login")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("username=${email.replace("@", "%40")}&password=password123"),
+            )
         assertEquals(Status.SEE_OTHER, response.status)
         assertNotNull(response.cookies().find { it.name == "token" && it.value.isNotBlank() })
     }
@@ -230,16 +231,18 @@ class AuthIntegrationTest : IntegrationTestBase() {
         val username = uniqueUser()
         app(Request(Method.POST, "/auth/register").header("Content-Type", "application/json").body(registerJson(username)))
 
-        val loginResponse = app(
-            Request(Method.POST, "/auth/login")
-                .header("Content-Type", "application/json")
-                .body(loginJson(username)),
-        )
+        val loginResponse =
+            app(
+                Request(Method.POST, "/auth/login")
+                    .header("Content-Type", "application/json")
+                    .body(loginJson(username)),
+            )
         val token = loginResponse.cookies().find { it.name == "token" }!!.value
 
-        val librariesResponse = app(
-            Request(Method.GET, "/api/libraries").header("Cookie", "token=$token"),
-        )
+        val librariesResponse =
+            app(
+                Request(Method.GET, "/api/libraries").header("Cookie", "token=$token"),
+            )
 
         assertEquals(Status.OK, librariesResponse.status)
     }
@@ -247,11 +250,12 @@ class AuthIntegrationTest : IntegrationTestBase() {
     @Test
     fun `register returns 403 when registration is closed`() {
         val closedApp = buildApp(registrationOpen = false)
-        val response = closedApp(
-            Request(Method.POST, "/auth/register")
-                .header("Content-Type", "application/json")
-                .body(registerJson(uniqueUser())),
-        )
+        val response =
+            closedApp(
+                Request(Method.POST, "/auth/register")
+                    .header("Content-Type", "application/json")
+                    .body(registerJson(uniqueUser())),
+            )
         assertEquals(Status.FORBIDDEN, response.status)
         assertTrue(response.bodyString().contains("REGISTRATION_CLOSED"))
     }
@@ -260,11 +264,12 @@ class AuthIntegrationTest : IntegrationTestBase() {
     fun `form register returns 403 when registration is closed`() {
         val closedApp = buildApp(registrationOpen = false)
         val username = uniqueUser()
-        val response = closedApp(
-            Request(Method.POST, "/auth/register")
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .body("username=$username&email=$username%40test.com&password=password123"),
-        )
+        val response =
+            closedApp(
+                Request(Method.POST, "/auth/register")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("username=$username&email=$username%40test.com&password=password123"),
+            )
         assertEquals(Status.FORBIDDEN, response.status)
     }
 

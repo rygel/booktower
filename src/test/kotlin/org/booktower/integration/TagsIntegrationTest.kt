@@ -9,12 +9,17 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class TagsIntegrationTest : IntegrationTestBase() {
-
-    private fun setTags(token: String, bookId: String, tags: String) {
-        app(Request(Method.POST, "/ui/books/$bookId/tags")
-            .header("Cookie", "token=$token")
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .body("tags=${java.net.URLEncoder.encode(tags, "UTF-8")}"))
+    private fun setTags(
+        token: String,
+        bookId: String,
+        tags: String,
+    ) {
+        app(
+            Request(Method.POST, "/ui/books/$bookId/tags")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .body("tags=${java.net.URLEncoder.encode(tags, "UTF-8")}"),
+        )
     }
 
     @Test
@@ -22,10 +27,13 @@ class TagsIntegrationTest : IntegrationTestBase() {
         val token = registerAndGetToken("tg1")
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
-        val response = app(Request(Method.POST, "/ui/books/$bookId/tags")
-            .header("Cookie", "token=$token")
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .body("tags=sci-fi"))
+        val response =
+            app(
+                Request(Method.POST, "/ui/books/$bookId/tags")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("tags=sci-fi"),
+            )
         assertEquals(Status.OK, response.status)
     }
 
@@ -67,8 +75,11 @@ class TagsIntegrationTest : IntegrationTestBase() {
         val book2 = createBook(token, libId, "History Book")
         setTags(token, book1, "sci-fi")
         setTags(token, book2, "history")
-        val body = app(Request(Method.GET, "/libraries/$libId?tag=sci-fi")
-            .header("Cookie", "token=$token")).bodyString()
+        val body =
+            app(
+                Request(Method.GET, "/libraries/$libId?tag=sci-fi")
+                    .header("Cookie", "token=$token"),
+            ).bodyString()
         assertTrue(body.contains("Sci-Fi Book"), "Tag filter should show Sci-Fi Book")
         assertFalse(body.contains("History Book"), "Tag filter should not show History Book")
     }
@@ -112,9 +123,12 @@ class TagsIntegrationTest : IntegrationTestBase() {
 
     @Test
     fun `tags require authentication`() {
-        val response = app(Request(Method.POST, "/ui/books/some-id/tags")
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .body("tags=sci-fi"))
+        val response =
+            app(
+                Request(Method.POST, "/ui/books/some-id/tags")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("tags=sci-fi"),
+            )
         assertEquals(Status.UNAUTHORIZED, response.status)
     }
 

@@ -5,20 +5,22 @@ import org.http4k.core.Method
 import org.http4k.core.Request
 import org.http4k.core.Status
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class LibrarySettingsIntegrationTest : IntegrationTestBase() {
-
     private fun createTestLibrary(token: String): String {
-        val resp = app(
-            Request(Method.POST, "/api/libraries")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"name":"Settings Test Lib","path":"./data/settings-test-${System.nanoTime()}"}"""),
-        )
-        return Json.mapper.readTree(resp.bodyString()).get("id").asText()
+        val resp =
+            app(
+                Request(Method.POST, "/api/libraries")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"name":"Settings Test Lib","path":"./data/settings-test-${System.nanoTime()}"}"""),
+            )
+        return Json.mapper
+            .readTree(resp.bodyString())
+            .get("id")
+            .asText()
     }
 
     @Test
@@ -41,12 +43,13 @@ class LibrarySettingsIntegrationTest : IntegrationTestBase() {
         val token = registerAndGetToken()
         val libId = createTestLibrary(token)
 
-        val putResp = app(
-            Request(Method.PUT, "/api/libraries/$libId/settings")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"formatAllowlist":["pdf","epub"],"metadataSource":null,"defaultSort":null,"additionalPaths":null}"""),
-        )
+        val putResp =
+            app(
+                Request(Method.PUT, "/api/libraries/$libId/settings")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"formatAllowlist":["pdf","epub"],"metadataSource":null,"defaultSort":null,"additionalPaths":null}"""),
+            )
         assertEquals(Status.OK, putResp.status)
 
         val getResp = app(Request(Method.GET, "/api/libraries/$libId/settings").header("Cookie", "token=$token"))
@@ -63,12 +66,13 @@ class LibrarySettingsIntegrationTest : IntegrationTestBase() {
         val token = registerAndGetToken()
         val libId = createTestLibrary(token)
 
-        val putResp = app(
-            Request(Method.PUT, "/api/libraries/$libId/settings")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"formatAllowlist":null,"metadataSource":"googlebooks","defaultSort":null,"additionalPaths":null}"""),
-        )
+        val putResp =
+            app(
+                Request(Method.PUT, "/api/libraries/$libId/settings")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"formatAllowlist":null,"metadataSource":"googlebooks","defaultSort":null,"additionalPaths":null}"""),
+            )
         assertEquals(Status.OK, putResp.status)
 
         val getResp = app(Request(Method.GET, "/api/libraries/$libId/settings").header("Cookie", "token=$token"))
@@ -81,12 +85,13 @@ class LibrarySettingsIntegrationTest : IntegrationTestBase() {
         val token = registerAndGetToken()
         val libId = createTestLibrary(token)
 
-        val putResp = app(
-            Request(Method.PUT, "/api/libraries/$libId/settings")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"formatAllowlist":null,"metadataSource":null,"defaultSort":"author","additionalPaths":null}"""),
-        )
+        val putResp =
+            app(
+                Request(Method.PUT, "/api/libraries/$libId/settings")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"formatAllowlist":null,"metadataSource":null,"defaultSort":"author","additionalPaths":null}"""),
+            )
         assertEquals(Status.OK, putResp.status)
 
         val getResp = app(Request(Method.GET, "/api/libraries/$libId/settings").header("Cookie", "token=$token"))
@@ -99,17 +104,21 @@ class LibrarySettingsIntegrationTest : IntegrationTestBase() {
         val token = registerAndGetToken()
         val libId = createTestLibrary(token)
 
-        val putResp = app(
-            Request(Method.PUT, "/api/libraries/$libId/settings")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"formatAllowlist":null,"metadataSource":null,"defaultSort":null,"additionalPaths":["./data/extra1","./data/extra2"]}"""),
-        )
+        val putResp =
+            app(
+                Request(Method.PUT, "/api/libraries/$libId/settings")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body(
+                        """{"formatAllowlist":null,"metadataSource":null,"defaultSort":null,"additionalPaths":["./data/extra1","./data/extra2"]}""",
+                    ),
+            )
         assertEquals(Status.OK, putResp.status)
 
-        val tree = Json.mapper.readTree(
-            app(Request(Method.GET, "/api/libraries/$libId/settings").header("Cookie", "token=$token")).bodyString(),
-        )
+        val tree =
+            Json.mapper.readTree(
+                app(Request(Method.GET, "/api/libraries/$libId/settings").header("Cookie", "token=$token")).bodyString(),
+            )
         val paths = (0 until tree.get("additionalPaths").size()).map { tree.get("additionalPaths")[it].asText() }
         assertTrue("./data/extra1" in paths)
         assertTrue("./data/extra2" in paths)
@@ -134,9 +143,10 @@ class LibrarySettingsIntegrationTest : IntegrationTestBase() {
                 .body("""{"additionalPaths":["./data/new"]}"""),
         )
 
-        val tree = Json.mapper.readTree(
-            app(Request(Method.GET, "/api/libraries/$libId/settings").header("Cookie", "token=$token")).bodyString(),
-        )
+        val tree =
+            Json.mapper.readTree(
+                app(Request(Method.GET, "/api/libraries/$libId/settings").header("Cookie", "token=$token")).bodyString(),
+            )
         val paths = (0 until tree.get("additionalPaths").size()).map { tree.get("additionalPaths")[it].asText() }
         assertEquals(listOf("./data/new"), paths)
     }
@@ -146,12 +156,13 @@ class LibrarySettingsIntegrationTest : IntegrationTestBase() {
         val token = registerAndGetToken()
         val libId = createTestLibrary(token)
 
-        val resp = app(
-            Request(Method.PUT, "/api/libraries/$libId/settings")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"metadataSource":"nonexistent"}"""),
-        )
+        val resp =
+            app(
+                Request(Method.PUT, "/api/libraries/$libId/settings")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"metadataSource":"nonexistent"}"""),
+            )
         assertEquals(Status.BAD_REQUEST, resp.status)
     }
 
@@ -160,22 +171,24 @@ class LibrarySettingsIntegrationTest : IntegrationTestBase() {
         val token = registerAndGetToken()
         val libId = createTestLibrary(token)
 
-        val resp = app(
-            Request(Method.PUT, "/api/libraries/$libId/settings")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"defaultSort":"invalid_field"}"""),
-        )
+        val resp =
+            app(
+                Request(Method.PUT, "/api/libraries/$libId/settings")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"defaultSort":"invalid_field"}"""),
+            )
         assertEquals(Status.BAD_REQUEST, resp.status)
     }
 
     @Test
     fun `GET settings for non-existent library returns 404`() {
         val token = registerAndGetToken()
-        val resp = app(
-            Request(Method.GET, "/api/libraries/00000000-0000-0000-0000-000000000000/settings")
-                .header("Cookie", "token=$token"),
-        )
+        val resp =
+            app(
+                Request(Method.GET, "/api/libraries/00000000-0000-0000-0000-000000000000/settings")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.NOT_FOUND, resp.status)
     }
 

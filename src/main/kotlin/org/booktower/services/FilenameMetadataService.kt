@@ -25,18 +25,21 @@ data class FilenameMetadata(
  * Where N is an optional float/integer (e.g. "1", "1.5", "02").
  */
 object FilenameMetadataService {
-
     // "Series N" or "Series, Book N" inside parentheses or brackets
-    private val SERIES_IN_PARENS = Regex(
-        """[\(\[]\s*(.+?)[,\s]+(?:book\s+)?(\d+(?:\.\d+)?)\s*[\)\]]""",
-        RegexOption.IGNORE_CASE,
-    )
+    private val SERIES_IN_PARENS =
+        Regex(
+            """[\(\[]\s*(.+?)[,\s]+(?:book\s+)?(\d+(?:\.\d+)?)\s*[\)\]]""",
+            RegexOption.IGNORE_CASE,
+        )
+
     // "Author - Title" separator
     private val AUTHOR_TITLE_SEP = Regex("""\s+[-–]\s+""")
+
     // "Series N - Title" where series is e.g. "Dune 2" or "Wheel of Time 01"
-    private val SERIES_INDEX_INLINE = Regex(
-        """^(.*?)\s+(\d+(?:\.\d+)?)\s*$""",
-    )
+    private val SERIES_INDEX_INLINE =
+        Regex(
+            """^(.*?)\s+(\d+(?:\.\d+)?)\s*$""",
+        )
 
     fun extract(filePath: String): FilenameMetadata {
         val name = File(filePath).nameWithoutExtension.trim()

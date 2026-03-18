@@ -18,25 +18,27 @@ import java.util.UUID
 
 private val logger = LoggerFactory.getLogger("booktower.FileHandler")
 
-private val ALLOWED_EXTENSIONS = setOf("pdf", "epub", "mobi", "azw3", "cbz", "cbr", "fb2", "djvu", "mp3", "m4b", "m4a", "ogg", "flac", "aac")
+private val ALLOWED_EXTENSIONS =
+    setOf("pdf", "epub", "mobi", "azw3", "cbz", "cbr", "fb2", "djvu", "mp3", "m4b", "m4a", "ogg", "flac", "aac")
 private val ALLOWED_COVER_EXTENSIONS = setOf("jpg", "jpeg", "png", "webp")
 private const val MAX_COVER_SIZE = 10L * 1024 * 1024 // 10 MB
-private val CONTENT_TYPES = mapOf(
-    "pdf" to "application/pdf",
-    "epub" to "application/epub+zip",
-    "mobi" to "application/x-mobipocket-ebook",
-    "azw3" to "application/x-mobi8-ebook",
-    "cbz" to "application/zip",
-    "cbr" to "application/x-rar-compressed",
-    "fb2" to "application/xml",
-    "djvu" to "image/vnd.djvu",
-    "mp3" to "audio/mpeg",
-    "m4b" to "audio/mp4",
-    "m4a" to "audio/mp4",
-    "ogg" to "audio/ogg",
-    "flac" to "audio/flac",
-    "aac" to "audio/aac",
-)
+private val CONTENT_TYPES =
+    mapOf(
+        "pdf" to "application/pdf",
+        "epub" to "application/epub+zip",
+        "mobi" to "application/x-mobipocket-ebook",
+        "azw3" to "application/x-mobi8-ebook",
+        "cbz" to "application/zip",
+        "cbr" to "application/x-rar-compressed",
+        "fb2" to "application/xml",
+        "djvu" to "image/vnd.djvu",
+        "mp3" to "audio/mpeg",
+        "m4b" to "audio/mp4",
+        "m4a" to "audio/mp4",
+        "ogg" to "audio/ogg",
+        "flac" to "audio/flac",
+        "aac" to "audio/aac",
+    )
 private const val MAX_FILE_SIZE = 500L * 1024 * 1024 // 500 MB
 
 class FileHandler(
@@ -47,12 +49,16 @@ class FileHandler(
     private val fb2ReaderService: Fb2ReaderService = Fb2ReaderService(),
     private val calibreService: CalibreConversionService? = null,
 ) {
-
     fun upload(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
-        val bookId = req.uri.path.split("/").dropLast(1).lastOrNull()?.let { id ->
-            try { UUID.fromString(id) } catch (e: IllegalArgumentException) { null }
-        }
+        val bookId =
+            req.uri.path.split("/").dropLast(1).lastOrNull()?.let { id ->
+                try {
+                    UUID.fromString(id)
+                } catch (e: IllegalArgumentException) {
+                    null
+                }
+            }
 
         if (bookId == null) {
             return badRequest("Invalid book ID")
@@ -77,14 +83,14 @@ class FileHandler(
         }
 
         val destDir = File(storageConfig.booksPath)
-        if (!destDir.exists()) destDir.mkdirs()
+        if (!destDir.exists() && !destDir.mkdirs()) logger.warn("Could not create directory: ${destDir.absolutePath}")
 
         val destFile = File(destDir, "$bookId.$ext")
         destFile.writeBytes(bytes)
 
         val updated = bookService.updateFileInfo(userId, bookId, destFile.path, bytes.size.toLong())
         if (!updated) {
-            destFile.delete()
+            if (!destFile.delete()) logger.warn("Could not delete file: ${destFile.absolutePath}")
             return Response(Status.NOT_FOUND)
                 .header("Content-Type", "application/json")
                 .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "Book not found")))
@@ -105,18 +111,24 @@ class FileHandler(
 
     fun download(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
-        val bookId = req.uri.path.split("/").dropLast(1).lastOrNull()?.let { id ->
-            try { UUID.fromString(id) } catch (e: IllegalArgumentException) { null }
-        }
+        val bookId =
+            req.uri.path.split("/").dropLast(1).lastOrNull()?.let { id ->
+                try {
+                    UUID.fromString(id)
+                } catch (e: IllegalArgumentException) {
+                    null
+                }
+            }
 
         if (bookId == null) {
             return badRequest("Invalid book ID")
         }
 
-        val filePath = bookService.getBookFilePath(userId, bookId)
-            ?: return Response(Status.NOT_FOUND)
-                .header("Content-Type", "application/json")
-                .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "Book not found")))
+        val filePath =
+            bookService.getBookFilePath(userId, bookId)
+                ?: return Response(Status.NOT_FOUND)
+                    .header("Content-Type", "application/json")
+                    .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "Book not found")))
 
         if (filePath.isBlank()) {
             return Response(Status.NOT_FOUND)
@@ -148,27 +160,37 @@ class FileHandler(
      */
     fun downloadKepub(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
-        val bookId = req.uri.path.split("/").dropLast(1).lastOrNull()?.let { id ->
-            try { UUID.fromString(id) } catch (e: IllegalArgumentException) { null }
-        } ?: return badRequest("Invalid book ID")
+        val bookId =
+            req.uri.path.split("/").dropLast(1).lastOrNull()?.let { id ->
+                try {
+                    UUID.fromString(id)
+                } catch (e: IllegalArgumentException) {
+                    null
+                }
+            } ?: return badRequest("Invalid book ID")
 
-        val filePath = bookService.getBookFilePath(userId, bookId)
-            ?: return Response(Status.NOT_FOUND).header("Content-Type", "application/json")
-                .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "Book not found")))
+        val filePath =
+            bookService.getBookFilePath(userId, bookId)
+                ?: return Response(Status.NOT_FOUND)
+                    .header("Content-Type", "application/json")
+                    .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "Book not found")))
 
         if (filePath.isBlank()) {
-            return Response(Status.NOT_FOUND).header("Content-Type", "application/json")
+            return Response(Status.NOT_FOUND)
+                .header("Content-Type", "application/json")
                 .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "No file uploaded for this book")))
         }
 
         val file = File(filePath)
         if (!file.exists() || !file.isFile) {
-            return Response(Status.NOT_FOUND).header("Content-Type", "application/json")
+            return Response(Status.NOT_FOUND)
+                .header("Content-Type", "application/json")
                 .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "File not found on disk")))
         }
 
         if (file.extension.lowercase() != "epub") {
-            return Response(Status.UNPROCESSABLE_ENTITY).header("Content-Type", "application/json")
+            return Response(Status.UNPROCESSABLE_ENTITY)
+                .header("Content-Type", "application/json")
                 .body(Json.mapper.writeValueAsString(ErrorResponse("UNSUPPORTED", "KEPUB conversion is only available for EPUB files")))
         }
 
@@ -186,28 +208,35 @@ class FileHandler(
      */
     fun readContent(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
-        val bookId = req.uri.path.split("/").dropLast(1).lastOrNull()?.let { id ->
-            try { UUID.fromString(id) } catch (e: IllegalArgumentException) { null }
-        } ?: return badRequest("Invalid book ID")
+        val bookId =
+            req.uri.path.split("/").dropLast(1).lastOrNull()?.let { id ->
+                try {
+                    UUID.fromString(id)
+                } catch (e: IllegalArgumentException) {
+                    null
+                }
+            } ?: return badRequest("Invalid book ID")
 
-        val filePath = bookService.getBookFilePath(userId, bookId)
-            ?: return Response(Status.NOT_FOUND)
+        val filePath =
+            bookService.getBookFilePath(userId, bookId)
+                ?: return Response(Status.NOT_FOUND)
         val file = File(filePath)
         if (!file.exists()) return Response(Status.NOT_FOUND)
 
         val ext = file.extension.lowercase()
         return when (ext) {
-            "fb2" -> try {
-                val html = fb2ReaderService.toHtml(file)
-                Response(Status.OK)
-                    .header("Content-Type", "text/html; charset=utf-8")
-                    .body(html)
-            } catch (e: Exception) {
-                logger.error("FB2 conversion failed for book $bookId", e)
-                Response(Status.INTERNAL_SERVER_ERROR)
-                    .header("Content-Type", "application/json")
-                    .body("""{"error":"FB2 conversion failed: ${e.message}"}""")
-            }
+            "fb2" ->
+                try {
+                    val html = fb2ReaderService.toHtml(file)
+                    Response(Status.OK)
+                        .header("Content-Type", "text/html; charset=utf-8")
+                        .body(html)
+                } catch (e: Exception) {
+                    logger.error("FB2 conversion failed for book $bookId", e)
+                    Response(Status.INTERNAL_SERVER_ERROR)
+                        .header("Content-Type", "application/json")
+                        .body("""{"error":"FB2 conversion failed: ${e.message}"}""")
+                }
             "mobi", "azw3" -> {
                 val svc = calibreService
                 if (svc == null || !svc.isAvailable) {
@@ -227,23 +256,30 @@ class FileHandler(
                         .body("""{"error":"Calibre conversion failed: ${e.message}"}""")
                 }
             }
-            else -> Response(Status.UNPROCESSABLE_ENTITY)
-                .header("Content-Type", "application/json")
-                .body("""{"error":"read-content is only supported for FB2, MOBI, and AZW3 files"}""")
+            else ->
+                Response(Status.UNPROCESSABLE_ENTITY)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"read-content is only supported for FB2, MOBI, and AZW3 files"}""")
         }
     }
 
     /** GET /api/books/{id}/audio — streams audio with HTTP Range support for seeking */
     fun audioStream(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
-        val bookId = req.uri.path.split("/").dropLast(1).lastOrNull()?.let { id ->
-            try { UUID.fromString(id) } catch (e: IllegalArgumentException) { null }
-        } ?: return badRequest("Invalid book ID")
+        val bookId =
+            req.uri.path.split("/").dropLast(1).lastOrNull()?.let { id ->
+                try {
+                    UUID.fromString(id)
+                } catch (e: IllegalArgumentException) {
+                    null
+                }
+            } ?: return badRequest("Invalid book ID")
 
-        val filePath = bookService.getBookFilePath(userId, bookId)
-            ?: return Response(Status.NOT_FOUND)
-                .header("Content-Type", "application/json")
-                .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "Book not found")))
+        val filePath =
+            bookService.getBookFilePath(userId, bookId)
+                ?: return Response(Status.NOT_FOUND)
+                    .header("Content-Type", "application/json")
+                    .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "Book not found")))
 
         if (filePath.isBlank()) {
             return Response(Status.NOT_FOUND)
@@ -275,24 +311,36 @@ class FileHandler(
                 .header("Content-Range", "bytes $start-$safeEnd/$totalSize")
                 .header("Content-Length", length.toString())
                 .header("Accept-Ranges", "bytes")
-                .body(inputStream.buffered().let { buf ->
-                    object : java.io.InputStream() {
-                        private var remaining = length
-                        override fun read(): Int {
-                            if (remaining <= 0) return -1
-                            remaining--
-                            return buf.read()
+                .body(
+                    inputStream.buffered().let { buf ->
+                        object : java.io.InputStream() {
+                            private var remaining = length
+
+                            override fun read(): Int {
+                                if (remaining <= 0) return -1
+                                remaining--
+                                return buf.read()
+                            }
+
+                            override fun read(
+                                b: ByteArray,
+                                off: Int,
+                                len: Int,
+                            ): Int {
+                                if (remaining <= 0) return -1
+                                val toRead = minOf(len.toLong(), remaining).toInt()
+                                val n = buf.read(b, off, toRead)
+                                if (n > 0) remaining -= n
+                                return n
+                            }
+
+                            override fun close() {
+                                buf.close()
+                                inputStream.close()
+                            }
                         }
-                        override fun read(b: ByteArray, off: Int, len: Int): Int {
-                            if (remaining <= 0) return -1
-                            val toRead = minOf(len.toLong(), remaining).toInt()
-                            val n = buf.read(b, off, toRead)
-                            if (n > 0) remaining -= n
-                            return n
-                        }
-                        override fun close() { buf.close(); inputStream.close() }
-                    }
-                })
+                    },
+                )
         }
 
         return Response(Status.OK)
@@ -304,9 +352,14 @@ class FileHandler(
 
     fun uploadCover(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
-        val bookId = req.uri.path.split("/").dropLast(1).lastOrNull()?.let { id ->
-            try { UUID.fromString(id) } catch (e: IllegalArgumentException) { null }
-        } ?: return badRequest("Invalid book ID")
+        val bookId =
+            req.uri.path.split("/").dropLast(1).lastOrNull()?.let { id ->
+                try {
+                    UUID.fromString(id)
+                } catch (e: IllegalArgumentException) {
+                    null
+                }
+            } ?: return badRequest("Invalid book ID")
 
         val filename = req.header("X-Filename")?.trim()
         if (filename.isNullOrBlank()) return badRequest("X-Filename header is required")
@@ -321,7 +374,7 @@ class FileHandler(
         if (bytes.size > MAX_COVER_SIZE) return badRequest("Cover image exceeds maximum size of 10 MB")
 
         val coversDir = File(storageConfig.coversPath)
-        if (!coversDir.exists()) coversDir.mkdirs()
+        if (!coversDir.exists() && !coversDir.mkdirs()) logger.warn("Could not create directory: ${coversDir.absolutePath}")
 
         // Normalise to a canonical filename; keep ext for correct Content-Type serving
         val coverFilename = "$bookId.$ext"
@@ -330,7 +383,7 @@ class FileHandler(
 
         val updated = bookService.updateCoverPath(userId, bookId, coverFilename)
         if (!updated) {
-            destFile.delete()
+            if (!destFile.delete()) logger.warn("Could not delete file: ${destFile.absolutePath}")
             return Response(Status.NOT_FOUND)
                 .header("Content-Type", "application/json")
                 .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "Book not found")))
@@ -343,8 +396,11 @@ class FileHandler(
     }
 
     fun cover(req: Request): Response {
-        val filename = req.uri.path.split("/").lastOrNull()
-            ?: return Response(Status.NOT_FOUND)
+        val filename =
+            req.uri.path
+                .split("/")
+                .lastOrNull()
+                ?: return Response(Status.NOT_FOUND)
 
         // Reject path traversal attempts
         if (filename.contains("..") || filename.contains("/") || filename.contains("\\")) {
@@ -360,12 +416,13 @@ class FileHandler(
                 .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "Cover not found")))
         }
 
-        val contentType = when (file.extension.lowercase()) {
-            "jpg", "jpeg" -> "image/jpeg"
-            "png" -> "image/png"
-            "webp" -> "image/webp"
-            else -> "application/octet-stream"
-        }
+        val contentType =
+            when (file.extension.lowercase()) {
+                "jpg", "jpeg" -> "image/jpeg"
+                "png" -> "image/png"
+                "webp" -> "image/webp"
+                else -> "application/octet-stream"
+            }
 
         return Response(Status.OK)
             .header("Content-Type", contentType)
@@ -377,9 +434,14 @@ class FileHandler(
     /** GET /api/books/{id}/chapters — list all chapter files for a book */
     fun listChapters(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
-        val bookId = req.uri.path.split("/").dropLast(1).lastOrNull()?.let { id ->
-            try { UUID.fromString(id) } catch (e: IllegalArgumentException) { null }
-        } ?: return badRequest("Invalid book ID")
+        val bookId =
+            req.uri.path.split("/").dropLast(1).lastOrNull()?.let { id ->
+                try {
+                    UUID.fromString(id)
+                } catch (e: IllegalArgumentException) {
+                    null
+                }
+            } ?: return badRequest("Invalid book ID")
         val chapters = bookService.getBookFiles(userId, bookId)
         return Response(Status.OK)
             .header("Content-Type", "application/json")
@@ -389,9 +451,14 @@ class FileHandler(
     /** POST /api/books/{id}/chapters — upload a single audio chapter */
     fun uploadChapter(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
-        val bookId = req.uri.path.split("/").dropLast(1).lastOrNull()?.let { id ->
-            try { UUID.fromString(id) } catch (e: IllegalArgumentException) { null }
-        } ?: return badRequest("Invalid book ID")
+        val bookId =
+            req.uri.path.split("/").dropLast(1).lastOrNull()?.let { id ->
+                try {
+                    UUID.fromString(id)
+                } catch (e: IllegalArgumentException) {
+                    null
+                }
+            } ?: return badRequest("Invalid book ID")
 
         bookService.getBook(userId, bookId) ?: return Response(Status.NOT_FOUND)
 
@@ -399,25 +466,33 @@ class FileHandler(
         if (filename.isNullOrBlank()) return badRequest("X-Filename header is required")
 
         val ext = filename.substringAfterLast('.', "").lowercase()
-        if (ext !in setOf("mp3", "m4b", "m4a", "ogg", "flac", "aac"))
+        if (ext !in setOf("mp3", "m4b", "m4a", "ogg", "flac", "aac")) {
             return badRequest("Unsupported audio format: $ext")
+        }
 
-        val trackIndex = req.header("X-Track-Index")?.toIntOrNull()
-            ?: return badRequest("X-Track-Index header is required")
+        val trackIndex =
+            req.header("X-Track-Index")?.toIntOrNull()
+                ?: return badRequest("X-Track-Index header is required")
         val chapterTitle = req.header("X-Chapter-Title")?.trim()
 
         val existing = bookService.getBookFilePath(userId, bookId, trackIndex)
-        if (existing != null) return Response(Status.CONFLICT)
-            .header("Content-Type", "application/json")
-            .body(Json.mapper.writeValueAsString(ErrorResponse("CONFLICT", "Chapter $trackIndex already exists — delete it before re-uploading")))
+        if (existing != null) {
+            return Response(Status.CONFLICT)
+                .header("Content-Type", "application/json")
+                .body(
+                    Json.mapper.writeValueAsString(
+                        ErrorResponse("CONFLICT", "Chapter $trackIndex already exists — delete it before re-uploading"),
+                    ),
+                )
+        }
 
         val bytes = req.body.stream.readBytes()
         if (bytes.isEmpty()) return badRequest("File body is empty")
         if (bytes.size > MAX_FILE_SIZE) return badRequest("File exceeds maximum size of 500 MB")
 
         val destDir = File(storageConfig.booksPath)
-        if (!destDir.exists()) destDir.mkdirs()
-        val destFile = File(destDir, "${bookId}-${trackIndex.toString().padStart(4, '0')}.$ext")
+        if (!destDir.exists() && !destDir.mkdirs()) logger.warn("Could not create directory: ${destDir.absolutePath}")
+        val destFile = File(destDir, "$bookId-${trackIndex.toString().padStart(4, '0')}.$ext")
         destFile.writeBytes(bytes)
 
         bookService.addBookFile(userId, bookId, trackIndex, chapterTitle, destFile.path, bytes.size.toLong())
@@ -432,21 +507,30 @@ class FileHandler(
     fun audioStreamChapter(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
         val pathParts = req.uri.path.split("/")
-        val trackIndex = pathParts.lastOrNull()?.toIntOrNull()
-            ?: return badRequest("Invalid track index")
-        val bookId = pathParts.dropLast(2).lastOrNull()?.let { id ->
-            try { UUID.fromString(id) } catch (e: IllegalArgumentException) { null }
-        } ?: return badRequest("Invalid book ID")
+        val trackIndex =
+            pathParts.lastOrNull()?.toIntOrNull()
+                ?: return badRequest("Invalid track index")
+        val bookId =
+            pathParts.dropLast(2).lastOrNull()?.let { id ->
+                try {
+                    UUID.fromString(id)
+                } catch (e: IllegalArgumentException) {
+                    null
+                }
+            } ?: return badRequest("Invalid book ID")
 
-        val filePath = bookService.getBookFilePath(userId, bookId, trackIndex)
-            ?: return Response(Status.NOT_FOUND)
-                .header("Content-Type", "application/json")
-                .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "Chapter not found")))
+        val filePath =
+            bookService.getBookFilePath(userId, bookId, trackIndex)
+                ?: return Response(Status.NOT_FOUND)
+                    .header("Content-Type", "application/json")
+                    .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "Chapter not found")))
 
         val file = java.io.File(filePath)
-        if (!file.exists() || !file.isFile) return Response(Status.NOT_FOUND)
-            .header("Content-Type", "application/json")
-            .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "File not found on disk")))
+        if (!file.exists() || !file.isFile) {
+            return Response(Status.NOT_FOUND)
+                .header("Content-Type", "application/json")
+                .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "File not found on disk")))
+        }
 
         val contentType = CONTENT_TYPES[file.extension.lowercase()] ?: "audio/mpeg"
         val totalSize = file.length()
@@ -465,24 +549,36 @@ class FileHandler(
                 .header("Content-Range", "bytes $start-$safeEnd/$totalSize")
                 .header("Content-Length", length.toString())
                 .header("Accept-Ranges", "bytes")
-                .body(inputStream.buffered().let { buf ->
-                    object : java.io.InputStream() {
-                        private var remaining = length
-                        override fun read(): Int {
-                            if (remaining <= 0) return -1
-                            remaining--
-                            return buf.read()
+                .body(
+                    inputStream.buffered().let { buf ->
+                        object : java.io.InputStream() {
+                            private var remaining = length
+
+                            override fun read(): Int {
+                                if (remaining <= 0) return -1
+                                remaining--
+                                return buf.read()
+                            }
+
+                            override fun read(
+                                b: ByteArray,
+                                off: Int,
+                                len: Int,
+                            ): Int {
+                                if (remaining <= 0) return -1
+                                val toRead = minOf(len.toLong(), remaining).toInt()
+                                val n = buf.read(b, off, toRead)
+                                if (n > 0) remaining -= n
+                                return n
+                            }
+
+                            override fun close() {
+                                buf.close()
+                                inputStream.close()
+                            }
                         }
-                        override fun read(b: ByteArray, off: Int, len: Int): Int {
-                            if (remaining <= 0) return -1
-                            val toRead = minOf(len.toLong(), remaining).toInt()
-                            val n = buf.read(b, off, toRead)
-                            if (n > 0) remaining -= n
-                            return n
-                        }
-                        override fun close() { buf.close(); inputStream.close() }
-                    }
-                })
+                    },
+                )
         }
 
         return Response(Status.OK)
@@ -496,11 +592,17 @@ class FileHandler(
     fun deleteChapter(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
         val pathParts = req.uri.path.split("/")
-        val trackIndex = pathParts.lastOrNull()?.toIntOrNull()
-            ?: return badRequest("Invalid track index")
-        val bookId = pathParts.dropLast(2).lastOrNull()?.let { id ->
-            try { UUID.fromString(id) } catch (e: IllegalArgumentException) { null }
-        } ?: return badRequest("Invalid book ID")
+        val trackIndex =
+            pathParts.lastOrNull()?.toIntOrNull()
+                ?: return badRequest("Invalid track index")
+        val bookId =
+            pathParts.dropLast(2).lastOrNull()?.let { id ->
+                try {
+                    UUID.fromString(id)
+                } catch (e: IllegalArgumentException) {
+                    null
+                }
+            } ?: return badRequest("Invalid book ID")
         val deleted = bookService.deleteBookFile(userId, bookId, trackIndex)
         return if (deleted) Response(Status.NO_CONTENT) else Response(Status.NOT_FOUND)
     }
@@ -509,19 +611,27 @@ class FileHandler(
     fun updateChapterMeta(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
         val pathParts = req.uri.path.split("/")
-        val trackIndex = pathParts.lastOrNull()?.toIntOrNull()
-            ?: return badRequest("Invalid track index")
-        val bookId = pathParts.dropLast(2).lastOrNull()?.let { id ->
-            try { UUID.fromString(id) } catch (e: IllegalArgumentException) { null }
-        } ?: return badRequest("Invalid book ID")
-        val body = runCatching { Json.mapper.readTree(req.bodyString()) }.getOrNull()
-            ?: return badRequest("Invalid JSON")
+        val trackIndex =
+            pathParts.lastOrNull()?.toIntOrNull()
+                ?: return badRequest("Invalid track index")
+        val bookId =
+            pathParts.dropLast(2).lastOrNull()?.let { id ->
+                try {
+                    UUID.fromString(id)
+                } catch (e: IllegalArgumentException) {
+                    null
+                }
+            } ?: return badRequest("Invalid book ID")
+        val body =
+            runCatching { Json.mapper.readTree(req.bodyString()) }.getOrNull()
+                ?: return badRequest("Invalid JSON")
         val newTitle = body.get("title")?.asText()
         bookService.updateBookFileTitle(userId, bookId, trackIndex, newTitle)
         return Response(Status.OK).header("Content-Type", "application/json").body("{}")
     }
 
-    private fun badRequest(message: String) = Response(Status.BAD_REQUEST)
-        .header("Content-Type", "application/json")
-        .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", message)))
+    private fun badRequest(message: String) =
+        Response(Status.BAD_REQUEST)
+            .header("Content-Type", "application/json")
+            .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", message)))
 }

@@ -4,7 +4,7 @@ import org.booktower.TestFixture
 import org.booktower.config.Json
 import org.booktower.config.SmtpConfig
 import org.booktower.config.WeblateConfig
-import org.booktower.filters.GlobalErrorFilter
+import org.booktower.filters.globalErrorFilter
 import org.booktower.handlers.AppHandler
 import org.booktower.models.LoginResponse
 import org.booktower.services.AdminService
@@ -13,8 +13,8 @@ import org.booktower.services.AnnotationService
 import org.booktower.services.ApiTokenService
 import org.booktower.services.AuthService
 import org.booktower.services.BookDeliveryService
-import org.booktower.services.BookmarkService
 import org.booktower.services.BookService
+import org.booktower.services.BookmarkService
 import org.booktower.services.ComicService
 import org.booktower.services.EmailService
 import org.booktower.services.EpubMetadataService
@@ -43,7 +43,6 @@ import java.io.File
 import java.nio.file.Path
 
 class BookDeliveryIntegrationTest {
-
     @TempDir
     lateinit var tmp: Path
 
@@ -53,11 +52,17 @@ class BookDeliveryIntegrationTest {
     // Track sent emails in-memory for assertions; real SMTP is disabled
     private val sentEmails = mutableListOf<Triple<String, String, String>>() // to, title, filename
 
-    private val emailService = object : EmailService(SmtpConfig("", 587, "", "", "", false)) {
-        override fun sendBook(toEmail: String, bookTitle: String, filename: String, fileBytes: ByteArray) {
-            sentEmails += Triple(toEmail, bookTitle, filename)
+    private val emailService =
+        object : EmailService(SmtpConfig("", 587, "", "", "", false)) {
+            override fun sendBook(
+                toEmail: String,
+                bookTitle: String,
+                filename: String,
+                fileBytes: ByteArray,
+            ) {
+                sentEmails += Triple(toEmail, bookTitle, filename)
+            }
         }
-    }
 
     private lateinit var app: HttpHandler
     private lateinit var booksDir: File
@@ -90,51 +95,95 @@ class BookDeliveryIntegrationTest {
         val goodreadsImportService = GoodreadsImportService(bookService)
         val seedService = SeedService(bookService, libraryService, config.storage.coversPath, config.storage.booksPath)
         val deliveryService = BookDeliveryService(jdbi, bookService, emailService, booksDir.absolutePath)
-        val appHandler = AppHandler(
-            authService, libraryService, bookService, bookmarkService,
-            userSettingsService, pdfMetadataService, epubMetadataService, adminService, jwtService, config.storage,
-            TestFixture.templateRenderer,
-            WeblateHandler(WeblateConfig("", "", "", false)),
-            analyticsService, annotationService, MetadataFetchService(), magicShelfService,
-            passwordResetService, emailService,
-            "http://localhost:9999", true,
-            apiTokenService, exportService, comicService, goodreadsImportService,
-            readingSessionService, seedService,
-            null, null, null, null, null, null, null, null, null, deliveryService,
-        )
-        return GlobalErrorFilter().then(appHandler.routes())
+        val appHandler =
+            AppHandler(
+                authService,
+                libraryService,
+                bookService,
+                bookmarkService,
+                userSettingsService,
+                pdfMetadataService,
+                epubMetadataService,
+                adminService,
+                jwtService,
+                config.storage,
+                TestFixture.templateRenderer,
+                WeblateHandler(WeblateConfig("", "", "", false)),
+                analyticsService,
+                annotationService,
+                MetadataFetchService(),
+                magicShelfService,
+                passwordResetService,
+                emailService,
+                "http://localhost:9999",
+                true,
+                apiTokenService,
+                exportService,
+                comicService,
+                goodreadsImportService,
+                readingSessionService,
+                seedService,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                deliveryService,
+            )
+        return globalErrorFilter().then(appHandler.routes())
     }
 
     private fun registerAndGetToken(prefix: String = "del"): String {
         val u = "${prefix}_${System.nanoTime()}"
-        val resp = app(
-            Request(Method.POST, "/auth/register")
-                .header("Content-Type", "application/json")
-                .body("""{"username":"$u","email":"$u@test.com","password":"password123"}"""),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/auth/register")
+                    .header("Content-Type", "application/json")
+                    .body("""{"username":"$u","email":"$u@test.com","password":"password123"}"""),
+            )
         return Json.mapper.readValue(resp.bodyString(), LoginResponse::class.java).token
     }
 
-    private fun createLibraryAndBook(token: String, bookFile: File? = null): Pair<String, String> {
-        val libResp = app(
-            Request(Method.POST, "/api/libraries")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"name":"DelLib ${System.nanoTime()}","path":"./data/del-${System.nanoTime()}"}"""),
-        )
-        val libId = Json.mapper.readTree(libResp.bodyString()).get("id").asText()
-        val bookResp = app(
-            Request(Method.POST, "/api/books")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"title":"Dune","author":"Frank Herbert","description":null,"libraryId":"$libId"}"""),
-        )
-        val bookId = Json.mapper.readTree(bookResp.bodyString()).get("id").asText()
+    private fun createLibraryAndBook(
+        token: String,
+        bookFile: File? = null,
+    ): Pair<String, String> {
+        val libResp =
+            app(
+                Request(Method.POST, "/api/libraries")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"name":"DelLib ${System.nanoTime()}","path":"./data/del-${System.nanoTime()}"}"""),
+            )
+        val libId =
+            Json.mapper
+                .readTree(libResp.bodyString())
+                .get("id")
+                .asText()
+        val bookResp =
+            app(
+                Request(Method.POST, "/api/books")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"title":"Dune","author":"Frank Herbert","description":null,"libraryId":"$libId"}"""),
+            )
+        val bookId =
+            Json.mapper
+                .readTree(bookResp.bodyString())
+                .get("id")
+                .asText()
         // Optionally point the book at a real file
         if (bookFile != null) {
             jdbi.useHandle<Exception> { h ->
-                h.createUpdate("UPDATE books SET file_path = ? WHERE id = ?")
-                    .bind(0, bookFile.absolutePath).bind(1, bookId).execute()
+                h
+                    .createUpdate("UPDATE books SET file_path = ? WHERE id = ?")
+                    .bind(0, bookFile.absolutePath)
+                    .bind(1, bookId)
+                    .execute()
             }
         }
         return libId to bookId
@@ -146,12 +195,13 @@ class BookDeliveryIntegrationTest {
     fun `POST api delivery recipients adds recipient and GET returns it`() {
         val token = registerAndGetToken()
 
-        val addResp = app(
-            Request(Method.POST, "/api/delivery/recipients")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"label":"My Kindle","email":"mykindle@kindle.com"}"""),
-        )
+        val addResp =
+            app(
+                Request(Method.POST, "/api/delivery/recipients")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"label":"My Kindle","email":"mykindle@kindle.com"}"""),
+            )
         assertEquals(Status.CREATED, addResp.status)
         val created = Json.mapper.readTree(addResp.bodyString())
         assertEquals("My Kindle", created.get("label").asText())
@@ -166,13 +216,18 @@ class BookDeliveryIntegrationTest {
     @Test
     fun `DELETE api delivery recipients id removes recipient`() {
         val token = registerAndGetToken()
-        val addResp = app(
-            Request(Method.POST, "/api/delivery/recipients")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"label":"Temp","email":"temp@kindle.com"}"""),
-        )
-        val recipientId = Json.mapper.readTree(addResp.bodyString()).get("id").asText()
+        val addResp =
+            app(
+                Request(Method.POST, "/api/delivery/recipients")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"label":"Temp","email":"temp@kindle.com"}"""),
+            )
+        val recipientId =
+            Json.mapper
+                .readTree(addResp.bodyString())
+                .get("id")
+                .asText()
 
         val delResp = app(Request(Method.DELETE, "/api/delivery/recipients/$recipientId").header("Cookie", "token=$token"))
         assertEquals(Status.NO_CONTENT, delResp.status)
@@ -188,14 +243,21 @@ class BookDeliveryIntegrationTest {
         val bookFile = tmp.resolve("Dune.epub").toFile().also { it.writeText("fake epub content") }
         val (_, bookId) = createLibraryAndBook(token, bookFile)
 
-        val resp = app(
-            Request(Method.POST, "/api/books/$bookId/send")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"email":"user@kindle.com"}"""),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/api/books/$bookId/send")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"email":"user@kindle.com"}"""),
+            )
         assertEquals(Status.OK, resp.status)
-        assertEquals(true, Json.mapper.readTree(resp.bodyString()).get("sent").asBoolean())
+        assertEquals(
+            true,
+            Json.mapper
+                .readTree(resp.bodyString())
+                .get("sent")
+                .asBoolean(),
+        )
         assertEquals(1, sentEmails.size)
         assertEquals("user@kindle.com", sentEmails[0].first)
         assertEquals("Dune", sentEmails[0].second)
@@ -206,22 +268,24 @@ class BookDeliveryIntegrationTest {
         val token = registerAndGetToken()
         val (_, bookId) = createLibraryAndBook(token) // no file attached
 
-        val resp = app(
-            Request(Method.POST, "/api/books/$bookId/send")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"email":"user@kindle.com"}"""),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/api/books/$bookId/send")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"email":"user@kindle.com"}"""),
+            )
         assertEquals(Status.BAD_REQUEST, resp.status)
     }
 
     @Test
     fun `POST api books id send returns 401 without authentication`() {
-        val resp = app(
-            Request(Method.POST, "/api/books/some-id/send")
-                .header("Content-Type", "application/json")
-                .body("""{"email":"x@y.com"}"""),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/api/books/some-id/send")
+                    .header("Content-Type", "application/json")
+                    .body("""{"email":"x@y.com"}"""),
+            )
         assertEquals(Status.UNAUTHORIZED, resp.status)
     }
 

@@ -12,27 +12,38 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class LibraryAccessIntegrationTest : IntegrationTestBase() {
-
     private fun registerAdminAndGetToken(): Pair<String, String> {
         val u = "lacadmin_${System.nanoTime()}"
-        val regResp = app(Request(Method.POST, "/auth/register")
-            .header("Content-Type", "application/json")
-            .body("""{"username":"$u","email":"$u@test.com","password":"pass1234"}"""))
-        val userId = Json.mapper.readValue(regResp.bodyString(), LoginResponse::class.java).user.id
+        val regResp =
+            app(
+                Request(Method.POST, "/auth/register")
+                    .header("Content-Type", "application/json")
+                    .body("""{"username":"$u","email":"$u@test.com","password":"pass1234"}"""),
+            )
+        val userId =
+            Json.mapper
+                .readValue(regResp.bodyString(), LoginResponse::class.java)
+                .user.id
         TestFixture.database.getJdbi().useHandle<Exception> { h ->
             h.createUpdate("UPDATE users SET is_admin = true WHERE id = ?").bind(0, userId).execute()
         }
-        val loginResp = app(Request(Method.POST, "/auth/login")
-            .header("Content-Type", "application/json")
-            .body("""{"username":"$u","password":"pass1234"}"""))
+        val loginResp =
+            app(
+                Request(Method.POST, "/auth/login")
+                    .header("Content-Type", "application/json")
+                    .body("""{"username":"$u","password":"pass1234"}"""),
+            )
         return userId to Json.mapper.readValue(loginResp.bodyString(), LoginResponse::class.java).token
     }
 
     private fun registerUserAndGetTokenAndId(): Triple<String, String, String> {
         val u = "lacuser_${System.nanoTime()}"
-        val r = app(Request(Method.POST, "/auth/register")
-            .header("Content-Type", "application/json")
-            .body("""{"username":"$u","email":"$u@test.com","password":"pass1234"}"""))
+        val r =
+            app(
+                Request(Method.POST, "/auth/register")
+                    .header("Content-Type", "application/json")
+                    .body("""{"username":"$u","email":"$u@test.com","password":"pass1234"}"""),
+            )
         val lr = Json.mapper.readValue(r.bodyString(), LoginResponse::class.java)
         return Triple(lr.user.id, lr.token, u)
     }
@@ -42,8 +53,11 @@ class LibraryAccessIntegrationTest : IntegrationTestBase() {
         val (_, adminToken) = registerAdminAndGetToken()
         val (userId, _, _) = registerUserAndGetTokenAndId()
 
-        val resp = app(Request(Method.GET, "/api/admin/users/$userId/library-access")
-            .header("Cookie", "token=$adminToken"))
+        val resp =
+            app(
+                Request(Method.GET, "/api/admin/users/$userId/library-access")
+                    .header("Cookie", "token=$adminToken"),
+            )
         assertEquals(Status.OK, resp.status)
         val tree = Json.mapper.readTree(resp.bodyString())
         assertFalse(tree.get("restricted")?.asBoolean() ?: true)
@@ -55,14 +69,20 @@ class LibraryAccessIntegrationTest : IntegrationTestBase() {
         val (_, adminToken) = registerAdminAndGetToken()
         val (userId, _, _) = registerUserAndGetTokenAndId()
 
-        val resp = app(Request(Method.PUT, "/api/admin/users/$userId/library-access")
-            .header("Cookie", "token=$adminToken")
-            .header("Content-Type", "application/json")
-            .body("""{"restricted":true}"""))
+        val resp =
+            app(
+                Request(Method.PUT, "/api/admin/users/$userId/library-access")
+                    .header("Cookie", "token=$adminToken")
+                    .header("Content-Type", "application/json")
+                    .body("""{"restricted":true}"""),
+            )
         assertEquals(Status.NO_CONTENT, resp.status)
 
-        val check = app(Request(Method.GET, "/api/admin/users/$userId/library-access")
-            .header("Cookie", "token=$adminToken"))
+        val check =
+            app(
+                Request(Method.GET, "/api/admin/users/$userId/library-access")
+                    .header("Cookie", "token=$adminToken"),
+            )
         val tree = Json.mapper.readTree(check.bodyString())
         assertTrue(tree.get("restricted")?.asBoolean() == true)
     }
@@ -74,16 +94,21 @@ class LibraryAccessIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(userToken)
 
         // Restrict the user
-        app(Request(Method.PUT, "/api/admin/users/$userId/library-access")
-            .header("Cookie", "token=$adminToken")
-            .header("Content-Type", "application/json")
-            .body("""{"restricted":true}"""))
+        app(
+            Request(Method.PUT, "/api/admin/users/$userId/library-access")
+                .header("Cookie", "token=$adminToken")
+                .header("Content-Type", "application/json")
+                .body("""{"restricted":true}"""),
+        )
 
         // Grant access to the library
-        val grantResp = app(Request(Method.POST, "/api/admin/users/$userId/library-access")
-            .header("Cookie", "token=$adminToken")
-            .header("Content-Type", "application/json")
-            .body("""{"libraryId":"$libId"}"""))
+        val grantResp =
+            app(
+                Request(Method.POST, "/api/admin/users/$userId/library-access")
+                    .header("Cookie", "token=$adminToken")
+                    .header("Content-Type", "application/json")
+                    .body("""{"libraryId":"$libId"}"""),
+            )
         assertEquals(Status.NO_CONTENT, grantResp.status)
 
         // Library should now be visible
@@ -96,13 +121,15 @@ class LibraryAccessIntegrationTest : IntegrationTestBase() {
     fun `restricted user cannot see libraries not granted`() {
         val (_, adminToken) = registerAdminAndGetToken()
         val (userId, userToken, _) = registerUserAndGetTokenAndId()
-        createLibrary(userToken)  // create a library for the user
+        createLibrary(userToken) // create a library for the user
 
         // Restrict — no grants
-        app(Request(Method.PUT, "/api/admin/users/$userId/library-access")
-            .header("Cookie", "token=$adminToken")
-            .header("Content-Type", "application/json")
-            .body("""{"restricted":true}"""))
+        app(
+            Request(Method.PUT, "/api/admin/users/$userId/library-access")
+                .header("Cookie", "token=$adminToken")
+                .header("Content-Type", "application/json")
+                .body("""{"restricted":true}"""),
+        )
 
         val libResp = app(Request(Method.GET, "/api/libraries").header("Cookie", "token=$userToken"))
         val arr = Json.mapper.readTree(libResp.bodyString())
@@ -116,18 +143,25 @@ class LibraryAccessIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(userToken)
 
         // Restrict and grant
-        app(Request(Method.PUT, "/api/admin/users/$userId/library-access")
-            .header("Cookie", "token=$adminToken")
-            .header("Content-Type", "application/json")
-            .body("""{"restricted":true}"""))
-        app(Request(Method.POST, "/api/admin/users/$userId/library-access")
-            .header("Cookie", "token=$adminToken")
-            .header("Content-Type", "application/json")
-            .body("""{"libraryId":"$libId"}"""))
+        app(
+            Request(Method.PUT, "/api/admin/users/$userId/library-access")
+                .header("Cookie", "token=$adminToken")
+                .header("Content-Type", "application/json")
+                .body("""{"restricted":true}"""),
+        )
+        app(
+            Request(Method.POST, "/api/admin/users/$userId/library-access")
+                .header("Cookie", "token=$adminToken")
+                .header("Content-Type", "application/json")
+                .body("""{"libraryId":"$libId"}"""),
+        )
 
         // Revoke
-        val del = app(Request(Method.DELETE, "/api/admin/users/$userId/library-access/$libId")
-            .header("Cookie", "token=$adminToken"))
+        val del =
+            app(
+                Request(Method.DELETE, "/api/admin/users/$userId/library-access/$libId")
+                    .header("Cookie", "token=$adminToken"),
+            )
         assertEquals(Status.NO_CONTENT, del.status)
 
         // Should no longer be visible
@@ -154,8 +188,11 @@ class LibraryAccessIntegrationTest : IntegrationTestBase() {
         val (userId, _, _) = registerUserAndGetTokenAndId()
         val (_, regularToken, _) = registerUserAndGetTokenAndId()
 
-        val resp = app(Request(Method.GET, "/api/admin/users/$userId/library-access")
-            .header("Cookie", "token=$regularToken"))
+        val resp =
+            app(
+                Request(Method.GET, "/api/admin/users/$userId/library-access")
+                    .header("Cookie", "token=$regularToken"),
+            )
         assertEquals(Status.FORBIDDEN, resp.status)
     }
 }

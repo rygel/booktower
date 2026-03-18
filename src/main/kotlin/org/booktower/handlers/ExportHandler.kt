@@ -15,10 +15,11 @@ class ExportHandler(
 ) {
     /** GET /api/export — returns all user data as JSON */
     fun export(req: Request): Response {
-        val userId = jwtService.extractUserId(req.cookie("token")?.value ?: "")
-            ?: return Response(Status.UNAUTHORIZED)
-                .header("Content-Type", "application/json")
-                .body(Json.mapper.writeValueAsString(ErrorResponse("UNAUTHORIZED", "Authentication required")))
+        val userId =
+            jwtService.extractUserId(req.cookie("token")?.value ?: "")
+                ?: return Response(Status.UNAUTHORIZED)
+                    .header("Content-Type", "application/json")
+                    .body(Json.mapper.writeValueAsString(ErrorResponse("UNAUTHORIZED", "Authentication required")))
         return try {
             val data = exportService.exportUser(userId)
             val json = Json.mapper.writerWithDefaultPrettyPrinter().writeValueAsString(data)

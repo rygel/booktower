@@ -12,8 +12,11 @@ private val IMAGE_EXTENSIONS = setOf("jpg", "jpeg", "png", "gif", "webp", "bmp")
 
 /** Reads pages from CBZ (ZIP) and CBR (RAR) comic archives. */
 class ComicService {
-
-    data class PageInfo(val index: Int, val name: String, val contentType: String)
+    data class PageInfo(
+        val index: Int,
+        val name: String,
+        val contentType: String,
+    )
 
     /** Returns sorted list of image entry names inside the archive. */
     fun listPages(filePath: String): List<PageInfo> {
@@ -27,7 +30,10 @@ class ComicService {
     }
 
     /** Returns the raw bytes for a single page (0-indexed). */
-    fun getPage(filePath: String, pageIndex: Int): ByteArray? {
+    fun getPage(
+        filePath: String,
+        pageIndex: Int,
+    ): ByteArray? {
         val file = File(filePath)
         if (!file.exists() || !file.isFile) return null
         return when (file.extension.lowercase()) {
@@ -41,10 +47,12 @@ class ComicService {
 
     // ── CBZ (ZIP) ─────────────────────────────────────────────────────────────
 
-    private fun listCbzPages(file: File): List<PageInfo> {
-        return try {
+    private fun listCbzPages(file: File): List<PageInfo> =
+        try {
             ZipFile(file).use { zip ->
-                zip.entries().asSequence()
+                zip
+                    .entries()
+                    .asSequence()
                     .filter { !it.isDirectory && it.name.substringAfterLast('.', "").lowercase() in IMAGE_EXTENSIONS }
                     .sortedBy { it.name }
                     .mapIndexed { idx, entry -> PageInfo(idx, entry.name, mimeOf(entry.name)) }
@@ -54,15 +62,20 @@ class ComicService {
             logger.warn("Failed to list CBZ pages: ${file.name}", e)
             emptyList()
         }
-    }
 
-    private fun getCbzPage(file: File, pageIndex: Int): ByteArray? {
+    private fun getCbzPage(
+        file: File,
+        pageIndex: Int,
+    ): ByteArray? {
         return try {
             ZipFile(file).use { zip ->
-                val entries = zip.entries().asSequence()
-                    .filter { !it.isDirectory && it.name.substringAfterLast('.', "").lowercase() in IMAGE_EXTENSIONS }
-                    .sortedBy { it.name }
-                    .toList()
+                val entries =
+                    zip
+                        .entries()
+                        .asSequence()
+                        .filter { !it.isDirectory && it.name.substringAfterLast('.', "").lowercase() in IMAGE_EXTENSIONS }
+                        .sortedBy { it.name }
+                        .toList()
                 val entry = entries.getOrNull(pageIndex) ?: return null
                 zip.getInputStream(entry).readBytes()
             }
@@ -74,8 +87,8 @@ class ComicService {
 
     // ── CBR (RAR via junrar) ──────────────────────────────────────────────────
 
-    private fun listCbrPages(file: File): List<PageInfo> {
-        return try {
+    private fun listCbrPages(file: File): List<PageInfo> =
+        try {
             Archive(file).use { rar ->
                 rar.fileHeaders
                     .filter { !it.isDirectory && it.fileName.substringAfterLast('.', "").lowercase() in IMAGE_EXTENSIONS }
@@ -86,14 +99,17 @@ class ComicService {
             logger.warn("Failed to list CBR pages: ${file.name} — ${e.message}")
             emptyList()
         }
-    }
 
-    private fun getCbrPage(file: File, pageIndex: Int): ByteArray? {
+    private fun getCbrPage(
+        file: File,
+        pageIndex: Int,
+    ): ByteArray? {
         return try {
             Archive(file).use { rar ->
-                val headers = rar.fileHeaders
-                    .filter { !it.isDirectory && it.fileName.substringAfterLast('.', "").lowercase() in IMAGE_EXTENSIONS }
-                    .sortedBy { it.fileName }
+                val headers =
+                    rar.fileHeaders
+                        .filter { !it.isDirectory && it.fileName.substringAfterLast('.', "").lowercase() in IMAGE_EXTENSIONS }
+                        .sortedBy { it.fileName }
                 val hdr = headers.getOrNull(pageIndex) ?: return null
                 val out = ByteArrayOutputStream()
                 rar.extractFile(hdr, out)
@@ -105,11 +121,12 @@ class ComicService {
         }
     }
 
-    private fun mimeOf(name: String): String = when (name.substringAfterLast('.', "").lowercase()) {
-        "jpg", "jpeg" -> "image/jpeg"
-        "png" -> "image/png"
-        "gif" -> "image/gif"
-        "webp" -> "image/webp"
-        else -> "image/jpeg"
-    }
+    private fun mimeOf(name: String): String =
+        when (name.substringAfterLast('.', "").lowercase()) {
+            "jpg", "jpeg" -> "image/jpeg"
+            "png" -> "image/png"
+            "gif" -> "image/gif"
+            "webp" -> "image/webp"
+            else -> "image/jpeg"
+        }
 }

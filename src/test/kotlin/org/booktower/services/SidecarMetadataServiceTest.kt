@@ -8,18 +8,22 @@ import java.io.File
 import java.nio.file.Path
 
 class SidecarMetadataServiceTest {
-
     @TempDir
     lateinit var tmp: Path
 
-    private fun file(name: String, content: String): File =
-        tmp.resolve(name).toFile().also { it.writeText(content) }
+    private fun file(
+        name: String,
+        content: String,
+    ): File = tmp.resolve(name).toFile().also { it.writeText(content) }
 
     // ── OPF tests ─────────────────────────────────────────────────────────────
 
     @Test
     fun `parseOpf extracts title author publisher and date`() {
-        val opf = file("book.opf", """<?xml version="1.0" encoding="UTF-8"?>
+        val opf =
+            file(
+                "book.opf",
+                """<?xml version="1.0" encoding="UTF-8"?>
 <package xmlns="http://www.idpf.org/2007/opf" version="2.0">
   <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
     <dc:title>Dune</dc:title>
@@ -29,7 +33,8 @@ class SidecarMetadataServiceTest {
     <dc:description>A science fiction epic.</dc:description>
     <dc:identifier>9780441013593</dc:identifier>
   </metadata>
-</package>""")
+</package>""",
+            )
         val r = SidecarMetadataService.parseOpf(opf)!!
         assertEquals("Dune", r.title)
         assertEquals("Frank Herbert", r.author)
@@ -42,14 +47,18 @@ class SidecarMetadataServiceTest {
 
     @Test
     fun `parseOpf handles multiple creators joined by comma`() {
-        val opf = file("multi.opf", """<?xml version="1.0"?>
+        val opf =
+            file(
+                "multi.opf",
+                """<?xml version="1.0"?>
 <package xmlns="http://www.idpf.org/2007/opf" version="2.0">
   <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
     <dc:title>Co-authored</dc:title>
     <dc:creator>Author One</dc:creator>
     <dc:creator>Author Two</dc:creator>
   </metadata>
-</package>""")
+</package>""",
+            )
         val r = SidecarMetadataService.parseOpf(opf)!!
         assertEquals("Author One, Author Two", r.author)
     }
@@ -64,14 +73,18 @@ class SidecarMetadataServiceTest {
 
     @Test
     fun `parseNfo extracts title author and year`() {
-        val nfo = file("book.nfo", """<?xml version="1.0"?>
+        val nfo =
+            file(
+                "book.nfo",
+                """<?xml version="1.0"?>
 <book>
   <title>Foundation</title>
   <author>Isaac Asimov</author>
   <year>1951</year>
   <publisher>Gnome Press</publisher>
   <plot>Galactic empire falls.</plot>
-</book>""")
+</book>""",
+            )
         val r = SidecarMetadataService.parseNfo(nfo)!!
         assertEquals("Foundation", r.title)
         assertEquals("Isaac Asimov", r.author)
@@ -83,8 +96,12 @@ class SidecarMetadataServiceTest {
 
     @Test
     fun `parseNfo falls back to creator for author`() {
-        val nfo = file("creator.nfo", """<?xml version="1.0"?>
-<book><title>T</title><creator>C. Author</creator></book>""")
+        val nfo =
+            file(
+                "creator.nfo",
+                """<?xml version="1.0"?>
+<book><title>T</title><creator>C. Author</creator></book>""",
+            )
         val r = SidecarMetadataService.parseNfo(nfo)!!
         assertEquals("C. Author", r.author)
     }
@@ -93,12 +110,15 @@ class SidecarMetadataServiceTest {
 
     @Test
     fun `read finds same-name opf next to book file`() {
-        file("MyBook.opf", """<?xml version="1.0"?>
+        file(
+            "MyBook.opf",
+            """<?xml version="1.0"?>
 <package xmlns="http://www.idpf.org/2007/opf">
   <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
     <dc:title>My OPF Book</dc:title>
   </metadata>
-</package>""")
+</package>""",
+        )
         val epub = file("MyBook.epub", "fake")
         val r = SidecarMetadataService.read(epub.absolutePath)!!
         assertEquals("My OPF Book", r.title)
@@ -120,10 +140,13 @@ class SidecarMetadataServiceTest {
 
     @Test
     fun `read prefers opf over nfo when both exist`() {
-        file("Both.opf", """<?xml version="1.0"?>
+        file(
+            "Both.opf",
+            """<?xml version="1.0"?>
 <package xmlns="http://www.idpf.org/2007/opf">
   <metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>OPF Wins</dc:title></metadata>
-</package>""")
+</package>""",
+        )
         file("Both.nfo", """<?xml version="1.0"?><book><title>NFO Loses</title></book>""")
         val book = file("Both.epub", "fake")
         val r = SidecarMetadataService.read(book.absolutePath)!!

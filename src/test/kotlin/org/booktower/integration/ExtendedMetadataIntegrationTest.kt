@@ -9,17 +9,19 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class ExtendedMetadataIntegrationTest : IntegrationTestBase() {
-
     @Test
     fun `PUT extended-metadata sets subtitle and language`() {
         val token = registerAndGetToken()
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
 
-        val resp = app(Request(Method.PUT, "/api/books/$bookId/extended-metadata")
-            .header("Cookie", "token=$token")
-            .header("Content-Type", "application/json")
-            .body("""{"subtitle":"A Novel","language":"en","contentRating":"PG","ageRating":"13+"}"""))
+        val resp =
+            app(
+                Request(Method.PUT, "/api/books/$bookId/extended-metadata")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"subtitle":"A Novel","language":"en","contentRating":"PG","ageRating":"13+"}"""),
+            )
         assertEquals(Status.OK, resp.status)
         val tree = Json.mapper.readTree(resp.bodyString())
         assertEquals("A Novel", tree.get("subtitle")?.asText())
@@ -32,9 +34,12 @@ class ExtendedMetadataIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
 
-        app(Request(Method.PUT, "/api/books/$bookId/extended-metadata")
-            .header("Cookie", "token=$token").header("Content-Type", "application/json")
-            .body("""{"subtitle":"Subtitle Here","language":"fr","contentRating":"PG-13","ageRating":"16+"}"""))
+        app(
+            Request(Method.PUT, "/api/books/$bookId/extended-metadata")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/json")
+                .body("""{"subtitle":"Subtitle Here","language":"fr","contentRating":"PG-13","ageRating":"16+"}"""),
+        )
 
         val resp = app(Request(Method.GET, "/api/books/$bookId").header("Cookie", "token=$token"))
         val tree = Json.mapper.readTree(resp.bodyString())
@@ -50,9 +55,13 @@ class ExtendedMetadataIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
 
-        val resp = app(Request(Method.PUT, "/api/books/$bookId/moods")
-            .header("Cookie", "token=$token").header("Content-Type", "application/json")
-            .body("""{"moods":["dark","mysterious"]}"""))
+        val resp =
+            app(
+                Request(Method.PUT, "/api/books/$bookId/moods")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"moods":["dark","mysterious"]}"""),
+            )
         assertEquals(Status.OK, resp.status)
         val tree = Json.mapper.readTree(resp.bodyString())
         assertTrue(tree.get("moods")?.size() == 2)
@@ -64,9 +73,12 @@ class ExtendedMetadataIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
 
-        app(Request(Method.PUT, "/api/books/$bookId/moods")
-            .header("Cookie", "token=$token").header("Content-Type", "application/json")
-            .body("""{"moods":["hopeful"]}"""))
+        app(
+            Request(Method.PUT, "/api/books/$bookId/moods")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/json")
+                .body("""{"moods":["hopeful"]}"""),
+        )
 
         val resp = app(Request(Method.GET, "/api/books/$bookId").header("Cookie", "token=$token"))
         val tree = Json.mapper.readTree(resp.bodyString())
@@ -79,12 +91,18 @@ class ExtendedMetadataIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
 
-        app(Request(Method.PUT, "/api/books/$bookId/moods")
-            .header("Cookie", "token=$token").header("Content-Type", "application/json")
-            .body("""{"moods":["sad","melancholic"]}"""))
-        app(Request(Method.PUT, "/api/books/$bookId/moods")
-            .header("Cookie", "token=$token").header("Content-Type", "application/json")
-            .body("""{"moods":["joyful"]}"""))
+        app(
+            Request(Method.PUT, "/api/books/$bookId/moods")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/json")
+                .body("""{"moods":["sad","melancholic"]}"""),
+        )
+        app(
+            Request(Method.PUT, "/api/books/$bookId/moods")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/json")
+                .body("""{"moods":["joyful"]}"""),
+        )
 
         val resp = app(Request(Method.GET, "/api/books/$bookId").header("Cookie", "token=$token"))
         val tree = Json.mapper.readTree(resp.bodyString())
@@ -95,9 +113,13 @@ class ExtendedMetadataIntegrationTest : IntegrationTestBase() {
     @Test
     fun `PUT extended-metadata on nonexistent book returns 404`() {
         val token = registerAndGetToken()
-        val resp = app(Request(Method.PUT, "/api/books/00000000-0000-0000-0000-000000000000/extended-metadata")
-            .header("Cookie", "token=$token").header("Content-Type", "application/json")
-            .body("""{"subtitle":"x"}"""))
+        val resp =
+            app(
+                Request(Method.PUT, "/api/books/00000000-0000-0000-0000-000000000000/extended-metadata")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"subtitle":"x"}"""),
+            )
         assertEquals(Status.NOT_FOUND, resp.status)
     }
 

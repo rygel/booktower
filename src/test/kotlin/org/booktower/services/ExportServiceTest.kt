@@ -10,7 +10,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.util.UUID
 import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class ExportServiceTest {
@@ -87,7 +86,11 @@ class ExportServiceTest {
         val book = bookService.createBook(userId, CreateBookRequest("BM Book", "Auth", null, libId)).getOrThrow()
         bookmarkService.createBookmark(userId, CreateBookmarkRequest(book.id, 5, "Ch 1", "A note"))
         val export = exportService.exportUser(userId)
-        val exportedBook = export.libraries.first().books.first()
+        val exportedBook =
+            export.libraries
+                .first()
+                .books
+                .first()
         assertEquals(1, exportedBook.bookmarks.size)
         assertEquals(5, exportedBook.bookmarks.first().page)
         assertEquals("Ch 1", exportedBook.bookmarks.first().title)
@@ -102,9 +105,10 @@ class ExportServiceTest {
 
     @Test
     fun `exportUser does not include another user's libraries`() {
-        val otherResult = authService.register(
-            CreateUserRequest("exportother_${System.nanoTime()}", "exportother_${System.nanoTime()}@test.com", "password123"),
-        )
+        val otherResult =
+            authService.register(
+                CreateUserRequest("exportother_${System.nanoTime()}", "exportother_${System.nanoTime()}@test.com", "password123"),
+            )
         val otherId = jwtService.extractUserId(otherResult.getOrThrow().token)!!
         libraryService.createLibrary(otherId, CreateLibraryRequest("Other Lib", "./data/eo-${System.nanoTime()}"))
         val export = exportService.exportUser(userId)
@@ -117,7 +121,11 @@ class ExportServiceTest {
         val book = bookService.createBook(userId, CreateBookRequest("Tagged", "Auth", null, libId)).getOrThrow()
         bookService.bulkTag(userId, listOf(UUID.fromString(book.id)), listOf("sci-fi", "classic"))
         val export = exportService.exportUser(userId)
-        val exportedBook = export.libraries.first().books.first()
+        val exportedBook =
+            export.libraries
+                .first()
+                .books
+                .first()
         assertEquals(listOf("classic", "sci-fi"), exportedBook.tags.sorted())
     }
 }

@@ -9,12 +9,17 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class ReadStatusIntegrationTest : IntegrationTestBase() {
-
-    private fun setStatus(token: String, bookId: String, status: String) {
-        app(Request(Method.POST, "/ui/books/$bookId/status")
-            .header("Cookie", "token=$token")
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .body("status=$status"))
+    private fun setStatus(
+        token: String,
+        bookId: String,
+        status: String,
+    ) {
+        app(
+            Request(Method.POST, "/ui/books/$bookId/status")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .body("status=$status"),
+        )
     }
 
     // ── Book detail page ────────────────────────────────────────────────────────
@@ -35,10 +40,13 @@ class ReadStatusIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
 
-        val response = app(Request(Method.POST, "/ui/books/$bookId/status")
-            .header("Cookie", "token=$token")
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .body("status=WANT_TO_READ"))
+        val response =
+            app(
+                Request(Method.POST, "/ui/books/$bookId/status")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("status=WANT_TO_READ"),
+            )
         assertEquals(Status.OK, response.status)
     }
 
@@ -83,8 +91,10 @@ class ReadStatusIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
 
         val body = app(Request(Method.GET, "/libraries/$libId").header("Cookie", "token=$token")).bodyString()
-        assertTrue(body.contains("WANT_TO_READ") || body.contains("status.want.to.read"),
-            "Library page should show status filter with WANT_TO_READ option")
+        assertTrue(
+            body.contains("WANT_TO_READ") || body.contains("status.want.to.read"),
+            "Library page should show status filter with WANT_TO_READ option",
+        )
     }
 
     @Test
@@ -96,8 +106,11 @@ class ReadStatusIntegrationTest : IntegrationTestBase() {
         setStatus(token, book1, "READING")
         setStatus(token, book2, "FINISHED")
 
-        val body = app(Request(Method.GET, "/libraries/$libId?status=READING")
-            .header("Cookie", "token=$token")).bodyString()
+        val body =
+            app(
+                Request(Method.GET, "/libraries/$libId?status=READING")
+                    .header("Cookie", "token=$token"),
+            ).bodyString()
         assertTrue(body.contains("Reading Book"), "READING filter should show Reading Book")
         assertFalse(body.contains("Finished Book"), "READING filter should not show Finished Book")
     }
@@ -110,8 +123,11 @@ class ReadStatusIntegrationTest : IntegrationTestBase() {
         val book2 = createBook(token, libId, "Second Book")
         setStatus(token, book1, "READING")
 
-        val body = app(Request(Method.GET, "/libraries/$libId?status=ALL")
-            .header("Cookie", "token=$token")).bodyString()
+        val body =
+            app(
+                Request(Method.GET, "/libraries/$libId?status=ALL")
+                    .header("Cookie", "token=$token"),
+            ).bodyString()
         assertTrue(body.contains("First Book"), "ALL filter should show First Book")
         assertTrue(body.contains("Second Book"), "ALL filter should show Second Book")
     }
@@ -124,8 +140,11 @@ class ReadStatusIntegrationTest : IntegrationTestBase() {
         createBook(token, libId, "No Status Book")
         setStatus(token, book1, "WANT_TO_READ")
 
-        val body = app(Request(Method.GET, "/libraries/$libId?status=WANT_TO_READ")
-            .header("Cookie", "token=$token")).bodyString()
+        val body =
+            app(
+                Request(Method.GET, "/libraries/$libId?status=WANT_TO_READ")
+                    .header("Cookie", "token=$token"),
+            ).bodyString()
         assertTrue(body.contains("Tagged Book"), "Should show book with matching status")
         assertFalse(body.contains("No Status Book"), "Should not show book with no status")
     }
@@ -141,8 +160,10 @@ class ReadStatusIntegrationTest : IntegrationTestBase() {
 
         val body = app(Request(Method.GET, "/libraries/$libId").header("Cookie", "token=$token")).bodyString()
         assertTrue(body.contains("Badged Book"), "Book must appear on library page")
-        assertTrue(body.contains("book-status-badge"),
-            "Library page should show Finished badge for the book")
+        assertTrue(
+            body.contains("book-status-badge"),
+            "Library page should show Finished badge for the book",
+        )
     }
 
     @Test
@@ -154,8 +175,10 @@ class ReadStatusIntegrationTest : IntegrationTestBase() {
         val body = app(Request(Method.GET, "/libraries/$libId").header("Cookie", "token=$token")).bodyString()
         assertTrue(body.contains("Plain Book"))
         // No status badge should appear since status is null
-        assertFalse(body.contains("book-status-badge"),
-            "No status badge should appear for a book with no status")
+        assertFalse(
+            body.contains("book-status-badge"),
+            "No status badge should appear for a book with no status",
+        )
     }
 
     // ── Status isolation ────────────────────────────────────────────────────────

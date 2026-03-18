@@ -1,7 +1,6 @@
 package org.booktower.integration
 
 import org.booktower.TestFixture
-import org.booktower.models.CreateBookRequest
 import org.booktower.models.CreateLibraryRequest
 import org.booktower.models.CreateUserRequest
 import org.booktower.services.AnalyticsService
@@ -24,7 +23,6 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class GoodreadsImportIntegrationTest : IntegrationTestBase() {
-
     private lateinit var importService: GoodreadsImportService
     private lateinit var bookService: BookService
     private lateinit var userId: UUID
@@ -44,9 +42,10 @@ class GoodreadsImportIntegrationTest : IntegrationTestBase() {
         val libraryService = LibraryService(jdbi, pdfMetadataService)
         importService = GoodreadsImportService(bookService)
 
-        val result = authService.register(
-            CreateUserRequest("gr_${System.nanoTime()}", "gr_${System.nanoTime()}@test.com", "password123"),
-        )
+        val result =
+            authService.register(
+                CreateUserRequest("gr_${System.nanoTime()}", "gr_${System.nanoTime()}@test.com", "password123"),
+            )
         val loginResponse = result.getOrThrow()
         userId = jwtService.extractUserId(loginResponse.token)!!
         token = loginResponse.token
@@ -68,16 +67,18 @@ class GoodreadsImportIntegrationTest : IntegrationTestBase() {
         year: String = "",
         shelf: String = "",
         bookshelves: String = "",
-    ) = "1,\"$title\",\"$author\",,,$isbn,,$rating,4.0,\"$publisher\",,${if (pages > 0) pages else ""},$year,,,,\"$bookshelves\",,\"$shelf\",,,,"
+    ) =
+        "1,\"$title\",\"$author\",,,$isbn,,$rating,4.0,\"$publisher\",,${if (pages > 0) pages else ""},$year,,,,\"$bookshelves\",,\"$shelf\",,,,"
 
     // ── Service-level unit tests ──────────────────────────────────────────────
 
     @Test
     fun `import creates books from CSV rows`() {
-        val csv = csv(
-            row("The Hobbit", "J.R.R. Tolkien"),
-            row("Dune", "Frank Herbert"),
-        )
+        val csv =
+            csv(
+                row("The Hobbit", "J.R.R. Tolkien"),
+                row("Dune", "Frank Herbert"),
+            )
         val result = importService.import(userId, libId, csv.byteInputStream())
 
         assertEquals(2, result.imported)
@@ -132,7 +133,16 @@ class GoodreadsImportIntegrationTest : IntegrationTestBase() {
         val csv = csv(row("Rated Book", rating = 4))
         importService.import(userId, libId, csv.byteInputStream())
 
-        val book = bookService.getBook(userId, bookService.getBooks(userId, libId).getBooks().first().id.let { UUID.fromString(it) })
+        val book =
+            bookService.getBook(
+                userId,
+                bookService
+                    .getBooks(userId, libId)
+                    .getBooks()
+                    .first()
+                    .id
+                    .let { UUID.fromString(it) },
+            )
         assertNotNull(book)
         assertEquals(4, book!!.rating)
     }
@@ -142,7 +152,16 @@ class GoodreadsImportIntegrationTest : IntegrationTestBase() {
         val csv = csv(row("Unrated Book", rating = 0))
         importService.import(userId, libId, csv.byteInputStream())
 
-        val book = bookService.getBook(userId, bookService.getBooks(userId, libId).getBooks().first().id.let { UUID.fromString(it) })
+        val book =
+            bookService.getBook(
+                userId,
+                bookService
+                    .getBooks(userId, libId)
+                    .getBooks()
+                    .first()
+                    .id
+                    .let { UUID.fromString(it) },
+            )
         assertNull(book!!.rating)
     }
 
@@ -160,10 +179,11 @@ class GoodreadsImportIntegrationTest : IntegrationTestBase() {
 
     @Test
     fun `import skips rows with blank title`() {
-        val csv = csv(
-            row(""),
-            row("Valid Title"),
-        )
+        val csv =
+            csv(
+                row(""),
+                row("Valid Title"),
+            )
         val result = importService.import(userId, libId, csv.byteInputStream())
 
         assertEquals(1, result.imported)
@@ -201,7 +221,16 @@ class GoodreadsImportIntegrationTest : IntegrationTestBase() {
         val csv = csv(row("ISBN Book", isbn = "=\"9780441013593\""))
         importService.import(userId, libId, csv.byteInputStream())
 
-        val book = bookService.getBook(userId, bookService.getBooks(userId, libId).getBooks().first().id.let { UUID.fromString(it) })
+        val book =
+            bookService.getBook(
+                userId,
+                bookService
+                    .getBooks(userId, libId)
+                    .getBooks()
+                    .first()
+                    .id
+                    .let { UUID.fromString(it) },
+            )
         assertEquals("9780441013593", book!!.isbn)
     }
 
@@ -212,12 +241,13 @@ class GoodreadsImportIntegrationTest : IntegrationTestBase() {
         val libId2 = createLibrary(token)
         val csv = csv(row("HTTP Import Book", "Author"))
 
-        val response = app(
-            Request(Method.POST, "/api/import/goodreads?libraryId=$libId2")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "text/csv")
-                .body(csv),
-        )
+        val response =
+            app(
+                Request(Method.POST, "/api/import/goodreads?libraryId=$libId2")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "text/csv")
+                    .body(csv),
+            )
 
         assertEquals(Status.OK, response.status)
         assertTrue(response.bodyString().contains("imported"))
@@ -225,31 +255,34 @@ class GoodreadsImportIntegrationTest : IntegrationTestBase() {
 
     @Test
     fun `POST api import goodreads returns 401 without auth`() {
-        val response = app(
-            Request(Method.POST, "/api/import/goodreads?libraryId=$libId")
-                .header("Content-Type", "text/csv")
-                .body(csv()),
-        )
+        val response =
+            app(
+                Request(Method.POST, "/api/import/goodreads?libraryId=$libId")
+                    .header("Content-Type", "text/csv")
+                    .body(csv()),
+            )
         assertEquals(Status.UNAUTHORIZED, response.status)
     }
 
     @Test
     fun `POST api import goodreads returns 400 without libraryId`() {
-        val response = app(
-            Request(Method.POST, "/api/import/goodreads")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "text/csv")
-                .body(csv()),
-        )
+        val response =
+            app(
+                Request(Method.POST, "/api/import/goodreads")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "text/csv")
+                    .body(csv()),
+            )
         assertEquals(Status.BAD_REQUEST, response.status)
     }
 
     @Test
     fun `profile page returns 200 with import section`() {
-        val response = app(
-            Request(Method.GET, "/profile")
-                .header("Cookie", "token=$token"),
-        )
+        val response =
+            app(
+                Request(Method.GET, "/profile")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, response.status)
         assertTrue(response.bodyString().contains("import-library") || response.bodyString().contains("Goodreads"))
     }

@@ -12,15 +12,15 @@ import javax.xml.parsers.DocumentBuilderFactory
  * Uses only the JDK's built-in JAXP parser — no external dependencies.
  */
 class Fb2ReaderService {
-
     fun toHtml(file: File): String {
-        val dbf = DocumentBuilderFactory.newInstance().apply {
-            isNamespaceAware = false
-            isValidating = false
-            setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false)
-            setFeature("http://xml.org/sax/features/external-general-entities", false)
-            setFeature("http://xml.org/sax/features/external-parameter-entities", false)
-        }
+        val dbf =
+            DocumentBuilderFactory.newInstance().apply {
+                isNamespaceAware = false
+                isValidating = false
+                setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false)
+                setFeature("http://xml.org/sax/features/external-general-entities", false)
+                setFeature("http://xml.org/sax/features/external-parameter-entities", false)
+            }
         val doc = dbf.newDocumentBuilder().parse(file)
         doc.documentElement.normalize()
 
@@ -70,7 +70,11 @@ class Fb2ReaderService {
 
     // ── Node processors ───────────────────────────────────────────────────────
 
-    private fun processSection(node: Node, sb: StringBuilder, depth: Int) {
+    private fun processSection(
+        node: Node,
+        sb: StringBuilder,
+        depth: Int,
+    ) {
         if (node !is Element) return
         when (node.nodeName.substringAfterLast(':')) {
             "body" -> node.childNodes.forEach { processSection(it, sb, depth) }
@@ -120,16 +124,32 @@ class Fb2ReaderService {
         }
     }
 
-    private fun processInline(node: Node, sb: StringBuilder) {
+    private fun processInline(
+        node: Node,
+        sb: StringBuilder,
+    ) {
         when (node.nodeType) {
             Node.TEXT_NODE -> sb.append(escapeHtml(node.nodeValue ?: ""))
             Node.ELEMENT_NODE -> {
                 val tag = (node as Element).nodeName.substringAfterLast(':')
                 when (tag) {
-                    "strong" -> { sb.append("<strong>"); node.childNodes.forEach { processInline(it, sb) }; sb.append("</strong>") }
-                    "emphasis" -> { sb.append("<em>"); node.childNodes.forEach { processInline(it, sb) }; sb.append("</em>") }
-                    "p" -> { sb.append("<p>"); node.childNodes.forEach { processInline(it, sb) }; sb.append("</p>") }
-                    "a" -> node.childNodes.forEach { processInline(it, sb) }  // render link text only
+                    "strong" -> {
+                        sb.append("<strong>")
+                        node.childNodes.forEach { processInline(it, sb) }
+                        sb.append("</strong>")
+                    }
+                    "emphasis" -> {
+                        sb.append("<em>")
+                        node.childNodes.forEach { processInline(it, sb) }
+                        sb.append("</em>")
+                    }
+                    "p" -> {
+                        sb.append("<p>")
+                        node.childNodes.forEach { processInline(it, sb) }
+                        sb.append("</p>")
+                    }
+                    // render link text only
+                    "a" -> node.childNodes.forEach { processInline(it, sb) }
                     else -> node.childNodes.forEach { processInline(it, sb) }
                 }
             }
@@ -157,11 +177,12 @@ class Fb2ReaderService {
             .joinToString(" ")
     }
 
-    private fun escapeHtml(text: String): String = text
-        .replace("&", "&amp;")
-        .replace("<", "&lt;")
-        .replace(">", "&gt;")
-        .replace("\"", "&quot;")
+    private fun escapeHtml(text: String): String =
+        text
+            .replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace("\"", "&quot;")
 
     private fun org.w3c.dom.NodeList.forEach(action: (Node) -> Unit) {
         for (i in 0 until length) action(item(i))

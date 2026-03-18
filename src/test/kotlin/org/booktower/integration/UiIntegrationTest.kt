@@ -1,8 +1,6 @@
 package org.booktower.integration
 
 import org.booktower.config.Json
-import org.booktower.models.BookDto
-import org.booktower.models.LibraryDto
 import org.booktower.models.LoginResponse
 import org.http4k.core.Method
 import org.http4k.core.Request
@@ -21,7 +19,6 @@ import kotlin.test.assertTrue
  * - Login form accepting email address
  */
 class UiIntegrationTest : IntegrationTestBase() {
-
     // ── Auth: login by email ────────────────────────────────────────────────
 
     @Test
@@ -34,11 +31,12 @@ class UiIntegrationTest : IntegrationTestBase() {
                 .body("""{"username":"$username","email":"$knownEmail","password":"password123"}"""),
         )
 
-        val response = app(
-            Request(Method.POST, "/auth/login")
-                .header("Content-Type", "application/json")
-                .body("""{"username":"$knownEmail","password":"password123"}"""),
-        )
+        val response =
+            app(
+                Request(Method.POST, "/auth/login")
+                    .header("Content-Type", "application/json")
+                    .body("""{"username":"$knownEmail","password":"password123"}"""),
+            )
         assertEquals(Status.OK, response.status)
         val body = Json.mapper.readValue(response.bodyString(), LoginResponse::class.java)
         assertEquals(username, body.user.username)
@@ -54,11 +52,12 @@ class UiIntegrationTest : IntegrationTestBase() {
                 .body("""{"username":"$username","email":"$email","password":"password123"}"""),
         )
 
-        val response = app(
-            Request(Method.POST, "/auth/login")
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .body("username=${email.replace("@", "%40")}&password=password123"),
-        )
+        val response =
+            app(
+                Request(Method.POST, "/auth/login")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("username=${email.replace("@", "%40")}&password=password123"),
+            )
         assertEquals(Status.SEE_OTHER, response.status)
         assertNotNull(response.cookies().find { it.name == "token" && it.value.isNotBlank() })
     }
@@ -100,10 +99,11 @@ class UiIntegrationTest : IntegrationTestBase() {
     @Test
     fun `GET library detail for unknown id returns 404`() {
         val token = registerAndGetToken("lib404")
-        val response = app(
-            Request(Method.GET, "/libraries/00000000-0000-0000-0000-000000000000")
-                .header("Cookie", "token=$token"),
-        )
+        val response =
+            app(
+                Request(Method.GET, "/libraries/00000000-0000-0000-0000-000000000000")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.NOT_FOUND, response.status)
     }
 
@@ -130,10 +130,11 @@ class UiIntegrationTest : IntegrationTestBase() {
     @Test
     fun `GET book detail for unknown id returns 404`() {
         val token = registerAndGetToken("bk404")
-        val response = app(
-            Request(Method.GET, "/books/00000000-0000-0000-0000-000000000000")
-                .header("Cookie", "token=$token"),
-        )
+        val response =
+            app(
+                Request(Method.GET, "/books/00000000-0000-0000-0000-000000000000")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.NOT_FOUND, response.status)
     }
 
@@ -157,10 +158,11 @@ class UiIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         createBook(token, libId, "Unique Quantum Title")
 
-        val response = app(
-            Request(Method.GET, "/search?q=Quantum")
-                .header("Cookie", "token=$token"),
-        )
+        val response =
+            app(
+                Request(Method.GET, "/search?q=Quantum")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, response.status)
         assertTrue(response.bodyString().contains("Unique Quantum Title"))
     }
@@ -170,12 +172,13 @@ class UiIntegrationTest : IntegrationTestBase() {
     @Test
     fun `POST ui-libraries creates library and returns HTML card`() {
         val token = registerAndGetToken("uicreatelib")
-        val response = app(
-            Request(Method.POST, "/ui/libraries")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .body("name=My+UI+Library&path=./data/test-ui-${System.nanoTime()}"),
-        )
+        val response =
+            app(
+                Request(Method.POST, "/ui/libraries")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("name=My+UI+Library&path=./data/test-ui-${System.nanoTime()}"),
+            )
         assertEquals(Status.OK, response.status)
         val body = response.bodyString()
         assertTrue(body.contains("My UI Library"))
@@ -185,11 +188,12 @@ class UiIntegrationTest : IntegrationTestBase() {
 
     @Test
     fun `POST ui-libraries without auth returns 401`() {
-        val response = app(
-            Request(Method.POST, "/ui/libraries")
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .body("name=Hack&path=./data/hack"),
-        )
+        val response =
+            app(
+                Request(Method.POST, "/ui/libraries")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("name=Hack&path=./data/hack"),
+            )
         assertEquals(Status.UNAUTHORIZED, response.status)
     }
 
@@ -198,10 +202,11 @@ class UiIntegrationTest : IntegrationTestBase() {
         val token = registerAndGetToken("uideletelib")
         val libId = createLibrary(token)
 
-        val response = app(
-            Request(Method.DELETE, "/ui/libraries/$libId")
-                .header("Cookie", "token=$token"),
-        )
+        val response =
+            app(
+                Request(Method.DELETE, "/ui/libraries/$libId")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, response.status)
         assertTrue(response.header("HX-Trigger")?.contains("showToast") == true)
 
@@ -214,12 +219,13 @@ class UiIntegrationTest : IntegrationTestBase() {
         val token = registerAndGetToken("uicreatebk")
         val libId = createLibrary(token)
 
-        val response = app(
-            Request(Method.POST, "/ui/libraries/$libId/books")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .body("title=UI+Test+Book&author=Test+Author"),
-        )
+        val response =
+            app(
+                Request(Method.POST, "/ui/libraries/$libId/books")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("title=UI+Test+Book&author=Test+Author"),
+            )
         assertEquals(Status.OK, response.status)
         val body = response.bodyString()
         assertTrue(body.contains("UI Test Book"))
@@ -233,10 +239,11 @@ class UiIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
 
-        val response = app(
-            Request(Method.DELETE, "/ui/books/$bookId")
-                .header("Cookie", "token=$token"),
-        )
+        val response =
+            app(
+                Request(Method.DELETE, "/ui/books/$bookId")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, response.status)
         assertTrue(response.header("HX-Trigger")?.contains("showToast") == true)
     }
@@ -247,17 +254,19 @@ class UiIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
 
-        val response = app(
-            Request(Method.POST, "/ui/books/$bookId/progress")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .body("currentPage=42"),
-        )
+        val response =
+            app(
+                Request(Method.POST, "/ui/books/$bookId/progress")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("currentPage=42"),
+            )
         assertEquals(Status.OK, response.status)
 
-        val bookResponse = app(
-            Request(Method.GET, "/api/books/$bookId").header("Cookie", "token=$token"),
-        )
+        val bookResponse =
+            app(
+                Request(Method.GET, "/api/books/$bookId").header("Cookie", "token=$token"),
+            )
         assertTrue(bookResponse.bodyString().contains("42"))
     }
 
@@ -267,12 +276,13 @@ class UiIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
 
-        val response = app(
-            Request(Method.POST, "/ui/books/$bookId/bookmarks")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .body("page=7&title=Chapter+One&note=Important+section"),
-        )
+        val response =
+            app(
+                Request(Method.POST, "/ui/books/$bookId/bookmarks")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("page=7&title=Chapter+One&note=Important+section"),
+            )
         assertEquals(Status.OK, response.status)
         val body = response.bodyString()
         assertTrue(body.contains("7"))
@@ -287,18 +297,24 @@ class UiIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
 
-        val bmResponse = app(
-            Request(Method.POST, "/api/bookmarks")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"bookId":"$bookId","page":3,"title":"To delete","note":null}"""),
-        )
-        val bmId = Json.mapper.readTree(bmResponse.bodyString()).get("id").asText()
+        val bmResponse =
+            app(
+                Request(Method.POST, "/api/bookmarks")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"bookId":"$bookId","page":3,"title":"To delete","note":null}"""),
+            )
+        val bmId =
+            Json.mapper
+                .readTree(bmResponse.bodyString())
+                .get("id")
+                .asText()
 
-        val response = app(
-            Request(Method.DELETE, "/ui/bookmarks/$bmId")
-                .header("Cookie", "token=$token"),
-        )
+        val response =
+            app(
+                Request(Method.DELETE, "/ui/bookmarks/$bmId")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, response.status)
         assertTrue(response.header("HX-Trigger")?.contains("showToast") == true)
     }
@@ -367,9 +383,10 @@ class UiIntegrationTest : IntegrationTestBase() {
     @Test
     fun `search page pre-populates header search bar with current query`() {
         val token = registerAndGetToken("srchbar4")
-        val body = app(
-            Request(Method.GET, "/search?q=tolkien").header("Cookie", "token=$token"),
-        ).bodyString()
+        val body =
+            app(
+                Request(Method.GET, "/search?q=tolkien").header("Cookie", "token=$token"),
+            ).bodyString()
         assertTrue(body.contains("""value="tolkien""""))
     }
 
@@ -433,18 +450,20 @@ class UiIntegrationTest : IntegrationTestBase() {
     @Test
     fun `multi-word query is pre-populated in search bar`() {
         val token = registerAndGetToken("srchbar10")
-        val body = app(
-            Request(Method.GET, "/search?q=lord+of+the+rings").header("Cookie", "token=$token"),
-        ).bodyString()
+        val body =
+            app(
+                Request(Method.GET, "/search?q=lord+of+the+rings").header("Cookie", "token=$token"),
+            ).bodyString()
         assertTrue(body.contains("lord of the rings"))
     }
 
     @Test
     fun `HTML special chars in query are escaped in search bar value`() {
         val token = registerAndGetToken("srchbar11")
-        val body = app(
-            Request(Method.GET, "/search?q=%3Cscript%3E").header("Cookie", "token=$token"),
-        ).bodyString()
+        val body =
+            app(
+                Request(Method.GET, "/search?q=%3Cscript%3E").header("Cookie", "token=$token"),
+            ).bodyString()
         // The value attribute must not contain the raw unescaped tag
         assertFalse(body.contains("""value="<script>""""), "Raw <script> tag must not appear unescaped in value attribute")
         // JTE should have emitted the escaped form
@@ -457,9 +476,10 @@ class UiIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         createBook(token, libId, "The Hobbit")
 
-        val body = app(
-            Request(Method.GET, "/search?q=Hobbit").header("Cookie", "token=$token"),
-        ).bodyString()
+        val body =
+            app(
+                Request(Method.GET, "/search?q=Hobbit").header("Cookie", "token=$token"),
+            ).bodyString()
         assertTrue(body.contains("The Hobbit"))
         assertTrue(body.contains("""value="Hobbit""""))
     }
@@ -544,10 +564,11 @@ class UiIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId)
 
-        val response = app(
-            Request(Method.GET, "/books/$bookId/read")
-                .header("Cookie", "token=$token; app_theme=dracula"),
-        )
+        val response =
+            app(
+                Request(Method.GET, "/books/$bookId/read")
+                    .header("Cookie", "token=$token; app_theme=dracula"),
+            )
         assertTrue(response.bodyString().contains("data-theme=\"dracula\""))
     }
 

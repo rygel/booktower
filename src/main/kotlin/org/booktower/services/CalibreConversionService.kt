@@ -13,12 +13,13 @@ private val logger = LoggerFactory.getLogger("booktower.CalibreConversionService
  * - Results are cached by (canonical path + last-modified) so repeated reads are cheap.
  * - Conversion timeout is 120 seconds — large books can take tens of seconds.
  */
-class CalibreConversionService(private val cacheDir: File) {
-
+class CalibreConversionService(
+    private val cacheDir: File,
+) {
     val isAvailable: Boolean
 
     init {
-        cacheDir.mkdirs()
+        if (!cacheDir.mkdirs() && !cacheDir.exists()) logger.warn("Could not create directory: ${cacheDir.absolutePath}")
         isAvailable = checkCalibre()
         if (isAvailable) {
             logger.info("Calibre ebook-convert found — MOBI/AZW3 in-browser reading enabled")
@@ -27,14 +28,16 @@ class CalibreConversionService(private val cacheDir: File) {
         }
     }
 
-    private fun checkCalibre(): Boolean = try {
-        val proc = ProcessBuilder("ebook-convert", "--version")
-            .redirectErrorStream(true)
-            .start()
-        proc.waitFor(10, TimeUnit.SECONDS) && proc.exitValue() == 0
-    } catch (_: Exception) {
-        false
-    }
+    private fun checkCalibre(): Boolean =
+        try {
+            val proc =
+                ProcessBuilder("ebook-convert", "--version")
+                    .redirectErrorStream(true)
+                    .start()
+            proc.waitFor(10, TimeUnit.SECONDS) && proc.exitValue() == 0
+        } catch (_: Exception) {
+            false
+        }
 
     /**
      * Converts [file] (mobi or azw3) to a self-contained HTML string.
@@ -51,21 +54,22 @@ class CalibreConversionService(private val cacheDir: File) {
         }
 
         logger.info("Converting ${file.name} via Calibre → $hash.html")
-        val proc = ProcessBuilder(
-            "ebook-convert",
-            file.canonicalPath,
-            cacheFile.canonicalPath,
-        ).redirectErrorStream(true).start()
+        val proc =
+            ProcessBuilder(
+                "ebook-convert",
+                file.canonicalPath,
+                cacheFile.canonicalPath,
+            ).redirectErrorStream(true).start()
 
         val output = proc.inputStream.bufferedReader().readText()
 
         if (!proc.waitFor(120, TimeUnit.SECONDS)) {
             proc.destroyForcibly()
-            cacheFile.delete()
+            if (!cacheFile.delete()) logger.warn("Could not delete file: ${cacheFile.absolutePath}")
             throw RuntimeException("Calibre conversion timed out after 120 s for ${file.name}")
         }
         if (proc.exitValue() != 0) {
-            cacheFile.delete()
+            if (!cacheFile.delete()) logger.warn("Could not delete file: ${cacheFile.absolutePath}")
             throw RuntimeException("Calibre exited ${proc.exitValue()} for ${file.name}: $output")
         }
         if (!cacheFile.exists() || cacheFile.length() == 0L) {

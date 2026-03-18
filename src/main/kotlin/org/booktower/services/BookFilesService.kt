@@ -7,14 +7,15 @@ import java.io.File
 import java.time.Instant
 import java.util.UUID
 
-class BookFilesService(private val jdbi: Jdbi) {
-
+class BookFilesService(
+    private val jdbi: Jdbi,
+) {
     fun listFiles(bookId: String): List<BookFormatDto> =
         jdbi.withHandle<List<BookFormatDto>, Exception> { h ->
-            h.createQuery(
-                "SELECT id, book_id, file_path, file_size, format, is_primary, label, added_at FROM book_formats WHERE book_id = ? ORDER BY is_primary DESC, added_at",
-            )
-                .bind(0, bookId)
+            h
+                .createQuery(
+                    "SELECT id, book_id, file_path, file_size, format, is_primary, label, added_at FROM book_formats WHERE book_id = ? ORDER BY is_primary DESC, added_at",
+                ).bind(0, bookId)
                 .map { row ->
                     BookFormatDto(
                         id = row.getColumn("id", String::class.java),
@@ -29,7 +30,10 @@ class BookFilesService(private val jdbi: Jdbi) {
                 }.list()
         }
 
-    fun addFile(bookId: String, request: AddBookFileRequest): BookFormatDto {
+    fun addFile(
+        bookId: String,
+        request: AddBookFileRequest,
+    ): BookFormatDto {
         require(request.filePath.isNotBlank()) { "filePath must not be blank" }
         val file = File(request.filePath)
         val format = file.extension.lowercase().ifBlank { "unknown" }
@@ -40,13 +44,15 @@ class BookFilesService(private val jdbi: Jdbi) {
         jdbi.useHandle<Exception> { h ->
             if (request.isPrimary) {
                 // demote any existing primary
-                h.createUpdate("UPDATE book_formats SET is_primary = FALSE WHERE book_id = ?")
-                    .bind(0, bookId).execute()
+                h
+                    .createUpdate("UPDATE book_formats SET is_primary = FALSE WHERE book_id = ?")
+                    .bind(0, bookId)
+                    .execute()
             }
-            h.createUpdate(
-                "INSERT INTO book_formats (id, book_id, file_path, file_size, format, is_primary, label, added_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-            )
-                .bind(0, id)
+            h
+                .createUpdate(
+                    "INSERT INTO book_formats (id, book_id, file_path, file_size, format, is_primary, label, added_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                ).bind(0, id)
                 .bind(1, bookId)
                 .bind(2, request.filePath)
                 .bind(3, fileSize)
@@ -70,13 +76,18 @@ class BookFilesService(private val jdbi: Jdbi) {
     }
 
     /** Remove a specific file entry. Returns true if deleted, false if not found. */
-    fun removeFile(bookId: String, fileId: String): Boolean {
-        val rows = jdbi.withHandle<Int, Exception> { h ->
-            h.createUpdate("DELETE FROM book_formats WHERE id = ? AND book_id = ?")
-                .bind(0, fileId)
-                .bind(1, bookId)
-                .execute()
-        }
+    fun removeFile(
+        bookId: String,
+        fileId: String,
+    ): Boolean {
+        val rows =
+            jdbi.withHandle<Int, Exception> { h ->
+                h
+                    .createUpdate("DELETE FROM book_formats WHERE id = ? AND book_id = ?")
+                    .bind(0, fileId)
+                    .bind(1, bookId)
+                    .execute()
+            }
         return rows > 0
     }
 }

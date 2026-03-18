@@ -22,17 +22,24 @@ data class PdfMetadata(
     val coverPath: String?,
 )
 
-class PdfMetadataService(private val jdbi: Jdbi, private val coversPath: String) {
+class PdfMetadataService(
+    private val jdbi: Jdbi,
+    private val coversPath: String,
+) {
     companion object {
         private const val COVER_DPI = 150f
     }
 
     // Single-threaded so extractions are sequential and don't overwhelm memory
-    private val executor: ExecutorService = Executors.newSingleThreadExecutor { r ->
-        Thread(r, "pdf-metadata").also { it.isDaemon = true }
-    }
+    private val executor: ExecutorService =
+        Executors.newSingleThreadExecutor { r ->
+            Thread(r, "pdf-metadata").also { it.isDaemon = true }
+        }
 
-    fun submitAsync(bookId: String, pdfFile: File) {
+    fun submitAsync(
+        bookId: String,
+        pdfFile: File,
+    ) {
         executor.submit {
             extractAndStore(bookId, pdfFile)
         }
@@ -46,7 +53,10 @@ class PdfMetadataService(private val jdbi: Jdbi, private val coversPath: String)
         }
     }
 
-    fun extractAndStore(bookId: String, pdfFile: File): PdfMetadata {
+    fun extractAndStore(
+        bookId: String,
+        pdfFile: File,
+    ): PdfMetadata {
         var document: PDDocument? = null
         return try {
             document = Loader.loadPDF(pdfFile)
@@ -71,13 +81,16 @@ class PdfMetadataService(private val jdbi: Jdbi, private val coversPath: String)
         }
     }
 
-    private fun extractCover(bookId: String, document: PDDocument): String? {
-        return try {
+    private fun extractCover(
+        bookId: String,
+        document: PDDocument,
+    ): String? =
+        try {
             val renderer = PDFRenderer(document)
             val image = renderer.renderImageWithDPI(0, COVER_DPI, ImageType.RGB)
 
             val coversDir = File(coversPath)
-            if (!coversDir.exists()) coversDir.mkdirs()
+            if (!coversDir.exists() && !coversDir.mkdirs()) logger.warn("Could not create directory: ${coversDir.absolutePath}")
 
             val coverFile = File(coversDir, "$bookId.jpg")
             ImageIO.write(image, "JPEG", coverFile)
@@ -87,19 +100,22 @@ class PdfMetadataService(private val jdbi: Jdbi, private val coversPath: String)
             logger.warn("Failed to extract cover for book $bookId: ${e.message}")
             null
         }
-    }
 
-    private fun persistMetadata(bookId: String, metadata: PdfMetadata) {
+    private fun persistMetadata(
+        bookId: String,
+        metadata: PdfMetadata,
+    ) {
         val now = Instant.now().toString()
 
         jdbi.useHandle<Exception> { handle ->
-            val setClauses = buildList {
-                add("page_count = ?")
-                add("updated_at = ?")
-                if (metadata.title != null) add("title = ?")
-                if (metadata.author != null) add("author = ?")
-                if (metadata.coverPath != null) add("cover_path = ?")
-            }
+            val setClauses =
+                buildList {
+                    add("page_count = ?")
+                    add("updated_at = ?")
+                    if (metadata.title != null) add("title = ?")
+                    if (metadata.author != null) add("author = ?")
+                    if (metadata.coverPath != null) add("cover_path = ?")
+                }
 
             val sql = "UPDATE books SET ${setClauses.joinToString(", ")} WHERE id = ?"
             val update = handle.createUpdate(sql)
