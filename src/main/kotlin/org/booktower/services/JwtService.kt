@@ -21,10 +21,11 @@ class JwtService(
     private val algorithm = Algorithm.HMAC256(config.jwtSecret)
 
     /** Cache verified JWT claims for 60 seconds to avoid re-verifying the same token on rapid requests. */
-    private val claimsCache = Caffeine.newBuilder()
-        .maximumSize(2_000)
-        .expireAfterWrite(60, TimeUnit.SECONDS)
-        .build<String, Pair<UUID, Boolean>>()
+    private val claimsCache =
+        Caffeine.newBuilder()
+            .maximumSize(2_000)
+            .expireAfterWrite(60, TimeUnit.SECONDS)
+            .build<String, Pair<UUID, Boolean>>()
 
     fun generateToken(user: User): String {
         val now = Instant.now()
