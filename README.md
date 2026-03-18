@@ -56,17 +56,14 @@ volumes:
 
 | Layer | Technology |
 |---|---|
-| Language | Kotlin 1.9 |
+| Language | Kotlin |
 | HTTP framework | http4k |
 | Templates | JTE (`.kte`) |
 | Frontend interactivity | HTMX |
-| Database | H2 (file or in-memory) |
+| Database | H2, Postgres |
 | Migrations | Flyway |
 | SQL access | JDBI 3 |
 | DI | Koin |
-| Auth | JWT (cookie) + SHA-256 hashed API tokens |
-| Build | Maven |
-| Testing | JUnit 5 — 833 tests |
 
 ## Configuration
 
