@@ -33,21 +33,21 @@ private val LIBRIVOX_SEED_BOOKS = listOf(
         title = "Alice's Adventures in Wonderland",
         author = "Lewis Carroll",
         description = "A young girl named Alice falls through a rabbit hole into a surreal fantasy world populated by peculiar creatures. One of the most beloved works of English literature, rich with wordplay, logic, and whimsy.",
-        librivoxId = 42,
+        librivoxId = 200,
         tags = listOf("classic", "fantasy", "audiobook"),
     ),
     SeedAudioBook(
         title = "The Metamorphosis",
         author = "Franz Kafka",
         description = "One morning Gregor Samsa wakes to find himself transformed into a monstrous insect. Kafka's landmark novella is an unsettling meditation on alienation, family duty, and existential despair.",
-        librivoxId = 3715,
+        librivoxId = 527,
         tags = listOf("classic", "philosophy", "audiobook"),
     ),
     SeedAudioBook(
         title = "Treasure Island",
         author = "Robert Louis Stevenson",
         description = "Young Jim Hawkins discovers a treasure map and sets sail on a perilous voyage with the unforgettable Long John Silver. The definitive pirate adventure — action, treachery, and buried gold.",
-        librivoxId = 1261,
+        librivoxId = 449,
         tags = listOf("adventure", "classic", "audiobook"),
     ),
 )
@@ -494,22 +494,26 @@ class SeedService(
 
     private fun downloadLibrivoxChapters(userId: UUID, bookId: UUID, librivoxId: Int, title: String) {
         try {
-            val apiUrl = "https://librivox.org/api/feed/audiofiles?project_id=$librivoxId&format=json"
-            val conn = java.net.URI(apiUrl).toURL().openConnection() as java.net.HttpURLConnection
+            // Use the RSS feed — the audiofiles JSON API is no longer functional
+            val rssUrl = "https://librivox.org/rss/$librivoxId"
+            val conn = java.net.URI(rssUrl).toURL().openConnection() as java.net.HttpURLConnection
             conn.connectTimeout = 15_000
             conn.readTimeout = 15_000
             conn.setRequestProperty("User-Agent", "BookTower/1.0 librivox-seed")
             if (conn.responseCode != 200) {
-                logger.warn("LibriVox API returned ${conn.responseCode} for '$title' (id=$librivoxId)")
+                logger.warn("LibriVox RSS returned ${conn.responseCode} for '$title' (id=$librivoxId)")
                 return
             }
-            val json = conn.inputStream.use { Json.mapper.readTree(it) }
-            val sections = json.get("sections") ?: run {
-                logger.warn("No 'sections' field in LibriVox response for '$title' (id=$librivoxId)")
-                return
+
+            // Parse RSS with the standard JDK XML parser
+            val dbf = javax.xml.parsers.DocumentBuilderFactory.newInstance().also {
+                it.setFeature("http://apache.org/xml/features/disallow-doctype-decl", false)
+                it.isNamespaceAware = true
             }
-            if (!sections.isArray || sections.size() == 0) {
-                logger.warn("Empty sections for LibriVox '$title' (id=$librivoxId)")
+            val doc = conn.inputStream.use { dbf.newDocumentBuilder().parse(it) }
+            val items = doc.getElementsByTagName("item")
+            if (items.length == 0) {
+                logger.warn("No items in LibriVox RSS for '$title' (id=$librivoxId)")
                 return
             }
 
@@ -517,15 +521,23 @@ class SeedService(
             if (!booksDir.exists()) booksDir.mkdirs()
 
             var downloaded = 0
-            sections.forEachIndexed { idx, section ->
-                val listenUrl = section.get("listen_url")?.asText()?.takeIf { it.isNotBlank() }
-                    ?: return@forEachIndexed
-                val chapterTitle = section.get("title")?.asText()?.trim()?.takeIf { it.isNotBlank() }
-                val durationSec = parseDuration(section.get("duration")?.asText())
-                val trackIndex = section.get("section_number")?.asText()?.toIntOrNull()?.let { it - 1 } ?: idx
+            for (idx in 0 until items.length) {
+                val item = items.item(idx) as org.w3c.dom.Element
+                val enclosures = item.getElementsByTagName("enclosure")
+                val listenUrl = if (enclosures.length > 0)
+                    (enclosures.item(0) as org.w3c.dom.Element).getAttribute("url").takeIf { it.isNotBlank() }
+                    else null
+                if (listenUrl == null) continue
 
-                val destFile = File(booksDir, "$bookId-${trackIndex.toString().padStart(4, '0')}.mp3")
-                if (destFile.exists()) return@forEachIndexed // already downloaded
+                val chapterTitle = item.getElementsByTagName("title").item(0)
+                    ?.textContent?.trim()?.takeIf { it.isNotBlank() }
+                val durationSec = parseDuration(
+                    item.getElementsByTagNameNS("http://www.itunes.com/dtds/podcast-1.0.dtd", "duration")
+                        .item(0)?.textContent
+                )
+
+                val destFile = File(booksDir, "$bookId-${idx.toString().padStart(4, '0')}.mp3")
+                if (destFile.exists()) continue // already downloaded
 
                 try {
                     val mp3Conn = java.net.URI(listenUrl).toURL().openConnection() as java.net.HttpURLConnection
@@ -534,24 +546,24 @@ class SeedService(
                     mp3Conn.setRequestProperty("User-Agent", "BookTower/1.0 librivox-seed")
                     mp3Conn.instanceFollowRedirects = true
                     if (mp3Conn.responseCode != 200) {
-                        logger.warn("Chapter $trackIndex download failed for '$title': HTTP ${mp3Conn.responseCode}")
-                        return@forEachIndexed
+                        logger.warn("Chapter $idx download failed for '$title': HTTP ${mp3Conn.responseCode}")
+                        continue
                     }
                     mp3Conn.inputStream.use { input -> destFile.outputStream().use { input.copyTo(it) } }
                     bookService.addBookFile(
-                        userId, bookId, trackIndex, chapterTitle,
+                        userId, bookId, idx, chapterTitle,
                         destFile.absolutePath, destFile.length(), durationSec,
                     )
                     downloaded++
-                    logger.debug("Downloaded ch $trackIndex of '$title' (${destFile.length()} bytes)")
+                    logger.debug("Downloaded ch $idx of '$title' (${destFile.length()} bytes)")
                 } catch (e: Exception) {
-                    logger.warn("Chapter $trackIndex download error for '$title': ${e.message}")
+                    logger.warn("Chapter $idx download error for '$title': ${e.message}")
                 }
             }
 
             if (downloaded > 0) {
                 bookService.updateBookFileAggregateSize(bookId)
-                logger.info("LibriVox download complete for '$title': $downloaded/${sections.size()} chapters")
+                logger.info("LibriVox download complete for '$title': $downloaded/${items.length} chapters")
             }
         } catch (e: Exception) {
             logger.warn("LibriVox download failed for '$title' (id=$librivoxId): ${e.message}")

@@ -211,6 +211,29 @@ class AudiobookReaderUiTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `reader page for audio-multi book includes getBookmarkPage and jumpToPage functions`() {
+        val token = registerAndGetToken("arui")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId)
+        uploadChapter(token, bookId, 0)
+
+        val body = app(Request(Method.GET, "/books/$bookId/read").header("Cookie", "token=$token")).bodyString()
+        assertTrue(body.contains("getBookmarkPage"), "Reader page must define getBookmarkPage for audio-multi")
+        assertTrue(body.contains("jumpToPage"), "Reader page must define jumpToPage for audio-multi")
+    }
+
+    @Test
+    fun `reader page for audio-multi book includes bookmark add button`() {
+        val token = registerAndGetToken("arui")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId)
+        uploadChapter(token, bookId, 0)
+
+        val body = app(Request(Method.GET, "/books/$bookId/read").header("Cookie", "token=$token")).bodyString()
+        assertTrue(body.contains("btn-add-bookmark"), "Bookmark add button must be present in audio-multi reader")
+    }
+
+    @Test
     fun `chapter names with single quotes do not produce unescaped JS string break`() {
         val token = registerAndGetToken("arui")
         val libId = createLibrary(token)
@@ -357,6 +380,62 @@ class AudiobookBookPageTest : IntegrationTestBase() {
             body.contains("/api/books/$bookId/file"),
             "Download link to /file must not appear for chapter-only audiobooks",
         )
+    }
+
+    @Test
+    fun `book page shows Listen button with headphone icon for chapter-only audiobook`() {
+        val token = registerAndGetToken("bbp")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId, "Spoken Chapters Book")
+        val mp3 = byteArrayOf(0xFF.toByte(), 0xFB.toByte(), 0x90.toByte(), 0x00.toByte()) + ByteArray(416)
+        app(
+            Request(Method.POST, "/api/books/$bookId/chapters")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/octet-stream")
+                .header("X-Filename", "ch-0.mp3")
+                .header("X-Track-Index", "0")
+                .body(mp3.inputStream(), mp3.size.toLong()),
+        )
+
+        val body = app(Request(Method.GET, "/books/$bookId").header("Cookie", "token=$token")).bodyString()
+        assertTrue(body.contains("ri-headphone-line"), "Headphone icon must appear in Listen button for chapter-only audiobook")
+        assertTrue(body.contains("Listen"), "Listen label must appear in button for chapter-only audiobook")
+    }
+
+    @Test
+    fun `book page shows Listen button with headphone icon for single-file audio book`() {
+        val token = registerAndGetToken("bbp")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId, "Single MP3 Book")
+        val fakeBytes = ByteArray(64) { it.toByte() }
+        app(
+            Request(Method.POST, "/api/books/$bookId/upload")
+                .header("Cookie", "token=$token")
+                .header("X-Filename", "audiobook.mp3")
+                .body(fakeBytes.inputStream()),
+        )
+
+        val body = app(Request(Method.GET, "/books/$bookId").header("Cookie", "token=$token")).bodyString()
+        assertTrue(body.contains("ri-headphone-line"), "Headphone icon must appear in Listen button for single-file mp3 book")
+        assertTrue(body.contains("Listen"), "Listen label must appear in button for single-file mp3 book")
+    }
+
+    @Test
+    fun `book page shows Read button with book icon for non-audio book`() {
+        val token = registerAndGetToken("bbp")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId, "PDF Text Book")
+        val pdfBytes = byteArrayOf(0x25, 0x50, 0x44, 0x46, 0x2D, 0x31, 0x2E, 0x34) + ByteArray(64)
+        app(
+            Request(Method.POST, "/api/books/$bookId/upload")
+                .header("Cookie", "token=$token")
+                .header("X-Filename", "book.pdf")
+                .body(pdfBytes.inputStream()),
+        )
+
+        val body = app(Request(Method.GET, "/books/$bookId").header("Cookie", "token=$token")).bodyString()
+        assertTrue(body.contains("ri-book-open-line"), "Book icon must appear in Read button for non-audio book")
+        assertFalse(body.contains("ri-headphone-line"), "Headphone icon must not appear for a PDF book")
     }
 
     @Test
