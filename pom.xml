@@ -45,7 +45,7 @@
         <jte.version>3.2.3</jte.version>
         <flatlaf.version>3.5.4</flatlaf.version>
         <junit.version>5.12.0</junit.version>
-        <mockk.version>1.13.17</mockk.version>
+        <mockk.version>1.14.9</mockk.version>
         
         <!-- Code Quality Plugin Versions -->
         <detekt.version>1.23.8</detekt.version>
