@@ -34,7 +34,7 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
@@ -85,7 +85,7 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
@@ -124,14 +124,14 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-browser-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-maven-
 
       # Cache the downloaded Chromium binary (~250 MB) to avoid re-downloading
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         with:
           path: ~/.cache/ms-playwright
           key: playwright-chromium-${{ hashFiles('**/pom.xml') }}
@@ -165,7 +165,7 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
@@ -213,7 +213,7 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-e2e-${{ hashFiles('**/pom.xml') }}
