@@ -18,7 +18,7 @@
         <!-- Version Properties -->
         <kotlin.version>2.3.20</kotlin.version>
         <java.version>21.0.9</java.version>
-        
+
         <!-- Maven Plugin Versions -->
         <kotlin-maven-plugin.version>${kotlin.version}</kotlin-maven-plugin.version>
         <maven-compiler-plugin.version>3.14.0</maven-compiler-plugin.version>
@@ -38,26 +38,26 @@
         <native-maven-plugin.version>0.11.5</native-maven-plugin.version>
         <maven-shade-plugin.version>3.6.0</maven-shade-plugin.version>
         <fizzed-watcher-maven-plugin.version>1.10.6</fizzed-watcher-maven-plugin.version>
-        
+
         <!-- Dependency Versions -->
-        <h2.version>2.2.224</h2.version>
+        <h2.version>2.4.240</h2.version>
         <postgresql.version>42.7.10</postgresql.version>
         <jte.version>3.2.3</jte.version>
         <flatlaf.version>3.5.4</flatlaf.version>
-        <junit.version>5.12.0</junit.version>
-        <mockk.version>1.13.17</mockk.version>
-        
+        <junit.version>5.13.0</junit.version>
+        <mockk.version>1.14.9</mockk.version>
+
         <!-- Code Quality Plugin Versions -->
         <detekt.version>1.23.8</detekt.version>
         <jacoco.version>0.8.14</jacoco.version>
         <spotbugs.plugin.version>4.9.3.0</spotbugs.plugin.version>
-        <spotbugs.version>4.9.5</spotbugs.version>
+        <spotbugs.version>4.9.8</spotbugs.version>
         <checkstyle.version>3.6.0</checkstyle.version>
         <pmd.version>3.28.0</pmd.version>
-        <errorprone.version>2.34.0</errorprone.version>
-        <spotless.version>2.43.0</spotless.version>
+        <errorprone.version>2.48.0</errorprone.version>
+        <spotless.version>2.44.4</spotless.version>
         <ktlint.version>3.5.0</ktlint.version>
-        <sonar-scanner.version>5.0.1.3006</sonar-scanner.version>
+        <sonar-scanner.version>5.5.0.6356</sonar-scanner.version>
         <duplicate-finder.version>2.0.1</duplicate-finder.version>
         <forbidden-apis.version>3.9</forbidden-apis.version>
         
@@ -69,18 +69,25 @@
         <!-- Logging Versions -->
         <slf4j.version>2.0.17</slf4j.version>
         <logback.version>1.5.32</logback.version>
-        
+
         <!-- Other Versions -->
-        <jackson.version>2.19.1</jackson.version>
-        <jackson-kotlin.version>2.19.1</jackson-kotlin.version>
+        <jackson.version>2.21.1</jackson.version>
+        <jackson-kotlin.version>2.21.1</jackson-kotlin.version>
         <jwt.version>4.5.1</jwt.version>
         <bcrypt.version>0.4</bcrypt.version>
-        <pdfbox.version>3.0.5</pdfbox.version>
-        <jdbi3.version>3.49.4</jdbi3.version>
-        <hikari.version>6.3.0</hikari.version>
-        <http4k.version>6.5.0.0</http4k.version>
-        <kotlin-logging.version>3.0.5</kotlin-logging.version>
-        <koin.version>4.0.4</koin.version>
+        <pdfbox.version>3.0.7</pdfbox.version>
+        <jdbi3.version>3.51.0</jdbi3.version>
+        <hikari.version>7.0.2</hikari.version>
+        <http4k.version>6.35.0.0</http4k.version>
+        <kotlin-logging.version>7.0.7</kotlin-logging.version>
+        <!-- kotlin-logging 8.x is available but is a pre-release rewrite; 7.0.7 is latest stable -->
+        <testcontainers.version>1.21.4</testcontainers.version>
+        <commons-compress.version>1.28.0</commons-compress.version>
+        <commons-csv.version>1.14.1</commons-csv.version>
+        <commons-io.version>2.21.0</commons-io.version>
+        <junrar.version>7.5.8</junrar.version>
+        <typesafe-config.version>1.4.6</typesafe-config.version>
+        <koin.version>4.2.0</koin.version>
         <simplejavamail.version>8.12.6</simplejavamail.version>
         <greenmail.version>2.1.8</greenmail.version>
         <playwright.version>1.58.0</playwright.version>
@@ -121,7 +128,7 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.module</groupId>
                 <artifactId>jackson-module-kotlin</artifactId>
-                <version>2.18.2</version>
+                <version>${jackson-kotlin.version}</version>
             </dependency>
         <dependency>
             <groupId>gg.jte</groupId>
@@ -161,7 +168,7 @@
             <dependency>
                 <groupId>org.flywaydb</groupId>
                 <artifactId>flyway-core</artifactId>
-                <version>11.3.4</version>
+                <version>${flyway-maven-plugin.version}</version>
             </dependency>
         <dependency>
             <groupId>org.http4k</groupId>
@@ -191,7 +198,7 @@
             <dependency>
                 <groupId>com.typesafe</groupId>
                 <artifactId>config</artifactId>
-                <version>1.4.3</version>
+                <version>${typesafe-config.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.auth0</groupId>
@@ -209,8 +216,8 @@
                 <version>${pdfbox.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.github.microutils</groupId>
-                <artifactId>kotlin-logging</artifactId>
+                <groupId>io.github.oshai</groupId>
+                <artifactId>kotlin-logging-jvm</artifactId>
                 <version>${kotlin-logging.version}</version>
             </dependency>
             <dependency>
@@ -261,14 +268,14 @@
             <artifactId>logback-classic</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.github.microutils</groupId>
-            <artifactId>kotlin-logging</artifactId>
+            <groupId>io.github.oshai</groupId>
+            <artifactId>kotlin-logging-jvm</artifactId>
             <version>${kotlin-logging.version}</version>
         </dependency>
         <dependency>
             <groupId>com.typesafe</groupId>
             <artifactId>config</artifactId>
-            <version>1.4.3</version>
+            <version>${typesafe-config.version}</version>
         </dependency>
         <dependency>
             <groupId>org.jdbi</groupId>
@@ -330,22 +337,22 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-compress</artifactId>
-            <version>1.28.0</version>
+            <version>${commons-compress.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-csv</artifactId>
-            <version>1.14.1</version>
+            <version>${commons-csv.version}</version>
         </dependency>
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
-            <version>2.21.0</version>
+            <version>${commons-io.version}</version>
         </dependency>
         <dependency>
             <groupId>com.github.junrar</groupId>
             <artifactId>junrar</artifactId>
-            <version>7.5.8</version>
+            <version>${junrar.version}</version>
         </dependency>
         <dependency>
             <groupId>com.github.ben-manes.caffeine</groupId>
@@ -403,13 +410,13 @@
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>postgresql</artifactId>
-            <version>1.19.8</version>
+            <version>${testcontainers.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>junit-jupiter</artifactId>
-            <version>1.19.8</version>
+            <version>${testcontainers.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -544,7 +551,7 @@
             <plugin>
                 <groupId>org.flywaydb</groupId>
                 <artifactId>flyway-maven-plugin</artifactId>
-                <version>11.3.4</version>
+                <version>${flyway-maven-plugin.version}</version>
                 <configuration>
                     <locations>classpath:db/migration</locations>
                     <baselineOnMigrate>true</baselineOnMigrate>
@@ -898,7 +905,7 @@
             <plugin>
                 <groupId>com.fizzed</groupId>
                 <artifactId>fizzed-watcher-maven-plugin</artifactId>
-                <version>1.10.6</version>
+                <version>${fizzed-watcher-maven-plugin.version}</version>
                 <configuration>
                     <touchFile>target/watcher.trigger</touchFile>
                     <watches>
