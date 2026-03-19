@@ -193,8 +193,91 @@ jobs:
       - name: Build Docker image
         run: docker build --tag booktower:ci .
 
-      - name: Verify image exists
-        run: docker image inspect booktower:ci --format '{{.RepoTags}} {{.Config.ExposedPorts}}'
+      - name: Smoke test Docker container
+        run: |
+          docker run -d --name bt-smoke -p 9999:8080 \
+            -e BOOKTOWER_QUICKSTART=true \
+            booktower:ci
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:9999/health > /dev/null 2>&1; then
+              echo "Container healthy after ${i}s"
+              break
+            fi
+            [ "$i" -eq 30 ] && { echo "Container failed to start"; docker logs bt-smoke; exit 1; }
+            sleep 1
+          done
+          # Verify it serves actual content
+          STATUS=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:9999/login)
+          [ "$STATUS" = "200" ] || { echo "Login page returned $STATUS"; docker logs bt-smoke; exit 1; }
+          echo "Docker smoke test passed"
+          docker stop bt-smoke
+
+  # ── PostgreSQL integration test ──────────────────────────────────────────
+  postgres-test:
+    name: PostgreSQL Test
+    needs: code-quality
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: booktower
+          POSTGRES_PASSWORD: booktower
+          POSTGRES_DB: booktower
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U booktower"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-java@v5
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - uses: actions/cache@v5
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-pg-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-maven-
+
+      - name: Build fat JAR
+        run: mvn package -DskipTests -Dflyway.skip=true -q
+
+      - name: Start app with PostgreSQL
+        run: |
+          BOOKTOWER_DB_URL="jdbc:postgresql://localhost:5432/booktower" \
+          BOOKTOWER_DB_USERNAME=booktower \
+          BOOKTOWER_DB_PASSWORD=booktower \
+          BOOKTOWER_DB_DRIVER=org.postgresql.Driver \
+          BOOKTOWER_QUICKSTART=true \
+          java -jar target/booktower-*-fat.jar &
+          echo "APP_PID=$!" >> "$GITHUB_ENV"
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:9999/health > /dev/null 2>&1; then
+              echo "App healthy with PostgreSQL after ${i}s"
+              break
+            fi
+            [ "$i" -eq 30 ] && { echo "App failed to start with PostgreSQL"; exit 1; }
+            sleep 2
+          done
+
+      - name: Run E2E tests against PostgreSQL
+        env:
+          BASE_URL: http://localhost:9999
+        run: |
+          chmod +x e2e-test.sh
+          ./e2e-test.sh
+
+      - name: Stop app
+        if: always()
+        run: kill "$APP_PID" 2>/dev/null || true
 
   # ── E2E tests: Linux only (bash-based test script) ────────────────────────
   e2e-tests:

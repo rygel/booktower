@@ -13,17 +13,24 @@ A self-hosted personal book, audiobook, and comic manager with a built-in reader
 
 ### Feature Maturity
 
-| Area | Status | Notes |
-|------|--------|-------|
-| Core (libraries, books, auth, search) | **Stable** | Covered by 1600+ integration tests |
-| EPUB/PDF/Comic readers | **Stable** | Tested in browser tests |
-| Metadata fetching | **Stable** | OpenLibrary, Google Books, Hardcover, ComicVine, Audible |
-| Kobo / KOReader sync | **Experimental** | Implements protocols but not tested with real hardware |
-| OPDS catalog | **Experimental** | Basic catalog works; not verified with all client apps |
-| OIDC / SSO | **Experimental** | Implements OIDC spec; tested only with mock providers |
-| Hardcover.app sync | **Experimental** | API integration exists; not tested with real accounts |
-| Email delivery | **Experimental** | SMTP sending works; not tested with Kindle/device delivery |
-| Full-text search | **Experimental** | PostgreSQL only; requires `BOOKTOWER_FTS_ENABLED=true` |
+| Area | Status | How tested |
+|------|--------|------------|
+| Core (libraries, books, auth, search) | **Stable** | 1600+ integration tests, CI on Linux/macOS/Windows |
+| EPUB/PDF/Comic readers | **Stable** | Playwright browser tests + manual testing |
+| Metadata fetching | **Stable** | Integration tests against live APIs |
+| Bookmarks, journals, notebooks, reviews | **Stable** | Integration tests |
+| Reading/listening stats & analytics | **Stable** | Integration tests |
+| Smart shelves & filter presets | **Stable** | Integration tests |
+| Whispersync (ebook↔audiobook) | **Experimental** | Integration tests only; chapter mapping is approximate |
+| Docker image | **Untested** | Builds in CI but no E2E test runs against the container |
+| PostgreSQL | **Untested** | SQL written for H2 PostgreSQL-mode; never connected to real PostgreSQL |
+| Native binaries (GraalVM) | **Untested** | CI builds for 5 platforms but no smoke test verifies they start |
+| Kobo / KOReader sync | **Untested** | Implements protocols; never tested with real hardware |
+| OPDS catalog | **Untested** | Basic tests; not verified with real client apps |
+| OIDC / SSO | **Untested** | Implements OIDC spec; tested only with mock providers |
+| Hardcover.app sync | **Untested** | API integration exists; not tested with real accounts |
+| Email delivery | **Untested** | SMTP works with GreenMail mock; not tested with real SMTP or Kindle |
+| Full-text search | **Untested** | PostgreSQL only; requires `BOOKTOWER_FTS_ENABLED=true` |
 
 ## Features
 
