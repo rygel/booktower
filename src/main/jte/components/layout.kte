@@ -53,6 +53,7 @@
                     <i class="ri-search-line" style="position:absolute; left:0.625rem; top:50%; transform:translateY(-50%); color:var(--bt-muted); pointer-events:none; font-size:0.875rem;"></i>
                     <input type="search" name="q"
                            value="${searchQuery}"
+                           aria-label="${i18n.translate("placeholder.search")}"
                            placeholder="${i18n.translate("placeholder.search")}"
                            style="width:100%; padding:0.4rem 0.75rem 0.4rem 2rem; border-radius:0.5rem; border:1px solid var(--bt-border-input); background:var(--bt-bg); color:var(--bt-text); font-size:0.8rem; outline:none; transition:border-color 0.15s;"
                            onfocus="this.style.borderColor='var(--bt-accent-dim)'"
@@ -62,6 +63,7 @@
             <div style="display:flex; align-items:center; gap:0.75rem; flex-shrink:0;">
                 @if(username != null)
                 <button id="notif-btn" onclick="toggleNotifPanel()"
+                        aria-label="${i18n.translate("label.notifications")}"
                         style="position:relative; background:transparent; border:none; cursor:pointer; color:var(--bt-muted); font-size:1.1rem; padding:0.25rem; display:flex; align-items:center;"
                         title="${i18n.translate("label.notifications")}">
                     <i class="ri-notification-3-line"></i>
@@ -93,7 +95,7 @@
     <div style="display:flex; flex:1; min-height:0; overflow:hidden;">
 
         <!-- Sidebar -->
-        <nav style="width:14rem; background:var(--bt-surface); border-right:1px solid var(--bt-border); flex-shrink:0; display:flex; flex-direction:column;">
+        <nav role="navigation" aria-label="${i18n.translate("nav.section")}" style="width:14rem; background:var(--bt-surface); border-right:1px solid var(--bt-border); flex-shrink:0; display:flex; flex-direction:column;">
             <div style="flex:1; padding:1.25rem 0.875rem; display:flex; flex-direction:column; gap:0.25rem; overflow-y:auto;">
                 <p style="font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--bt-subtle); padding:0 0.5rem; margin:0 0 0.625rem; font-weight:600;">${i18n.translate("nav.section")}</p>
                 <a href="/" class="sidebar-link ${if (currentPage == "home") "active" else ""}">
