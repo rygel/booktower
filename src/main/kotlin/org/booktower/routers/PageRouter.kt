@@ -5,6 +5,7 @@ import org.booktower.handlers.AdminHandler
 import org.booktower.handlers.PageHandler
 import org.booktower.model.ThemeCatalog
 import org.booktower.services.JwtService
+import org.booktower.services.UserSettingsService
 import org.booktower.web.WebContext
 import org.http4k.core.Method
 import org.http4k.core.Request
@@ -24,6 +25,7 @@ class PageRouter(
     private val jwtService: JwtService,
     private val templateRenderer: TemplateRenderer,
     private val registrationOpen: Boolean,
+    private val userSettingsService: UserSettingsService? = null,
 ) {
     fun routes(): List<RoutingHttpHandler> =
         listOf(
@@ -188,6 +190,10 @@ class PageRouter(
         val themeId = req.form("theme")?.trim()?.takeIf { ThemeCatalog.isValid(it) } ?: "catppuccin-mocha"
         val css = ThemeCatalog.toCssVariables(themeId)
         val themeCookie = Cookie(name = "app_theme", value = themeId, path = "/", maxAge = 365L * 24 * 3600)
+        // Persist to user settings so preference survives across devices
+        authenticatedUserId(req)?.let { userId ->
+            userSettingsService?.set(userId, "pref.theme", themeId)
+        }
         return Response(Status.OK)
             .header("Content-Type", "text/html; charset=utf-8")
             .cookie(themeCookie)
@@ -197,9 +203,18 @@ class PageRouter(
     private fun setLanguage(req: Request): Response {
         val lang = req.form("lang")?.trim()?.takeIf { it in WebContext.SUPPORTED_LANGS } ?: "en"
         val langCookie = Cookie(name = "app_lang", value = lang, path = "/", maxAge = 365L * 24 * 3600)
+        // Persist to user settings so preference survives across devices
+        authenticatedUserId(req)?.let { userId ->
+            userSettingsService?.set(userId, "pref.lang", lang)
+        }
         return Response(Status.OK)
             .cookie(langCookie)
             .header("HX-Refresh", "true")
             .body("")
+    }
+
+    private fun authenticatedUserId(req: Request): java.util.UUID? {
+        val token = req.cookie("token")?.value ?: return null
+        return jwtService.extractUserId(token)
     }
 }
