@@ -59,6 +59,45 @@ input:focus, select:focus, textarea:focus {
   background-color: var(--bt-surface);
   border: 1px solid var(--bt-border);
   border-radius: 0.75rem;
+  transition: border-color 0.15s;
+}
+
+.card:hover {
+  border-color: var(--bt-border-input);
+}
+
+/* Stat cards on dashboard */
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem;
+}
+
+.stat-icon {
+  background: var(--bt-icon-bg);
+  color: var(--bt-icon-text);
+  border-radius: 0.625rem;
+  padding: 0.75rem;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stat-icon i { font-size: 1.25rem; }
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--bt-text);
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  color: var(--bt-subtle);
+  margin-top: 0.25rem;
 }
 
 .modal-panel {

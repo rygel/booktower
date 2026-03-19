@@ -66,7 +66,7 @@
 
     @if(libraries.isEmpty())
         <div id="empty-hint" style="text-align:center; padding:5rem 0;">
-            <i class="ri-book-shelf-line" style="font-size:4rem; display:block; margin-bottom:1rem; color:var(--bt-border);"></i>
+            <i class="ri-stack-line" style="font-size:4rem; display:block; margin-bottom:1rem; color:var(--bt-border);"></i>
             <p style="font-size:1.125rem; font-weight:500; color:var(--bt-subtle);">${i18n.translate("page.libraries.empty.title")}</p>
             <p style="font-size:0.875rem; margin-top:0.375rem; color:var(--bt-faint);">${i18n.translate("page.libraries.empty.hint")}</p>
         </div>

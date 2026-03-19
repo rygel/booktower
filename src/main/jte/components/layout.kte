@@ -19,6 +19,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https://www.gravatar.com data:; connect-src 'self'; font-src 'self';">
     <title>${title}</title>
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#6366f1">
@@ -94,7 +95,7 @@
                     ${i18n.translate("nav.home")}
                 </a>
                 <a href="/libraries" class="sidebar-link ${if (currentPage == "libraries" || currentPage == "library") "active" else ""}">
-                    <i class="ri-book-shelf-line" style="font-size:1rem; width:1rem; text-align:center;"></i>
+                    <i class="ri-stack-line" style="font-size:1rem; width:1rem; text-align:center;"></i>
                     ${i18n.translate("nav.libraries")}
                 </a>
                 <a href="/search" class="sidebar-link ${if (currentPage == "search") "active" else ""}">

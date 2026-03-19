@@ -26,38 +26,31 @@
 <div class="page-container" style="max-width:64rem;">
 
     <!-- Stats row -->
-    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(10rem, 1fr)); gap:1rem; margin-bottom:2rem;">
-        <div class="card card-padding" style=" display:flex; align-items:center; gap:1rem;">
-            <div style="background:var(--bt-icon-bg); color:var(--bt-icon-text); border-radius:0.5rem; padding:0.75rem; flex-shrink:0;">
-                <i class="ri-book-shelf-line" style="font-size:1.5rem;"></i>
-            </div>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(13rem, 1fr)); gap:1rem; margin-bottom:2rem;">
+        <div class="card stat-card">
+            <div class="stat-icon"><i class="ri-stack-line"></i></div>
             <div>
-                <p style="font-size:1.75rem; font-weight:700; color:var(--bt-text); line-height:1;">${libraryCount}</p>
-                <p style="font-size:0.75rem; color:var(--bt-subtle); margin-top:0.25rem;">${i18n.translate("page.dashboard.stat.libraries")}</p>
+                <p class="stat-value">${libraryCount}</p>
+                <p class="stat-label">${i18n.translate("page.dashboard.stat.libraries")}</p>
             </div>
         </div>
-        <div class="card card-padding" style=" display:flex; align-items:center; gap:1rem;">
-            <div style="background:var(--bt-icon-bg); color:var(--bt-icon-text); border-radius:0.5rem; padding:0.75rem; flex-shrink:0;">
-                <i class="ri-book-2-line" style="font-size:1.5rem;"></i>
-            </div>
+        <div class="card stat-card">
+            <div class="stat-icon"><i class="ri-book-2-line"></i></div>
             <div>
-                <p style="font-size:1.75rem; font-weight:700; color:var(--bt-text); line-height:1;">${totalBooks}</p>
-                <p style="font-size:0.75rem; color:var(--bt-subtle); margin-top:0.25rem;">${i18n.translate("page.dashboard.stat.books")}</p>
+                <p class="stat-value">${totalBooks}</p>
+                <p class="stat-label">${i18n.translate("page.dashboard.stat.books")}</p>
             </div>
         </div>
-        <div class="card card-padding" style=" display:flex; align-items:center; gap:1rem;">
-            <div style="background:var(--bt-icon-bg); color:var(--bt-icon-text); border-radius:0.5rem; padding:0.75rem; flex-shrink:0;">
-                <i class="ri-bar-chart-line" style="font-size:1.5rem;"></i>
-            </div>
+        <div class="card stat-card">
+            <div class="stat-icon"><i class="ri-book-read-line"></i></div>
             <div>
-                <p style="font-size:1.75rem; font-weight:700; color:var(--bt-text); line-height:1;">${currentlyReadingCount}</p>
-                <p style="font-size:0.75rem; color:var(--bt-subtle); margin-top:0.25rem;">${i18n.translate("page.dashboard.stat.in.progress")}</p>
+                <p class="stat-value">${currentlyReadingCount}</p>
+                <p class="stat-label">${i18n.translate("page.dashboard.stat.in.progress")}</p>
             </div>
         </div>
-        <!-- Reading Goal card -->
-        <div class="card" style="padding:1rem; text-align:center;">
-            <p style="font-size:2rem; font-weight:700; color:var(--bt-accent);">${booksFinishedThisYear} / ${if (goal > 0) goal.toString() else "—"}</p>
-            <p style="font-size:0.75rem; color:var(--bt-subtle); margin-top:0.25rem;">${i18n.translate("page.dashboard.stat.goal")}</p>
+        <div class="card stat-card" style="flex-direction:column; text-align:center;">
+            <p style="font-size:1.5rem; font-weight:700; color:var(--bt-accent); line-height:1;">${booksFinishedThisYear} / ${if (goal > 0) goal.toString() else "---"}</p>
+            <p class="stat-label">${i18n.translate("page.dashboard.stat.goal")}</p>
             @if(goal > 0)
                 <div style="margin-top:0.5rem; height:0.25rem; background:var(--bt-border); border-radius:9999px; overflow:hidden;">
                     <div style="height:100%; background:var(--bt-accent); border-radius:9999px; width:${if (booksFinishedThisYear >= goal) 100 else (booksFinishedThisYear * 100 / goal)}%;"></div>
@@ -189,7 +182,7 @@
         <section>
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
                 <h2 style="font-size:1rem; font-weight:700; color:var(--bt-text); display:flex; align-items:center; gap:0.5rem;">
-                    <i class="ri-book-shelf-line" style="color:var(--bt-accent-dim);"></i>
+                    <i class="ri-stack-line" style="color:var(--bt-accent-dim);"></i>
                     ${i18n.translate("page.dashboard.my.libraries")}
                 </h2>
                 <a href="/libraries" style="font-size:0.8rem; color:var(--bt-accent-dim); text-decoration:none;"
@@ -202,7 +195,7 @@
                     <a href="/libraries/${lib.id}" style="text-decoration:none; background:var(--bt-surface); border:1px solid var(--bt-border); border-radius:0.75rem; padding:1rem; display:flex; align-items:center; gap:0.75rem; transition:border-color 0.15s;"
                         onmouseover="this.style.borderColor='var(--bt-accent)'" onmouseout="this.style.borderColor='var(--bt-border)'">
                         <div style="background:var(--bt-icon-bg); color:var(--bt-icon-text); border-radius:0.375rem; padding:0.5rem; flex-shrink:0;">
-                            <i class="ri-book-shelf-line"></i>
+                            <i class="ri-stack-line"></i>
                         </div>
                         <div style="min-width:0;">
                             <p style="font-size:0.8rem; font-weight:600; color:var(--bt-text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${lib.name}</p>
@@ -214,7 +207,7 @@
         </section>
     @else
         <!-- Empty state -->
-        @template.components.emptyState(icon = "ri-book-shelf-line", message = i18n.translate("page.dashboard.empty.title"), action = @`
+        @template.components.emptyState(icon = "ri-stack-line", message = i18n.translate("page.dashboard.empty.title"), action = @`
             <p style="font-size:0.875rem; margin-top:0.375rem; color:var(--bt-faint);">${i18n.translate("page.dashboard.empty.hint")}</p>
             <a href="/libraries" class="btn-primary" style="display:inline-flex; align-items:center; gap:0.5rem; text-decoration:none; margin-top:1.5rem;">
                 <i class="ri-add-line"></i> ${i18n.translate("page.libraries.new")}
