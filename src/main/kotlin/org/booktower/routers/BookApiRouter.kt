@@ -12,6 +12,7 @@ import org.booktower.handlers.ReaderPreferencesHandler
 import org.booktower.services.AlternativeCoverService
 import org.booktower.services.BookDeliveryService
 import org.booktower.services.BookFilesService
+import org.booktower.services.BookLinkService
 import org.booktower.services.BookNotebookService
 import org.booktower.services.BookReviewService
 import org.booktower.services.BookService
@@ -57,6 +58,7 @@ class BookApiRouter(
     private val bookReviewService: BookReviewService?,
     private val bookNotebookService: BookNotebookService?,
     private val duplicateDetectionService: DuplicateDetectionService?,
+    private val bookLinkService: BookLinkService? = null,
 ) {
     @Suppress("LongMethod")
     fun routes(): List<RoutingHttpHandler> =
@@ -174,6 +176,11 @@ class BookApiRouter(
             "/api/books/{id}/reviews" bind Method.POST to filters.auth.then(::createReview),
             "/api/books/{id}/reviews/{reviewId}" bind Method.PUT to filters.auth.then(::updateReview),
             "/api/books/{id}/reviews/{reviewId}" bind Method.DELETE to filters.auth.then(::deleteReview),
+            // Whispersync (linked books)
+            "/api/books/{id}/link" bind Method.GET to filters.auth.then(::getBookLink),
+            "/api/books/{id}/link" bind Method.POST to filters.auth.then(::linkBook),
+            "/api/books/{id}/link" bind Method.DELETE to filters.auth.then(::unlinkBook),
+            "/api/books/{id}/sync-position" bind Method.GET to filters.auth.then(::getSyncPosition),
         )
 
     // ─── Inline handler methods ──────────────────────────────────────────────
@@ -1205,5 +1212,103 @@ class BookApiRouter(
         val reviewId = parts.lastOrNull() ?: return Response(Status.BAD_REQUEST)
         val bookId = parts.dropLast(2).lastOrNull() ?: return Response(Status.BAD_REQUEST)
         return if (svc.delete(bookId, reviewId, userId)) Response(Status.NO_CONTENT) else Response(Status.NOT_FOUND)
+    }
+
+    // ─── Whispersync (linked books) ──────────────────────────────────────────
+
+    private fun getBookLink(req: Request): Response {
+        val svc = bookLinkService
+            ?: return Response(Status.SERVICE_UNAVAILABLE)
+                .header("Content-Type", "application/json")
+                .body("""{"error":"Book link service not available"}""")
+        val userId = AuthenticatedUser.from(req)
+        val bookId = extractBookIdFromPath(req)
+            ?: return Response(Status.BAD_REQUEST)
+                .header("Content-Type", "application/json")
+                .body("""{"error":"Invalid book ID"}""")
+        val link = svc.getLinkForBook(userId, bookId)
+            ?: return Response(Status.NOT_FOUND)
+                .header("Content-Type", "application/json")
+                .body("""{"error":"No link found for this book"}""")
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(link),
+            )
+    }
+
+    private fun linkBook(req: Request): Response {
+        val svc = bookLinkService
+            ?: return Response(Status.SERVICE_UNAVAILABLE)
+                .header("Content-Type", "application/json")
+                .body("""{"error":"Book link service not available"}""")
+        val userId = AuthenticatedUser.from(req)
+        val bookId = extractBookIdFromPath(req)
+            ?: return Response(Status.BAD_REQUEST)
+                .header("Content-Type", "application/json")
+                .body("""{"error":"Invalid book ID"}""")
+        val body = runCatching {
+            org.booktower.config.Json.mapper
+                .readValue(req.bodyString(), org.booktower.models.LinkBooksRequest::class.java)
+        }.getOrNull()
+            ?: return Response(Status.BAD_REQUEST)
+                .header("Content-Type", "application/json")
+                .body("""{"error":"Invalid request body"}""")
+        val linkedBookId = runCatching { java.util.UUID.fromString(body.linkedBookId) }.getOrNull()
+            ?: return Response(Status.BAD_REQUEST)
+                .header("Content-Type", "application/json")
+                .body("""{"error":"Invalid linked book ID"}""")
+        val link = svc.linkBooks(userId, bookId, linkedBookId)
+            ?: return Response(Status.BAD_REQUEST)
+                .header("Content-Type", "application/json")
+                .body("""{"error":"Could not link books"}""")
+        return Response(Status.CREATED)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(link),
+            )
+    }
+
+    private fun unlinkBook(req: Request): Response {
+        val svc = bookLinkService
+            ?: return Response(Status.SERVICE_UNAVAILABLE)
+                .header("Content-Type", "application/json")
+                .body("""{"error":"Book link service not available"}""")
+        val userId = AuthenticatedUser.from(req)
+        val bookId = extractBookIdFromPath(req)
+            ?: return Response(Status.BAD_REQUEST)
+                .header("Content-Type", "application/json")
+                .body("""{"error":"Invalid book ID"}""")
+        return if (svc.unlinkBook(userId, bookId)) {
+            Response(Status.NO_CONTENT)
+        } else {
+            Response(Status.NOT_FOUND)
+                .header("Content-Type", "application/json")
+                .body("""{"error":"No link found for this book"}""")
+        }
+    }
+
+    private fun getSyncPosition(req: Request): Response {
+        val svc = bookLinkService
+            ?: return Response(Status.SERVICE_UNAVAILABLE)
+                .header("Content-Type", "application/json")
+                .body("""{"error":"Book link service not available"}""")
+        val userId = AuthenticatedUser.from(req)
+        val bookId = extractBookIdFromPath(req)
+            ?: return Response(Status.BAD_REQUEST)
+                .header("Content-Type", "application/json")
+                .body("""{"error":"Invalid book ID"}""")
+        val position = svc.syncPosition(userId, bookId)
+            ?: return Response(Status.NOT_FOUND)
+                .header("Content-Type", "application/json")
+                .body("""{"error":"No sync position available"}""")
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(position),
+            )
     }
 }
