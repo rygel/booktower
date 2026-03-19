@@ -212,6 +212,7 @@ abstract class IntegrationTestBase {
         val adminHandler =
             AdminHandler(
                 adminService,
+                authService,
                 TestFixture.templateRenderer,
                 passwordResetService,
                 seedService,

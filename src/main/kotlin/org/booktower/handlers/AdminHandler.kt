@@ -8,6 +8,7 @@ import org.booktower.models.ErrorResponse
 import org.booktower.models.SuccessResponse
 import org.booktower.services.AdminService
 import org.booktower.services.AuditService
+import org.booktower.services.AuthService
 import org.booktower.services.ComicPageHashService
 import org.booktower.services.DuplicateDetectionService
 import org.booktower.services.EmailService
@@ -26,6 +27,7 @@ import java.util.UUID
 
 class AdminHandler(
     private val adminService: AdminService,
+    private val authService: AuthService,
     private val templateRenderer: TemplateRenderer,
     private val passwordResetService: PasswordResetService,
     private val seedService: SeedService,
@@ -39,14 +41,24 @@ class AdminHandler(
 ) {
     fun adminPage(req: Request): Response {
         val ctx = WebContext(req)
+        val userId = AuthenticatedUser.from(req)
+        val user = authService.getUserById(userId)
         val users = adminService.listUsers()
-        val currentUserId = AuthenticatedUser.from(req).toString()
+        val gravatarHash =
+            user?.email?.trim()?.lowercase()?.let {
+                java.security.MessageDigest
+                    .getInstance("MD5")
+                    .digest(it.toByteArray())
+                    .joinToString("") { b -> "%02x".format(b) }
+            } ?: ""
         val content =
             templateRenderer.render(
                 "admin.kte",
                 mapOf(
                     "users" to users,
-                    "currentUserId" to currentUserId,
+                    "currentUserId" to userId.toString(),
+                    "username" to user?.username,
+                    "gravatarHash" to gravatarHash,
                     "themeCss" to ctx.themeCss,
                     "currentTheme" to ctx.theme,
                     "lang" to ctx.lang,

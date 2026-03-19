@@ -229,6 +229,7 @@ val appModule =
         single {
             AdminHandler(
                 get(),
+                get<AuthService>(),
                 get(),
                 get(),
                 get(),

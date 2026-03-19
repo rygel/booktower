@@ -3,6 +3,8 @@
 @import org.booktower.models.UserAdminDto
 @param users: List<UserAdminDto>
 @param currentUserId: String
+@param username: String?
+@param gravatarHash: String = ""
 @param themeCss: String
 @param currentTheme: String
 @param lang: String
@@ -10,7 +12,7 @@
 @param i18n: I18nService
 @param isAdmin: Boolean = false
 
-@template.components.layout(title="${i18n.translate("page.admin.title")} - BookTower", username=null, currentPage="admin",
+@template.components.layout(title="${i18n.translate("page.admin.title")} - BookTower", username=username, gravatarHash=gravatarHash, currentPage="admin",
     themeCss=themeCss, currentTheme=currentTheme, lang=lang, themes=themes, i18n=i18n, searchQuery="", isAdmin=isAdmin, content = @`
 <div class="page-container">
 
