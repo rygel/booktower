@@ -22,9 +22,19 @@ class Database private constructor(
         fun connect(config: DatabaseConfig): Database {
             logger.info("Connecting to database: ${config.url}")
 
+            // PostgreSQL needs stringtype=unspecified so JDBI can bind Instant.toString()
+            // to TIMESTAMP columns without explicit casting
+            val effectiveUrl =
+                if (config.url.startsWith("jdbc:postgresql") && !config.url.contains("stringtype=")) {
+                    val separator = if (config.url.contains('?')) "&" else "?"
+                    "${config.url}${separator}stringtype=unspecified"
+                } else {
+                    config.url
+                }
+
             val hikariConfig =
                 HikariConfig().apply {
-                    jdbcUrl = config.url
+                    jdbcUrl = effectiveUrl
                     username = config.username
                     password = config.password
                     driverClassName = config.driver

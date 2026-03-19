@@ -21,8 +21,8 @@ WORKDIR /app
 # Create non-root user
 RUN groupadd -r booktower && useradd -r -g booktower booktower
 
-# Copy fat jar
-COPY --from=build /build/target/booktower-*.jar app.jar
+# Copy fat jar (the -fat.jar variant has the main manifest)
+COPY --from=build /build/target/booktower-*-fat.jar app.jar
 
 # Data directories (override with volumes in docker-compose)
 RUN mkdir -p /data/books /data/covers /data/db && \
