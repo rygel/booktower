@@ -208,5 +208,10 @@
     </style>
     @endif
 
+    <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/static/sw.js');
+    }
+    </script>
 </body>
 </html>
