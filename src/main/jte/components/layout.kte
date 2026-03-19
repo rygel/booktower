@@ -143,12 +143,6 @@
                 </a>
                 @endif
             </div>
-
-            <!-- Version -->
-            <div class="bt-sidebar-version">
-                <p>BookTower v${org.booktower.services.VersionService.info.version}</p>
-            </div>
-
         </nav>
 
         <!-- Main content -->
@@ -160,7 +154,7 @@
     <!-- Footer -->
     <footer class="bt-footer">
         <div class="bt-footer-inner">
-            <span>&copy; 2026 BookTower. ${i18n.translate("footer.rights")}</span>
+            <span>&copy; 2026 BookTower v${org.booktower.services.VersionService.info.display}. ${i18n.translate("footer.rights")}</span>
             <span>${i18n.translate("footer.made.with")} <i class="ri-heart-fill" style="color:var(--bt-danger);"></i> Kotlin &amp; http4k</span>
         </div>
     </footer>
