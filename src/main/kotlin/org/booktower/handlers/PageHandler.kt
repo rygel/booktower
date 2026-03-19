@@ -1006,7 +1006,8 @@ class PageHandler(
 
     private fun gravatarHash(email: String): String {
         val md = java.security.MessageDigest.getInstance("MD5")
-        return md.digest(email.trim().lowercase().toByteArray())
+        return md
+            .digest(email.trim().lowercase().toByteArray())
             .joinToString("") { "%02x".format(it) }
     }
 

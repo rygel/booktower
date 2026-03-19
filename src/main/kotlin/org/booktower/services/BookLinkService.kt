@@ -13,16 +13,27 @@ class BookLinkService(
 ) {
     private val logger = LoggerFactory.getLogger("booktower.BookLinkService")
 
-    fun linkBooks(userId: UUID, bookId: UUID, linkedBookId: UUID): LinkedBookDto? {
+    fun linkBooks(
+        userId: UUID,
+        bookId: UUID,
+        linkedBookId: UUID,
+    ): LinkedBookDto? {
         // Get both books
         val book1 = bookService.getBook(userId, bookId) ?: return null
         val book2 = bookService.getBook(userId, linkedBookId) ?: return null
 
-        // Determine which is ebook and which is audiobook
-        val (ebookId, audioId) = when {
-            book1.bookFormat == "AUDIOBOOK" && book2.bookFormat != "AUDIOBOOK" -> linkedBookId to bookId
-            book2.bookFormat == "AUDIOBOOK" && book1.bookFormat != "AUDIOBOOK" -> bookId to linkedBookId
-            else -> bookId to linkedBookId // default: first is ebook, second is audio
+        // Determine which is ebook and which is audiobook based on format
+        val ebookId: UUID
+        val audioId: UUID
+        if (book1.bookFormat == "AUDIOBOOK" && book2.bookFormat != "AUDIOBOOK") {
+            ebookId = linkedBookId
+            audioId = bookId
+        } else if (book2.bookFormat == "AUDIOBOOK" && book1.bookFormat != "AUDIOBOOK") {
+            ebookId = bookId
+            audioId = linkedBookId
+        } else {
+            ebookId = bookId
+            audioId = linkedBookId
         }
 
         val id = UUID.randomUUID().toString()
@@ -30,14 +41,18 @@ class BookLinkService(
 
         return try {
             jdbi.withHandle<LinkedBookDto?, Exception> { handle ->
-                handle.createUpdate(
-                    """
+                handle
+                    .createUpdate(
+                        """
                     INSERT INTO linked_books (id, user_id, ebook_id, audio_id, created_at)
                     VALUES (?, ?, ?, ?, ?)
                     """,
-                ).bind(0, id).bind(1, userId.toString())
-                    .bind(2, ebookId.toString()).bind(3, audioId.toString())
-                    .bind(4, now).execute()
+                    ).bind(0, id)
+                    .bind(1, userId.toString())
+                    .bind(2, ebookId.toString())
+                    .bind(3, audioId.toString())
+                    .bind(4, now)
+                    .execute()
 
                 val ebook = bookService.getBook(userId, ebookId)
                 val audio = bookService.getBook(userId, audioId)
@@ -57,20 +72,28 @@ class BookLinkService(
         }
     }
 
-    fun unlinkBook(userId: UUID, bookId: UUID): Boolean {
-        return jdbi.withHandle<Int, Exception> { handle ->
-            handle.createUpdate("DELETE FROM linked_books WHERE user_id = ? AND (ebook_id = ? OR audio_id = ?)")
+    fun unlinkBook(
+        userId: UUID,
+        bookId: UUID,
+    ): Boolean =
+        jdbi.withHandle<Int, Exception> { handle ->
+            handle
+                .createUpdate("DELETE FROM linked_books WHERE user_id = ? AND (ebook_id = ? OR audio_id = ?)")
                 .bind(0, userId.toString())
                 .bind(1, bookId.toString())
                 .bind(2, bookId.toString())
                 .execute()
         } > 0
-    }
 
-    fun getLinkForBook(userId: UUID, bookId: UUID): LinkedBookDto? {
+    fun getLinkForBook(
+        userId: UUID,
+        bookId: UUID,
+    ): LinkedBookDto? {
         return jdbi.withHandle<LinkedBookDto?, Exception> { handle ->
-            val row = handle.createQuery(
-                """
+            val row =
+                handle
+                    .createQuery(
+                        """
                 SELECT lb.id, lb.ebook_id, lb.audio_id, lb.created_at,
                        eb.title AS ebook_title, ab.title AS audio_title
                 FROM linked_books lb
@@ -78,11 +101,11 @@ class BookLinkService(
                 JOIN books ab ON ab.id = lb.audio_id
                 WHERE lb.user_id = ? AND (lb.ebook_id = ? OR lb.audio_id = ?)
                 """,
-            ).bind(0, userId.toString())
-                .bind(1, bookId.toString())
-                .bind(2, bookId.toString())
-                .mapToMap()
-                .firstOrNull() ?: return@withHandle null
+                    ).bind(0, userId.toString())
+                    .bind(1, bookId.toString())
+                    .bind(2, bookId.toString())
+                    .mapToMap()
+                    .firstOrNull() ?: return@withHandle null
 
             LinkedBookDto(
                 id = row["id"].toString(),
@@ -104,7 +127,10 @@ class BookLinkService(
      * - Track count is derived from book_files table
      * - The overall percentage through the source maps to a chapter + position in the target
      */
-    fun syncPosition(userId: UUID, bookId: UUID): SyncPositionDto? {
+    fun syncPosition(
+        userId: UUID,
+        bookId: UUID,
+    ): SyncPositionDto? {
         val link = getLinkForBook(userId, bookId) ?: return null
         val isEbookSide = bookId.toString() == link.ebookId
 
@@ -163,24 +189,29 @@ class BookLinkService(
     }
 
     /** Count tracks in book_files for a given book. */
-    private fun countBookFiles(bookId: String): Int {
-        return jdbi.withHandle<Int, Exception> { handle ->
-            handle.createQuery("SELECT COUNT(*) FROM book_files WHERE book_id = ?")
+    private fun countBookFiles(bookId: String): Int =
+        jdbi.withHandle<Int, Exception> { handle ->
+            handle
+                .createQuery("SELECT COUNT(*) FROM book_files WHERE book_id = ?")
                 .bind(0, bookId)
                 .mapTo(Int::class.java)
                 .one()
         }
-    }
 
     /** Get listen progress (positionSec, totalSec) for a user/book. */
-    private fun getListenProgress(userId: UUID, bookId: UUID): Pair<Int, Int>? {
+    private fun getListenProgress(
+        userId: UUID,
+        bookId: UUID,
+    ): Pair<Int, Int>? {
         return jdbi.withHandle<Pair<Int, Int>?, Exception> { handle ->
-            val row = handle.createQuery(
-                "SELECT position_sec, total_sec FROM listen_progress WHERE user_id = ? AND book_id = ?",
-            ).bind(0, userId.toString())
-                .bind(1, bookId.toString())
-                .mapToMap()
-                .firstOrNull() ?: return@withHandle null
+            val row =
+                handle
+                    .createQuery(
+                        "SELECT position_sec, total_sec FROM listen_progress WHERE user_id = ? AND book_id = ?",
+                    ).bind(0, userId.toString())
+                    .bind(1, bookId.toString())
+                    .mapToMap()
+                    .firstOrNull() ?: return@withHandle null
             val pos = (row["position_sec"] as? Number)?.toInt() ?: 0
             val total = (row["total_sec"] as? Number)?.toInt() ?: 0
             pos to total

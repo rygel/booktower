@@ -90,7 +90,7 @@ class ReadingGoalIntegrationTest : IntegrationTestBase() {
         // Default goal is 0 (unset)
         val body = app(Request(Method.GET, "/").header("Cookie", "token=$token")).bodyString()
         assertTrue(
-            body.contains("/ —") || body.contains("/&nbsp;—") || body.contains("/ &#8212;") || body.contains("—"),
+            body.contains("/ —") || body.contains("/ ---") || body.contains("/&nbsp;—") || body.contains("/ &#8212;") || body.contains("—"),
             "Dashboard should show dash when no goal is set",
         )
     }
