@@ -201,6 +201,7 @@ val appModule =
         single { org.booktower.services.CommunityRatingService(get<Database>().getJdbi()) }
         single { BookLinkService(get<Database>().getJdbi(), get<BookService>()) }
         single { WeblateHandler(get<AppConfig>().weblate) }
+        single { org.booktower.services.CollectionService(get<Database>().getJdbi()) }
 
         // ── Handler objects ──────────────────────────────────────────────────
         single {
@@ -358,6 +359,7 @@ val appModule =
                 apiTokenHandler = get<ApiTokenHandler>(),
                 exportHandler = get<ExportHandler>(),
                 goodreadsImportHandler = get<GoodreadsImportHandler>(),
+                collectionService = get<org.booktower.services.CollectionService>(),
             )
         }
         single {

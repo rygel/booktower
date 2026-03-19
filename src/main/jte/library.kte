@@ -165,6 +165,15 @@
         </form>
     `)
 
+    <!-- Drop zone overlay -->
+    <div id="drop-overlay" style="display:none; position:fixed; inset:0; z-index:50; background:rgba(0,0,0,0.5); display:none; align-items:center; justify-content:center;">
+        <div style="background:var(--bt-surface); border:3px dashed var(--bt-accent); border-radius:1rem; padding:3rem 4rem; text-align:center;">
+            <i class="ri-upload-cloud-2-line" style="font-size:3rem; color:var(--bt-accent); display:block; margin-bottom:1rem;"></i>
+            <p style="font-size:1.125rem; font-weight:600; color:var(--bt-text);">${i18n.translate("page.library.drop.title")}</p>
+            <p style="font-size:0.85rem; color:var(--bt-subtle); margin-top:0.25rem;">${i18n.translate("page.library.drop.hint")}</p>
+        </div>
+    </div>
+
     <!-- Books grid -->
     <div id="books-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:1rem;">
         @for(book in books)
@@ -390,5 +399,66 @@ async function scanLibrary(libraryId) {
         btn.innerHTML = '<i class="ri-folder-search-line"></i> ${i18n.translate("page.library.scan")}';
     }
 }
+
+// ── Drag & drop file upload ──────────────────────────────────────────
+(function() {
+    var ALLOWED = ['epub','pdf','cbz','cbr','fb2','mobi','azw3','djvu','mp3','m4b','m4a','ogg','flac'];
+    var overlay = document.getElementById('drop-overlay');
+    var dragCount = 0;
+
+    document.addEventListener('dragenter', function(e) {
+        e.preventDefault();
+        dragCount++;
+        if (overlay) overlay.style.display = 'flex';
+    });
+    document.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        dragCount--;
+        if (dragCount <= 0 && overlay) { overlay.style.display = 'none'; dragCount = 0; }
+    });
+    document.addEventListener('dragover', function(e) { e.preventDefault(); });
+    document.addEventListener('drop', function(e) {
+        e.preventDefault();
+        dragCount = 0;
+        if (overlay) overlay.style.display = 'none';
+        var files = Array.from(e.dataTransfer.files).filter(function(f) {
+            var ext = f.name.split('.').pop().toLowerCase();
+            return ALLOWED.indexOf(ext) >= 0;
+        });
+        if (files.length === 0) return;
+        uploadDroppedFiles(files);
+    });
+
+    async function uploadDroppedFiles(files) {
+        var libId = '${library.id}';
+        for (var i = 0; i < files.length; i++) {
+            var file = files[i];
+            var name = file.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ');
+            // Create book entry
+            var createResp = await fetch('/ui/libraries/' + libId + '/books', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: 'title=' + encodeURIComponent(name)
+            });
+            if (!createResp.ok) continue;
+            var html = createResp.text ? await createResp.text() : '';
+            // Extract book ID from the response (the HTMX response includes a link to /books/{id})
+            var match = html.match(/\/books\/([a-f0-9-]+)/);
+            if (!match) continue;
+            var bookId = match[1];
+            // Upload file
+            await fetch('/api/books/' + bookId + '/upload', {
+                method: 'POST',
+                headers: {'X-Filename': file.name, 'Content-Type': 'application/octet-stream'},
+                body: file
+            });
+            document.dispatchEvent(new CustomEvent('showToast', {
+                detail: {message: file.name + ' uploaded', type: 'success'}
+            }));
+        }
+        // Reload to show new books
+        setTimeout(function() { window.location.reload(); }, 500);
+    }
+})();
 </script>
 `)

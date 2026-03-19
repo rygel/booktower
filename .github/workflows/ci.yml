@@ -70,15 +70,52 @@ jobs:
           name: detekt-report
           path: target/detekt-reports/
 
-  # ── Tests: run on all three supported platforms ───────────────────────────
-  test:
+  # ── Tests: Linux first (fast, gates downstream) ──────────────────────────
+  test-linux:
+    name: Tests (Linux)
+    needs: code-quality
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-java@v5
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - uses: actions/cache@v5
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-maven-
+
+      - name: Run tests
+        run: mvn test -Dflyway.skip=true
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: test-results-ubuntu-latest
+          path: target/surefire-reports/
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: jacoco-report-ubuntu-latest
+          path: target/site/jacoco/
+
+  # ── Cross-platform tests: macOS + Windows (parallel, non-blocking) ──────
+  test-cross-platform:
     name: Tests (${{ matrix.os }})
     needs: code-quality
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: false          # keep running other OSes when one fails
+      fail-fast: false
       matrix:
-        os: [ ubuntu-latest, macos-latest, windows-latest ]
+        os: [ macos-latest, windows-latest ]
 
     steps:
       - uses: actions/checkout@v6
@@ -105,17 +142,10 @@ jobs:
           name: test-results-${{ matrix.os }}
           path: target/surefire-reports/
 
-      - name: Upload coverage report
-        uses: actions/upload-artifact@v6
-        if: always()
-        with:
-          name: jacoco-report-${{ matrix.os }}
-          path: target/site/jacoco/
-
   # ── Browser tests: Playwright on Linux (headless Chromium) ──────────────
   browser-tests:
     name: Browser Tests
-    needs: test
+    needs: test-linux
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -150,10 +180,10 @@ jobs:
           name: browser-test-results
           path: target/surefire-reports/
 
-  # ── Build: verify the JAR assembles on all three platforms ────────────────
+  # ── Build: verify the JAR assembles (Linux gates downstream, others parallel) ─
   build:
     name: Build (${{ matrix.os }})
-    needs: test
+    needs: test-linux
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
