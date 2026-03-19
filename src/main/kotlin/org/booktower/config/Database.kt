@@ -22,13 +22,23 @@ class Database private constructor(
         fun connect(config: DatabaseConfig): Database {
             logger.info("Connecting to database: ${config.url}")
 
+            // PostgreSQL needs stringtype=unspecified so JDBI can bind Instant.toString()
+            // to TIMESTAMP columns without explicit casting
+            val effectiveUrl =
+                if (config.url.startsWith("jdbc:postgresql") && !config.url.contains("stringtype=")) {
+                    val separator = if (config.url.contains('?')) "&" else "?"
+                    "${config.url}${separator}stringtype=unspecified"
+                } else {
+                    config.url
+                }
+
             val maxPool = System.getenv("BOOKTOWER_DB_POOL_MAX")?.toIntOrNull() ?: DEFAULT_MAX_POOL_SIZE
             val minIdle = System.getenv("BOOKTOWER_DB_POOL_MIN_IDLE")?.toIntOrNull() ?: DEFAULT_MIN_IDLE
             logger.info("Connection pool: max=$maxPool, minIdle=$minIdle")
 
             val hikariConfig =
                 HikariConfig().apply {
-                    jdbcUrl = config.url
+                    jdbcUrl = effectiveUrl
                     username = config.username
                     password = config.password
                     driverClassName = config.driver

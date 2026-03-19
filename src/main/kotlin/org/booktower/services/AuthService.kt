@@ -45,7 +45,7 @@ class AuthService(
                 .createUpdate(
                     """
                 INSERT INTO users (id, username, email, password_hash, created_at, updated_at, is_admin)
-                VALUES (?, ?, ?, ?, ?, ?, 0)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
                 ).bind(0, userId.toString())
                 .bind(1, request.username)
@@ -53,6 +53,7 @@ class AuthService(
                 .bind(3, passwordHash)
                 .bind(4, now.toString())
                 .bind(5, now.toString())
+                .bind(6, false)
                 .execute()
         }
 

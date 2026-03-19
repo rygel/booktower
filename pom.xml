@@ -30,7 +30,7 @@
         <maven-surefire-plugin.version>3.5.3</maven-surefire-plugin.version>
         <maven-enforcer-plugin.version>3.5.0</maven-enforcer-plugin.version>
         <maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
-        <flyway-maven-plugin.version>11.3.4</flyway-maven-plugin.version>
+        <flyway-maven-plugin.version>12.1.1</flyway-maven-plugin.version>
         <exec-maven-plugin.version>3.6.3</exec-maven-plugin.version>
         <jte-maven-plugin.version>3.2.3</jte-maven-plugin.version>
         <detekt-maven-plugin.version>1.23.8</detekt-maven-plugin.version>
@@ -78,7 +78,7 @@
         <pdfbox.version>3.0.7</pdfbox.version>
         <jdbi3.version>3.51.0</jdbi3.version>
         <hikari.version>7.0.2</hikari.version>
-        <http4k.version>6.35.0.0</http4k.version>
+        <http4k.version>6.36.0.0</http4k.version>
         <kotlin-logging.version>7.0.7</kotlin-logging.version>
         <!-- kotlin-logging 8.x is available but is a pre-release rewrite; 7.0.7 is latest stable -->
         <testcontainers.version>1.21.4</testcontainers.version>
@@ -168,6 +168,11 @@
             <dependency>
                 <groupId>org.flywaydb</groupId>
                 <artifactId>flyway-core</artifactId>
+                <version>${flyway-maven-plugin.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-database-postgresql</artifactId>
                 <version>${flyway-maven-plugin.version}</version>
             </dependency>
         <dependency>
@@ -304,6 +309,11 @@
             <version>${flyway-maven-plugin.version}</version>
         </dependency>
         <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-database-postgresql</artifactId>
+            <version>${flyway-maven-plugin.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.http4k</groupId>
             <artifactId>http4k-core</artifactId>
             <version>${http4k.version}</version>
@@ -357,7 +367,7 @@
         <dependency>
             <groupId>com.github.ben-manes.caffeine</groupId>
             <artifactId>caffeine</artifactId>
-            <version>3.2.0</version>
+            <version>3.2.3</version>
         </dependency>
         <dependency>
             <groupId>io.insert-koin</groupId>

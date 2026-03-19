@@ -106,7 +106,7 @@ class LibraryHealthIntegrationTest {
                 .toString()
         jdbi.useHandle<Exception> { h ->
             h
-                .createUpdate("INSERT INTO users (id,username,email,password_hash,created_at,updated_at,is_admin) VALUES (?,?,?,?,?,?,0)")
+                .createUpdate("INSERT INTO users (id,username,email,password_hash,created_at,updated_at,is_admin) VALUES (?,?,?,?,?,?,false)")
                 .bind(0, userId.toString())
                 .bind(1, "hlthpath_${System.nanoTime()}")
                 .bind(2, "hp_${System.nanoTime()}@t.com")
@@ -222,7 +222,7 @@ class LibraryHealthIntegrationTest {
             for ((uid, uname) in listOf(userId1 to "hlthuser1_${System.nanoTime()}", userId2 to "hlthuser2_${System.nanoTime()}")) {
                 h
                     .createUpdate(
-                        "INSERT INTO users (id,username,email,password_hash,created_at,updated_at,is_admin) VALUES (?,?,?,?,?,?,0)",
+                        "INSERT INTO users (id,username,email,password_hash,created_at,updated_at,is_admin) VALUES (?,?,?,?,?,?,false)",
                     ).bind(0, uid.toString())
                     .bind(1, uname)
                     .bind(2, "$uname@t.com")
