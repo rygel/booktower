@@ -435,11 +435,6 @@ class SeedService(
     private val coverExecutor: ExecutorService = Executors.newFixedThreadPool(4)
 
     /**
-     * Seeds demo data AND auto-triggers all file downloads (EPUBs, LibriVox audiobooks, comics).
-     * This is the "one-click" full demo — the user gets books they can immediately read.
-     * Returns null if the user already has libraries (idempotent guard on seed()).
-     */
-    /**
      * Seeds demo data for [userId]. Returns null if the user already has libraries (idempotent guard).
      */
     fun seed(userId: UUID): SeedResult? {
