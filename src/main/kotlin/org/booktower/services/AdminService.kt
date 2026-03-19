@@ -102,11 +102,8 @@ class AdminService(
                     // Table might not exist — skip
                 }
             }
-            // Delete all users except the calling admin
-            handle.createUpdate("DELETE FROM users WHERE id != :id")
-                .bind("id", preserveUserId.toString())
-                .execute()
-            logger.info("Database reset by admin $preserveUserId — all data deleted except admin account")
+            // User accounts are preserved — only content data is deleted
+            logger.info("Database reset by admin $preserveUserId — all content data deleted, user accounts preserved")
         }
     }
 }
