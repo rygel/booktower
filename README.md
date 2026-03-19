@@ -24,7 +24,7 @@ A self-hosted personal digital library manager built with Kotlin, http4k, and HT
 
 > [!NOTE]
 > This project is developed with the help of AI. However, a human is guiding it and making all critical design decisions. On top of that,
-  an extensive end-to-end test suite is co-developd and maintained to keep the quality high and prevent regressions.
+  an extensive end-to-end test suite is co-developed and maintained to keep the quality high and prevent regressions.
 
 ## Quick Start
 
