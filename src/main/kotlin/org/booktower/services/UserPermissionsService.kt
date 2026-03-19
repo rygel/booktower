@@ -1,9 +1,11 @@
 package org.booktower.services
 
+import com.github.benmanes.caffeine.cache.Caffeine
 import org.jdbi.v3.core.Jdbi
 import org.jdbi.v3.core.result.RowView
 import java.time.Instant
 import java.util.UUID
+import java.util.concurrent.TimeUnit
 
 data class UserPermissions(
     val userId: String,
@@ -38,8 +40,17 @@ data class UserPermissions(
 class UserPermissionsService(
     private val jdbi: Jdbi,
 ) {
+    private val cache =
+        Caffeine
+            .newBuilder()
+            .maximumSize(200)
+            .expireAfterWrite(5, TimeUnit.MINUTES)
+            .build<UUID, UserPermissions>()
+
     /** Returns permissions for a user, creating default row if not yet set. */
-    fun getPermissions(userId: UUID): UserPermissions {
+    fun getPermissions(userId: UUID): UserPermissions = cache.get(userId) { loadPermissions(it) }
+
+    private fun loadPermissions(userId: UUID): UserPermissions {
         val existing =
             jdbi.withHandle<UserPermissions?, Exception> { h ->
                 h
@@ -93,6 +104,7 @@ class UserPermissionsService(
         } else {
             insertPermissions(permissions.copy(userId = userId.toString()))
         }
+        cache.invalidate(userId)
         return getPermissions(userId)
     }
 

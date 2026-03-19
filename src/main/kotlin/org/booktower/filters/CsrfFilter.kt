@@ -9,6 +9,13 @@ import java.net.URI
 
 private val logger = LoggerFactory.getLogger("booktower.CsrfFilter")
 
+/** Extracts host:port from URI, omitting default ports (80/443). */
+private fun extractHostWithPort(uri: URI): String? {
+    val host = uri.host ?: return null
+    val port = uri.port
+    return if (port > 0 && port != 80 && port != 443) "$host:$port" else host
+}
+
 fun csrfFilter(allowedHosts: Set<String>): Filter =
     Filter { next ->
         { req ->
@@ -20,16 +27,16 @@ fun csrfFilter(allowedHosts: Set<String>): Filter =
                     when {
                         origin != null -> {
                             try {
-                                URI(origin).host
-                            } catch (e: Exception) {
+                                extractHostWithPort(URI(origin))
+                            } catch (_: Exception) {
                                 origin
                             }
                         }
 
                         referer != null -> {
                             try {
-                                URI(referer).host
-                            } catch (e: Exception) {
+                                extractHostWithPort(URI(referer))
+                            } catch (_: Exception) {
                                 null
                             }
                         }
@@ -39,7 +46,8 @@ fun csrfFilter(allowedHosts: Set<String>): Filter =
                         }
                     }
 
-                if (sourceHost == null || sourceHost in allowedHosts) {
+                val hostOnly = sourceHost?.substringBefore(':')
+                if (sourceHost == null || sourceHost in allowedHosts || hostOnly in allowedHosts) {
                     next(req)
                 } else {
                     logger.warn("CSRF blocked: ${req.method} ${req.uri} from origin=$origin referer=$referer")
