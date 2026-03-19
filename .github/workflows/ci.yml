@@ -200,6 +200,7 @@ jobs:
         run: |
           docker run -d --name bt-smoke -p 9999:8080 \
             -e BOOKTOWER_QUICKSTART=true \
+            -e BOOKTOWER_JWT_SECRET=ci-test-secret-not-for-production \
             booktower:ci
           for i in $(seq 1 30); do
             if curl -sf http://localhost:9999/health > /dev/null 2>&1; then
