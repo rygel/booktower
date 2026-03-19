@@ -30,6 +30,7 @@
     <link rel="stylesheet" href="/static/css/app.css">
     <link rel="stylesheet" href="/static/vendor/remixicon.css">
     <script src="/static/vendor/htmx.min.js" defer></script>
+    <script src="/static/js/shortcuts.js" defer></script>
 </head>
 <body class="bt-app">
 

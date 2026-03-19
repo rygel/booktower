@@ -139,7 +139,7 @@
     </a>
     <div class="sep"></div>
     <span class="title">${book.title}</span>
-    <span id="save-indicator" style="font-size:0.7rem; color:#34d399; min-width:5rem; text-align:right; white-space:nowrap; visibility:hidden; flex-shrink:0;">${i18n.translate("msg.progress.saved")}</span>
+    <span id="save-indicator" style="font-size:0.7rem; color:#34d399; min-width:5rem; text-align:right; white-space:nowrap; visibility:hidden; flex-shrink:0; display:flex; align-items:center; gap:0.25rem; justify-content:flex-end;"><i class="ri-check-line"></i> ${i18n.translate("msg.progress.saved")}</span>
     <div class="sep"></div>
     @if(readerType == "audio-multi")
         <button id="btn-prev-ch" class="tool-btn" title="${i18n.translate("page.reader.audio.prev.chapter")}" disabled>
@@ -1512,7 +1512,9 @@ var BT_DEVICE = (function() {
         lastSaved = sec;
         var body = new URLSearchParams();
         body.append('currentPage', sec);
-        fetch(PROG_URL, { method: 'POST', body: body }).catch(function () {});
+        fetch(PROG_URL, { method: 'POST', body: body }).then(function (r) {
+            if (r.ok && saveInd) { saveInd.style.visibility = 'visible'; setTimeout(function () { saveInd.style.visibility = 'hidden'; }, 2000); }
+        }).catch(function () {});
     }
 
     document.querySelectorAll('.speed-btn').forEach(function (btn) {
