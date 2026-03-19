@@ -1417,12 +1417,13 @@ class BookService(
         }
     }
 
-    /** Returns all books for a user matching a shelf rule (no pagination limit). Used by MagicShelfService. */
+    /** Returns books for a user matching a shelf rule. Used by MagicShelfService. */
     fun getBooksForShelf(
         userId: UUID,
         statusFilter: String? = null,
         tagFilter: String? = null,
         ratingGte: Int? = null,
+        limit: Int = 200,
     ): List<BookDto> {
         val statusClause = if (statusFilter != null) " AND bs.status = ?" else ""
         val tagClause =
@@ -1444,6 +1445,7 @@ class BookService(
                 LEFT JOIN book_ratings br ON br.book_id = b.id AND br.user_id = ?
                 WHERE l.user_id = ?${statusClause}${tagClause}$ratingGteClause
                 ORDER BY b.title
+                LIMIT ?
                 """,
                     )
                 q.bind(0, userId.toString())
@@ -1456,6 +1458,7 @@ class BookService(
                     q.bind(idx++, tagFilter)
                 }
                 if (ratingGte != null) q.bind(idx++, ratingGte)
+                q.bind(idx++, limit)
                 q.map { row -> mapBook(row) }.list()
             }
         val tagMap = fetchTagsForBooks(userId, books.map { it.id })
