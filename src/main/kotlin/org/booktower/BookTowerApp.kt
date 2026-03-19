@@ -100,7 +100,9 @@ fun main() {
                 CreateUserRequest("demo", "demo@booktower.local", "demo1234"),
             )
         if (result.isSuccess) {
-            val userId = jwtService.extractUserId(result.getOrThrow().token)!!
+            val userId =
+                jwtService.extractUserId(result.getOrThrow().token)
+                    ?: error("Failed to extract user ID from quickstart token")
             libraryService.createLibrary(userId, CreateLibraryRequest("My Library", "${config.storage.booksPath}/demo"))
             logger.info("=================================================")
             logger.info("  QUICKSTART MODE")

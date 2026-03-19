@@ -12,12 +12,18 @@ import java.time.format.DateTimeFormatter
 import java.util.UUID
 
 private val logger = LoggerFactory.getLogger("booktower.AuthService")
+private val EMAIL_REGEX = Regex("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")
 
 class AuthService(
     private val jdbi: Jdbi,
     private val jwtService: JwtService,
 ) {
     fun register(request: CreateUserRequest): Result<LoginResponse> {
+        val email = request.email.trim().lowercase()
+        if (!EMAIL_REGEX.matches(email) || email.length > 100) {
+            return Result.failure(IllegalArgumentException("Invalid email address"))
+        }
+
         val now = Instant.now()
         val userId = UUID.randomUUID()
         val passwordHash = BCrypt.hashpw(request.password, BCrypt.gensalt())
@@ -174,7 +180,7 @@ class AuthService(
         }
 
         val trimmedEmail = newEmail.trim().lowercase()
-        if (!trimmedEmail.contains("@") || trimmedEmail.length > 100) {
+        if (!EMAIL_REGEX.matches(trimmedEmail) || trimmedEmail.length > 100) {
             return Result.failure(IllegalArgumentException("Invalid email address"))
         }
 
