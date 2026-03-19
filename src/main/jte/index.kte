@@ -66,6 +66,7 @@
                                 <input type="password" name="password" id="login-password" required autocomplete="current-password"
                                     style="width:100%; border-radius:0.5rem; border:1px solid; padding:0.625rem 2.5rem 0.625rem 0.75rem; font-size:0.875rem; box-sizing:border-box;">
                                 <button type="button"
+                                    aria-label="${i18n.translate("aria.toggle.password")}"
                                     onclick="var f=document.getElementById('login-password');f.type=f.type==='password'?'text':'password';this.querySelector('i').className=f.type==='password'?'ri-eye-line':'ri-eye-off-line'"
                                     style="position:absolute; right:0; top:0; bottom:0; padding:0 0.75rem; background:transparent; border:none; cursor:pointer; color:var(--bt-subtle);">
                                     <i class="ri-eye-line"></i>
@@ -110,6 +111,7 @@
                                 <input type="password" name="password" id="reg-password" required minlength="8" autocomplete="new-password"
                                     style="width:100%; border-radius:0.5rem; border:1px solid; padding:0.625rem 2.5rem 0.625rem 0.75rem; font-size:0.875rem; box-sizing:border-box;">
                                 <button type="button"
+                                    aria-label="${i18n.translate("aria.toggle.password")}"
                                     onclick="var f=document.getElementById('reg-password');f.type=f.type==='password'?'text':'password';this.querySelector('i').className=f.type==='password'?'ri-eye-line':'ri-eye-off-line'"
                                     style="position:absolute; right:0; top:0; bottom:0; padding:0 0.75rem; background:transparent; border:none; cursor:pointer; color:var(--bt-subtle);">
                                     <i class="ri-eye-line"></i>

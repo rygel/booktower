@@ -1,6 +1,8 @@
+@import org.booktower.i18n.I18nService
 @param items: List<kotlin.Pair<String, String?>>
+@param i18n: I18nService? = null
 
-<nav style="font-size:0.8rem; color:var(--bt-muted); margin-bottom:1.5rem; display:flex; align-items:center; gap:0.375rem; flex-wrap:wrap;">
+<nav aria-label="${i18n?.translate("aria.breadcrumb") ?: "Breadcrumb"}" style="font-size:0.8rem; color:var(--bt-muted); margin-bottom:1.5rem; display:flex; align-items:center; gap:0.375rem; flex-wrap:wrap;">
     @for(item in items)
         @if(item.second != null)
             <a href="${item.second}" style="color:var(--bt-accent-dim); text-decoration:none;"

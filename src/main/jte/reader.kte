@@ -142,17 +142,17 @@
     <span id="save-indicator" style="font-size:0.7rem; color:#34d399; min-width:5rem; text-align:right; white-space:nowrap; visibility:hidden; flex-shrink:0;">${i18n.translate("msg.progress.saved")}</span>
     <div class="sep"></div>
     @if(readerType == "audio-multi")
-        <button id="btn-prev-ch" class="tool-btn" title="${i18n.translate("page.reader.audio.prev.chapter")}" disabled>
+        <button id="btn-prev-ch" class="tool-btn" title="${i18n.translate("page.reader.audio.prev.chapter")}" aria-label="${i18n.translate("page.reader.audio.prev.chapter")}" disabled>
             <i class="ri-skip-back-line"></i>
         </button>
         <span id="ch-info" style="font-size:0.8rem; color:var(--bt-muted); white-space:nowrap;">—</span>
-        <button id="btn-next-ch" class="tool-btn" title="${i18n.translate("page.reader.audio.next.chapter")}" disabled>
+        <button id="btn-next-ch" class="tool-btn" title="${i18n.translate("page.reader.audio.next.chapter")}" aria-label="${i18n.translate("page.reader.audio.next.chapter")}" disabled>
             <i class="ri-skip-forward-line"></i>
         </button>
         <div class="sep"></div>
         <span id="audio-multi-time" style="font-size:0.8rem; color:var(--bt-muted); white-space:nowrap;">0:00 / —</span>
     @elseif(readerType != "audio")
-        <button id="btn-prev" class="tool-btn" title="${i18n.translate("page.reader.prev")} (←)" disabled>
+        <button id="btn-prev" class="tool-btn" title="${i18n.translate("page.reader.prev")} (←)" aria-label="${i18n.translate("page.reader.prev")}" disabled>
             <i class="ri-arrow-left-s-line"></i>
         </button>
         <span id="page-info-wrap">
@@ -161,7 +161,7 @@
                 <input id="loc-jump" type="number" min="1" placeholder="${i18n.translate("page.reader.loc.jump.placeholder")}" title="${i18n.translate("page.reader.loc.jump")}">
             @endif
         </span>
-        <button id="btn-next" class="tool-btn" title="${i18n.translate("page.reader.next")} (→)" disabled>
+        <button id="btn-next" class="tool-btn" title="${i18n.translate("page.reader.next")} (→)" aria-label="${i18n.translate("page.reader.next")}" disabled>
             <i class="ri-arrow-right-s-line"></i>
         </button>
         @if(readerType == "pdf")
@@ -176,9 +176,9 @@
     @endif
     @if(readerType != "comic" && readerType != "audio" && readerType != "audio-multi")
         <div class="sep"></div>
-        <button id="btn-zoom-out" class="tool-btn" title="${i18n.translate("page.reader.zoom.out")} (−)"><i class="ri-zoom-out-line"></i></button>
+        <button id="btn-zoom-out" class="tool-btn" title="${i18n.translate("page.reader.zoom.out")} (−)" aria-label="${i18n.translate("page.reader.zoom.out")}"><i class="ri-zoom-out-line"></i></button>
         <span id="zoom-pct">100%</span>
-        <button id="btn-zoom-in" class="tool-btn" title="${i18n.translate("page.reader.zoom.in")} (+)"><i class="ri-zoom-in-line"></i></button>
+        <button id="btn-zoom-in" class="tool-btn" title="${i18n.translate("page.reader.zoom.in")} (+)" aria-label="${i18n.translate("page.reader.zoom.in")}"><i class="ri-zoom-in-line"></i></button>
     @endif
     <div class="sep"></div>
     <button id="btn-bookmarks" class="tool-btn" title="${i18n.translate("page.reader.bookmarks")}">
@@ -191,7 +191,7 @@
     @endif
     @if(readerType == "epub" || readerType == "pdf" || readerType == "comic")
         <div class="sep"></div>
-        <button id="btn-prefs" class="tool-btn" title="${i18n.translate("page.reader.prefs")}">
+        <button id="btn-prefs" class="tool-btn" title="${i18n.translate("page.reader.prefs")}" aria-label="${i18n.translate("aria.reader.settings")}">
             <i class="ri-settings-3-line"></i>
         </button>
     @endif
@@ -224,7 +224,7 @@
         <div id="audio-multi-wrap">
             <div id="audio-multi-card">
                 @if(book.coverUrl != null)
-                    <img src="${book.coverUrl}" id="audio-multi-cover" alt="cover">
+                    <img src="${book.coverUrl}" id="audio-multi-cover" alt="${book.title}">
                 @else
                     <div id="audio-multi-cover-ph"><i class="ri-headphone-line"></i></div>
                 @endif
@@ -258,7 +258,7 @@
         <div id="audio-wrap">
             <div id="audio-card">
                 @if(book.coverUrl != null)
-                    <img src="${book.coverUrl}" id="audio-cover" alt="cover">
+                    <img src="${book.coverUrl}" id="audio-cover" alt="${book.title}">
                 @else
                     <div id="audio-cover-placeholder"><i class="ri-music-2-line"></i></div>
                 @endif
@@ -312,7 +312,7 @@
         <div id="kindle-download" style="flex:1; display:none; align-items:center; justify-content:center; padding:2rem;">
             <div style="text-align:center; max-width:28rem;">
                 @if(book.coverUrl != null)
-                    <img src="${book.coverUrl}" alt="cover"
+                    <img src="${book.coverUrl}" alt="${book.title}"
                          style="max-height:14rem; border-radius:0.5rem; box-shadow:0 4px 16px rgba(0,0,0,0.25); margin-bottom:1.5rem;">
                 @else
                     <div style="width:8rem; height:11rem; background:var(--bt-surface); border:1px solid var(--bt-border); border-radius:0.5rem; display:inline-flex; align-items:center; justify-content:center; margin-bottom:1.5rem;">
@@ -432,9 +432,9 @@
             <div class="pref-section">
                 <p class="pref-section-label">${i18n.translate("page.reader.prefs.fontsize")}</p>
                 <div class="pref-fs-row">
-                    <button class="pref-fs-btn" id="pref-fs-dec">−</button>
+                    <button class="pref-fs-btn" id="pref-fs-dec" aria-label="${i18n.translate("page.reader.zoom.out")}">−</button>
                     <span id="pref-fs-val">100%</span>
-                    <button class="pref-fs-btn" id="pref-fs-inc">+</button>
+                    <button class="pref-fs-btn" id="pref-fs-inc" aria-label="${i18n.translate("page.reader.zoom.in")}">+</button>
                 </div>
             </div>
             <div class="pref-section">
@@ -526,10 +526,10 @@
 <div id="annot-popup">
     <p>${i18n.translate("page.reader.annotations")}</p>
     <div class="an-color-row">
-        <button class="an-color-btn selected" data-color="yellow" style="background:#fbbf24;" title="Yellow"></button>
-        <button class="an-color-btn" data-color="green" style="background:#34d399;" title="Green"></button>
-        <button class="an-color-btn" data-color="blue" style="background:#60a5fa;" title="Blue"></button>
-        <button class="an-color-btn" data-color="pink" style="background:#f472b6;" title="Pink"></button>
+        <button class="an-color-btn selected" data-color="yellow" style="background:#fbbf24;" title="Yellow" aria-label="Yellow"></button>
+        <button class="an-color-btn" data-color="green" style="background:#34d399;" title="Green" aria-label="Green"></button>
+        <button class="an-color-btn" data-color="blue" style="background:#60a5fa;" title="Blue" aria-label="Blue"></button>
+        <button class="an-color-btn" data-color="pink" style="background:#f472b6;" title="Pink" aria-label="Pink"></button>
     </div>
     <div class="an-action-row">
         <button id="annot-save-btn">${i18n.translate("page.reader.annotation.save")}</button>

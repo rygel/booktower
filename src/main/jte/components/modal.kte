@@ -3,7 +3,7 @@
 @param title: String
 @param content: Content
 
-<div id="${id}" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); align-items:center; justify-content:center; z-index:50;"
+<div id="${id}" role="dialog" aria-modal="true" aria-label="${title}" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); align-items:center; justify-content:center; z-index:50;"
      onclick="if(event.target===this)this.style.display='none'">
     <div class="modal-panel" style="padding:1.5rem; width:100%; max-width:28rem; border-radius:0.75rem; border:1px solid var(--bt-border);" onclick="event.stopPropagation()">
         <h2 style="font-size:1.125rem; font-weight:700; color:var(--bt-text); margin-bottom:1.25rem;">${title}</h2>

@@ -30,7 +30,7 @@
 <div style="padding:2rem;">
 
     <!-- Breadcrumb -->
-    @template.components.breadcrumb(items = listOf(i18n.translate("nav.libraries") to "/libraries", library.name to null))
+    @template.components.breadcrumb(items = listOf(i18n.translate("nav.libraries") to "/libraries", library.name to null), i18n = i18n)
 
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.75rem; flex-wrap:wrap; gap:1rem;">
         <div>
@@ -41,33 +41,35 @@
             <form action="/search" method="get" style="display:flex;">
                 <input type="hidden" name="libId" value="${library.id}">
                 <input type="text" name="q" placeholder="${i18n.translate("placeholder.search.books")}"
+                    aria-label="${i18n.translate("aria.search.in.library")}"
                     style="border-radius:0.5rem 0 0 0.5rem; border:1px solid; border-right:none; padding:0.5rem 0.75rem; font-size:0.8rem; width:10rem;">
                 <button type="submit"
+                    aria-label="${i18n.translate("aria.search.in.library")}"
                     style="border-radius:0 0.5rem 0.5rem 0; border:1px solid var(--bt-border-input); padding:0.5rem 0.75rem; background:var(--bt-input-bg); color:var(--bt-muted); cursor:pointer;">
                     <i class="ri-search-line"></i>
                 </button>
             </form>
-            <select onchange="window.location.href='/libraries/${library.id}?sort='+this.value+'&status=${currentStatus}&tag=${currentTag}&rating=${currentRating}'"
+            <select aria-label="${i18n.translate("label.sort.by")}" onchange="window.location.href='/libraries/${library.id}?sort='+this.value+'&status=${currentStatus}&tag=${currentTag}&rating=${currentRating}'"
                 style="border-radius:0.5rem; border:1px solid var(--bt-border-input); padding:0.4rem 0.75rem; font-size:0.8rem; background:var(--bt-input-bg); color:var(--bt-muted); cursor:pointer;">
                 @for(opt in sortOptions)
                     <option value="${opt.name}" selected="${opt.name == currentSort}">${i18n.translate(opt.label)}</option>
                 @endfor
             </select>
-            <select onchange="window.location.href='/libraries/${library.id}?sort=${currentSort}&status='+this.value+'&tag=${currentTag}&rating=${currentRating}'"
+            <select aria-label="${i18n.translate("label.status")}" onchange="window.location.href='/libraries/${library.id}?sort=${currentSort}&status='+this.value+'&tag=${currentTag}&rating=${currentRating}'"
                 style="border-radius:0.5rem; border:1px solid var(--bt-border-input); padding:0.4rem 0.75rem; font-size:0.8rem; background:var(--bt-input-bg); color:var(--bt-muted); cursor:pointer;">
                 <option value="ALL" selected="${currentStatus == "ALL"}">${i18n.translate("filter.all")}</option>
                 @for(opt in statusOptions)
                     <option value="${opt.name}" selected="${opt.name == currentStatus}">${i18n.translate(opt.label)}</option>
                 @endfor
             </select>
-            <select onchange="window.location.href='/libraries/${library.id}?sort=${currentSort}&status=${currentStatus}&tag='+this.value+'&rating=${currentRating}'"
+            <select aria-label="${i18n.translate("label.tags")}" onchange="window.location.href='/libraries/${library.id}?sort=${currentSort}&status=${currentStatus}&tag='+this.value+'&rating=${currentRating}'"
                 style="border-radius:0.5rem; border:1px solid var(--bt-border-input); padding:0.4rem 0.75rem; font-size:0.8rem; background:var(--bt-input-bg); color:var(--bt-muted); cursor:pointer;">
                 <option value="">${i18n.translate("filter.all.tags")}</option>
                 @for(tag in userTags)
                     <option value="${tag}" selected="${tag == currentTag}">${tag}</option>
                 @endfor
             </select>
-            <select onchange="window.location.href='/libraries/${library.id}?sort=${currentSort}&status=${currentStatus}&tag=${currentTag}&rating='+this.value"
+            <select aria-label="${i18n.translate("label.rating")}" onchange="window.location.href='/libraries/${library.id}?sort=${currentSort}&status=${currentStatus}&tag=${currentTag}&rating='+this.value"
                 style="border-radius:0.5rem; border:1px solid var(--bt-border-input); padding:0.4rem 0.75rem; font-size:0.8rem; background:var(--bt-input-bg); color:var(--bt-muted); cursor:pointer;">
                 <option value="0" selected="${currentRating == 0}">${i18n.translate("filter.all.ratings")}</option>
                 <option value="1" selected="${currentRating == 1}">\u2605 ${i18n.translate("filter.rating.andabove")}</option>

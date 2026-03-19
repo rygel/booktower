@@ -19,7 +19,7 @@
 <div style="padding:2rem;">
 
     <!-- Breadcrumb -->
-    @template.components.breadcrumb(items = listOf(i18n.translate("nav.libraries") to "/libraries", shelf.name to null))
+    @template.components.breadcrumb(items = listOf(i18n.translate("nav.libraries") to "/libraries", shelf.name to null), i18n = i18n)
 
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.75rem; flex-wrap:wrap; gap:1rem;">
         <div>

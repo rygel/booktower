@@ -24,16 +24,17 @@
 
     <form action="/search" method="get" style="display:flex; gap:0.75rem; margin-bottom:2rem; flex-wrap:wrap;">
         <input type="text" name="q" value="${query}" autofocus
+            aria-label="${i18n.translate("aria.search")}"
             placeholder="${i18n.translate("placeholder.search")}"
             style="flex:1; min-width:12rem; border-radius:0.5rem; border:1px solid; padding:0.75rem 1rem; font-size:0.875rem;">
-        <select name="status"
+        <select name="status" aria-label="${i18n.translate("label.status")}"
             style="border-radius:0.5rem; border:1px solid var(--bt-border-input); padding:0.5rem 0.75rem; font-size:0.8rem; background:var(--bt-input-bg); color:var(--bt-muted); cursor:pointer;">
             <option value="ALL" selected="${currentStatus == "ALL"}">${i18n.translate("filter.all")}</option>
             @for(opt in statusOptions)
                 <option value="${opt.name}" selected="${opt.name == currentStatus}">${i18n.translate(opt.label)}</option>
             @endfor
         </select>
-        <select name="rating"
+        <select name="rating" aria-label="${i18n.translate("label.rating")}"
             style="border-radius:0.5rem; border:1px solid var(--bt-border-input); padding:0.5rem 0.75rem; font-size:0.8rem; background:var(--bt-input-bg); color:var(--bt-muted); cursor:pointer;">
             <option value="0" selected="${currentRating == 0}">${i18n.translate("filter.all.ratings")}</option>
             <option value="1" selected="${currentRating == 1}">\u2605 ${i18n.translate("filter.rating.andabove")}</option>

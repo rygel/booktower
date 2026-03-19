@@ -36,6 +36,15 @@ input:focus, select:focus, textarea:focus {
 }
 
 /* ========================================
+   FOCUS INDICATORS (Accessibility)
+   ======================================== */
+
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible {
+  outline: 2px solid var(--bt-accent);
+  outline-offset: 2px;
+}
+
+/* ========================================
    COMPONENTS
    ======================================== */
 

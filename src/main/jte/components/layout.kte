@@ -47,12 +47,13 @@
                 <i class="ri-building-2-fill" style="font-size:1.25rem; color:var(--bt-accent-dim);"></i>
                 <span style="font-weight:700; color:var(--bt-text); font-size:1rem;">${i18n.translate("app.title")}</span>
             </a>
-            <form method="GET" action="/search" role="search"
+            <form method="GET" action="/search" role="search" aria-label="${i18n.translate("aria.search")}"
                   style="flex:1; max-width:28rem; margin:0 1.5rem;">
                 <div style="position:relative;">
                     <i class="ri-search-line" style="position:absolute; left:0.625rem; top:50%; transform:translateY(-50%); color:var(--bt-muted); pointer-events:none; font-size:0.875rem;"></i>
                     <input type="search" name="q"
                            value="${searchQuery}"
+                           aria-label="${i18n.translate("aria.search")}"
                            placeholder="${i18n.translate("placeholder.search")}"
                            style="width:100%; padding:0.4rem 0.75rem 0.4rem 2rem; border-radius:0.5rem; border:1px solid var(--bt-border-input); background:var(--bt-bg); color:var(--bt-text); font-size:0.8rem; outline:none; transition:border-color 0.15s;"
                            onfocus="this.style.borderColor='var(--bt-accent-dim)'"
@@ -63,7 +64,8 @@
                 @if(username != null)
                 <button id="notif-btn" onclick="toggleNotifPanel()"
                         style="position:relative; background:transparent; border:none; cursor:pointer; color:var(--bt-muted); font-size:1.1rem; padding:0.25rem; display:flex; align-items:center;"
-                        title="${i18n.translate("label.notifications")}">
+                        title="${i18n.translate("label.notifications")}"
+                        aria-label="${i18n.translate("label.notifications")}">
                     <i class="ri-notification-3-line"></i>
                     <span id="notif-badge"
                           style="display:none; position:absolute; top:-2px; right:-4px; background:var(--bt-danger); color:#fff; font-size:0.6rem; font-weight:700; min-width:1rem; height:1rem; border-radius:0.5rem; line-height:1rem; text-align:center; padding:0 0.2rem;"></span>
@@ -93,51 +95,51 @@
     <div style="display:flex; flex:1; min-height:0; overflow:hidden;">
 
         <!-- Sidebar -->
-        <nav style="width:14rem; background:var(--bt-surface); border-right:1px solid var(--bt-border); flex-shrink:0; display:flex; flex-direction:column;">
+        <nav role="navigation" aria-label="${i18n.translate("aria.sidebar")}" style="width:14rem; background:var(--bt-surface); border-right:1px solid var(--bt-border); flex-shrink:0; display:flex; flex-direction:column;">
             <div style="flex:1; padding:1.25rem 0.875rem; display:flex; flex-direction:column; gap:0.25rem; overflow-y:auto;">
                 <p style="font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--bt-subtle); padding:0 0.5rem; margin:0 0 0.625rem; font-weight:600;">${i18n.translate("nav.section")}</p>
-                <a href="/" class="sidebar-link ${if (currentPage == "home") "active" else ""}">
+                <a href="/" class="sidebar-link ${if (currentPage == "home") "active" else ""}" $unsafe{if (currentPage == "home") "aria-current=\"page\"" else ""}>
                     <i class="ri-home-line" style="font-size:1rem; width:1rem; text-align:center;"></i>
                     ${i18n.translate("nav.home")}
                 </a>
-                <a href="/libraries" class="sidebar-link ${if (currentPage == "libraries" || currentPage == "library") "active" else ""}">
+                <a href="/libraries" class="sidebar-link ${if (currentPage == "libraries" || currentPage == "library") "active" else ""}" $unsafe{if (currentPage == "libraries" || currentPage == "library") "aria-current=\"page\"" else ""}>
                     <i class="ri-stack-line" style="font-size:1rem; width:1rem; text-align:center;"></i>
                     ${i18n.translate("nav.libraries")}
                 </a>
-                <a href="/search" class="sidebar-link ${if (currentPage == "search") "active" else ""}">
+                <a href="/search" class="sidebar-link ${if (currentPage == "search") "active" else ""}" $unsafe{if (currentPage == "search") "aria-current=\"page\"" else ""}>
                     <i class="ri-search-line" style="font-size:1rem; width:1rem; text-align:center;"></i>
                     ${i18n.translate("nav.search")}
                 </a>
-                <a href="/queue" class="sidebar-link ${if (currentPage == "queue") "active" else ""}">
+                <a href="/queue" class="sidebar-link ${if (currentPage == "queue") "active" else ""}" $unsafe{if (currentPage == "queue") "aria-current=\"page\"" else ""}>
                     <i class="ri-bookmark-line" style="font-size:1rem; width:1rem; text-align:center;"></i>
                     ${i18n.translate("nav.queue")}
                 </a>
-                <a href="/series" class="sidebar-link ${if (currentPage == "series") "active" else ""}">
+                <a href="/series" class="sidebar-link ${if (currentPage == "series") "active" else ""}" $unsafe{if (currentPage == "series") "aria-current=\"page\"" else ""}>
                     <i class="ri-stack-line" style="font-size:1rem; width:1rem; text-align:center;"></i>
                     ${i18n.translate("nav.series")}
                 </a>
-                <a href="/authors" class="sidebar-link ${if (currentPage == "authors") "active" else ""}">
+                <a href="/authors" class="sidebar-link ${if (currentPage == "authors") "active" else ""}" $unsafe{if (currentPage == "authors") "aria-current=\"page\"" else ""}>
                     <i class="ri-user-2-line" style="font-size:1rem; width:1rem; text-align:center;"></i>
                     ${i18n.translate("nav.authors")}
                 </a>
-                <a href="/tags" class="sidebar-link ${if (currentPage == "tags") "active" else ""}">
+                <a href="/tags" class="sidebar-link ${if (currentPage == "tags") "active" else ""}" $unsafe{if (currentPage == "tags") "aria-current=\"page\"" else ""}>
                     <i class="ri-price-tag-3-line" style="font-size:1rem; width:1rem; text-align:center;"></i>
                     ${i18n.translate("nav.tags")}
                 </a>
-                <a href="/analytics" class="sidebar-link ${if (currentPage == "analytics") "active" else ""}">
+                <a href="/analytics" class="sidebar-link ${if (currentPage == "analytics") "active" else ""}" $unsafe{if (currentPage == "analytics") "aria-current=\"page\"" else ""}>
                     <i class="ri-bar-chart-line" style="font-size:1rem; width:1rem; text-align:center;"></i>
                     ${i18n.translate("nav.analytics")}
                 </a>
-                <a href="/activity" class="sidebar-link ${if (currentPage == "activity") "active" else ""}">
+                <a href="/activity" class="sidebar-link ${if (currentPage == "activity") "active" else ""}" $unsafe{if (currentPage == "activity") "aria-current=\"page\"" else ""}>
                     <i class="ri-history-line" style="font-size:1rem; width:1rem; text-align:center;"></i>
                     ${i18n.translate("nav.activity")}
                 </a>
-                <a href="/profile" class="sidebar-link ${if (currentPage == "profile") "active" else ""}">
+                <a href="/profile" class="sidebar-link ${if (currentPage == "profile") "active" else ""}" $unsafe{if (currentPage == "profile") "aria-current=\"page\"" else ""}>
                     <i class="ri-user-settings-line" style="font-size:1rem; width:1rem; text-align:center;"></i>
                     ${i18n.translate("nav.profile")}
                 </a>
                 @if(isAdmin)
-                <a href="/admin" class="sidebar-link ${if (currentPage == "admin") "active" else ""}">
+                <a href="/admin" class="sidebar-link ${if (currentPage == "admin") "active" else ""}" $unsafe{if (currentPage == "admin") "aria-current=\"page\"" else ""}>
                     <i class="ri-shield-user-line" style="font-size:1rem; width:1rem; text-align:center;"></i>
                     ${i18n.translate("nav.admin")}
                 </a>
@@ -166,13 +168,13 @@
     </footer>
 
     <!-- Notification panel (hidden by default) -->
-    <div id="notif-panel"
+    <div id="notif-panel" role="dialog" aria-label="${i18n.translate("label.notifications")}"
          style="display:none; position:fixed; top:3.75rem; right:1rem; width:22rem; max-height:28rem; overflow-y:auto;
                 background:var(--bt-surface); border:1px solid var(--bt-border); border-radius:0.625rem;
                 box-shadow:0 8px 24px rgba(0,0,0,0.25); z-index:1000;">
         <div style="display:flex; align-items:center; justify-content:space-between; padding:0.75rem 1rem; border-bottom:1px solid var(--bt-border);">
             <span style="font-size:0.8rem; font-weight:600; color:var(--bt-text);">${i18n.translate("label.notifications")}</span>
-            <button onclick="markAllRead()" style="font-size:0.7rem; color:var(--bt-accent-dim); background:none; border:none; cursor:pointer;">${i18n.translate("action.mark.all.read")}</button>
+            <button onclick="markAllRead()" aria-label="${i18n.translate("action.mark.all.read")}" style="font-size:0.7rem; color:var(--bt-accent-dim); background:none; border:none; cursor:pointer;">${i18n.translate("action.mark.all.read")}</button>
         </div>
         <div id="notif-list" style="padding:0.5rem;"></div>
     </div>
@@ -186,6 +188,7 @@
             if (!container) return;
             var toast = document.createElement('div');
             toast.className = 'bt-toast ' + (type || 'info');
+            toast.setAttribute('role', 'alert');
             var icon = type === 'success' ? 'ri-checkbox-circle-line'
                      : type === 'error'   ? 'ri-error-warning-line'
                      :                      'ri-information-line';
@@ -375,6 +378,7 @@
     <!-- Download progress indicator -->
     <div id="dl-indicator" style="position:fixed; bottom:1rem; right:1rem; z-index:100; display:none;">
         <button id="dl-toggle" onclick="toggleDlPanel()"
+                aria-label="${i18n.translate("aria.downloads")}"
                 style="background:var(--bt-accent); color:#fff; border:none; border-radius:50%; width:3rem; height:3rem; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,0.3); position:relative;">
             <i class="ri-download-line" style="font-size:1.25rem;"></i>
             <span id="dl-count" style="position:absolute; top:-4px; right:-4px; background:var(--bt-danger); color:#fff; font-size:0.6rem; font-weight:700; min-width:1.1rem; height:1.1rem; border-radius:50%; display:flex; align-items:center; justify-content:center;">0</span>

@@ -1,5 +1,7 @@
+@import org.booktower.i18n.I18nService
 @import org.booktower.models.BookmarkDto
 @param bookmark: BookmarkDto
+@param i18n: I18nService? = null
 
 <li id="bookmark-${bookmark.id}" style="display:flex; align-items:flex-start; justify-content:space-between; gap:0.75rem; padding:0.75rem 0; border-bottom:1px solid var(--bt-border);">
     <div style="flex:1; min-width:0;">
@@ -14,6 +16,7 @@
         @endif
     </div>
     <button
+        aria-label="${i18n?.translate("aria.delete.bookmark") ?: "Delete bookmark"}"
         style="font-size:0.9rem; color:var(--bt-subtle); background:transparent; border:none; cursor:pointer; flex-shrink:0; padding:0.125rem 0.375rem; border-radius:0.375rem; transition:color 0.15s;"
         onmouseover="this.style.color='var(--bt-danger)'" onmouseout="this.style.color='var(--bt-subtle)'"
         hx-delete="/ui/bookmarks/${bookmark.id}"
