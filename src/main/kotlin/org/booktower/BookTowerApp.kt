@@ -39,6 +39,7 @@ fun main() {
     val logger = LoggerFactory.getLogger("booktower.Main")
 
     logger.info("Starting BookTower application...")
+    val startTime = System.currentTimeMillis()
 
     startKoin { modules(appModule) }
     val koin = GlobalContext.get()
@@ -118,7 +119,22 @@ fun main() {
 
     val app =
         routes(
-            "/health" bind Method.GET to { Response(OK).body("OK") },
+            "/health" bind Method.GET to {
+                val dbOk =
+                    try {
+                        database.getJdbi().withHandle<Boolean, Exception> { h ->
+                            h.createQuery("SELECT 1").mapTo(Int::class.java).firstOrNull() == 1
+                        }
+                    } catch (_: Exception) {
+                        false
+                    }
+                val version = org.booktower.services.VersionService.info.version
+                val uptimeMs = System.currentTimeMillis() - startTime
+                val uptimeSec = uptimeMs / 1000
+                Response(OK)
+                    .header("Content-Type", "application/json")
+                    .body("""{"status":"${if (dbOk) "up" else "degraded"}","database":"${if (dbOk) "ok" else "unreachable"}","version":"$version","uptimeSeconds":$uptimeSec}""")
+            },
             appHandler.routes(),
         )
 

@@ -74,7 +74,7 @@ class AppHandler(
                 "/health" bind Method.GET to {
                     Response(Status.OK)
                         .header("Content-Type", "application/json")
-                        .body("""{"status":"ok"}""")
+                        .body("""{"status":"ok","version":"${org.booktower.services.VersionService.info.version}"}""")
                 },
                 "/api/version" bind Method.GET to {
                     Response(Status.OK)

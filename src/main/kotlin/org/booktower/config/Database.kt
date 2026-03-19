@@ -46,6 +46,7 @@ class Database private constructor(
                     minimumIdle = minIdle
                     idleTimeout = IDLE_TIMEOUT_MS
                     connectionTimeout = CONNECTION_TIMEOUT_MS
+                    connectionTestQuery = "SELECT 1"
                 }
 
             val dataSource = HikariDataSource(hikariConfig)
