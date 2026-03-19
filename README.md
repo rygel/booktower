@@ -22,9 +22,9 @@ A self-hosted personal book, audiobook, and comic manager with a built-in reader
 | Reading/listening stats & analytics | **Stable** | Integration tests |
 | Smart shelves & filter presets | **Stable** | Integration tests |
 | Whispersync (ebook↔audiobook) | **Experimental** | Integration tests only; chapter mapping is approximate |
-| Docker image | **Untested** | Builds in CI but no E2E test runs against the container |
-| PostgreSQL | **Untested** | SQL written for H2 PostgreSQL-mode; never connected to real PostgreSQL |
-| Native binaries (GraalVM) | **Untested** | CI builds for 5 platforms but no smoke test verifies they start |
+| Docker image | **Stable** | CI builds image and runs smoke test (health + login page) |
+| PostgreSQL 17/18 | **Stable** | Full 1600+ test suite runs against real PostgreSQL in CI |
+| Native binaries (GraalVM) | **Experimental** | CI builds for 5 platforms with smoke test on release |
 | Kobo / KOReader sync | **Untested** | Implements protocols; never tested with real hardware |
 | OPDS catalog | **Untested** | Basic tests; not verified with real client apps |
 | OIDC / SSO | **Untested** | Implements OIDC spec; tested only with mock providers |
@@ -136,6 +136,10 @@ A self-hosted personal book, audiobook, and comic manager with a built-in reader
 ### Internationalization
 
 10 languages supported: English, French, German, Spanish, Portuguese, Italian, Dutch, Polish, Japanese, and Chinese.
+
+> [!NOTE]
+> This project is developed with the help of AI. However, a human is guiding it and making all critical design decisions. On top of that,
+  an extensive end-to-end test suite is co-developed and maintained to keep the quality high and prevent regressions.
 
 ## Quick Start
 
