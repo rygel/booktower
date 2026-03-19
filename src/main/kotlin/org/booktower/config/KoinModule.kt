@@ -303,6 +303,7 @@ val appModule =
                 get<JwtService>(),
                 get<TemplateRenderer>(),
                 get<AppConfig>().registrationOpen,
+                get<UserSettingsService>(),
             )
         }
         single {

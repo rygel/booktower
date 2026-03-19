@@ -21,6 +21,8 @@ import org.booktower.services.LibraryService
 import org.booktower.services.LibraryWatchService
 import org.booktower.services.PdfMetadataService
 import org.booktower.services.ScanScheduleService
+import org.booktower.services.UserSettingsService
+import org.booktower.web.WebContext
 import org.http4k.core.Method
 import org.http4k.core.Response
 import org.http4k.core.Status.Companion.OK
@@ -48,6 +50,10 @@ fun main() {
     val epubMetadataService = koin.get<EpubMetadataService>()
     val scanScheduleService = koin.get<ScanScheduleService>()
     val libraryWatchService = koin.get<LibraryWatchService>()
+
+    // Wire user settings into WebContext for theme/language preference persistence
+    val userSettingsService = koin.get<UserSettingsService>()
+    WebContext.settingsProvider = { userId, key -> userSettingsService.get(userId, key) }
 
     scanScheduleService.start()
     libraryWatchService.start()
