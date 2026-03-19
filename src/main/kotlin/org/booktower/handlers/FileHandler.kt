@@ -51,10 +51,12 @@ class FileHandler(
     private val calibreService: CalibreConversionService? = null,
 ) {
     private val coverCache =
-        com.github.benmanes.caffeine.cache.Caffeine.newBuilder()
+        com.github.benmanes.caffeine.cache.Caffeine
+            .newBuilder()
             .maximumSize(200)
             .expireAfterWrite(10, TimeUnit.MINUTES)
             .build<String, ByteArray>()
+
     fun upload(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
         val bookId =
@@ -420,18 +422,19 @@ class FileHandler(
                 .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Invalid filename")))
         }
 
-        val bytes = coverCache.getIfPresent(filename) ?: run {
-            val f = File(storageConfig.coversPath, filename)
-            if (f.exists() && f.isFile) {
-                val data = f.readBytes()
-                coverCache.put(filename, data)
-                data
-            } else {
-                null
-            }
-        } ?: return Response(Status.NOT_FOUND)
-            .header("Content-Type", "application/json")
-            .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "Cover not found")))
+        val bytes =
+            coverCache.getIfPresent(filename) ?: run {
+                val f = File(storageConfig.coversPath, filename)
+                if (f.exists() && f.isFile) {
+                    val data = f.readBytes()
+                    coverCache.put(filename, data)
+                    data
+                } else {
+                    null
+                }
+            } ?: return Response(Status.NOT_FOUND)
+                .header("Content-Type", "application/json")
+                .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "Cover not found")))
 
         val contentType =
             when (filename.substringAfterLast('.').lowercase()) {
