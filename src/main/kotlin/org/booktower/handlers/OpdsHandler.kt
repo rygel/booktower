@@ -138,10 +138,12 @@ class OpdsHandler(
         val books = bookService.getBooks(userId, libId.toString(), 1, 100).getBooks()
         val updated = Instant.now().toString()
 
+        val bookIds = books.map { UUID.fromString(it.id) }
+        val allFiles = bookService.getBookFilesForBooks(userId, bookIds)
+
         val entries =
             books.joinToString("\n") { book ->
-                val chapters = bookService.getBookFiles(userId, UUID.fromString(book.id))
-                bookEntry(book, updated, chapters)
+                bookEntry(book, updated, allFiles[book.id] ?: emptyList())
             }
 
         val upLink = """  <link rel="up"
