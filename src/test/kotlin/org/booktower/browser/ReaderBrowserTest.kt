@@ -456,14 +456,15 @@ class ReaderBrowserTest : BrowserTestBase() {
         assertTrue(hasIframe, "epub.js should create an iframe inside #epub-viewer")
 
         // The iframe should have content (not empty)
-        val iframeHasContent = page.evaluate(
-            """() => {
+        val iframeHasContent =
+            page.evaluate(
+                """() => {
         const iframe = document.querySelector('#epub-viewer iframe');
         if (!iframe || !iframe.contentDocument) return false;
         const body = iframe.contentDocument.body;
         return body && body.textContent.trim().length > 0;
     }""",
-        ) as Boolean
+            ) as Boolean
         assertTrue(iframeHasContent, "epub.js iframe should have rendered text content")
 
         page.close()
