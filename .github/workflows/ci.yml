@@ -217,13 +217,17 @@ jobs:
 
   # ── PostgreSQL integration test ──────────────────────────────────────────
   postgres-test:
-    name: PostgreSQL Test
+    name: PostgreSQL Test (PG ${{ matrix.pg }})
     needs: code-quality
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        pg: [ 17, 18 ]
 
     services:
       postgres:
-        image: postgres:17-alpine
+        image: postgres:${{ matrix.pg }}-alpine
         env:
           POSTGRES_USER: booktower
           POSTGRES_PASSWORD: booktower
