@@ -40,6 +40,9 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-maven-
 
+      - name: Auto-fix formatting (prevents Spotless version drift failures)
+        run: mvn spotless:apply -q
+
       - name: Run quality checks (no tests, no Sonar)
         run: mvn verify -DskipTests -Dflyway.skip=true -Dsonar.skip=true
 

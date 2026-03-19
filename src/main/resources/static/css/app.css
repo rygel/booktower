@@ -96,7 +96,7 @@ input:focus, select:focus, textarea:focus {
 
 .stat-label {
   font-size: 0.75rem;
-  color: var(--bt-subtle);
+  color: var(--bt-muted);
   margin-top: 0.25rem;
 }
 
