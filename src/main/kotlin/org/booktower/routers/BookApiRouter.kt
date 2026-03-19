@@ -166,13 +166,13 @@ class BookApiRouter(
             "/api/shelves" bind Method.POST to filters.auth.then(::createShelf),
             "/api/shelves/{id}/share" bind Method.POST to filters.auth.then(::shareShelf),
             "/api/shelves/{id}/share" bind Method.DELETE to filters.auth.then(::unshareShelf),
-            "/public/shelf/{token}" bind Method.GET to ::getPublicShelf,
-            // Book sharing
+            "/shared/shelf/{token}" bind Method.GET to filters.auth.then(::getPublicShelf),
+            // Book sharing (all require authentication per ADR-001)
             "/api/books/{id}/share" bind Method.POST to filters.auth.then(::shareBook),
             "/api/books/{id}/share" bind Method.DELETE to filters.auth.then(::unshareBook),
             "/api/books/{id}/share" bind Method.GET to filters.auth.then(::getBookShareToken),
-            "/public/book/{token}" bind Method.GET to ::getPublicBook,
-            "/public/book/{token}/download" bind Method.GET to ::downloadSharedBook,
+            "/shared/book/{token}" bind Method.GET to filters.auth.then(::getPublicBook),
+            "/shared/book/{token}/download" bind Method.GET to filters.auth.then(::downloadSharedBook),
             // Notebooks
             "/api/books/{id}/notebooks" bind Method.GET to filters.auth.then(::listNotebooks),
             "/api/books/{id}/notebooks" bind Method.POST to filters.auth.then(::createNotebook),

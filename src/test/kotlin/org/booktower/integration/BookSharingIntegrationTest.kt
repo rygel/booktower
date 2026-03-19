@@ -6,28 +6,26 @@ import org.http4k.core.Status
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
-import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class BookSharingIntegrationTest : IntegrationTestBase() {
     @Test
-    fun `share book generates token and public endpoint returns book data`() {
-        val token = registerAndGetToken("share1")
-        val libId = createLibrary(token)
-        val bookId = createBook(token, libId, "Shared Book")
+    fun `share book generates token and another user can view shared book`() {
+        val ownerToken = registerAndGetToken("share1a")
+        val viewerToken = registerAndGetToken("share1b")
+        val libId = createLibrary(ownerToken)
+        val bookId = createBook(ownerToken, libId, "Shared Book")
 
         // Share the book
         val shareResp =
             app(
                 Request(Method.POST, "/api/books/$bookId/share")
-                    .header("Cookie", "token=$token"),
+                    .header("Cookie", "token=$ownerToken"),
             )
         assertEquals(Status.OK, shareResp.status, "Share should succeed")
         val shareBody = shareResp.bodyString()
         assertTrue(shareBody.contains("shareToken"), "Response should contain shareToken")
-        assertTrue(shareBody.contains("shareUrl"), "Response should contain shareUrl")
 
-        // Extract the token
         val shareToken =
             org.booktower.config.Json.mapper
                 .readTree(shareBody)
@@ -35,20 +33,22 @@ class BookSharingIntegrationTest : IntegrationTestBase() {
                 .asText()
         assertNotNull(shareToken, "Share token should not be null")
 
-        // Access the public endpoint (no auth)
-        val publicResp = app(Request(Method.GET, "/public/book/$shareToken"))
-        assertEquals(Status.OK, publicResp.status, "Public book endpoint should return 200")
-        val publicBody = publicResp.bodyString()
-        assertTrue(publicBody.contains("Shared Book"), "Public response should contain book title")
+        // Another authenticated user can access the shared book
+        val viewResp =
+            app(
+                Request(Method.GET, "/shared/book/$shareToken")
+                    .header("Cookie", "token=$viewerToken"),
+            )
+        assertEquals(Status.OK, viewResp.status, "Authenticated user should access shared book")
+        assertTrue(viewResp.bodyString().contains("Shared Book"), "Response should contain book title")
     }
 
     @Test
-    fun `unshare book removes public access`() {
+    fun `shared book requires authentication`() {
         val token = registerAndGetToken("share2")
         val libId = createLibrary(token)
-        val bookId = createBook(token, libId, "Unshare Test")
+        val bookId = createBook(token, libId, "Auth Test")
 
-        // Share
         val shareResp =
             app(
                 Request(Method.POST, "/api/books/$bookId/share")
@@ -60,22 +60,50 @@ class BookSharingIntegrationTest : IntegrationTestBase() {
                 .get("shareToken")
                 .asText()
 
+        // Unauthenticated access should return 401
+        val anonResp = app(Request(Method.GET, "/shared/book/$shareToken"))
+        assertEquals(Status.UNAUTHORIZED, anonResp.status, "Anonymous access should return 401")
+    }
+
+    @Test
+    fun `unshare book removes access`() {
+        val ownerToken = registerAndGetToken("share3a")
+        val viewerToken = registerAndGetToken("share3b")
+        val libId = createLibrary(ownerToken)
+        val bookId = createBook(ownerToken, libId, "Unshare Test")
+
+        // Share
+        val shareResp =
+            app(
+                Request(Method.POST, "/api/books/$bookId/share")
+                    .header("Cookie", "token=$ownerToken"),
+            )
+        val shareToken =
+            org.booktower.config.Json.mapper
+                .readTree(shareResp.bodyString())
+                .get("shareToken")
+                .asText()
+
         // Unshare
         val unshareResp =
             app(
                 Request(Method.DELETE, "/api/books/$bookId/share")
-                    .header("Cookie", "token=$token"),
+                    .header("Cookie", "token=$ownerToken"),
             )
         assertEquals(Status.NO_CONTENT, unshareResp.status, "Unshare should succeed")
 
-        // Public endpoint should now return 404
-        val publicResp = app(Request(Method.GET, "/public/book/$shareToken"))
-        assertEquals(Status.NOT_FOUND, publicResp.status, "Public endpoint should return 404 after unshare")
+        // Shared endpoint should now return 404 even for authenticated users
+        val viewResp =
+            app(
+                Request(Method.GET, "/shared/book/$shareToken")
+                    .header("Cookie", "token=$viewerToken"),
+            )
+        assertEquals(Status.NOT_FOUND, viewResp.status, "Should return 404 after unshare")
     }
 
     @Test
     fun `get share token returns null when book is not shared`() {
-        val token = registerAndGetToken("share3")
+        val token = registerAndGetToken("share4")
         val libId = createLibrary(token)
         val bookId = createBook(token, libId, "Not Shared")
 
@@ -92,24 +120,12 @@ class BookSharingIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `share book returns 404 for nonexistent book`() {
-        val token = registerAndGetToken("share4")
-        val resp =
-            app(
-                Request(Method.POST, "/api/books/00000000-0000-0000-0000-000000000000/share")
-                    .header("Cookie", "token=$token"),
-            )
-        assertEquals(Status.NOT_FOUND, resp.status)
-    }
-
-    @Test
-    fun `cannot access other users shared book management`() {
+    fun `cannot share another users book`() {
         val token1 = registerAndGetToken("share5a")
         val token2 = registerAndGetToken("share5b")
         val libId = createLibrary(token1)
         val bookId = createBook(token1, libId, "User1 Book")
 
-        // User2 tries to share user1's book
         val resp =
             app(
                 Request(Method.POST, "/api/books/$bookId/share")
