@@ -541,4 +541,116 @@ class UserManagementE2ETest : IntegrationTestBase() {
             "11th login attempt from same IP should be rate limited",
         )
     }
+
+    // ── 50 concurrent users: register, create data, verify isolation ────────
+
+    @Test
+    fun `50 concurrent users register, create libraries and books, all isolated`() {
+        // Rebuild app to reset rate limiter state (previous tests may have exhausted it)
+        app = buildApp()
+        val userCount = 50
+        val errors = ConcurrentLinkedQueue<String>()
+        val tokens = ConcurrentLinkedQueue<Pair<String, String>>() // username to token
+        val latch = CountDownLatch(userCount)
+
+        // Phase 1: Register 50 users concurrently (each with unique IP to avoid rate limiting)
+        val threads =
+            (1..userCount).map { i ->
+                Thread.startVirtualThread {
+                    try {
+                        val username = "conc50_${System.nanoTime()}_$i"
+                        val resp =
+                            app(
+                                Request(Method.POST, "/auth/register")
+                                    .header("Content-Type", "application/json")
+                                    .header("X-Forwarded-For", "10.0.${i / 256}.${i % 256}")
+                                    .body("""{"username":"$username","email":"$username@test.com","password":"password_$i"}"""),
+                            )
+                        if (resp.status.code != 201) {
+                            errors.add("User $i registration failed: ${resp.status} body=${resp.bodyString().take(200)}")
+                        } else {
+                            val token = Json.mapper.readValue(resp.bodyString(), LoginResponse::class.java).token
+                            tokens.add(username to token)
+                        }
+                    } catch (e: Exception) {
+                        errors.add("User $i exception: ${e.message}")
+                    } finally {
+                        latch.countDown()
+                    }
+                }
+            }
+        latch.await()
+        assertTrue(errors.isEmpty(), "All 50 registrations should succeed, but got errors: $errors")
+        assertEquals(userCount, tokens.size, "Should have 50 tokens")
+
+        // Phase 2: Each user creates a library and a book concurrently
+        val latch2 = CountDownLatch(tokens.size)
+        val userBooks = ConcurrentLinkedQueue<Triple<String, String, String>>() // username, libId, bookId
+        tokens.forEach { (username, token) ->
+            Thread.startVirtualThread {
+                try {
+                    val libResp =
+                        app(
+                            Request(Method.POST, "/api/libraries")
+                                .header("Cookie", "token=$token")
+                                .header("Content-Type", "application/json")
+                                .body("""{"name":"Lib of $username","path":"./data/conc50-${System.nanoTime()}"}"""),
+                        )
+                    if (libResp.status.code != 201) {
+                        errors.add("$username library creation failed: ${libResp.status}")
+                    } else {
+                        val libId = Json.mapper.readValue(libResp.bodyString(), LibraryDto::class.java).id
+                        val bookResp =
+                            app(
+                                Request(Method.POST, "/api/books")
+                                    .header("Cookie", "token=$token")
+                                    .header("Content-Type", "application/json")
+                                    .body("""{"title":"Book by $username","author":"$username","description":null,"libraryId":"$libId"}"""),
+                            )
+                        if (bookResp.status.code != 201) {
+                            errors.add("$username book creation failed: ${bookResp.status}")
+                        } else {
+                            val bookId = Json.mapper.readValue(bookResp.bodyString(), BookDto::class.java).id
+                            userBooks.add(Triple(username, libId, bookId))
+                        }
+                    }
+                } catch (e: Exception) {
+                    errors.add("$username data creation exception: ${e.message}")
+                } finally {
+                    latch2.countDown()
+                }
+            }
+        }
+        latch2.await()
+        assertTrue(errors.isEmpty(), "All 50 users should create data, but got errors: $errors")
+        assertEquals(userCount, userBooks.size, "Should have 50 user-book entries")
+
+        // Phase 3: Verify isolation — each user sees only their own library
+        val tokenMap = tokens.associate { it.first to it.second }
+        val latch3 = CountDownLatch(userBooks.size)
+        userBooks.forEach { (username, _, _) ->
+            Thread.startVirtualThread {
+                try {
+                    val token = tokenMap[username]!!
+                    val libsResp =
+                        app(
+                            Request(Method.GET, "/api/libraries")
+                                .header("Cookie", "token=$token"),
+                        )
+                    val libs = Json.mapper.readValue(libsResp.bodyString(), Array<LibraryDto>::class.java)
+                    if (libs.size != 1) {
+                        errors.add("$username sees ${libs.size} libraries (expected 1)")
+                    } else if (!libs[0].name.contains(username)) {
+                        errors.add("$username sees wrong library: ${libs[0].name}")
+                    }
+                } catch (e: Exception) {
+                    errors.add("$username isolation check exception: ${e.message}")
+                } finally {
+                    latch3.countDown()
+                }
+            }
+        }
+        latch3.await()
+        assertTrue(errors.isEmpty(), "All 50 users should see only their own library: $errors")
+    }
 }
