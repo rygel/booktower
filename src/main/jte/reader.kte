@@ -1034,7 +1034,7 @@ var BT_DEVICE = (function() {
                 'box-sizing':   'border-box !important',
                 'width':        '100% !important',
                 'margin':       '0 !important',
-                'padding':      '1em ' + mar + ' !important',
+                'padding':      '1em 0 !important',
                 'font-family':  ff,
                 'line-height':  epubPrefs.lineSpacing + ' !important',
                 'text-align':   epubPrefs.textAlign + ' !important',
@@ -1060,7 +1060,17 @@ var BT_DEVICE = (function() {
         rendition.themes.select('bt');
         rendition.themes.fontSize(epubPrefs.fontSize + '%');
         var c = EPUB_COLORS[epubPrefs.theme] || EPUB_COLORS.white;
-        document.getElementById('epub-viewer').style.background = c.bg;
+        var viewer = document.getElementById('epub-viewer');
+        viewer.style.background = c.bg;
+
+        // Apply margins on the container element so epub.js accounts for them
+        // in its page width calculation (not just CSS inside the iframe)
+        var mar = (epubPrefs.margins in EPUB_MARGIN_MAP) ? EPUB_MARGIN_MAP[epubPrefs.margins] : (epubPrefs.margins || EPUB_MARGIN_MAP.normal);
+        viewer.style.padding = '0 ' + mar;
+
+        // Force epub.js to recalculate page dimensions after margin/font changes
+        rendition.resize();
+
         var fsVal = document.getElementById('pref-fs-val');
         if (fsVal) fsVal.textContent = epubPrefs.fontSize + '%';
         zoomPct.textContent = epubPrefs.fontSize + '%';
@@ -1255,6 +1265,10 @@ var BT_DEVICE = (function() {
     }); // end loadUserFonts
 
     function initEpub() {
+    // Apply initial margins on the container BEFORE epub.js renders
+    var initMar = (epubPrefs.margins in EPUB_MARGIN_MAP) ? EPUB_MARGIN_MAP[epubPrefs.margins] : (epubPrefs.margins || EPUB_MARGIN_MAP.normal);
+    document.getElementById('epub-viewer').style.padding = '0 ' + initMar;
+
     fetch(EPUB_URL)
         .then(function (r) { return r.arrayBuffer(); })
         .then(function (buf) {
