@@ -221,7 +221,7 @@
                     <div id="share-content">
                         @if(book.shareToken != null)
                             <div style="display:flex; align-items:center; gap:0.5rem;">
-                                <input type="text" id="share-url" readonly value="${"${i18n.translate("page.book.share.link.prefix")}/shared/book/${book.shareToken}"}"
+                                <input type="text" id="share-url" readonly value="/shared/book/${book.shareToken}"
                                     style="flex:1; font-size:0.8rem; padding:0.4rem 0.625rem; border-radius:0.5rem; border:1px solid var(--bt-border-input); background:var(--bt-bg); color:var(--bt-text);">
                                 <button onclick="copyShareUrl()" class="btn-primary" style="font-size:0.8rem; padding:0.4rem 0.75rem;">
                                     <i class="ri-file-copy-line"></i> ${i18n.translate("action.copy")}
