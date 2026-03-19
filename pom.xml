@@ -922,6 +922,36 @@
                     </goals>
                 </configuration>
             </plugin>
+            <!-- i18n validation — checks all locale files have the same keys -->
+            <plugin>
+                <groupId>io.github.rygel</groupId>
+                <artifactId>i18n-maven-plugin</artifactId>
+                <version>1.0.0-SNAPSHOT</version>
+                <configuration>
+                    <sourcePatterns>
+                        <pattern>i18n.translate</pattern>
+                        <pattern>i18n.translate(</pattern>
+                    </sourcePatterns>
+                    <scanExtensions>
+                        <extension>kt</extension>
+                        <extension>kte</extension>
+                        <extension>java</extension>
+                    </scanExtensions>
+                    <!-- Set to true once all translations are complete -->
+                    <failOnMissing>false</failOnMissing>
+                    <failOnUndefined>false</failOnUndefined>
+                    <showFixSuggestions>true</showFixSuggestions>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>check-i18n</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>validate</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
