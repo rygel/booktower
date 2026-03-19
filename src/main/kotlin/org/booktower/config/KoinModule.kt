@@ -140,7 +140,20 @@ val appModule =
         single { ExportService(get<Database>().getJdbi()) }
         single { GoodreadsImportService(get()) }
         single { ComicService() }
-        single { SeedService(get(), get(), get<AppConfig>().storage.coversPath, get<AppConfig>().storage.booksPath, get()) }
+        single {
+            SeedService(
+                get(),
+                get(),
+                get<AppConfig>().storage.coversPath,
+                get<AppConfig>().storage.booksPath,
+                get(),
+                get<BookmarkService>(),
+                get<ReadingSessionService>(),
+                get<MagicShelfService>(),
+                get<UserSettingsService>(),
+                get<Database>().getJdbi(),
+            )
+        }
         single { ScanScheduleService(get<Database>().getJdbi(), get(), get<AppConfig>().autoScanMinutes) }
         single { LibraryWatchService(get<Database>().getJdbi(), get()) }
         single { DuplicateDetectionService(get<Database>().getJdbi()) }
