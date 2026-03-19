@@ -48,6 +48,7 @@ import org.booktower.services.BackgroundTaskService
 import org.booktower.services.BookDeliveryService
 import org.booktower.services.BookDropService
 import org.booktower.services.BookFilesService
+import org.booktower.services.BookLinkService
 import org.booktower.services.BookNotebookService
 import org.booktower.services.BookReviewService
 import org.booktower.services.BookService
@@ -185,6 +186,7 @@ val appModule =
         single { FilterPresetService(get<Database>().getJdbi()) }
         single { TelemetryService(get<Database>().getJdbi(), get()) }
         single { org.booktower.services.CommunityRatingService(get<Database>().getJdbi()) }
+        single { BookLinkService(get<Database>().getJdbi(), get<BookService>()) }
         single { WeblateHandler(get<AppConfig>().weblate) }
 
         // ── Handler objects ──────────────────────────────────────────────────
@@ -238,6 +240,7 @@ val appModule =
                 get(),
                 get(),
                 get(),
+                getOrNull(),
             )
         }
         single { BackgroundTaskHandler(get()) }
@@ -312,6 +315,7 @@ val appModule =
                 bookReviewService = get<BookReviewService>(),
                 bookNotebookService = get<BookNotebookService>(),
                 duplicateDetectionService = get<DuplicateDetectionService>(),
+                bookLinkService = get<BookLinkService>(),
             )
         }
         single {

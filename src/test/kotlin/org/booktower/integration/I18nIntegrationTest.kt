@@ -81,7 +81,7 @@ class I18nIntegrationTest : IntegrationTestBase() {
     @Test
     fun `all 10 language options appear in selector`() {
         val token = registerAndGetToken("i18n_all")
-        val response = app(Request(Method.GET, "/").header("Cookie", "token=$token"))
+        val response = app(Request(Method.GET, "/profile").header("Cookie", "token=$token"))
         val body = response.bodyString()
         for (lang in listOf("en", "fr", "de", "es", "pt", "it", "nl", "pl", "ja", "zh")) {
             assertTrue(body.contains("value=\"$lang\""), "Expected language option for $lang")

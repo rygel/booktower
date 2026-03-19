@@ -552,3 +552,27 @@ data class ScanJobStatus(
     val errors: Int = 0,
     val message: String? = null,
 )
+
+// ── Whispersync (linked books) ──────────────────────────────────────────────
+
+data class LinkedBookDto(
+    val id: String,
+    val ebookId: String,
+    val audioId: String,
+    val ebookTitle: String,
+    val audioTitle: String,
+    val createdAt: String,
+)
+
+data class SyncPositionDto(
+    val targetBookId: String,
+    val targetTitle: String,
+    val targetFormat: String,
+    val chapterIndex: Int,
+    val chapterLabel: String?,
+    val positionInChapter: Double,
+)
+
+data class LinkBooksRequest(
+    val linkedBookId: String,
+)

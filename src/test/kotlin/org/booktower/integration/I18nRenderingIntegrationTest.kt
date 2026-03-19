@@ -166,9 +166,9 @@ class I18nRenderingIntegrationTest : IntegrationTestBase() {
     // ── Sidebar language switcher ─────────────────────────────────────────────
 
     @Test
-    fun `sidebar shows all supported language options`() {
+    fun `profile page shows all supported language options`() {
         val token = registerAndGetToken("i18nlang1")
-        val body = requestWithLang(Method.GET, "/", token, "en").bodyString()
+        val body = requestWithLang(Method.GET, "/profile", token, "en").bodyString()
         assertTrue(body.contains("English"), "English should be shown in language selector")
         assertTrue(body.contains("Fran"), "French should be shown in language selector")
         assertTrue(body.contains("Deutsch"), "German should be shown in language selector")
@@ -177,7 +177,7 @@ class I18nRenderingIntegrationTest : IntegrationTestBase() {
     @Test
     fun `language switcher action posts to correct endpoint`() {
         val token = registerAndGetToken("i18nlang2")
-        val body = requestWithLang(Method.GET, "/", token, "en").bodyString()
+        val body = requestWithLang(Method.GET, "/profile", token, "en").bodyString()
         assertTrue(body.contains("/preferences/lang"), "Language switcher should post to /preferences/lang")
     }
 }

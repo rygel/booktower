@@ -25,7 +25,12 @@ class TemplateRenderer {
         // and the dynamic engine would conflict with the precompiled classes on the classpath.
         val isDev = System.getenv("BOOKTOWER_ENV")?.lowercase() != "production"
         val sourceDir = Path.of("src/main/jte")
-        val isJar = javaClass.protectionDomain?.codeSource?.location?.path?.endsWith(".jar") == true
+        val isJar =
+            javaClass.protectionDomain
+                ?.codeSource
+                ?.location
+                ?.path
+                ?.endsWith(".jar") == true
 
         if (isDev && sourceDir.toFile().isDirectory && !isJar) {
             val dynamicOutputDir = Path.of("target/jte-dynamic")
@@ -33,7 +38,9 @@ class TemplateRenderer {
             if (dynamicOutputDir.toFile().exists()) {
                 dynamicOutputDir.toFile().deleteRecursively()
             }
-            dynamicOutputDir.toFile().mkdirs()
+            if (!dynamicOutputDir.toFile().mkdirs() && !dynamicOutputDir.toFile().exists()) {
+                logger.warn("Could not create JTE dynamic output directory: $dynamicOutputDir")
+            }
             logger.info("Using dynamic JTE engine (live-reload from src/main/jte/)")
             TemplateEngine.create(
                 DirectoryCodeResolver(sourceDir),
