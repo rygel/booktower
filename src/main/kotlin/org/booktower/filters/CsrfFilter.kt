@@ -46,7 +46,8 @@ fun csrfFilter(allowedHosts: Set<String>): Filter =
                         }
                     }
 
-                if (sourceHost == null || sourceHost in allowedHosts) {
+                val hostOnly = sourceHost?.substringBefore(':')
+                if (sourceHost == null || sourceHost in allowedHosts || hostOnly in allowedHosts) {
                     next(req)
                 } else {
                     logger.warn("CSRF blocked: ${req.method} ${req.uri} from origin=$origin referer=$referer")
