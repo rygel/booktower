@@ -697,7 +697,10 @@ class SeedService(
         }
 
         // Step 7: Set reading goal
-        val year = java.time.LocalDate.now().year
+        val year =
+            java.time.LocalDate
+                .now()
+                .year
         userSettingsService?.set(userId, "reading.goal.$year", "24")
 
         // Step 8: Create smart shelves
