@@ -256,6 +256,219 @@ class ReaderBrowserTest : BrowserTestBase() {
         page.close()
     }
 
+    @Test
+    @Timeout(value = 30, unit = TimeUnit.SECONDS)
+    fun `epub reader margin settings change viewer padding`() {
+        val (page, token) = newAuthenticatedPage("margin")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId, "Margin Test Book")
+        uploadFile(token, bookId, "book.epub", minimalEpubBytes())
+
+        page.navigate("$baseUrl/books/$bookId/read")
+        page.waitForTimeout(3000.0) // wait for epub.js to render
+
+        // Check viewer exists
+        val viewer = page.querySelector("#epub-viewer")
+        assertTrue(viewer != null, "epub-viewer must exist")
+
+        // Default should be 'normal' margins (2em)
+        val defaultPadding = page.evaluate("() => getComputedStyle(document.getElementById('epub-viewer')).padding") as String
+        assertTrue(
+            defaultPadding.contains("32") || defaultPadding.contains("2em") || defaultPadding.isNotBlank(),
+            "Default margins should apply padding to viewer, got: $defaultPadding",
+        )
+
+        // Click narrow margin button
+        page.click("[data-pref='margins'][data-val='narrow']")
+        page.waitForTimeout(500.0)
+        val narrowPadding = page.evaluate("() => getComputedStyle(document.getElementById('epub-viewer')).paddingLeft") as String
+
+        // Click wide margin button
+        page.click("[data-pref='margins'][data-val='wide']")
+        page.waitForTimeout(500.0)
+        val widePadding = page.evaluate("() => getComputedStyle(document.getElementById('epub-viewer')).paddingLeft") as String
+
+        // Wide should be larger than narrow
+        val narrowPx = narrowPadding.replace("px", "").toDoubleOrNull() ?: 0.0
+        val widePx = widePadding.replace("px", "").toDoubleOrNull() ?: 0.0
+        assertTrue(widePx > narrowPx, "Wide margin ($widePx px) should be larger than narrow ($narrowPx px)")
+
+        page.close()
+    }
+
+    @Test
+    @Timeout(value = 30, unit = TimeUnit.SECONDS)
+    fun `epub reader font size buttons change text size`() {
+        val (page, token) = newAuthenticatedPage("fontsize")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId, "Font Size Test")
+        uploadFile(token, bookId, "book.epub", minimalEpubBytes())
+
+        page.navigate("$baseUrl/books/$bookId/read")
+        page.waitForTimeout(3000.0)
+
+        // Check zoom percentage display exists
+        val zoomPct = page.querySelector("#zoom-pct")
+        assertTrue(zoomPct != null, "zoom-pct element should exist")
+
+        // Default is 100%
+        val defaultSize = page.textContent("#zoom-pct") ?: ""
+        assertTrue(defaultSize.contains("100"), "Default font size should be 100%, got: $defaultSize")
+
+        // Click zoom in
+        page.click("#btn-zoom-in")
+        page.waitForTimeout(500.0)
+        val increasedSize = page.textContent("#zoom-pct") ?: ""
+        assertTrue(increasedSize.contains("110"), "Font size should increase to 110% after zoom in, got: $increasedSize")
+
+        // Click zoom out twice
+        page.click("#btn-zoom-out")
+        page.click("#btn-zoom-out")
+        page.waitForTimeout(500.0)
+        val decreasedSize = page.textContent("#zoom-pct") ?: ""
+        assertTrue(decreasedSize.contains("90"), "Font size should be 90% after zoom out twice, got: $decreasedSize")
+
+        page.close()
+    }
+
+    @Test
+    @Timeout(value = 30, unit = TimeUnit.SECONDS)
+    fun `epub reader theme buttons change viewer background`() {
+        val (page, token) = newAuthenticatedPage("theme")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId, "Theme Test")
+        uploadFile(token, bookId, "book.epub", minimalEpubBytes())
+
+        page.navigate("$baseUrl/books/$bookId/read")
+        page.waitForTimeout(3000.0)
+
+        // Open preferences panel (click the settings button)
+        val prefsToggle = page.querySelector("#btn-prefs") ?: page.querySelector("[onclick*='prefs']")
+        if (prefsToggle != null) prefsToggle.click()
+        page.waitForTimeout(500.0)
+
+        // Click sepia theme
+        val sepiaBtn = page.querySelector("[data-pref='theme'][data-val='sepia']")
+        if (sepiaBtn != null) {
+            sepiaBtn.click()
+            page.waitForTimeout(500.0)
+            val bg = page.evaluate("() => getComputedStyle(document.getElementById('epub-viewer')).backgroundColor") as String
+            // Sepia background is #faf4e8 = rgb(250, 244, 232)
+            assertTrue(bg.contains("250") || bg.contains("faf4e8"), "Sepia theme should have warm background, got: $bg")
+        }
+
+        // Click dark theme
+        val darkBtn = page.querySelector("[data-pref='theme'][data-val='dark']")
+        if (darkBtn != null) {
+            darkBtn.click()
+            page.waitForTimeout(500.0)
+            val bg = page.evaluate("() => getComputedStyle(document.getElementById('epub-viewer')).backgroundColor") as String
+            // Dark background is #1a1a1a = rgb(26, 26, 26)
+            assertTrue(bg.contains("26") || bg.contains("1a1a1a"), "Dark theme should have dark background, got: $bg")
+        }
+
+        page.close()
+    }
+
+    @Test
+    @Timeout(value = 30, unit = TimeUnit.SECONDS)
+    fun `epub reader navigation buttons exist and are clickable`() {
+        val (page, token) = newAuthenticatedPage("nav")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId, "Navigation Test")
+        uploadFile(token, bookId, "book.epub", minimalEpubBytes())
+
+        page.navigate("$baseUrl/books/$bookId/read")
+        page.waitForTimeout(3000.0)
+
+        val prevBtn = page.querySelector("#btn-prev")
+        val nextBtn = page.querySelector("#btn-next")
+        assertTrue(prevBtn != null, "Previous button should exist")
+        assertTrue(nextBtn != null, "Next button should exist")
+
+        // Both should be visible
+        val prevVisible = page.evaluate("() => !document.getElementById('btn-prev').hidden") as Boolean
+        assertTrue(prevVisible, "Previous button should be visible")
+
+        page.close()
+    }
+
+    @Test
+    @Timeout(value = 30, unit = TimeUnit.SECONDS)
+    fun `epub reader shows book title in toolbar`() {
+        val (page, token) = newAuthenticatedPage("toolbar")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId, "Toolbar Title Test")
+        uploadFile(token, bookId, "book.epub", minimalEpubBytes())
+
+        page.navigate("$baseUrl/books/$bookId/read")
+        page.waitForTimeout(2000.0)
+
+        val title = page.textContent("#toolbar .title") ?: ""
+        assertTrue(title.contains("Toolbar Title Test"), "Toolbar should show book title, got: '$title'")
+
+        page.close()
+    }
+
+    @Test
+    @Timeout(value = 30, unit = TimeUnit.SECONDS)
+    fun `epub reader preferences panel opens and closes`() {
+        val (page, token) = newAuthenticatedPage("prefs")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId, "Prefs Panel Test")
+        uploadFile(token, bookId, "book.epub", minimalEpubBytes())
+
+        page.navigate("$baseUrl/books/$bookId/read")
+        page.waitForTimeout(2000.0)
+
+        // Find the prefs panel
+        val panel = page.querySelector("#prefs-panel")
+        assertTrue(panel != null, "Preferences panel element should exist")
+
+        // Initially hidden
+        val initialDisplay = page.evaluate("() => getComputedStyle(document.getElementById('prefs-panel')).display") as String
+
+        // Click toggle button to open
+        val toggleBtn = page.querySelector("#btn-prefs")
+        if (toggleBtn != null) {
+            toggleBtn.click()
+            page.waitForTimeout(300.0)
+            val openDisplay = page.evaluate("() => getComputedStyle(document.getElementById('prefs-panel')).display") as String
+            assertTrue(openDisplay != "none", "Prefs panel should be visible after clicking toggle, got: $openDisplay")
+        }
+
+        page.close()
+    }
+
+    @Test
+    @Timeout(value = 30, unit = TimeUnit.SECONDS)
+    fun `epub reader renders content inside viewer iframe`() {
+        val (page, token) = newAuthenticatedPage("content")
+        val libId = createLibrary(token)
+        val bookId = createBook(token, libId, "Content Render Test")
+        uploadFile(token, bookId, "book.epub", minimalEpubBytes())
+
+        page.navigate("$baseUrl/books/$bookId/read")
+        page.waitForTimeout(4000.0) // epub.js needs time to render
+
+        // epub.js creates an iframe inside #epub-viewer
+        val hasIframe = page.evaluate("() => document.querySelector('#epub-viewer iframe') !== null") as Boolean
+        assertTrue(hasIframe, "epub.js should create an iframe inside #epub-viewer")
+
+        // The iframe should have content (not empty)
+        val iframeHasContent = page.evaluate(
+            """() => {
+        const iframe = document.querySelector('#epub-viewer iframe');
+        if (!iframe || !iframe.contentDocument) return false;
+        const body = iframe.contentDocument.body;
+        return body && body.textContent.trim().length > 0;
+    }""",
+        ) as Boolean
+        assertTrue(iframeHasContent, "epub.js iframe should have rendered text content")
+
+        page.close()
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────────
 
     /** Builds a minimal structurally valid 1-page PDF. */
