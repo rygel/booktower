@@ -518,6 +518,27 @@ class PageHandler(
         )
     }
 
+    fun activity(req: Request): Response {
+        val userId = auth(req) ?: return redirectToLogin()
+        val ctx = WebContext(req)
+        val (username, gravatarHash) = userDisplayInfo(userId)
+        return htmlOk(
+            templateRenderer.render(
+                "activity.kte",
+                mapOf(
+                    "username" to username,
+                    "gravatarHash" to gravatarHash,
+                    "themeCss" to ctx.themeCss,
+                    "currentTheme" to ctx.theme,
+                    "lang" to ctx.lang,
+                    "themes" to ThemeCatalog.allThemes(),
+                    "i18n" to ctx.i18n,
+                    "isAdmin" to authIsAdmin(req),
+                ),
+            ),
+        )
+    }
+
     fun analytics(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
         val ctx = WebContext(req)

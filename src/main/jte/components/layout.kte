@@ -34,6 +34,12 @@
 </head>
 <body style="min-height:100vh; display:flex; flex-direction:column;">
 
+    @if(username != null)
+    <div id="global-progress" style="height:3px; background:transparent; position:fixed; top:0; left:0; right:0; z-index:200;">
+        <div id="global-progress-bar" style="height:100%; background:var(--bt-accent); width:0%; transition:width 0.3s;"></div>
+    </div>
+    @endif
+
     <!-- Top bar -->
     <header style="background:var(--bt-surface); border-bottom:1px solid var(--bt-border); flex-shrink:0;">
         <div style="display:flex; align-items:center; justify-content:space-between; height:3.5rem; padding:0 1.25rem;">
@@ -121,6 +127,10 @@
                 <a href="/analytics" class="sidebar-link ${if (currentPage == "analytics") "active" else ""}">
                     <i class="ri-bar-chart-line" style="font-size:1rem; width:1rem; text-align:center;"></i>
                     ${i18n.translate("nav.analytics")}
+                </a>
+                <a href="/activity" class="sidebar-link ${if (currentPage == "activity") "active" else ""}">
+                    <i class="ri-history-line" style="font-size:1rem; width:1rem; text-align:center;"></i>
+                    ${i18n.translate("nav.activity")}
                 </a>
                 <a href="/profile" class="sidebar-link ${if (currentPage == "profile") "active" else ""}">
                     <i class="ri-user-settings-line" style="font-size:1rem; width:1rem; text-align:center;"></i>
@@ -430,6 +440,21 @@
                             '<i class="' + icon + '" style="flex-shrink:0;' + (t.status === 'RUNNING' ? 'animation:bt-spin 1s linear infinite;' : '') + '"></i>' +
                             '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + t.label + '</span></div>';
                     }).join('');
+
+                    var progressBar = document.getElementById('global-progress-bar');
+                    if (progressBar) {
+                        if (running.length > 0) {
+                            var pct = 10 + (Date.now() / 30 % 80);
+                            progressBar.style.width = pct + '%';
+                            progressBar.style.opacity = '1';
+                        } else {
+                            progressBar.style.width = '100%';
+                            setTimeout(function() {
+                                progressBar.style.width = '0%';
+                                progressBar.style.opacity = '0';
+                            }, 500);
+                        }
+                    }
 
                     if (running.length > 0 && !polling) {
                         polling = setInterval(pollTasks, 3000);
