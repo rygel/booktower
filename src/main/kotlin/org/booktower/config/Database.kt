@@ -14,13 +14,17 @@ class Database private constructor(
     private val jdbi: Jdbi,
 ) {
     companion object {
-        private const val MAX_POOL_SIZE = 10
-        private const val MIN_IDLE = 2
+        private const val DEFAULT_MAX_POOL_SIZE = 10
+        private const val DEFAULT_MIN_IDLE = 2
         private const val IDLE_TIMEOUT_MS = 600_000L
         private const val CONNECTION_TIMEOUT_MS = 30_000L
 
         fun connect(config: DatabaseConfig): Database {
             logger.info("Connecting to database: ${config.url}")
+
+            val maxPool = System.getenv("BOOKTOWER_DB_POOL_MAX")?.toIntOrNull() ?: DEFAULT_MAX_POOL_SIZE
+            val minIdle = System.getenv("BOOKTOWER_DB_POOL_MIN_IDLE")?.toIntOrNull() ?: DEFAULT_MIN_IDLE
+            logger.info("Connection pool: max=$maxPool, minIdle=$minIdle")
 
             val hikariConfig =
                 HikariConfig().apply {
@@ -28,8 +32,8 @@ class Database private constructor(
                     username = config.username
                     password = config.password
                     driverClassName = config.driver
-                    maximumPoolSize = MAX_POOL_SIZE
-                    minimumIdle = MIN_IDLE
+                    maximumPoolSize = maxPool
+                    minimumIdle = minIdle
                     idleTimeout = IDLE_TIMEOUT_MS
                     connectionTimeout = CONNECTION_TIMEOUT_MS
                 }
