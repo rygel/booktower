@@ -825,9 +825,14 @@ class SeedService(
             }
         }
 
+        // Auto-trigger file downloads so books are readable
+        seedFiles(userId)
+        seedLibrivox(userId)
+        seedComics(userId)
+
         logger.info(
             "Full demo seed complete for $userId: enriched ${allBooks.size} books with categories, moods, " +
-                "bookmarks, sessions, shelves, journals, notebooks, reviews, annotations, presets",
+                "bookmarks, sessions, shelves, journals, notebooks, reviews, annotations, presets, downloads",
         )
         return basicResult
     }
@@ -843,6 +848,12 @@ class SeedService(
             val libDir = File("./data/libraries/comics")
             if (!libDir.exists() && !libDir.mkdirs()) logger.warn("Could not create directory: ${libDir.absolutePath}")
             val destFile = File(libDir, "$bookId.cbz")
+
+            if (destFile.exists() && destFile.length() > 0) {
+                logger.info("Skipping download for '${comic.title}' — file already exists (${destFile.length()} bytes)")
+                backgroundTaskService.complete(taskId, "Already downloaded")
+                return
+            }
 
             val conn =
                 java.net
@@ -877,6 +888,15 @@ class SeedService(
     ) {
         val taskId = backgroundTaskService.start(userId, "download-audiobook", "Downloading audiobook: $title")
         try {
+            // Check if at least one chapter file already exists (resumable)
+            val booksDir = File(booksPath)
+            val existingChapters = booksDir.listFiles { f -> f.name.startsWith("$bookId-") && f.name.endsWith(".mp3") && f.length() > 0 }
+            if (existingChapters != null && existingChapters.isNotEmpty()) {
+                logger.info("Skipping download for '$title' — ${existingChapters.size} chapter files already exist")
+                backgroundTaskService.complete(taskId, "Already downloaded")
+                return
+            }
+
             val conn =
                 java.net
                     .URI("https://librivox.org/rss/$librivoxId")
@@ -905,10 +925,7 @@ class SeedService(
                 return
             }
 
-            val booksDir =
-                File(
-                    booksPath,
-                ).also { if (!it.mkdirs() && !it.exists()) logger.warn("Could not create directory: ${it.absolutePath}") }
+            if (!booksDir.exists() && !booksDir.mkdirs()) logger.warn("Could not create directory: ${booksDir.absolutePath}")
             var downloaded = 0
             for (idx in 0 until items.length) {
                 if (downloadChapter(userId, bookId, items.item(idx) as org.w3c.dom.Element, booksDir, idx, title)) {
@@ -999,6 +1016,12 @@ class SeedService(
             val booksDir = File(booksPath)
             if (!booksDir.exists() && !booksDir.mkdirs()) logger.warn("Could not create directory: ${booksDir.absolutePath}")
             val destFile = File(booksDir, "$bookId.epub")
+
+            if (destFile.exists() && destFile.length() > 0) {
+                logger.info("Skipping download for '$title' — file already exists (${destFile.length()} bytes)")
+                backgroundTaskService.complete(taskId, "Already downloaded")
+                return
+            }
 
             val conn =
                 java.net
