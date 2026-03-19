@@ -1,8 +1,10 @@
 package org.booktower.handlers
 
+import com.github.benmanes.caffeine.cache.Caffeine
 import org.booktower.config.StorageConfig
 import org.booktower.models.BookDto
 import org.booktower.models.BookFileDto
+import org.booktower.models.LibraryDto
 import org.booktower.services.ApiTokenService
 import org.booktower.services.AuthService
 import org.booktower.services.BookService
@@ -15,6 +17,7 @@ import java.io.File
 import java.time.Instant
 import java.util.Base64
 import java.util.UUID
+import java.util.concurrent.TimeUnit
 
 private val OPDS_CONTENT_TYPES =
     mapOf(
@@ -47,6 +50,14 @@ class OpdsHandler(
     private val apiTokenService: ApiTokenService,
     private val opdsCredentialsService: OpdsCredentialsService? = null,
 ) {
+    /** Cache library lists per user — libraries change rarely. */
+    private val libraryCache =
+        Caffeine
+            .newBuilder()
+            .maximumSize(100)
+            .expireAfterWrite(5, TimeUnit.MINUTES)
+            .build<UUID, List<LibraryDto>>()
+
     // ── Authentication ────────────────────────────────────────────────────────
 
     /**
@@ -86,7 +97,7 @@ class OpdsHandler(
     /** GET /opds/catalog */
     fun catalog(req: Request): Response {
         val userId = authenticate(req) ?: return unauthorized()
-        val libraries = libraryService.getLibraries(userId)
+        val libraries = libraryCache.get(userId) { libraryService.getLibraries(it) }
         val updated = Instant.now().toString()
 
         val entries =
@@ -138,10 +149,12 @@ class OpdsHandler(
         val books = bookService.getBooks(userId, libId.toString(), 1, 100).getBooks()
         val updated = Instant.now().toString()
 
+        val bookIds = books.map { UUID.fromString(it.id) }
+        val allFiles = bookService.getBookFilesForBooks(userId, bookIds)
+
         val entries =
             books.joinToString("\n") { book ->
-                val chapters = bookService.getBookFiles(userId, UUID.fromString(book.id))
-                bookEntry(book, updated, chapters)
+                bookEntry(book, updated, allFiles[book.id] ?: emptyList())
             }
 
         val upLink = """  <link rel="up"

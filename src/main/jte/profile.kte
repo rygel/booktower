@@ -24,25 +24,25 @@
     </h1>
 
     <!-- Account Information -->
-    <div class="card card-padding-lg" style=" margin-bottom:1.25rem;">
-        <h2 class="section-title flex-center gap-sm" style="font-size:0.9rem; color:var(--bt-text-dim); margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem;">
-            <i class="ri-user-line" style="color:var(--bt-accent-dim);"></i>
+    <div class="card card-pad">
+        <h2 class="profile-section-title">
+            <i class="ri-user-line"></i>
             ${i18n.translate("page.profile.account.info")}
         </h2>
-        <dl style="display:grid; grid-template-columns:auto 1fr; gap:0.5rem 1.5rem; font-size:0.85rem;">
-            <dt style="color:var(--bt-subtle); font-weight:500;">${i18n.translate("page.profile.label.username")}</dt>
-            <dd style="color:var(--bt-text); margin:0;">${userUsername}</dd>
-            <dt style="color:var(--bt-subtle); font-weight:500;">${i18n.translate("page.profile.label.email")}</dt>
-            <dd style="color:var(--bt-text); margin:0;">${userEmail}</dd>
-            <dt style="color:var(--bt-subtle); font-weight:500;">${i18n.translate("page.profile.label.member.since")}</dt>
-            <dd style="color:var(--bt-text); margin:0;">${memberSince}</dd>
+        <dl class="profile-dl">
+            <dt>${i18n.translate("page.profile.label.username")}</dt>
+            <dd>${userUsername}</dd>
+            <dt>${i18n.translate("page.profile.label.email")}</dt>
+            <dd>${userEmail}</dd>
+            <dt>${i18n.translate("page.profile.label.member.since")}</dt>
+            <dd>${memberSince}</dd>
         </dl>
     </div>
 
     <!-- Preferences -->
-    <div class="card card-padding-lg" style=" margin-bottom:1.25rem;">
-        <h2 class="section-title flex-center gap-sm" style="font-size:0.9rem; color:var(--bt-text-dim); margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem;">
-            <i class="ri-palette-line" style="color:var(--bt-accent-dim);"></i>
+    <div class="card card-pad">
+        <h2 class="profile-section-title">
+            <i class="ri-palette-line"></i>
             ${i18n.translate("page.profile.preferences")}
         </h2>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem;">
@@ -76,8 +76,8 @@
     </div>
 
     <!-- Reading Analytics toggle -->
-    <div class="card card-padding-lg" style=" margin-bottom:1.25rem;">
-        <h2 class="section-title flex-center gap-sm" style="font-size:0.9rem; color:var(--bt-text-dim); margin-bottom:0.5rem; display:flex; align-items:center; gap:0.5rem;">
+    <div class="card card-pad">
+        <h2 class="profile-section-title">
             <i class="ri-bar-chart-2-line" style="color:var(--bt-accent-dim);"></i>
             ${i18n.translate("page.profile.analytics")}
         </h2>
@@ -97,8 +97,8 @@
     </div>
 
     <!-- Change Email -->
-    <div class="card card-padding-lg" style=" margin-bottom:1.25rem;">
-        <h2 class="section-title flex-center gap-sm" style="font-size:0.9rem; color:var(--bt-text-dim); margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem;">
+    <div class="card card-pad">
+        <h2 class="profile-section-title">
             <i class="ri-mail-settings-line" style="color:var(--bt-accent-dim);"></i>
             ${i18n.translate("page.profile.change.email")}
         </h2>
@@ -120,8 +120,8 @@
     </div>
 
     <!-- API Tokens -->
-    <div class="card card-padding-lg" style=" margin-bottom:1.25rem;">
-        <h2 class="section-title flex-center gap-sm" style="font-size:0.9rem; color:var(--bt-text-dim); margin-bottom:0.5rem; display:flex; align-items:center; gap:0.5rem;">
+    <div class="card card-pad">
+        <h2 class="profile-section-title">
             <i class="ri-key-2-line" style="color:var(--bt-accent-dim);"></i>
             ${i18n.translate("page.profile.api.tokens")}
         </h2>
@@ -143,8 +143,8 @@
     </div>
 
     <!-- Data Export -->
-    <div class="card card-padding-lg" style=" margin-bottom:1.25rem;">
-        <h2 class="section-title flex-center gap-sm" style="font-size:0.9rem; color:var(--bt-text-dim); margin-bottom:0.5rem; display:flex; align-items:center; gap:0.5rem;">
+    <div class="card card-pad">
+        <h2 class="profile-section-title">
             <i class="ri-database-2-line" style="color:var(--bt-accent-dim);"></i>
             ${i18n.translate("page.profile.export")}
         </h2>
@@ -155,8 +155,8 @@
     </div>
 
     <!-- Goodreads Import -->
-    <div class="card card-padding-lg" style=" margin-bottom:1.25rem;">
-        <h2 class="section-title flex-center gap-sm" style="font-size:0.9rem; color:var(--bt-text-dim); margin-bottom:0.5rem; display:flex; align-items:center; gap:0.5rem;">
+    <div class="card card-pad">
+        <h2 class="profile-section-title">
             <i class="ri-upload-2-line" style="color:var(--bt-accent-dim);"></i>
             ${i18n.translate("page.profile.import.goodreads")}
         </h2>
@@ -182,8 +182,8 @@
     </div>
 
     <!-- Change Password -->
-    <div class="card card-padding-lg" style="">
-        <h2 class="section-title flex-center gap-sm" style="font-size:0.9rem; color:var(--bt-text-dim); margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem;">
+    <div class="card card-pad">
+        <h2 class="profile-section-title">
             <i class="ri-lock-password-line" style="color:var(--bt-accent-dim);"></i>
             ${i18n.translate("page.profile.change.password")}
         </h2>

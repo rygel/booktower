@@ -124,7 +124,7 @@ enum class BookSortOrder(
     TITLE("b.title", "sort.title"),
     ADDED("b.added_at DESC, b.title", "sort.added"),
     AUTHOR("COALESCE(b.author, ''), b.title", "sort.author"),
-    PUBLISHED_DATE("COALESCE(b.published_date, '') DESC, b.title", "sort.published.date"),
+    PUBLISHED_DATE("COALESCE(CAST(b.published_date AS VARCHAR), '') DESC, b.title", "sort.published.date"),
 }
 
 enum class ReadStatus(
@@ -185,6 +185,7 @@ data class BookDto(
     val communityRatingCount: Int? = null,
     val communityRatingSource: String? = null,
     val contentSnippet: String? = null,
+    val shareToken: String? = null,
 )
 
 data class ComicMetadataRequest(

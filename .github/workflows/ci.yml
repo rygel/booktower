@@ -196,8 +196,79 @@ jobs:
       - name: Build Docker image
         run: docker build --tag booktower:ci .
 
-      - name: Verify image exists
-        run: docker image inspect booktower:ci --format '{{.RepoTags}} {{.Config.ExposedPorts}}'
+      - name: Smoke test Docker container
+        run: |
+          docker run -d --name bt-smoke -p 9999:8080 \
+            -e BOOKTOWER_QUICKSTART=true \
+            -e BOOKTOWER_JWT_SECRET=ci-test-secret-not-for-production \
+            booktower:ci
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:9999/health > /dev/null 2>&1; then
+              echo "Container healthy after ${i}s"
+              break
+            fi
+            [ "$i" -eq 30 ] && { echo "Container failed to start"; docker logs bt-smoke; exit 1; }
+            sleep 1
+          done
+          # Verify it serves actual content
+          STATUS=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:9999/login)
+          [ "$STATUS" = "200" ] || { echo "Login page returned $STATUS"; docker logs bt-smoke; exit 1; }
+          echo "Docker smoke test passed"
+          docker stop bt-smoke
+
+  # ── Full test suite against PostgreSQL ────────────────────────────────────
+  postgres-test:
+    name: Tests PostgreSQL ${{ matrix.pg }}
+    needs: code-quality
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        pg: [ 17, 18 ]
+
+    services:
+      postgres:
+        image: postgres:${{ matrix.pg }}-alpine
+        env:
+          POSTGRES_USER: booktower
+          POSTGRES_PASSWORD: booktower
+          POSTGRES_DB: booktower
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U booktower"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-java@v5
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - uses: actions/cache@v5
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-pg-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-maven-
+
+      - name: Run full test suite against PostgreSQL
+        env:
+          BOOKTOWER_DB_URL: jdbc:postgresql://localhost:5432/booktower
+          BOOKTOWER_DB_USERNAME: booktower
+          BOOKTOWER_DB_PASSWORD: booktower
+          BOOKTOWER_DB_DRIVER: org.postgresql.Driver
+        run: mvn test -Dflyway.skip=false
+
+      - name: Upload PostgreSQL test results
+        uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: pg${{ matrix.pg }}-test-results
+          path: target/surefire-reports/
 
   # ── E2E tests: Linux only (bash-based test script) ────────────────────────
   e2e-tests:

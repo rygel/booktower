@@ -27,7 +27,7 @@ class LibraryWatchServiceTest {
         jdbi.useHandle<Exception> { handle ->
             handle
                 .createUpdate(
-                    "INSERT INTO users (id, username, email, password_hash, created_at, updated_at, is_admin) VALUES (?,?,?,?,?,?,0)",
+                    "INSERT INTO users (id, username, email, password_hash, created_at, updated_at, is_admin) VALUES (?,?,?,?,?,?,false)",
                 ).bind(0, userId.toString())
                 .bind(1, "watchtest_${System.nanoTime()}")
                 .bind(2, "wt_${System.nanoTime()}@test.com")

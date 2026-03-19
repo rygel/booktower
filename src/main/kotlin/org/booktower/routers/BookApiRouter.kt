@@ -16,6 +16,7 @@ import org.booktower.services.BookLinkService
 import org.booktower.services.BookNotebookService
 import org.booktower.services.BookReviewService
 import org.booktower.services.BookService
+import org.booktower.services.BookSharingService
 import org.booktower.services.ComicMetadataService
 import org.booktower.services.ComicService
 import org.booktower.services.CreateNotebookRequest
@@ -59,6 +60,7 @@ class BookApiRouter(
     private val bookNotebookService: BookNotebookService?,
     private val duplicateDetectionService: DuplicateDetectionService?,
     private val bookLinkService: BookLinkService? = null,
+    private val bookSharingService: BookSharingService? = null,
 ) {
     @Suppress("LongMethod")
     fun routes(): List<RoutingHttpHandler> =
@@ -164,7 +166,13 @@ class BookApiRouter(
             "/api/shelves" bind Method.POST to filters.auth.then(::createShelf),
             "/api/shelves/{id}/share" bind Method.POST to filters.auth.then(::shareShelf),
             "/api/shelves/{id}/share" bind Method.DELETE to filters.auth.then(::unshareShelf),
-            "/public/shelf/{token}" bind Method.GET to ::getPublicShelf,
+            "/shared/shelf/{token}" bind Method.GET to filters.auth.then(::getPublicShelf),
+            // Book sharing (all require authentication per ADR-001)
+            "/api/books/{id}/share" bind Method.POST to filters.auth.then(::shareBook),
+            "/api/books/{id}/share" bind Method.DELETE to filters.auth.then(::unshareBook),
+            "/api/books/{id}/share" bind Method.GET to filters.auth.then(::getBookShareToken),
+            // GET /shared/book/{token} is handled by PageRouter (renders HTML page)
+            "/shared/book/{token}/download" bind Method.GET to filters.auth.then(::downloadSharedBook),
             // Notebooks
             "/api/books/{id}/notebooks" bind Method.GET to filters.auth.then(::listNotebooks),
             "/api/books/{id}/notebooks" bind Method.POST to filters.auth.then(::createNotebook),
@@ -1023,6 +1031,92 @@ class BookApiRouter(
                 org.booktower.config.Json.mapper
                     .writeValueAsString(shelf),
             )
+    }
+
+    // ─── Book Sharing ─────────────────────────────────────────────────────────
+
+    private fun shareBook(req: Request): Response {
+        val svc = bookSharingService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val userId = AuthenticatedUser.from(req)
+        val bookId = extractBookId(req) ?: return Response(Status.BAD_REQUEST)
+        val token = svc.shareBook(userId, bookId) ?: return Response(Status.NOT_FOUND)
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body("""{"shareToken":"$token","shareUrl":"/public/book/$token"}""")
+    }
+
+    private fun unshareBook(req: Request): Response {
+        val svc = bookSharingService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val userId = AuthenticatedUser.from(req)
+        val bookId = extractBookId(req) ?: return Response(Status.BAD_REQUEST)
+        return if (svc.unshareBook(userId, bookId)) {
+            Response(Status.NO_CONTENT)
+        } else {
+            Response(Status.NOT_FOUND)
+        }
+    }
+
+    private fun getBookShareToken(req: Request): Response {
+        val svc = bookSharingService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val userId = AuthenticatedUser.from(req)
+        val bookId = extractBookId(req) ?: return Response(Status.BAD_REQUEST)
+        val token = svc.getShareToken(userId, bookId)
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body("""{"shareToken":${if (token != null) "\"$token\"" else "null"},"shareUrl":${if (token != null) "\"/public/book/$token\"" else "null"}}""")
+    }
+
+    private fun getPublicBook(req: Request): Response {
+        val svc = bookSharingService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val token =
+            req.uri.path
+                .split("/")
+                .lastOrNull()
+                ?.takeIf { it.isNotBlank() }
+                ?: return Response(Status.BAD_REQUEST)
+        val book = svc.getPublicBook(token) ?: return Response(Status.NOT_FOUND)
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(book),
+            )
+    }
+
+    private fun downloadSharedBook(req: Request): Response {
+        val svc = bookSharingService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val token =
+            req.uri.path
+                .split("/")
+                .dropLast(1)
+                .lastOrNull()
+                ?.takeIf { it.isNotBlank() }
+                ?: return Response(Status.BAD_REQUEST)
+        val filePath = svc.getSharedBookFilePath(token) ?: return Response(Status.NOT_FOUND)
+        val file = java.io.File(filePath)
+        if (!file.exists() || !file.isFile) return Response(Status.NOT_FOUND)
+        val ext = file.extension.lowercase()
+        val contentType =
+            when (ext) {
+                "epub" -> "application/epub+zip"
+                "pdf" -> "application/pdf"
+                "cbz" -> "application/vnd.comicbook+zip"
+                "cbr" -> "application/vnd.comicbook-rar"
+                "fb2" -> "application/x-fictionbook+xml"
+                else -> "application/octet-stream"
+            }
+        return Response(Status.OK)
+            .header("Content-Type", contentType)
+            .header("Content-Disposition", "attachment; filename=\"${file.name}\"")
+            .header("Content-Length", file.length().toString())
+            .body(file.inputStream())
+    }
+
+    private fun extractBookId(req: Request): java.util.UUID? {
+        val path = req.uri.path.split("/")
+        // /api/books/{id}/share → id is at index 3
+        val idStr = path.getOrNull(3) ?: return null
+        return runCatching { java.util.UUID.fromString(idStr) }.getOrNull()
     }
 
     // ─── Notebooks ────────────────────────────────────────────────────────────
