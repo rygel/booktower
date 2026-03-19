@@ -583,6 +583,12 @@ var BT_DEVICE = (function() {
             } else {
                 openBookmarkPanel();
             }
+            // After the CSS transition finishes, tell epub.js to recalculate
+            setTimeout(function () {
+                if (typeof rendition !== 'undefined' && rendition && rendition.resize) {
+                    rendition.resize();
+                }
+            }, 250);
         });
     }
 
@@ -605,6 +611,12 @@ var BT_DEVICE = (function() {
                 var anBtn2   = document.getElementById('btn-annotations');
                 if (anPanel2) { anPanel2.classList.remove('open'); if (anBtn2) anBtn2.classList.remove('active'); }
             }
+            // After the CSS transition finishes, tell epub.js to recalculate
+            setTimeout(function () {
+                if (typeof rendition !== 'undefined' && rendition && rendition.resize) {
+                    rendition.resize();
+                }
+            }, 250); // matches the 0.2s CSS transition
         });
     }
     // Fallback jumpToPage for "none" mode (no-op)
