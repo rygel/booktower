@@ -115,6 +115,10 @@
                             <i class="ri-folder-transfer-line"></i> ${i18n.translate("action.move")}
                         </button>
                     @endif
+                    <button id="share-btn" class="btn-secondary" style="display:inline-flex; align-items:center; gap:0.5rem;"
+                        onclick="toggleBookShare('${book.id}')">
+                        <i class="ri-share-line"></i> ${i18n.translate("action.share")}
+                    </button>
                     <button id="delete-book-btn"
                         class="btn-danger-outline"
                         hx-delete="/ui/books/${book.id}"
@@ -206,6 +210,30 @@
                         </form>
                     </div>
                 @endif
+
+                <!-- Share panel -->
+                <div id="share-panel" style="display:none; margin-top:1rem; border-top:1px solid var(--bt-border); padding-top:1rem;">
+                    <p style="font-size:0.8rem; font-weight:600; color:var(--bt-text-dim); margin-bottom:0.75rem;">${i18n.translate("page.book.share.title")}</p>
+                    <div id="share-content">
+                        @if(book.shareToken != null)
+                            <div style="display:flex; align-items:center; gap:0.5rem;">
+                                <input type="text" id="share-url" readonly value="/shared/book/${book.shareToken}"
+                                    style="flex:1; font-size:0.8rem; padding:0.4rem 0.625rem; border-radius:0.5rem; border:1px solid var(--bt-border-input); background:var(--bt-bg); color:var(--bt-text);">
+                                <button onclick="copyShareUrl()" class="btn-primary" style="font-size:0.8rem; padding:0.4rem 0.75rem;">
+                                    <i class="ri-file-copy-line"></i> ${i18n.translate("action.copy")}
+                                </button>
+                                <button onclick="unshareBook('${book.id}')" class="btn-outline btn-danger" style="font-size:0.8rem; padding:0.4rem 0.75rem;">
+                                    <i class="ri-close-line"></i> ${i18n.translate("action.unshare")}
+                                </button>
+                            </div>
+                        @else
+                            <p style="font-size:0.8rem; color:var(--bt-subtle); margin-bottom:0.5rem;">${i18n.translate("page.book.share.hint")}</p>
+                            <button onclick="shareBook('${book.id}')" class="btn-primary" style="font-size:0.8rem; padding:0.4rem 0.75rem;">
+                                <i class="ri-share-line"></i> ${i18n.translate("action.share")}
+                            </button>
+                        @endif
+                    </div>
+                </div>
 
                 <!-- Inline edit form -->
                 <div id="edit-panel" style="display:none; margin-top:1rem; border-top:1px solid var(--bt-border); padding-top:1rem;">
@@ -705,6 +733,40 @@ async function uploadFile(bookId) {
     } catch (e) {
         status.style.display = 'none';
         toast('${i18n.translate("msg.upload-failed")}', 'error');
+    }
+}
+
+function toggleBookShare(bookId) {
+    var panel = document.getElementById('share-panel');
+    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+}
+
+async function shareBook(bookId) {
+    var resp = await fetch('/api/books/' + bookId + '/share', { method: 'POST' });
+    if (resp.ok) {
+        var data = await resp.json();
+        var url = window.location.origin + data.shareUrl;
+        var content = document.getElementById('share-content');
+        content.innerHTML = '<div style="display:flex;align-items:center;gap:0.5rem;">' +
+            '<input type="text" id="share-url" readonly value="' + url + '" style="flex:1;font-size:0.8rem;padding:0.4rem 0.625rem;border-radius:0.5rem;border:1px solid var(--bt-border-input);background:var(--bt-bg);color:var(--bt-text);">' +
+            '<button onclick="copyShareUrl()" class="btn-primary" style="font-size:0.8rem;padding:0.4rem 0.75rem;"><i class="ri-file-copy-line"></i></button>' +
+            '<button onclick="unshareBook(\'' + bookId + '\')" class="btn-outline" style="font-size:0.8rem;padding:0.4rem 0.75rem;color:var(--bt-danger);border-color:var(--bt-danger);"><i class="ri-close-line"></i></button>' +
+            '</div>';
+        copyShareUrl();
+    }
+}
+
+async function unshareBook(bookId) {
+    await fetch('/api/books/' + bookId + '/share', { method: 'DELETE' });
+    window.location.reload();
+}
+
+function copyShareUrl() {
+    var input = document.getElementById('share-url');
+    if (input) {
+        navigator.clipboard.writeText(input.value).then(function() {
+            document.dispatchEvent(new CustomEvent('showToast', {detail: {message: '${i18n.translate("msg.link.copied")}', type: 'success'}}));
+        });
     }
 }
 </script>

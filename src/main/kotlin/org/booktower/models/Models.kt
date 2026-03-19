@@ -185,6 +185,7 @@ data class BookDto(
     val communityRatingCount: Int? = null,
     val communityRatingSource: String? = null,
     val contentSnippet: String? = null,
+    val shareToken: String? = null,
 )
 
 data class ComicMetadataRequest(
