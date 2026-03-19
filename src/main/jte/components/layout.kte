@@ -26,6 +26,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="BookTower">
     <style id="theme-style" data-theme="${currentTheme}">${themeCss}</style>
+    <link rel="stylesheet" href="/static/css/style.css">
     <link rel="stylesheet" href="/static/css/app.css">
     <link rel="stylesheet" href="/static/vendor/remixicon.css">
     <script src="/static/vendor/htmx.min.js" defer></script>
