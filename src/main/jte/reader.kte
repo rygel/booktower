@@ -413,7 +413,17 @@
                 <div class="pref-btn-row">
                     <button class="pref-btn" data-pref="theme" data-val="white">${i18n.translate("page.reader.prefs.theme.white")}</button>
                     <button class="pref-btn" data-pref="theme" data-val="sepia">${i18n.translate("page.reader.prefs.theme.sepia")}</button>
+                    <button class="pref-btn" data-pref="theme" data-val="cream">${i18n.translate("page.reader.prefs.theme.cream")}</button>
+                    <button class="pref-btn" data-pref="theme" data-val="mint">${i18n.translate("page.reader.prefs.theme.mint")}</button>
                     <button class="pref-btn" data-pref="theme" data-val="dark">${i18n.translate("page.reader.prefs.theme.dark")}</button>
+                </div>
+                <div style="display:flex; align-items:center; gap:0.5rem; margin-top:0.5rem;">
+                    <label style="font-size:0.75rem; color:var(--bt-muted);">${i18n.translate("page.reader.prefs.theme.custom")}</label>
+                    <input type="color" id="custom-bg-color" value="#ffffff"
+                           style="width:2rem; height:1.5rem; border:1px solid var(--bt-border-input); border-radius:0.25rem; cursor:pointer; padding:0;">
+                    <input type="color" id="custom-fg-color" value="#111111"
+                           style="width:2rem; height:1.5rem; border:1px solid var(--bt-border-input); border-radius:0.25rem; cursor:pointer; padding:0;">
+                    <button id="apply-custom-theme" class="pref-btn" style="font-size:0.7rem; padding:0.2rem 0.5rem;">${i18n.translate("page.reader.prefs.theme.apply")}</button>
                 </div>
             </div>
             @endif
@@ -719,7 +729,7 @@ var BT_DEVICE = (function() {
 
     // ── Reader preferences ─────────────────────────────────────────────────────
     const PDF_PREFS_URL = '/api/reader-preferences/pdf?device=' + BT_DEVICE;
-    const PDF_BG = { white: '#f0f0f0', dark: '#1a1a1a', sepia: '#e8dfc8' };
+    const PDF_BG = { white: '#f0f0f0', dark: '#1a1a1a', sepia: '#e8dfc8', cream: '#fdf6e3', mint: '#e8f5e9' };
     let pdfPrefSaveTimer = null;
     let pdfTheme = 'dark';
 
@@ -1017,6 +1027,8 @@ var BT_DEVICE = (function() {
     const EPUB_COLORS = {
         white: { bg: '#ffffff', fg: '#111111', link: '#1a5fb4' },
         sepia: { bg: '#faf4e8', fg: '#3b2e1a', link: '#7a5020' },
+        cream: { bg: '#fdf6e3', fg: '#586e75', link: '#268bd2' },
+        mint:  { bg: '#e8f5e9', fg: '#2e3b2f', link: '#2e7d32' },
         dark:  { bg: '#1a1a1a', fg: '#e0e0e0', link: '#78aeed' },
     };
     const EPUB_MARGIN_MAP = { narrow: '0.5em', normal: '2em', wide: '5em' };
@@ -1137,6 +1149,20 @@ var BT_DEVICE = (function() {
             }
         });
     }
+    // Custom color picker
+    var applyCustomBtn = document.getElementById('apply-custom-theme');
+    if (applyCustomBtn) {
+        applyCustomBtn.addEventListener('click', function() {
+            var bg = document.getElementById('custom-bg-color').value;
+            var fg = document.getElementById('custom-fg-color').value;
+            EPUB_COLORS['custom'] = { bg: bg, fg: fg, link: '#1a5fb4' };
+            epubPrefs.theme = 'custom';
+            applyEpubStyles();
+            updatePrefButtons();
+            saveEpubPrefs();
+        });
+    }
+
     document.querySelectorAll('[data-pref="flow"]').forEach(function(btn) {
         btn.addEventListener('click', function() {
             if (btn.dataset.val === epubPrefs.flow) return;
