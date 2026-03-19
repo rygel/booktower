@@ -48,8 +48,8 @@
                 <p class="stat-label">${i18n.translate("page.dashboard.stat.in.progress")}</p>
             </div>
         </div>
-        <div class="card stat-card" style="flex-direction:column; text-align:center;">
-            <p style="font-size:1.5rem; font-weight:700; color:var(--bt-accent); line-height:1;">${booksFinishedThisYear} / ${if (goal > 0) goal.toString() else "---"}</p>
+        <div class="card stat-card stat-card-goal">
+            <p class="stat-goal-value">${booksFinishedThisYear} / ${if (goal > 0) goal.toString() else "---"}</p>
             <p class="stat-label">${i18n.translate("page.dashboard.stat.goal")}</p>
             @if(goal > 0)
                 <div class="goal-bar">

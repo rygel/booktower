@@ -176,6 +176,8 @@ input:focus, select:focus, textarea:focus {
 
 /* Stat cards on dashboard */
 .stat-card { display: flex; align-items: center; gap: 1rem; padding: 1.25rem; }
+.stat-card-goal { flex-direction: column; text-align: center; }
+.stat-goal-value { font-size: 1.5rem; font-weight: 700; color: var(--bt-accent); line-height: 1; }
 .stat-icon {
   background: var(--bt-icon-bg); color: var(--bt-icon-text);
   border-radius: 0.625rem; padding: 0.75rem; flex-shrink: 0;
