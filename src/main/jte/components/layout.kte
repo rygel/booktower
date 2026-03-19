@@ -27,63 +27,53 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="BookTower">
     <style id="theme-style" data-theme="${currentTheme}">${themeCss}</style>
-    <link rel="stylesheet" href="/static/css/style.css">
     <link rel="stylesheet" href="/static/css/app.css">
     <link rel="stylesheet" href="/static/vendor/remixicon.css">
     <script src="/static/vendor/htmx.min.js" defer></script>
     <script src="/static/js/shortcuts.js" defer></script>
 </head>
-<body style="min-height:100vh; display:flex; flex-direction:column;">
+<body class="bt-app">
 
     @if(username != null)
-    <div id="global-progress" style="height:3px; background:transparent; position:fixed; top:0; left:0; right:0; z-index:200;">
-        <div id="global-progress-bar" style="height:100%; background:var(--bt-accent); width:0%; transition:width 0.3s;"></div>
+    <div id="global-progress" class="bt-progress-bar">
+        <div id="global-progress-bar" class="bt-progress-fill"></div>
     </div>
     @endif
 
     <!-- Top bar -->
-    <header style="background:var(--bt-surface); border-bottom:1px solid var(--bt-border); flex-shrink:0;">
-        <div style="display:flex; align-items:center; justify-content:space-between; height:3.5rem; padding:0 1.25rem;">
-            <a href="/" style="display:flex; align-items:center; gap:0.625rem; flex-shrink:0; text-decoration:none;">
-                <i class="ri-building-2-fill" style="font-size:1.25rem; color:var(--bt-accent-dim);"></i>
-                <span style="font-weight:700; color:var(--bt-text); font-size:1rem;">${i18n.translate("app.title")}</span>
+    <header class="bt-header">
+        <div class="bt-header-inner">
+            <a href="/" class="bt-logo">
+                <i class="ri-building-2-fill"></i>
+                <span>${i18n.translate("app.title")}</span>
             </a>
-            <form method="GET" action="/search" role="search"
-                  style="flex:1; max-width:28rem; margin:0 1.5rem;">
-                <div style="position:relative;">
-                    <i class="ri-search-line" style="position:absolute; left:0.625rem; top:50%; transform:translateY(-50%); color:var(--bt-muted); pointer-events:none; font-size:0.875rem;"></i>
+            <form method="GET" action="/search" role="search" class="bt-search-form">
+                <div class="bt-search-wrap">
+                    <i class="ri-search-line bt-search-icon"></i>
                     <input type="search" name="q"
                            value="${searchQuery}"
                            placeholder="${i18n.translate("placeholder.search")}"
-                           style="width:100%; padding:0.4rem 0.75rem 0.4rem 2rem; border-radius:0.5rem; border:1px solid var(--bt-border-input); background:var(--bt-bg); color:var(--bt-text); font-size:0.8rem; outline:none; transition:border-color 0.15s;"
-                           onfocus="this.style.borderColor='var(--bt-accent-dim)'"
-                           onblur="this.style.borderColor='var(--bt-border-input)'">
+                           class="bt-search-input">
                 </div>
             </form>
-            <div style="display:flex; align-items:center; gap:0.75rem; flex-shrink:0;">
+            <div class="bt-header-actions">
                 @if(username != null)
-                <button id="notif-btn" onclick="toggleNotifPanel()"
-                        style="position:relative; background:transparent; border:none; cursor:pointer; color:var(--bt-muted); font-size:1.1rem; padding:0.25rem; display:flex; align-items:center;"
+                <button id="notif-btn" onclick="toggleNotifPanel()" class="btn-icon"
                         title="${i18n.translate("label.notifications")}">
                     <i class="ri-notification-3-line"></i>
-                    <span id="notif-badge"
-                          style="display:none; position:absolute; top:-2px; right:-4px; background:var(--bt-danger); color:#fff; font-size:0.6rem; font-weight:700; min-width:1rem; height:1rem; border-radius:0.5rem; line-height:1rem; text-align:center; padding:0 0.2rem;"></span>
+                    <span id="notif-badge" class="notif-badge"></span>
                 </button>
                 @endif
-                <a href="/profile" style="display:flex; align-items:center; gap:0.5rem; text-decoration:none; color:var(--bt-text);">
+                <a href="/profile" class="bt-user-link">
                     @if(gravatarHash.isNotEmpty())
                         <img src="https://www.gravatar.com/avatar/${gravatarHash}?s=28&d=identicon"
-                             alt="${username}"
-                             style="width:28px; height:28px; border-radius:50%;">
+                             alt="${username}" class="bt-avatar">
                     @else
                         <i class="ri-user-line" style="font-size:1.1rem; color:var(--bt-muted);"></i>
                     @endif
-                    <span style="font-size:0.85rem; font-weight:500;">${username}</span>
+                    <span class="bt-username">${username}</span>
                 </a>
-                <button hx-post="/auth/logout"
-                    style="font-size:0.75rem; color:var(--bt-muted); padding:0.375rem 0.75rem; border-radius:0.5rem; border:1px solid var(--bt-border-input); background:transparent; cursor:pointer; transition:color 0.15s, border-color 0.15s;"
-                    onmouseover="this.style.color='var(--bt-danger)';this.style.borderColor='var(--bt-danger)'"
-                    onmouseout="this.style.color='var(--bt-muted)';this.style.borderColor='var(--bt-border-input)'">
+                <button hx-post="/auth/logout" class="btn-outline btn-danger">
                     ${i18n.translate("auth.logout")}
                 </button>
             </div>
@@ -91,403 +81,121 @@
     </header>
 
     <!-- Body: sidebar + content -->
-    <div style="display:flex; flex:1; min-height:0; overflow:hidden;">
+    <div class="bt-body">
 
         <!-- Sidebar -->
-        <nav style="width:14rem; background:var(--bt-surface); border-right:1px solid var(--bt-border); flex-shrink:0; display:flex; flex-direction:column;">
-            <div style="flex:1; padding:1.25rem 0.875rem; display:flex; flex-direction:column; gap:0.25rem; overflow-y:auto;">
-                <p style="font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--bt-subtle); padding:0 0.5rem; margin:0 0 0.625rem; font-weight:600;">${i18n.translate("nav.section")}</p>
+        <nav class="bt-sidebar">
+            <div class="bt-sidebar-nav">
+                <p class="bt-sidebar-section">${i18n.translate("nav.section")}</p>
                 <a href="/" class="sidebar-link ${if (currentPage == "home") "active" else ""}">
-                    <i class="ri-home-line" style="font-size:1rem; width:1rem; text-align:center;"></i>
+                    <i class="ri-home-line"></i>
                     ${i18n.translate("nav.home")}
                 </a>
                 <a href="/libraries" class="sidebar-link ${if (currentPage == "libraries" || currentPage == "library") "active" else ""}">
-                    <i class="ri-stack-line" style="font-size:1rem; width:1rem; text-align:center;"></i>
+                    <i class="ri-stack-line"></i>
                     ${i18n.translate("nav.libraries")}
                 </a>
                 <a href="/search" class="sidebar-link ${if (currentPage == "search") "active" else ""}">
-                    <i class="ri-search-line" style="font-size:1rem; width:1rem; text-align:center;"></i>
+                    <i class="ri-search-line"></i>
                     ${i18n.translate("nav.search")}
                 </a>
                 <a href="/queue" class="sidebar-link ${if (currentPage == "queue") "active" else ""}">
-                    <i class="ri-bookmark-line" style="font-size:1rem; width:1rem; text-align:center;"></i>
+                    <i class="ri-bookmark-line"></i>
                     ${i18n.translate("nav.queue")}
                 </a>
                 <a href="/series" class="sidebar-link ${if (currentPage == "series") "active" else ""}">
-                    <i class="ri-stack-line" style="font-size:1rem; width:1rem; text-align:center;"></i>
+                    <i class="ri-stack-line"></i>
                     ${i18n.translate("nav.series")}
                 </a>
                 <a href="/authors" class="sidebar-link ${if (currentPage == "authors") "active" else ""}">
-                    <i class="ri-user-2-line" style="font-size:1rem; width:1rem; text-align:center;"></i>
+                    <i class="ri-user-2-line"></i>
                     ${i18n.translate("nav.authors")}
                 </a>
                 <a href="/tags" class="sidebar-link ${if (currentPage == "tags") "active" else ""}">
-                    <i class="ri-price-tag-3-line" style="font-size:1rem; width:1rem; text-align:center;"></i>
+                    <i class="ri-price-tag-3-line"></i>
                     ${i18n.translate("nav.tags")}
                 </a>
                 <a href="/analytics" class="sidebar-link ${if (currentPage == "analytics") "active" else ""}">
-                    <i class="ri-bar-chart-line" style="font-size:1rem; width:1rem; text-align:center;"></i>
+                    <i class="ri-bar-chart-line"></i>
                     ${i18n.translate("nav.analytics")}
                 </a>
                 <a href="/activity" class="sidebar-link ${if (currentPage == "activity") "active" else ""}">
-                    <i class="ri-history-line" style="font-size:1rem; width:1rem; text-align:center;"></i>
+                    <i class="ri-history-line"></i>
                     ${i18n.translate("nav.activity")}
                 </a>
                 <a href="/profile" class="sidebar-link ${if (currentPage == "profile") "active" else ""}">
-                    <i class="ri-user-settings-line" style="font-size:1rem; width:1rem; text-align:center;"></i>
+                    <i class="ri-user-settings-line"></i>
                     ${i18n.translate("nav.profile")}
                 </a>
                 @if(isAdmin)
                 <a href="/admin" class="sidebar-link ${if (currentPage == "admin") "active" else ""}">
-                    <i class="ri-shield-user-line" style="font-size:1rem; width:1rem; text-align:center;"></i>
+                    <i class="ri-shield-user-line"></i>
                     ${i18n.translate("nav.admin")}
                 </a>
                 @endif
             </div>
 
             <!-- Version -->
-            <div style="padding:0.5rem 0.875rem; border-top:1px solid var(--bt-border);">
-                <p style="font-size:0.6rem; color:var(--bt-faint); text-align:center; margin:0;">BookTower v${org.booktower.services.VersionService.info.version}</p>
+            <div class="bt-sidebar-version">
+                <p>BookTower v${org.booktower.services.VersionService.info.version}</p>
             </div>
 
         </nav>
 
         <!-- Main content -->
-        <main style="flex:1; overflow:auto; background:var(--bt-bg);">
+        <main class="bt-main">
             ${content}
         </main>
     </div>
 
     <!-- Footer -->
-    <footer style="background:var(--bt-surface); border-top:1px solid var(--bt-border); flex-shrink:0;">
-        <div style="display:flex; align-items:center; justify-content:space-between; padding:0.625rem 1.5rem; font-size:0.75rem; color:var(--bt-subtle);">
+    <footer class="bt-footer">
+        <div class="bt-footer-inner">
             <span>&copy; 2026 BookTower. ${i18n.translate("footer.rights")}</span>
             <span>${i18n.translate("footer.made.with")} <i class="ri-heart-fill" style="color:var(--bt-danger);"></i> Kotlin &amp; http4k</span>
         </div>
     </footer>
 
     <!-- Notification panel (hidden by default) -->
-    <div id="notif-panel"
-         style="display:none; position:fixed; top:3.75rem; right:1rem; width:22rem; max-height:28rem; overflow-y:auto;
-                background:var(--bt-surface); border:1px solid var(--bt-border); border-radius:0.625rem;
-                box-shadow:0 8px 24px rgba(0,0,0,0.25); z-index:1000;">
-        <div style="display:flex; align-items:center; justify-content:space-between; padding:0.75rem 1rem; border-bottom:1px solid var(--bt-border);">
-            <span style="font-size:0.8rem; font-weight:600; color:var(--bt-text);">${i18n.translate("label.notifications")}</span>
-            <button onclick="markAllRead()" style="font-size:0.7rem; color:var(--bt-accent-dim); background:none; border:none; cursor:pointer;">${i18n.translate("action.mark.all.read")}</button>
+    <div id="notif-panel" class="bt-notif-panel">
+        <div class="bt-notif-header">
+            <span class="bt-notif-title">${i18n.translate("label.notifications")}</span>
+            <button onclick="markAllRead()" class="bt-notif-action">${i18n.translate("action.mark.all.read")}</button>
         </div>
         <div id="notif-list" style="padding:0.5rem;"></div>
     </div>
 
     <!-- Toast notifications -->
     <div id="toast-container"></div>
-    <script>
-    (function () {
-        function showToast(message, type) {
-            var container = document.getElementById('toast-container');
-            if (!container) return;
-            var toast = document.createElement('div');
-            toast.className = 'bt-toast ' + (type || 'info');
-            var icon = type === 'success' ? 'ri-checkbox-circle-line'
-                     : type === 'error'   ? 'ri-error-warning-line'
-                     :                      'ri-information-line';
-            var safe = message.replace(/&/g, '&amp;').replace(/</g, '&lt;');
-            toast.innerHTML = '<i class="' + icon + '" style="font-size:1rem;"></i><span>' + safe + '</span>';
-            container.appendChild(toast);
-            setTimeout(function () { toast.remove(); }, 3500);
-        }
-
-        // HTMX: HX-Trigger fires a custom DOM event named by the key
-        document.addEventListener('showToast', function (e) {
-            var d = e.detail;
-            if (typeof d === 'string') showToast(d, 'info');
-            else showToast(d.message || '', d.type || 'info');
-        });
-
-        // Flash cookie: read toast message set before a server-side redirect
-        function getCookie(name) {
-            var prefix = name + '=';
-            var parts = document.cookie.split('; ');
-            for (var i = 0; i < parts.length; i++) {
-                if (parts[i].indexOf(prefix) === 0)
-                    return decodeURIComponent(parts[i].slice(prefix.length));
-            }
-            return null;
-        }
-        function clearCookie(name) {
-            document.cookie = name + '=; path=/; max-age=0';
-        }
-        var flashMsg  = getCookie('flash_msg');
-        var flashType = getCookie('flash_type');
-        if (flashMsg) {
-            showToast(flashMsg, flashType || 'info');
-            clearCookie('flash_msg');
-            clearCookie('flash_type');
-        }
-    })();
-    </script>
+    <script src="/static/js/toasts.js" defer></script>
 
     @if(username != null)
-    <script>
-    var __i18n_no_notifications = '${i18n.translate("label.no.notifications")}';
-    var __i18n_new_notification = '${i18n.translate("label.new.notification")}';
-    var __i18n_new_notifications = '${i18n.translate("label.new.notifications")}';
-    </script>
-    <script>
-    (function () {
-        var POLL_INTERVAL = 30000;
-        var knownCount = 0;
-        var pollTimer = null;
-        var sse = null;
-
-        // ── Badge ────────────────────────────────────────────────────────────
-        function setBadge(count) {
-            var badge = document.getElementById('notif-badge');
-            if (!badge) return;
-            knownCount = count;
-            if (count > 0) {
-                badge.textContent = count > 99 ? '99+' : String(count);
-                badge.style.display = '';
-            } else {
-                badge.style.display = 'none';
-            }
-        }
-
-        // ── Panel ────────────────────────────────────────────────────────────
-        window.toggleNotifPanel = function () {
-            var panel = document.getElementById('notif-panel');
-            if (!panel) return;
-            if (panel.style.display === 'none') {
-                loadNotifications();
-                panel.style.display = '';
-            } else {
-                panel.style.display = 'none';
-            }
-        };
-        document.addEventListener('click', function (e) {
-            var panel = document.getElementById('notif-panel');
-            var btn   = document.getElementById('notif-btn');
-            if (panel && btn && !panel.contains(e.target) && !btn.contains(e.target)) {
-                panel.style.display = 'none';
-            }
-        });
-
-        function loadNotifications() {
-            fetch('/api/notifications?unread=true', { credentials: 'same-origin' })
-                .then(function (r) { return r.ok ? r.json() : []; })
-                .then(function (items) {
-                    renderList(items);
-                    setBadge(items.length);
-                })
-                .catch(function () {});
-        }
-
-        function renderList(items) {
-            var list = document.getElementById('notif-list');
-            if (!list) return;
-            if (items.length === 0) {
-                list.innerHTML = '<p style="font-size:0.78rem;color:var(--bt-muted);text-align:center;padding:1rem;">' + __i18n_no_notifications + '</p>';
-                return;
-            }
-            list.innerHTML = items.map(function (n) {
-                var safe = (n.title || '').replace(/&/g,'&amp;').replace(/</g,'&lt;');
-                var body = n.body ? '<span style="display:block;font-size:0.72rem;color:var(--bt-muted);margin-top:0.15rem;">' + n.body.replace(/&/g,'&amp;').replace(/</g,'&lt;') + '</span>' : '';
-                return '<div style="padding:0.5rem 0.625rem;border-radius:0.4rem;cursor:pointer;transition:background 0.12s;" '
-                     + 'onmouseover="this.style.background=\'var(--bt-bg)\'" onmouseout="this.style.background=\'\'" '
-                     + 'onclick="dismissNotif(\'' + n.id + '\',this)">'
-                     + '<span style="font-size:0.78rem;color:var(--bt-text);font-weight:500;">' + safe + '</span>' + body
-                     + '</div>';
-            }).join('');
-        }
-
-        window.dismissNotif = function (id, el) {
-            fetch('/api/notifications/' + id + '/read', { method: 'POST', credentials: 'same-origin' })
-                .then(function () { if (el) el.remove(); setBadge(Math.max(0, knownCount - 1)); })
-                .catch(function () {});
-        };
-
-        window.markAllRead = function () {
-            fetch('/api/notifications/read-all', { method: 'POST', credentials: 'same-origin' })
-                .then(function () {
-                    setBadge(0);
-                    var list = document.getElementById('notif-list');
-                    if (list) list.innerHTML = '<p style="font-size:0.78rem;color:var(--bt-muted);text-align:center;padding:1rem;">' + __i18n_no_notifications + '</p>';
-                })
-                .catch(function () {});
-        };
-
-        // ── SSE + polling fallback ───────────────────────────────────────────
-        function onNotification(data) {
-            try {
-                var n = JSON.parse(data);
-                setBadge(knownCount + 1);
-                showToast(n.title || ('1 ' + __i18n_new_notification), 'info');
-            } catch (e) {}
-        }
-
-        function startPolling() {
-            if (pollTimer) return;
-            pollTimer = setInterval(function () {
-                fetch('/api/notifications/count', { credentials: 'same-origin' })
-                    .then(function (r) { return r.ok ? r.json() : null; })
-                    .then(function (d) {
-                        if (!d) return;
-                        if (d.count > knownCount) {
-                            var delta = d.count - knownCount;
-                            setBadge(d.count);
-                            showToast(delta === 1 ? '1 ' + __i18n_new_notification : delta + ' ' + __i18n_new_notifications, 'info');
-                        } else {
-                            setBadge(d.count);
-                        }
-                    })
-                    .catch(function () {});
-            }, POLL_INTERVAL);
-        }
-
-        function startSSE() {
-            if (!window.EventSource) { startPolling(); return; }
-            sse = new EventSource('/api/notifications/stream');
-            sse.addEventListener('notification', function (e) { onNotification(e.data); });
-            sse.addEventListener('heartbeat', function () {});
-            sse.onerror = function () {
-                sse.close();
-                sse = null;
-                // EventSource auto-reconnects but also start polling as backup
-                startPolling();
-                // Try re-opening SSE after POLL_INTERVAL
-                setTimeout(function () {
-                    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
-                    startSSE();
-                }, POLL_INTERVAL);
-            };
-        }
-
-        // Initial count fetch + start real-time transport
-        fetch('/api/notifications/count', { credentials: 'same-origin' })
-            .then(function (r) { return r.ok ? r.json() : null; })
-            .then(function (d) { if (d) setBadge(d.count); })
-            .catch(function () {});
-
-        startSSE();
-    })();
-    </script>
+    <script src="/static/js/notifications.js" defer
+            data-i18n-no-notifications="${i18n.translate("label.no.notifications")}"
+            data-i18n-new-notification="${i18n.translate("label.new.notification")}"
+            data-i18n-new-notifications="${i18n.translate("label.new.notifications")}"></script>
     @endif
 
     @if(username != null)
     <!-- Download progress indicator -->
-    <div id="dl-indicator" style="position:fixed; bottom:1rem; right:1rem; z-index:100; display:none;">
-        <button id="dl-toggle" onclick="toggleDlPanel()"
-                style="background:var(--bt-accent); color:#fff; border:none; border-radius:50%; width:3rem; height:3rem; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,0.3); position:relative;">
-            <i class="ri-download-line" style="font-size:1.25rem;"></i>
-            <span id="dl-count" style="position:absolute; top:-4px; right:-4px; background:var(--bt-danger); color:#fff; font-size:0.6rem; font-weight:700; min-width:1.1rem; height:1.1rem; border-radius:50%; display:flex; align-items:center; justify-content:center;">0</span>
+    <div id="dl-indicator" class="bt-dl-indicator">
+        <button id="dl-toggle" onclick="toggleDlPanel()" class="bt-dl-btn">
+            <i class="ri-download-line"></i>
+            <span id="dl-count" class="bt-dl-count">0</span>
         </button>
-        <div id="dl-panel" style="display:none; position:absolute; bottom:3.5rem; right:0; width:20rem; max-height:16rem; overflow-y:auto; background:var(--bt-surface); border:1px solid var(--bt-border); border-radius:0.75rem; box-shadow:0 4px 16px rgba(0,0,0,0.3); padding:0.75rem;">
-            <p style="font-size:0.75rem; font-weight:600; color:var(--bt-text); margin:0 0 0.5rem;">Downloads</p>
+        <div id="dl-panel" class="bt-dl-panel">
+            <p class="bt-dl-title">Downloads</p>
             <div id="dl-list"></div>
         </div>
     </div>
 
-    <script>
-    (function() {
-        var polling = null;
-        var indicator = document.getElementById('dl-indicator');
-        var countEl = document.getElementById('dl-count');
-        var listEl = document.getElementById('dl-list');
-        var panel = document.getElementById('dl-panel');
-        var lastRunningIds = new Set();
-
-        function fireToast(message, type) {
-            document.dispatchEvent(new CustomEvent('showToast', {detail: {message: message, type: type || 'info'}}));
-        }
-
-        function pollTasks() {
-            fetch('/api/tasks')
-                .then(function(r) { return r.ok ? r.json() : []; })
-                .then(function(tasks) {
-                    var running = tasks.filter(function(t) { return t.status === 'RUNNING'; });
-                    var runningIds = new Set(running.map(function(t) { return t.id; }));
-
-                    // Detect tasks that were running but are now complete/failed
-                    lastRunningIds.forEach(function(id) {
-                        if (!runningIds.has(id)) {
-                            var task = tasks.find(function(t) { return t.id === id; });
-                            if (task) {
-                                var suffix = task.status === 'DONE' ? ' \u2713' : ' \u2717';
-                                var toastType = task.status === 'DONE' ? 'success' : 'error';
-                                fireToast(task.label + suffix, toastType);
-                            }
-                        }
-                    });
-                    lastRunningIds = runningIds;
-
-                    var recent = tasks.filter(function(t) { return t.status !== 'RUNNING'; }).slice(0, 5);
-                    var all = running.concat(recent);
-
-                    if (all.length === 0) {
-                        indicator.style.display = 'none';
-                        if (polling) { clearInterval(polling); polling = null; }
-                        return;
-                    }
-
-                    indicator.style.display = 'block';
-                    countEl.textContent = running.length;
-                    countEl.style.display = running.length > 0 ? 'flex' : 'none';
-
-                    listEl.innerHTML = all.map(function(t) {
-                        var icon = t.status === 'RUNNING' ? 'ri-loader-4-line' :
-                                     t.status === 'DONE' ? 'ri-check-line' : 'ri-error-warning-line';
-                        var color = t.status === 'RUNNING' ? 'var(--bt-accent)' :
-                                      t.status === 'DONE' ? 'var(--bt-text)' : 'var(--bt-danger)';
-                        return '<div style="display:flex;align-items:center;gap:0.5rem;padding:0.375rem 0;font-size:0.75rem;color:' + color + ';">' +
-                            '<i class="' + icon + '" style="flex-shrink:0;' + (t.status === 'RUNNING' ? 'animation:bt-spin 1s linear infinite;' : '') + '"></i>' +
-                            '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + t.label + '</span></div>';
-                    }).join('');
-
-                    var progressBar = document.getElementById('global-progress-bar');
-                    if (progressBar) {
-                        if (running.length > 0) {
-                            var pct = 10 + (Date.now() / 30 % 80);
-                            progressBar.style.width = pct + '%';
-                            progressBar.style.opacity = '1';
-                        } else {
-                            progressBar.style.width = '100%';
-                            setTimeout(function() {
-                                progressBar.style.width = '0%';
-                                progressBar.style.opacity = '0';
-                            }, 500);
-                        }
-                    }
-
-                    if (running.length > 0 && !polling) {
-                        polling = setInterval(pollTasks, 3000);
-                    } else if (running.length === 0 && polling) {
-                        clearInterval(polling);
-                        polling = null;
-                    }
-                })
-                .catch(function() {});
-        }
-
-        window.toggleDlPanel = function() {
-            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-        };
-
-        document.addEventListener('click', function(e) {
-            var ind = document.getElementById('dl-indicator');
-            if (ind && !ind.contains(e.target)) {
-                panel.style.display = 'none';
-            }
-        });
-
-        // Initial check, then poll if active
-        pollTasks();
-        // Also check periodically in case new tasks start
-        setInterval(pollTasks, 10000);
-    })();
-    </script>
-    <style>
-    @keyframes bt-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-    </style>
+    <script src="/static/js/downloads.js" defer></script>
     @endif
 
+    <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/static/sw.js');
+    }
+    </script>
 </body>
 </html>

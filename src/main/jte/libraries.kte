@@ -16,14 +16,14 @@
 
 @template.components.layout(title="${i18n.translate("page.libraries.title")} - BookTower", username=username, gravatarHash=gravatarHash, currentPage="libraries",
     themeCss=themeCss, currentTheme=currentTheme, lang=lang, themes=themes, i18n=i18n, searchQuery="", isAdmin=isAdmin, content = @`
-<div style="padding:2rem;">
+<div class="page-container">
 
-    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:2rem;">
+    <div class="flex-between mb-3">
         <div>
-            <h1 style="font-size:1.5rem; font-weight:700; color:var(--bt-text); margin-bottom:0.25rem;">${i18n.translate("page.libraries.title")}</h1>
-            <p style="font-size:0.875rem; color:var(--bt-subtle);">${i18n.translate("page.libraries.subtitle")}</p>
+            <h1 class="page-title mb-0" style="margin-bottom:0.25rem;">${i18n.translate("page.libraries.title")}</h1>
+            <p class="text-sm text-subtle">${i18n.translate("page.libraries.subtitle")}</p>
         </div>
-        <button class="btn-primary" style="display:flex; align-items:center; gap:0.5rem;"
+        <button class="btn-primary flex-center gap-sm"
             onclick="document.getElementById('create-modal').style.display='flex'">
             <i class="ri-add-line"></i> ${i18n.translate("page.libraries.new")}
         </button>
@@ -58,7 +58,7 @@
     `)
 
     <!-- Library grid -->
-    <div id="libraries-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:1.25rem;">
+    <div id="libraries-grid" class="library-grid">
         @for(lib in libraries)
             @template.components.libraryCard(lib=lib, i18n=i18n)
         @endfor
@@ -76,12 +76,10 @@
 
     <!-- Smart Shelves section -->
     <div style="margin-top:2.5rem;">
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
-            <div>
-                <h2 style="font-size:1.125rem; font-weight:700; color:var(--bt-text); display:flex; align-items:center; gap:0.5rem;">
-                    <i class="ri-sparkling-line" style="color:var(--bt-accent);"></i> ${i18n.translate("page.shelves.title")}
-                </h2>
-            </div>
+        <div class="section-header">
+            <h2 class="section-heading">
+                <i class="ri-sparkling-line"></i> ${i18n.translate("page.shelves.title")}
+            </h2>
             <button class="btn-secondary" style="display:flex; align-items:center; gap:0.5rem;"
                 onclick="document.getElementById('create-shelf-modal').style.display='flex'">
                 <i class="ri-add-line"></i> ${i18n.translate("page.shelves.new")}
@@ -149,7 +147,7 @@
         `)
 
         <!-- Shelves grid -->
-        <div id="shelves-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:1.25rem;">
+        <div id="shelves-grid" class="library-grid">
             @for(shelf in shelves)
                 @template.components.shelfCard(shelf=shelf, i18n=i18n)
             @endfor

@@ -222,7 +222,7 @@ class RoundTripIntegrationTest {
 
     @Test
     fun `static assets served over HTTP`() {
-        val response = client(Request(Method.GET, url("/static/css/style.css")))
+        val response = client(Request(Method.GET, url("/static/css/app.css")))
         assertEquals(Status.OK, response.status, "Static file should be served")
         assertTrue(response.bodyString().isNotBlank(), "Static file should have content")
     }

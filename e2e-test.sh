@@ -65,7 +65,7 @@ assert_get "/manifest.json" "200" "PWA manifest"
 echo ""
 echo "Static assets"
 
-assert_get "/static/css/style.css" "200" "CSS served"
+assert_get "/static/css/app.css" "200" "CSS served"
 
 # ── 3. Public Pages ──────────────────────────────────────────────────────────
 echo ""

@@ -21,6 +21,8 @@ import org.booktower.services.LibraryService
 import org.booktower.services.LibraryWatchService
 import org.booktower.services.PdfMetadataService
 import org.booktower.services.ScanScheduleService
+import org.booktower.services.UserSettingsService
+import org.booktower.web.WebContext
 import org.http4k.core.Method
 import org.http4k.core.Response
 import org.http4k.core.Status.Companion.OK
@@ -37,6 +39,7 @@ fun main() {
     val logger = LoggerFactory.getLogger("booktower.Main")
 
     logger.info("Starting BookTower application...")
+    val startTime = System.currentTimeMillis()
 
     startKoin { modules(appModule) }
     val koin = GlobalContext.get()
@@ -48,6 +51,10 @@ fun main() {
     val epubMetadataService = koin.get<EpubMetadataService>()
     val scanScheduleService = koin.get<ScanScheduleService>()
     val libraryWatchService = koin.get<LibraryWatchService>()
+
+    // Wire user settings into WebContext for theme/language preference persistence
+    val userSettingsService = koin.get<UserSettingsService>()
+    WebContext.settingsProvider = { userId, key -> userSettingsService.get(userId, key) }
 
     scanScheduleService.start()
     libraryWatchService.start()
@@ -94,7 +101,9 @@ fun main() {
                 CreateUserRequest("demo", "demo@booktower.local", "demo1234"),
             )
         if (result.isSuccess) {
-            val userId = jwtService.extractUserId(result.getOrThrow().token)!!
+            val userId =
+                jwtService.extractUserId(result.getOrThrow().token)
+                    ?: error("Failed to extract user ID from quickstart token")
             libraryService.createLibrary(userId, CreateLibraryRequest("My Library", "${config.storage.booksPath}/demo"))
             logger.info("=================================================")
             logger.info("  QUICKSTART MODE")
@@ -110,7 +119,22 @@ fun main() {
 
     val app =
         routes(
-            "/health" bind Method.GET to { Response(OK).body("OK") },
+            "/health" bind Method.GET to {
+                val dbOk =
+                    try {
+                        database.getJdbi().withHandle<Boolean, Exception> { h ->
+                            h.createQuery("SELECT 1").mapTo(Int::class.java).firstOrNull() == 1
+                        }
+                    } catch (_: Exception) {
+                        false
+                    }
+                val version = org.booktower.services.VersionService.info.version
+                val uptimeMs = System.currentTimeMillis() - startTime
+                val uptimeSec = uptimeMs / 1000
+                Response(OK)
+                    .header("Content-Type", "application/json")
+                    .body("""{"status":"${if (dbOk) "up" else "degraded"}","database":"${if (dbOk) "ok" else "unreachable"}","version":"$version","uptimeSeconds":$uptimeSec}""")
+            },
             appHandler.routes(),
         )
 

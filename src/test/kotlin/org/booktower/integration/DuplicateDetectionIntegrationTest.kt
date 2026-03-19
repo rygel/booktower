@@ -76,7 +76,7 @@ class DuplicateDetectionIntegrationTest : IntegrationTestBase() {
         jdbi.useHandle<Exception> { h ->
             h
                 .createUpdate(
-                    "INSERT INTO users (id, username, email, password_hash, created_at, updated_at, is_admin) VALUES (?,?,?,?,?,?,0)",
+                    "INSERT INTO users (id, username, email, password_hash, created_at, updated_at, is_admin) VALUES (?,?,?,?,?,?,false)",
                 ).bind(0, id.toString())
                 .bind(1, "duptest_${System.nanoTime()}")
                 .bind(2, "dup_${System.nanoTime()}@test.com")

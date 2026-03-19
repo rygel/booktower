@@ -27,17 +27,17 @@
 
 @template.components.layout(title="${library.name} - BookTower", username=username, gravatarHash=gravatarHash, currentPage="library",
     themeCss=themeCss, currentTheme=currentTheme, lang=lang, themes=themes, i18n=i18n, searchQuery="", isAdmin=isAdmin, content = @`
-<div style="padding:2rem;">
+<div class="page-container">
 
     <!-- Breadcrumb -->
     @template.components.breadcrumb(items = listOf(i18n.translate("nav.libraries") to "/libraries", library.name to null))
 
-    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.75rem; flex-wrap:wrap; gap:1rem;">
+    <div class="flex-between mb-3" style="flex-wrap:wrap; gap:1rem;">
         <div>
-            <h1 style="font-size:1.5rem; font-weight:700; color:var(--bt-text); margin-bottom:0.25rem;">${library.name}</h1>
-            <p style="font-size:0.8rem; color:var(--bt-subtle);">${library.bookCount} ${i18n.translate("label.books")} &middot; <span style="font-family:monospace; color:var(--bt-faint);">${library.path}</span></p>
+            <h1 class="page-title mb-0" style="margin-bottom:0.25rem;">${library.name}</h1>
+            <p class="text-sm text-subtle">${library.bookCount} ${i18n.translate("label.books")} &middot; <span style="font-family:monospace; color:var(--bt-faint);">${library.path}</span></p>
         </div>
-        <div style="display:flex; gap:0.75rem; align-items:center;">
+        <div class="flex-center gap-md">
             <form action="/search" method="get" style="display:flex;">
                 <input type="hidden" name="libId" value="${library.id}">
                 <input type="text" name="q" placeholder="${i18n.translate("placeholder.search.books")}"
@@ -48,27 +48,27 @@
                 </button>
             </form>
             <select onchange="window.location.href='/libraries/${library.id}?sort='+this.value+'&status=${currentStatus}&tag=${currentTag}&rating=${currentRating}'"
-                style="border-radius:0.5rem; border:1px solid var(--bt-border-input); padding:0.4rem 0.75rem; font-size:0.8rem; background:var(--bt-input-bg); color:var(--bt-muted); cursor:pointer;">
+                class="filter-select">
                 @for(opt in sortOptions)
                     <option value="${opt.name}" selected="${opt.name == currentSort}">${i18n.translate(opt.label)}</option>
                 @endfor
             </select>
             <select onchange="window.location.href='/libraries/${library.id}?sort=${currentSort}&status='+this.value+'&tag=${currentTag}&rating=${currentRating}'"
-                style="border-radius:0.5rem; border:1px solid var(--bt-border-input); padding:0.4rem 0.75rem; font-size:0.8rem; background:var(--bt-input-bg); color:var(--bt-muted); cursor:pointer;">
+                class="filter-select">
                 <option value="ALL" selected="${currentStatus == "ALL"}">${i18n.translate("filter.all")}</option>
                 @for(opt in statusOptions)
                     <option value="${opt.name}" selected="${opt.name == currentStatus}">${i18n.translate(opt.label)}</option>
                 @endfor
             </select>
             <select onchange="window.location.href='/libraries/${library.id}?sort=${currentSort}&status=${currentStatus}&tag='+this.value+'&rating=${currentRating}'"
-                style="border-radius:0.5rem; border:1px solid var(--bt-border-input); padding:0.4rem 0.75rem; font-size:0.8rem; background:var(--bt-input-bg); color:var(--bt-muted); cursor:pointer;">
+                class="filter-select">
                 <option value="">${i18n.translate("filter.all.tags")}</option>
                 @for(tag in userTags)
                     <option value="${tag}" selected="${tag == currentTag}">${tag}</option>
                 @endfor
             </select>
             <select onchange="window.location.href='/libraries/${library.id}?sort=${currentSort}&status=${currentStatus}&tag=${currentTag}&rating='+this.value"
-                style="border-radius:0.5rem; border:1px solid var(--bt-border-input); padding:0.4rem 0.75rem; font-size:0.8rem; background:var(--bt-input-bg); color:var(--bt-muted); cursor:pointer;">
+                class="filter-select">
                 <option value="0" selected="${currentRating == 0}">${i18n.translate("filter.all.ratings")}</option>
                 <option value="1" selected="${currentRating == 1}">\u2605 ${i18n.translate("filter.rating.andabove")}</option>
                 <option value="2" selected="${currentRating == 2}">\u2605\u2605 ${i18n.translate("filter.rating.andabove")}</option>
