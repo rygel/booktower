@@ -355,6 +355,34 @@ abstract class IntegrationTestBase {
         return Json.mapper.readValue(response.bodyString(), LoginResponse::class.java).token
     }
 
+    /** Create a test user directly in the database (bypasses AuthService). PostgreSQL-compatible. */
+    protected fun createTestUserDirect(
+        jdbi: org.jdbi.v3.core.Jdbi,
+        userId: String,
+        username: String,
+        email: String = "$username@test.com",
+        passwordHash: String = "hash",
+        isAdmin: Boolean = false,
+    ) {
+        val now =
+            java.time.Instant
+                .now()
+                .toString()
+        jdbi.useHandle<Exception> { h ->
+            h
+                .createUpdate(
+                    "INSERT INTO users (id, username, email, password_hash, created_at, updated_at, is_admin) VALUES (?,?,?,?,?,?,?)",
+                ).bind(0, userId)
+                .bind(1, username)
+                .bind(2, email)
+                .bind(3, passwordHash)
+                .bind(4, now)
+                .bind(5, now)
+                .bind(6, isAdmin)
+                .execute()
+        }
+    }
+
     protected fun createLibrary(
         token: String,
         nameSuffix: String = "",
