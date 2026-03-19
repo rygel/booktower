@@ -131,6 +131,16 @@ class AdminHandler(
             .body("")
     }
 
+    fun resetDatabase(req: Request): Response {
+        val userId = AuthenticatedUser.from(req)
+        val ctx = WebContext(req)
+        adminService.resetDatabase(userId)
+        return Response(Status.OK)
+            .header("HX-Trigger", toast(ctx.i18n.translate("admin.danger.reset.done")))
+            .header("HX-Refresh", "true")
+            .body("")
+    }
+
     /** GET /api/admin/password-reset-tokens — lists active (unused, unexpired) tokens for admin display */
     fun listResetTokens(req: Request): Response {
         val tokens = passwordResetService.listActiveTokens()
