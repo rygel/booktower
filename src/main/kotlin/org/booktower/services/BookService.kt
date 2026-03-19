@@ -1142,6 +1142,12 @@ class BookService(
                 } catch (_: Exception) {
                     null
                 },
+            shareToken =
+                try {
+                    row.getColumn("share_token", String::class.java)
+                } catch (_: Exception) {
+                    null
+                },
         )
     }
 

@@ -263,6 +263,7 @@ abstract class IntegrationTestBase {
                 bookNotebookService,
                 duplicateDetectionService,
                 null, // bookLinkService
+                org.booktower.services.BookSharingService(jdbi, bookService),
             )
         val libraryApiRouter = LibraryApiRouter(filters, libraryHandler, libraryService, null, null)
         val userApiRouter =

@@ -52,6 +52,7 @@ import org.booktower.services.BookLinkService
 import org.booktower.services.BookNotebookService
 import org.booktower.services.BookReviewService
 import org.booktower.services.BookService
+import org.booktower.services.BookSharingService
 import org.booktower.services.BookmarkService
 import org.booktower.services.BulkCoverService
 import org.booktower.services.CalibreConversionService
@@ -200,6 +201,7 @@ val appModule =
         single { TelemetryService(get<Database>().getJdbi(), get()) }
         single { org.booktower.services.CommunityRatingService(get<Database>().getJdbi()) }
         single { BookLinkService(get<Database>().getJdbi(), get<BookService>()) }
+        single { BookSharingService(get<Database>().getJdbi(), get<BookService>()) }
         single { WeblateHandler(get<AppConfig>().weblate) }
 
         // ── Handler objects ──────────────────────────────────────────────────
@@ -329,6 +331,7 @@ val appModule =
                 bookNotebookService = get<BookNotebookService>(),
                 duplicateDetectionService = get<DuplicateDetectionService>(),
                 bookLinkService = get<BookLinkService>(),
+                bookSharingService = get<BookSharingService>(),
             )
         }
         single {
