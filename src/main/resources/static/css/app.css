@@ -527,6 +527,17 @@ input:focus, select:focus, textarea:focus {
   background: var(--bt-input-bg); color: var(--bt-muted); cursor: pointer;
 }
 
+/* Admin table */
+.bt-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+.bt-table thead tr { border-bottom: 2px solid var(--bt-border); }
+.bt-table th {
+  text-align: left; padding: 0.625rem 1rem; color: var(--bt-muted);
+  font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;
+}
+.bt-table td { padding: 0.75rem 1rem; }
+.bt-table tbody tr { border-bottom: 1px solid var(--bt-border); transition: background 0.12s; }
+.bt-table tbody tr:hover { background: var(--bt-bg); }
+
 /* Dialog / modal */
 dialog {
   border: none; border-radius: 1rem;
