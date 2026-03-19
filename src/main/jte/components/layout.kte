@@ -134,42 +134,6 @@
                 @endif
             </div>
 
-            <!-- Theme selector -->
-            <div style="padding:0.875rem 0.875rem 0.75rem; border-top:1px solid var(--bt-border);">
-                <label style="display:block; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--bt-subtle); margin-bottom:0.4rem; font-weight:600;">${i18n.translate("sidebar.themes")}</label>
-                <select name="theme"
-                        hx-post="/preferences/theme"
-                        hx-trigger="change"
-                        hx-target="#theme-style"
-                        hx-swap="outerHTML"
-                        style="width:100%; font-size:0.78rem; padding:0.35rem 0.5rem; border-radius:0.4rem; cursor:pointer;">
-                    @for(theme in themes)
-                        @if(theme.id == currentTheme)
-                            <option value="${theme.id}" selected>${theme.name}</option>
-                        @else
-                            <option value="${theme.id}">${theme.name}</option>
-                        @endif
-                    @endfor
-                </select>
-            </div>
-
-            <!-- Language selector -->
-            <div style="padding:0 0.875rem 0.875rem;">
-                <label style="display:block; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--bt-subtle); margin-bottom:0.4rem; font-weight:600;">${i18n.translate("sidebar.language")}</label>
-                <select name="lang"
-                        hx-post="/preferences/lang"
-                        hx-trigger="change"
-                        style="width:100%; font-size:0.78rem; padding:0.35rem 0.5rem; border-radius:0.4rem; cursor:pointer;">
-                    @for(code in listOf("en","fr","de","es","pt","it","nl","pl","ja","zh"))
-                        @if(code == lang)
-                            <option value="${code}" selected>${i18n.translate("language.$code")}</option>
-                        @else
-                            <option value="${code}">${i18n.translate("language.$code")}</option>
-                        @endif
-                    @endfor
-                </select>
-            </div>
-
             <!-- Version -->
             <div style="padding:0.5rem 0.875rem; border-top:1px solid var(--bt-border);">
                 <p style="font-size:0.6rem; color:var(--bt-faint); text-align:center; margin:0;">BookTower v${org.booktower.services.VersionService.info.version}</p>

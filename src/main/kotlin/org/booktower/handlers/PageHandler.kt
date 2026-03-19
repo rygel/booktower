@@ -32,6 +32,8 @@ import org.http4k.core.body.form
 import org.http4k.core.cookie.Cookie
 import org.http4k.core.cookie.cookie
 import java.util.UUID
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.Executors
 
 class PageHandler(
     private val jwtService: JwtService,
@@ -414,43 +416,61 @@ class PageHandler(
         val userId = auth(req) ?: return redirectToLogin()
         val ctx = WebContext(req)
         val (username, gravatarHash) = userDisplayInfo(userId)
-        val libraries = libraryService.getLibraries(userId)
-        val recentBooks = bookService.getRecentBooks(userId, 6)
-        val recentlyAddedBooks = bookService.getRecentlyAddedBooks(userId, 6)
-        val recentlyFinishedBooks = bookService.getRecentlyFinishedBooks(userId, 6)
-        val totalBooks = libraries.sumOf { it.bookCount }
-        val currentlyReadingCount = bookService.countByStatus(userId, org.booktower.models.ReadStatus.READING)
         val year =
             java.time.LocalDate
                 .now()
                 .year
-        val goal = userSettingsService.get(userId, "reading.goal.$year")?.toIntOrNull() ?: 0
-        val booksFinishedThisYear = bookService.countFinishedThisYear(userId, year)
-        return htmlOk(
-            templateRenderer.render(
-                "dashboard.kte",
-                mapOf(
-                    "username" to username,
-                    "gravatarHash" to gravatarHash,
-                    "libraries" to libraries,
-                    "recentBooks" to recentBooks,
-                    "recentlyAddedBooks" to recentlyAddedBooks,
-                    "recentlyFinishedBooks" to recentlyFinishedBooks,
-                    "libraryCount" to libraries.size,
-                    "totalBooks" to totalBooks,
-                    "currentlyReadingCount" to currentlyReadingCount,
-                    "goal" to goal,
-                    "booksFinishedThisYear" to booksFinishedThisYear,
-                    "year" to year,
-                    "themeCss" to ctx.themeCss,
-                    "currentTheme" to ctx.theme,
-                    "lang" to ctx.lang,
-                    "themes" to ThemeCatalog.allThemes(),
-                    "i18n" to ctx.i18n,
-                    "isAdmin" to authIsAdmin(req),
+
+        // Run all independent queries in parallel using virtual threads
+        val vt = Executors.newVirtualThreadPerTaskExecutor()
+        try {
+            val fLibraries = CompletableFuture.supplyAsync({ libraryService.getLibraries(userId) }, vt)
+            val fRecent = CompletableFuture.supplyAsync({ bookService.getRecentBooks(userId, 6) }, vt)
+            val fRecentlyAdded = CompletableFuture.supplyAsync({ bookService.getRecentlyAddedBooks(userId, 6) }, vt)
+            val fRecentlyFinished = CompletableFuture.supplyAsync({ bookService.getRecentlyFinishedBooks(userId, 6) }, vt)
+            val fReadingCount = CompletableFuture.supplyAsync({ bookService.countByStatus(userId, org.booktower.models.ReadStatus.READING) }, vt)
+            val fGoal = CompletableFuture.supplyAsync({ userSettingsService.get(userId, "reading.goal.$year")?.toIntOrNull() ?: 0 }, vt)
+            val fFinishedThisYear = CompletableFuture.supplyAsync({ bookService.countFinishedThisYear(userId, year) }, vt)
+
+            CompletableFuture.allOf(fLibraries, fRecent, fRecentlyAdded, fRecentlyFinished, fReadingCount, fGoal, fFinishedThisYear).join()
+
+            val libraries = fLibraries.get()
+            val recentBooks = fRecent.get()
+            val recentlyAddedBooks = fRecentlyAdded.get()
+            val recentlyFinishedBooks = fRecentlyFinished.get()
+            val currentlyReadingCount = fReadingCount.get()
+            val goal = fGoal.get()
+            val booksFinishedThisYear = fFinishedThisYear.get()
+            val totalBooks = libraries.sumOf { it.bookCount }
+
+            return htmlOk(
+                templateRenderer.render(
+                    "dashboard.kte",
+                    mapOf(
+                        "username" to username,
+                        "gravatarHash" to gravatarHash,
+                        "libraries" to libraries,
+                        "recentBooks" to recentBooks,
+                        "recentlyAddedBooks" to recentlyAddedBooks,
+                        "recentlyFinishedBooks" to recentlyFinishedBooks,
+                        "libraryCount" to libraries.size,
+                        "totalBooks" to totalBooks,
+                        "currentlyReadingCount" to currentlyReadingCount,
+                        "goal" to goal,
+                        "booksFinishedThisYear" to booksFinishedThisYear,
+                        "year" to year,
+                        "themeCss" to ctx.themeCss,
+                        "currentTheme" to ctx.theme,
+                        "lang" to ctx.lang,
+                        "themes" to ThemeCatalog.allThemes(),
+                        "i18n" to ctx.i18n,
+                        "isAdmin" to authIsAdmin(req),
+                    ),
                 ),
-            ),
-        )
+            )
+        } finally {
+            vt.close()
+        }
     }
 
     /** POST /ui/goal — save yearly reading goal */
