@@ -113,6 +113,24 @@ class AdminHandler(
             .body("")
     }
 
+    /** POST /admin/seed/comics — creates Public Domain Comics library and queues CBZ downloads */
+    fun seedComics(req: Request): Response {
+        val userId = AuthenticatedUser.from(req)
+        val ctx = WebContext(req)
+        val result =
+            seedService.seedComics(userId)
+                ?: return Response(Status.CONFLICT)
+                    .header("HX-Trigger", toast(ctx.i18n.translate("msg.seed.comics.already"), "info"))
+                    .body("")
+        val msg =
+            ctx.i18n
+                .translate("msg.seed.comics.queued")
+                .replace("{0}", result.queued.toString())
+        return Response(Status.OK)
+            .header("HX-Trigger", toast(msg))
+            .body("")
+    }
+
     /** GET /api/admin/password-reset-tokens — lists active (unused, unexpired) tokens for admin display */
     fun listResetTokens(req: Request): Response {
         val tokens = passwordResetService.listActiveTokens()

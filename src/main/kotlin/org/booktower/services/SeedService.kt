@@ -351,6 +351,61 @@ private val SEED_LIBRARIES =
         ),
     )
 
+private data class SeedComic(
+    val title: String,
+    val author: String,
+    val description: String,
+    val archiveId: String,
+    val fileName: String,
+    val tags: List<String> = emptyList(),
+)
+
+private const val COMICS_LIBRARY_NAME = "Public Domain Comics"
+
+private val COMIC_SEED_BOOKS =
+    listOf(
+        SeedComic(
+            title = "Atom Age Combat #1",
+            author = "St. John Publications",
+            description = "Cold War-era science fiction and action comic from 1952. Features stories of atomic-age warfare and adventure.",
+            archiveId = "Atom_Age_Combat_",
+            fileName = "Atom_Age_Combat_Volume_01_Number_01_1952_.cbz",
+            tags = listOf("sci-fi", "action", "golden-age", "comic"),
+        ),
+        SeedComic(
+            title = "Atom Age Combat #4",
+            author = "St. John Publications",
+            description = "Science fiction combat stories from 1953, part of the Atom Age Combat series.",
+            archiveId = "Atom_Age_Combat_",
+            fileName = "Atom_Age_Combat_Volume_01_Number_04_1953_.cbz",
+            tags = listOf("sci-fi", "action", "golden-age", "comic"),
+        ),
+        SeedComic(
+            title = "Forbidden Worlds #25",
+            author = "American Comics Group",
+            description = "Horror and supernatural anthology comic from January 1954. Features tales of the strange and unexplained.",
+            archiveId = "Forbidden_Worlds_25_to_32__895",
+            fileName = "ForbiddenWorldsNo25Jan1954.cbz",
+            tags = listOf("horror", "supernatural", "golden-age", "comic"),
+        ),
+        SeedComic(
+            title = "Forbidden Worlds #30",
+            author = "American Comics Group",
+            description = "Horror and mystery anthology from June 1954.",
+            archiveId = "Forbidden_Worlds_25_to_32__895",
+            fileName = "ForbiddenWorldsNo30Jun1954.cbz",
+            tags = listOf("horror", "supernatural", "golden-age", "comic"),
+        ),
+        SeedComic(
+            title = "Forbidden Worlds #32",
+            author = "American Comics Group",
+            description = "Supernatural tales from August 1954. The final issue in the Forbidden Worlds #25-32 collection.",
+            archiveId = "Forbidden_Worlds_25_to_32__895",
+            fileName = "ForbiddenWorldsNo32Aug1954.cbz",
+            tags = listOf("horror", "supernatural", "golden-age", "comic"),
+        ),
+    )
+
 /** Converts a bare year like "1898" to "1898-01-01"; returns null for non-parseable values. */
 private fun normalizeSeedDate(date: String?): String? =
     when {
@@ -527,6 +582,74 @@ class SeedService(
 
         logger.info("LibriVox seed queued $queued audiobooks for $userId")
         return SeedFilesResult(queued, 0)
+    }
+
+    /**
+     * Creates a "Public Domain Comics" library and queues CBZ downloads from Archive.org.
+     * Returns null if the library already exists (idempotent).
+     */
+    fun seedComics(userId: UUID): SeedFilesResult? {
+        val existing = libraryService.getLibraries(userId)
+        if (existing.any { it.name == COMICS_LIBRARY_NAME }) return null
+
+        val lib =
+            libraryService.createLibrary(
+                userId,
+                CreateLibraryRequest(COMICS_LIBRARY_NAME, "./data/libraries/comics"),
+            )
+
+        var queued = 0
+        COMIC_SEED_BOOKS.forEach { comic ->
+            bookService
+                .createBook(
+                    userId,
+                    CreateBookRequest(comic.title, comic.author, comic.description, lib.id),
+                ).onSuccess { b ->
+                    val bookId = UUID.fromString(b.id)
+                    if (comic.tags.isNotEmpty()) bookService.setTags(userId, bookId, comic.tags)
+
+                    coverExecutor.submit {
+                        downloadComic(userId, bookId, comic)
+                    }
+                    queued++
+                }
+        }
+
+        logger.info("Comic seed: queued $queued downloads for user $userId")
+        return SeedFilesResult(queued, 0)
+    }
+
+    private fun downloadComic(
+        userId: UUID,
+        bookId: UUID,
+        comic: SeedComic,
+    ) {
+        try {
+            val url = "https://archive.org/download/${comic.archiveId}/${java.net.URLEncoder.encode(comic.fileName, "UTF-8")}"
+            val libDir = File("./data/libraries/comics")
+            if (!libDir.exists()) libDir.mkdirs()
+            val destFile = File(libDir, "$bookId.cbz")
+
+            val conn =
+                java.net
+                    .URI(url)
+                    .toURL()
+                    .openConnection() as java.net.HttpURLConnection
+            conn.connectTimeout = 30_000
+            conn.readTimeout = 300_000 // comics can be large
+            conn.setRequestProperty("User-Agent", "BookTower/1.0 comic-seed")
+            conn.instanceFollowRedirects = true
+            if (conn.responseCode != 200) {
+                logger.warn("Comic download failed for '${comic.title}': HTTP ${conn.responseCode}")
+                return
+            }
+            conn.inputStream.use { input -> destFile.outputStream().use { input.copyTo(it) } }
+
+            bookService.updateFileInfo(userId, bookId, destFile.absolutePath, destFile.length())
+            logger.info("Downloaded comic '${comic.title}' (${destFile.length() / 1024}KB)")
+        } catch (e: Exception) {
+            logger.warn("Comic download failed for '${comic.title}': ${e.message}")
+        }
     }
 
     private fun downloadLibrivoxChapters(
