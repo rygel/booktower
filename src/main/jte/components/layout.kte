@@ -397,5 +397,87 @@
     </script>
     @endif
 
+    @if(username != null)
+    <!-- Download progress indicator -->
+    <div id="dl-indicator" style="position:fixed; bottom:1rem; right:1rem; z-index:100; display:none;">
+        <button id="dl-toggle" onclick="toggleDlPanel()"
+                style="background:var(--bt-accent); color:#fff; border:none; border-radius:50%; width:3rem; height:3rem; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,0.3); position:relative;">
+            <i class="ri-download-line" style="font-size:1.25rem;"></i>
+            <span id="dl-count" style="position:absolute; top:-4px; right:-4px; background:var(--bt-danger); color:#fff; font-size:0.6rem; font-weight:700; min-width:1.1rem; height:1.1rem; border-radius:50%; display:flex; align-items:center; justify-content:center;">0</span>
+        </button>
+        <div id="dl-panel" style="display:none; position:absolute; bottom:3.5rem; right:0; width:20rem; max-height:16rem; overflow-y:auto; background:var(--bt-surface); border:1px solid var(--bt-border); border-radius:0.75rem; box-shadow:0 4px 16px rgba(0,0,0,0.3); padding:0.75rem;">
+            <p style="font-size:0.75rem; font-weight:600; color:var(--bt-text); margin:0 0 0.5rem;">Downloads</p>
+            <div id="dl-list"></div>
+        </div>
+    </div>
+
+    <script>
+    (function() {
+        var polling = null;
+        var indicator = document.getElementById('dl-indicator');
+        var countEl = document.getElementById('dl-count');
+        var listEl = document.getElementById('dl-list');
+        var panel = document.getElementById('dl-panel');
+
+        function pollTasks() {
+            fetch('/api/tasks')
+                .then(function(r) { return r.ok ? r.json() : []; })
+                .then(function(tasks) {
+                    var running = tasks.filter(function(t) { return t.status === 'RUNNING'; });
+                    var recent = tasks.filter(function(t) { return t.status !== 'RUNNING'; }).slice(0, 5);
+                    var all = running.concat(recent);
+
+                    if (all.length === 0) {
+                        indicator.style.display = 'none';
+                        if (polling) { clearInterval(polling); polling = null; }
+                        return;
+                    }
+
+                    indicator.style.display = 'block';
+                    countEl.textContent = running.length;
+                    countEl.style.display = running.length > 0 ? 'flex' : 'none';
+
+                    listEl.innerHTML = all.map(function(t) {
+                        var icon = t.status === 'RUNNING' ? 'ri-loader-4-line' :
+                                     t.status === 'DONE' ? 'ri-check-line' : 'ri-error-warning-line';
+                        var color = t.status === 'RUNNING' ? 'var(--bt-accent)' :
+                                      t.status === 'DONE' ? 'var(--bt-text)' : 'var(--bt-danger)';
+                        return '<div style="display:flex;align-items:center;gap:0.5rem;padding:0.375rem 0;font-size:0.75rem;color:' + color + ';">' +
+                            '<i class="' + icon + '" style="flex-shrink:0;' + (t.status === 'RUNNING' ? 'animation:bt-spin 1s linear infinite;' : '') + '"></i>' +
+                            '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + t.label + '</span></div>';
+                    }).join('');
+
+                    if (running.length > 0 && !polling) {
+                        polling = setInterval(pollTasks, 3000);
+                    } else if (running.length === 0 && polling) {
+                        clearInterval(polling);
+                        polling = null;
+                    }
+                })
+                .catch(function() {});
+        }
+
+        window.toggleDlPanel = function() {
+            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        };
+
+        document.addEventListener('click', function(e) {
+            var ind = document.getElementById('dl-indicator');
+            if (ind && !ind.contains(e.target)) {
+                panel.style.display = 'none';
+            }
+        });
+
+        // Initial check, then poll if active
+        pollTasks();
+        // Also check periodically in case new tasks start
+        setInterval(pollTasks, 10000);
+    })();
+    </script>
+    <style>
+    @keyframes bt-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    </style>
+    @endif
+
 </body>
 </html>

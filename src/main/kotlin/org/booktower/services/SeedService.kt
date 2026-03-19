@@ -420,6 +420,7 @@ class SeedService(
     private val libraryService: LibraryService,
     private val coversPath: String,
     private val booksPath: String,
+    private val backgroundTaskService: BackgroundTaskService = BackgroundTaskService(),
 ) {
     private val coverExecutor: ExecutorService = Executors.newFixedThreadPool(4)
 
@@ -624,6 +625,7 @@ class SeedService(
         bookId: UUID,
         comic: SeedComic,
     ) {
+        val taskId = backgroundTaskService.start(userId, "download-comic", "Downloading comic: ${comic.title}")
         try {
             val url = "https://archive.org/download/${comic.archiveId}/${java.net.URLEncoder.encode(comic.fileName, "UTF-8")}"
             val libDir = File("./data/libraries/comics")
@@ -641,14 +643,17 @@ class SeedService(
             conn.instanceFollowRedirects = true
             if (conn.responseCode != 200) {
                 logger.warn("Comic download failed for '${comic.title}': HTTP ${conn.responseCode}")
+                backgroundTaskService.fail(taskId, "HTTP ${conn.responseCode}")
                 return
             }
             conn.inputStream.use { input -> destFile.outputStream().use { input.copyTo(it) } }
 
             bookService.updateFileInfo(userId, bookId, destFile.absolutePath, destFile.length())
             logger.info("Downloaded comic '${comic.title}' (${destFile.length() / 1024}KB)")
+            backgroundTaskService.complete(taskId, "Downloaded ${destFile.length() / 1024}KB")
         } catch (e: Exception) {
             logger.warn("Comic download failed for '${comic.title}': ${e.message}")
+            backgroundTaskService.fail(taskId, e.message)
         }
     }
 
@@ -658,6 +663,7 @@ class SeedService(
         librivoxId: Int,
         title: String,
     ) {
+        val taskId = backgroundTaskService.start(userId, "download-audiobook", "Downloading audiobook: $title")
         try {
             val conn =
                 java.net
@@ -669,6 +675,7 @@ class SeedService(
             conn.setRequestProperty("User-Agent", "BookTower/1.0 librivox-seed")
             if (conn.responseCode != 200) {
                 logger.warn("LibriVox RSS returned ${conn.responseCode} for '$title' (id=$librivoxId)")
+                backgroundTaskService.fail(taskId, "RSS HTTP ${conn.responseCode}")
                 return
             }
 
@@ -682,6 +689,7 @@ class SeedService(
             val items = conn.inputStream.use { dbf.newDocumentBuilder().parse(it) }.getElementsByTagName("item")
             if (items.length == 0) {
                 logger.warn("No items in LibriVox RSS for '$title'")
+                backgroundTaskService.fail(taskId, "No chapters found in RSS")
                 return
             }
 
@@ -699,8 +707,10 @@ class SeedService(
                 bookService.updateBookFileAggregateSize(bookId)
                 logger.info("LibriVox download complete for '$title': $downloaded/${items.length} chapters")
             }
+            backgroundTaskService.complete(taskId, "Downloaded $downloaded/${items.length} chapters")
         } catch (e: Exception) {
             logger.warn("LibriVox download failed for '$title' (id=$librivoxId): ${e.message}")
+            backgroundTaskService.fail(taskId, e.message)
         }
     }
 
@@ -771,6 +781,7 @@ class SeedService(
         gutenbergId: Int,
         title: String,
     ) {
+        val taskId = backgroundTaskService.start(userId, "download-epub", "Downloading EPUB: $title")
         try {
             val url = "https://www.gutenberg.org/cache/epub/$gutenbergId/pg$gutenbergId.epub"
             val booksDir = File(booksPath)
@@ -788,14 +799,17 @@ class SeedService(
             conn.instanceFollowRedirects = true
             if (conn.responseCode != 200) {
                 logger.warn("Gutenberg download failed for '$title' (id=$gutenbergId): HTTP ${conn.responseCode}")
+                backgroundTaskService.fail(taskId, "HTTP ${conn.responseCode}")
                 return
             }
             conn.inputStream.use { input -> destFile.outputStream().use { input.copyTo(it) } }
 
             bookService.updateFileInfo(userId, bookId, destFile.absolutePath, destFile.length())
             logger.info("Downloaded EPUB for '$title' (${destFile.length()} bytes)")
+            backgroundTaskService.complete(taskId, "Downloaded ${destFile.length() / 1024}KB")
         } catch (e: Exception) {
             logger.warn("Gutenberg download failed for '$title': ${e.message}")
+            backgroundTaskService.fail(taskId, e.message)
         }
     }
 
