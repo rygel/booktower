@@ -276,6 +276,22 @@ When no cover image is available, the UI renders a CSS gradient placeholder
 the book title — consistent across all card views without server-side image
 generation.
 
+### Book sharing is instance-internal
+Books can be shared via token-based links, but **only authenticated users** on
+the same instance can view shared books. Anonymous visitors are redirected to
+login. This prevents BookTower from being used as a public file distribution
+server. See [ADR-001](adr/001-book-sharing-authenticated-only.md).
+
+---
+
+## Architecture Decision Records (ADRs)
+
+Design decisions are documented in `docs/adr/`:
+
+| ADR | Decision |
+|---|---|
+| [001](adr/001-book-sharing-authenticated-only.md) | Book sharing requires authentication — no public links |
+
 ---
 
 ## Testing
