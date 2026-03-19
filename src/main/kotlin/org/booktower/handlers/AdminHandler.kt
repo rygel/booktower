@@ -58,25 +58,6 @@ class AdminHandler(
         return Response(Status.OK).header("Content-Type", "text/html; charset=utf-8").body(content)
     }
 
-    /** POST /admin/seed/full — seeds demo data AND auto-triggers all file downloads */
-    fun seedFullDemo(req: Request): Response {
-        val userId = AuthenticatedUser.from(req)
-        val ctx = WebContext(req)
-        val result =
-            seedService.seedFullDemo(userId)
-                ?: return Response(Status.CONFLICT)
-                    .header("HX-Trigger", toast(ctx.i18n.translate("msg.seed.already"), "info"))
-                    .body("")
-        val msg =
-            ctx.i18n
-                .translate("msg.seed.full.done")
-                .replace("{0}", result.libraries.toString())
-                .replace("{1}", result.books.toString())
-        return Response(Status.OK)
-            .header("HX-Trigger", toast(msg))
-            .body("")
-    }
-
     /** POST /admin/seed — seeds demo public-domain book data for the current admin user */
     fun seed(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
@@ -127,6 +108,25 @@ class AdminHandler(
             ctx.i18n
                 .translate("msg.seed.librivox.queued")
                 .replace("{0}", result.queued.toString())
+        return Response(Status.OK)
+            .header("HX-Trigger", toast(msg))
+            .body("")
+    }
+
+    /** POST /admin/seed/full-demo — seeds demo data enriched with all features */
+    fun seedFullDemo(req: Request): Response {
+        val userId = AuthenticatedUser.from(req)
+        val ctx = WebContext(req)
+        val result =
+            seedService.seedFullDemo(userId)
+                ?: return Response(Status.CONFLICT)
+                    .header("HX-Trigger", toast(ctx.i18n.translate("msg.seed.already"), "info"))
+                    .body("")
+        val msg =
+            ctx.i18n
+                .translate("msg.seed.full-demo.done")
+                .replace("{0}", result.libraries.toString())
+                .replace("{1}", result.books.toString())
         return Response(Status.OK)
             .header("HX-Trigger", toast(msg))
             .body("")

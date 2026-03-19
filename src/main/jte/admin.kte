@@ -99,27 +99,27 @@
     </div>
 
 
-    <!-- Full Demo (one-click) -->
-    <div style="margin-top:2.5rem; padding:1.5rem; background:var(--bt-surface); border:2px solid var(--bt-accent-dim); border-radius:0.75rem;">
+    <!-- Full Demo -->
+    <div style="margin-top:2.5rem; padding:1.5rem; background:var(--bt-surface); border:2px solid var(--bt-accent); border-radius:0.75rem;">
         <h2 style="font-size:1rem; font-weight:600; color:var(--bt-text); margin:0 0 0.375rem; display:flex; align-items:center; gap:0.5rem;">
-            <i class="ri-rocket-line" style="color:var(--bt-accent-dim);"></i>
-            ${i18n.translate("admin.seed.full.title")}
+            <i class="ri-magic-line" style="color:var(--bt-accent-dim);"></i>
+            ${i18n.translate("admin.seed.full-demo.title")}
         </h2>
-        <p style="font-size:0.8rem; color:var(--bt-subtle); margin:0 0 1rem;">${i18n.translate("admin.seed.full.hint")}</p>
+        <p style="font-size:0.8rem; color:var(--bt-subtle); margin:0 0 1rem;">${i18n.translate("admin.seed.full-demo.hint")}</p>
         <button
-            hx-post="/admin/seed/full"
+            hx-post="/admin/seed/full-demo"
             hx-swap="none"
-            hx-indicator="#seed-full-spinner"
-            style="display:inline-flex; align-items:center; gap:0.5rem; font-size:0.875rem; padding:0.5rem 1.25rem; border-radius:0.5rem; border:1px solid var(--bt-accent-dim); background:var(--bt-accent); color:#fff; cursor:pointer; font-weight:600;"
+            hx-indicator="#seed-demo-spinner"
+            style="display:inline-flex; align-items:center; gap:0.5rem; font-size:0.875rem; padding:0.5rem 1.25rem; border-radius:0.5rem; border:1px solid var(--bt-accent-dim); background:var(--bt-accent); color:#fff; cursor:pointer; font-weight:500;"
             onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
-            <i class="ri-rocket-line"></i>
-            ${i18n.translate("admin.seed.full.button")}
-            <span id="seed-full-spinner" class="htmx-indicator" style="font-size:0.75rem; opacity:0.8;">…</span>
+            <i class="ri-magic-line"></i>
+            ${i18n.translate("admin.seed.full-demo.button")}
+            <span id="seed-demo-spinner" class="htmx-indicator" style="font-size:0.75rem; opacity:0.8;">...</span>
         </button>
     </div>
 
     <!-- Demo Data Seeding -->
-    <div style="margin-top:2.5rem; padding:1.5rem; background:var(--bt-surface); border:1px solid var(--bt-border); border-radius:0.75rem;">
+    <div style="margin-top:1.5rem; padding:1.5rem; background:var(--bt-surface); border:1px solid var(--bt-border); border-radius:0.75rem;">
         <h2 style="font-size:1rem; font-weight:600; color:var(--bt-text); margin:0 0 0.375rem; display:flex; align-items:center; gap:0.5rem;">
             <i class="ri-seedling-line" style="color:var(--bt-accent-dim);"></i>
             ${i18n.translate("admin.seed.title")}
