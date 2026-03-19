@@ -382,12 +382,32 @@
         var countEl = document.getElementById('dl-count');
         var listEl = document.getElementById('dl-list');
         var panel = document.getElementById('dl-panel');
+        var lastRunningIds = new Set();
+
+        function fireToast(message, type) {
+            document.dispatchEvent(new CustomEvent('showToast', {detail: {message: message, type: type || 'info'}}));
+        }
 
         function pollTasks() {
             fetch('/api/tasks')
                 .then(function(r) { return r.ok ? r.json() : []; })
                 .then(function(tasks) {
                     var running = tasks.filter(function(t) { return t.status === 'RUNNING'; });
+                    var runningIds = new Set(running.map(function(t) { return t.id; }));
+
+                    // Detect tasks that were running but are now complete/failed
+                    lastRunningIds.forEach(function(id) {
+                        if (!runningIds.has(id)) {
+                            var task = tasks.find(function(t) { return t.id === id; });
+                            if (task) {
+                                var suffix = task.status === 'DONE' ? ' \u2713' : ' \u2717';
+                                var toastType = task.status === 'DONE' ? 'success' : 'error';
+                                fireToast(task.label + suffix, toastType);
+                            }
+                        }
+                    });
+                    lastRunningIds = runningIds;
+
                     var recent = tasks.filter(function(t) { return t.status !== 'RUNNING'; }).slice(0, 5);
                     var all = running.concat(recent);
 
