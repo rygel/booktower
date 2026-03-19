@@ -262,6 +262,7 @@ abstract class IntegrationTestBase {
                 bookReviewService,
                 bookNotebookService,
                 duplicateDetectionService,
+                null, // bookLinkService
             )
         val libraryApiRouter = LibraryApiRouter(filters, libraryHandler, libraryService, null, null)
         val userApiRouter =

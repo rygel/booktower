@@ -38,6 +38,7 @@ class AdminApiRouter(
             "/admin/seed/files" bind Method.POST to filters.admin.then(adminHandler::seedFiles),
             "/admin/seed/librivox" bind Method.POST to filters.admin.then(adminHandler::seedLibrivox),
             "/admin/seed/comics" bind Method.POST to filters.admin.then(adminHandler::seedComics),
+            "/admin/reset-database" bind Method.POST to filters.admin.then(adminHandler::resetDatabase),
             "/api/admin/password-reset-tokens" bind Method.GET to filters.admin.then(adminHandler::listResetTokens),
             "/api/admin/users" bind Method.GET to filters.admin.then(adminHandler::listUsers),
             "/api/admin/users/{userId}/promote" bind Method.POST to filters.admin.then(adminHandler::promote),

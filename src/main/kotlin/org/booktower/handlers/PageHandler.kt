@@ -49,6 +49,7 @@ class PageHandler(
     private val templateRenderer: TemplateRenderer,
     private val readingSessionService: ReadingSessionService? = null,
     private val libraryWatchService: org.booktower.services.LibraryWatchService? = null,
+    private val bookLinkService: org.booktower.services.BookLinkService? = null,
 ) {
     // ── Page routes ────────────────────────────────────────────────────────────
 
@@ -248,6 +249,8 @@ class PageHandler(
         val libraries = libraryService.getLibraries(userId)
         val libraryName = libraries.firstOrNull { it.id == book.libraryId }?.name
         val chapters = bookService.getBookFiles(userId, bookId)
+        val linkedBook = bookLinkService?.getLinkForBook(userId, bookId)
+        val syncPosition = if (linkedBook != null) bookLinkService?.syncPosition(userId, bookId) else null
         return htmlOk(
             templateRenderer.render(
                 "book.kte",
@@ -259,6 +262,8 @@ class PageHandler(
                     "libraries" to libraries,
                     "bookmarks" to bookmarks,
                     "chapters" to chapters,
+                    "linkedBook" to linkedBook,
+                    "syncPosition" to syncPosition,
                     "themeCss" to ctx.themeCss,
                     "currentTheme" to ctx.theme,
                     "lang" to ctx.lang,
@@ -1001,7 +1006,8 @@ class PageHandler(
 
     private fun gravatarHash(email: String): String {
         val md = java.security.MessageDigest.getInstance("MD5")
-        return md.digest(email.trim().lowercase().toByteArray())
+        return md
+            .digest(email.trim().lowercase().toByteArray())
             .joinToString("") { "%02x".format(it) }
     }
 

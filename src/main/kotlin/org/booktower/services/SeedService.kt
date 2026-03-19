@@ -838,7 +838,7 @@ class SeedService(
         try {
             val url = "https://archive.org/download/${comic.archiveId}/${java.net.URLEncoder.encode(comic.fileName, "UTF-8")}"
             val libDir = File("./data/libraries/comics")
-            if (!libDir.exists()) libDir.mkdirs()
+            if (!libDir.exists() && !libDir.mkdirs()) logger.warn("Could not create directory: ${libDir.absolutePath}")
             val destFile = File(libDir, "$bookId.cbz")
 
             val conn =

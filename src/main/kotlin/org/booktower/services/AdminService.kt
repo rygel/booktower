@@ -72,4 +72,38 @@ class AdminService(
             createdAt = row.getColumn("created_at", String::class.java),
             isAdmin = row.getColumn("is_admin", java.lang.Boolean::class.java)?.booleanValue() ?: false,
         )
+
+    /**
+     * Deletes ALL data from the database except the Flyway schema history.
+     * The calling user's account is preserved so they can still log in.
+     */
+    fun resetDatabase(preserveUserId: UUID) {
+        jdbi.useHandle<Exception> { handle ->
+            // Order matters: delete child tables first to respect foreign key constraints
+            val tables = listOf(
+                "reading_sessions", "reading_progress", "book_status", "book_ratings",
+                "book_tags", "book_authors", "book_categories", "book_moods",
+                "book_reviews", "book_notebooks", "book_formats",
+                "bookmarks", "annotations", "journal_entries",
+                "metadata_proposals", "metadata_locks",
+                "notifications", "filter_presets", "user_settings",
+                "kobo_devices", "koreader_devices", "opds_credentials",
+                "refresh_tokens", "api_tokens", "password_reset_tokens",
+                "audit_log", "telemetry_events", "scheduled_task_history",
+                "listening_sessions", "community_ratings", "comic_page_hashes",
+                "book_content", "email_recipients", "email_providers",
+                "scheduled_tasks", "user_permissions", "library_access",
+                "books", "libraries",
+            )
+            tables.forEach { table ->
+                try {
+                    handle.execute("DELETE FROM $table")
+                } catch (e: Exception) {
+                    // Table might not exist — skip
+                }
+            }
+            // User accounts are preserved — only content data is deleted
+            logger.info("Database reset by admin $preserveUserId — all content data deleted, user accounts preserved")
+        }
+    }
 }
