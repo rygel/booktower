@@ -39,6 +39,7 @@ class TemplateRenderer {
                 DirectoryCodeResolver(sourceDir),
                 dynamicOutputDir,
                 ContentType.Html,
+                javaClass.classLoader,
             )
         } else {
             logger.info("Using precompiled JTE engine")
