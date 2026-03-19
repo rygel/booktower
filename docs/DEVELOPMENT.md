@@ -111,7 +111,7 @@ docker pull ghcr.io/rygel/booktower:latest
 docker pull ghcr.io/rygel/booktower:beta
 
 # Specific version
-docker pull ghcr.io/rygel/booktower:0.5.2
+docker pull ghcr.io/rygel/booktower:0.6.0
 ```
 
 Multi-arch: `linux/amd64` + `linux/arm64` (Raspberry Pi, AWS Graviton).

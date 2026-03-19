@@ -2,7 +2,7 @@
 
 A self-hosted personal book, audiobook, and comic manager with a built-in reader and rich metadata support.
 
-[![Version](https://img.shields.io/badge/version-0.5.2-blue)](https://github.com/rygel/booktower/releases)
+[![Version](https://img.shields.io/badge/version-0.6.0-blue)](https://github.com/rygel/booktower/releases)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-green)](LICENSE)
 [![Docker](https://img.shields.io/badge/docker-ghcr.io%2Frygel%2Fbooktower-blue)](https://ghcr.io/rygel/booktower)
 
@@ -168,7 +168,7 @@ Open `http://localhost:9999` and register your first account.
 Download the latest release JAR from [Releases](https://github.com/rygel/booktower/releases), then:
 
 ```bash
-java -jar booktower-0.5.2.jar
+java -jar booktower-0.6.0.jar
 ```
 
 ### Native Binary

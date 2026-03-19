@@ -177,7 +177,7 @@ docker compose up -d
 Your data is preserved in the named volumes. To pin a specific version instead of `latest`:
 
 ```yaml
-image: ghcr.io/rygel/booktower:0.5.2
+image: ghcr.io/rygel/booktower:0.6.0
 ```
 
 ### Backup Before Upgrading
