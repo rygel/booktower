@@ -348,6 +348,100 @@ input:focus, select:focus, textarea:focus {
 .auth-back a:hover { text-decoration: underline; }
 
 /* ========================================
+   PAGE COMPONENTS
+   ======================================== */
+
+/* Section header: title on left, "view all" link on right */
+.section-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 1rem;
+}
+.section-heading {
+  font-size: 1rem; font-weight: 700; color: var(--bt-text);
+  display: flex; align-items: center; gap: 0.5rem; margin: 0;
+}
+.section-heading i { color: var(--bt-accent-dim); }
+.section-link {
+  font-size: 0.8rem; color: var(--bt-accent-dim); text-decoration: none;
+}
+.section-link:hover { text-decoration: underline; }
+
+.section { margin-bottom: 2rem; }
+
+/* Grids */
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: 1rem; }
+.book-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1rem; }
+.library-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.75rem; }
+
+/* Book grid card (thumbnail + title + author) */
+.book-grid-card {
+  text-decoration: none; background: var(--bt-surface);
+  border: 1px solid var(--bt-border); border-radius: 0.75rem;
+  display: flex; flex-direction: column; transition: border-color 0.15s;
+}
+.book-grid-card:hover { border-color: var(--bt-accent); }
+
+.book-grid-cover {
+  height: 10rem; background: var(--bt-bg);
+  border-radius: 0.75rem 0.75rem 0 0; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+}
+.book-grid-cover img { width: 100%; height: 100%; object-fit: cover; }
+
+.book-grid-info { padding: 0.625rem 0.75rem 0.75rem; }
+
+.book-grid-title {
+  font-size: 0.75rem; font-weight: 600; color: var(--bt-text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.book-grid-author {
+  font-size: 0.65rem; color: var(--bt-subtle);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  margin-top: 0.125rem;
+}
+
+/* Library quick-access card */
+.library-card-link {
+  text-decoration: none; background: var(--bt-surface);
+  border: 1px solid var(--bt-border); border-radius: 0.75rem;
+  padding: 1rem; display: flex; align-items: center; gap: 0.75rem;
+  transition: border-color 0.15s;
+}
+.library-card-link:hover { border-color: var(--bt-accent); }
+
+.library-card-icon {
+  background: var(--bt-icon-bg); color: var(--bt-icon-text);
+  border-radius: 0.375rem; padding: 0.5rem; flex-shrink: 0;
+}
+.library-card-name {
+  font-size: 0.8rem; font-weight: 600; color: var(--bt-text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.library-card-count { font-size: 0.7rem; color: var(--bt-subtle); margin-top: 0.125rem; }
+
+/* Mini progress bar (reading progress on cards) */
+.mini-progress { margin-top: 0.5rem; }
+.mini-progress-bar {
+  height: 0.2rem; background: var(--bt-border);
+  border-radius: 9999px; overflow: hidden;
+}
+.mini-progress-fill {
+  height: 100%; background: var(--bt-accent);
+  border-radius: 9999px;
+}
+.mini-progress-text { font-size: 0.6rem; color: var(--bt-subtle); margin-top: 0.25rem; }
+
+/* Goal progress bar */
+.goal-bar { margin-top: 0.5rem; height: 0.25rem; background: var(--bt-border); border-radius: 9999px; overflow: hidden; }
+.goal-bar-fill { height: 100%; background: var(--bt-accent); border-radius: 9999px; }
+
+/* Text link button (underline on hover) */
+.link-btn {
+  font-size: 0.7rem; color: var(--bt-accent-dim); background: transparent;
+  border: none; cursor: pointer; text-decoration: underline;
+}
+
+/* ========================================
    UTILITIES
    ======================================== */
 
@@ -362,13 +456,17 @@ input:focus, select:focus, textarea:focus {
 .gap-lg { gap: 1.5rem; }
 
 .text-muted { color: var(--bt-muted); }
+.text-subtle { color: var(--bt-subtle); }
 .text-sm { font-size: 0.85rem; }
 .text-xs { font-size: 0.75rem; }
+.text-truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .mb-0 { margin-bottom: 0; }
 .mb-1 { margin-bottom: 0.5rem; }
 .mb-2 { margin-bottom: 1rem; }
 .mb-3 { margin-bottom: 1.5rem; }
+
+.min-w-0 { min-width: 0; }
 
 /* Dialog / modal */
 dialog {
