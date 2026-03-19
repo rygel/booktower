@@ -2,7 +2,6 @@ package org.booktower.routers
 
 import org.booktower.handlers.KOReaderSyncHandler
 import org.booktower.handlers.KoboSyncHandler
-import org.booktower.handlers.KomgaApiHandler
 import org.booktower.handlers.OpdsHandler
 import org.http4k.core.Method
 import org.http4k.core.Response
@@ -15,7 +14,6 @@ class DeviceSyncRouter(
     private val filters: FilterSet,
     private val koboSyncHandler: KoboSyncHandler?,
     private val koReaderSyncHandler: KOReaderSyncHandler?,
-    private val komgaApiHandler: KomgaApiHandler?,
     private val opdsHandler: OpdsHandler,
 ) {
     fun routes(): List<RoutingHttpHandler> =
@@ -81,26 +79,5 @@ class DeviceSyncRouter(
                     Response(Status.SERVICE_UNAVAILABLE)
                 }
             ),
-            // Komga-compatible API (for Tachiyomi / Paperback)
-            "/api/v1/libraries" bind Method.GET to
-                filters.auth.then(
-                    optionalHandler(komgaApiHandler?.let { it::libraries }),
-                ),
-            "/api/v1/series" bind Method.GET to
-                filters.auth.then(
-                    optionalHandler(komgaApiHandler?.let { it::series }),
-                ),
-            "/api/v1/series/{id}" bind Method.GET to
-                filters.auth.then(
-                    optionalHandler(komgaApiHandler?.let { it::seriesById }),
-                ),
-            "/api/v1/books" bind Method.GET to
-                filters.auth.then(
-                    optionalHandler(komgaApiHandler?.let { it::books }),
-                ),
-            "/api/v1/books/{id}" bind Method.GET to
-                filters.auth.then(
-                    optionalHandler(komgaApiHandler?.let { it::bookById }),
-                ),
         )
 }

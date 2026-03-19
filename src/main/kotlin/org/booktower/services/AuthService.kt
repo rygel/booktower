@@ -12,12 +12,18 @@ import java.time.format.DateTimeFormatter
 import java.util.UUID
 
 private val logger = LoggerFactory.getLogger("booktower.AuthService")
+private val EMAIL_REGEX = Regex("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")
 
 class AuthService(
     private val jdbi: Jdbi,
     private val jwtService: JwtService,
 ) {
     fun register(request: CreateUserRequest): Result<LoginResponse> {
+        val email = request.email.trim().lowercase()
+        if (!EMAIL_REGEX.matches(email) || email.length > 100) {
+            return Result.failure(IllegalArgumentException("Invalid email address"))
+        }
+
         val now = Instant.now()
         val userId = UUID.randomUUID()
         val passwordHash = BCrypt.hashpw(request.password, BCrypt.gensalt())
@@ -39,7 +45,7 @@ class AuthService(
                 .createUpdate(
                     """
                 INSERT INTO users (id, username, email, password_hash, created_at, updated_at, is_admin)
-                VALUES (?, ?, ?, ?, ?, ?, 0)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
                 ).bind(0, userId.toString())
                 .bind(1, request.username)
@@ -47,6 +53,7 @@ class AuthService(
                 .bind(3, passwordHash)
                 .bind(4, now.toString())
                 .bind(5, now.toString())
+                .bind(6, false)
                 .execute()
         }
 
@@ -174,7 +181,7 @@ class AuthService(
         }
 
         val trimmedEmail = newEmail.trim().lowercase()
-        if (!trimmedEmail.contains("@") || trimmedEmail.length > 100) {
+        if (!EMAIL_REGEX.matches(trimmedEmail) || trimmedEmail.length > 100) {
             return Result.failure(IllegalArgumentException("Invalid email address"))
         }
 

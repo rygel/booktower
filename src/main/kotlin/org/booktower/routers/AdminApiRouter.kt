@@ -34,8 +34,11 @@ class AdminApiRouter(
     fun routes(): List<RoutingHttpHandler> =
         listOf(
             "/admin/seed" bind Method.POST to filters.admin.then(adminHandler::seed),
+            "/admin/seed/full-demo" bind Method.POST to filters.admin.then(adminHandler::seedFullDemo),
             "/admin/seed/files" bind Method.POST to filters.admin.then(adminHandler::seedFiles),
             "/admin/seed/librivox" bind Method.POST to filters.admin.then(adminHandler::seedLibrivox),
+            "/admin/seed/comics" bind Method.POST to filters.admin.then(adminHandler::seedComics),
+            "/admin/reset-database" bind Method.POST to filters.admin.then(adminHandler::resetDatabase),
             "/api/admin/password-reset-tokens" bind Method.GET to filters.admin.then(adminHandler::listResetTokens),
             "/api/admin/users" bind Method.GET to filters.admin.then(adminHandler::listUsers),
             "/api/admin/users/{userId}/promote" bind Method.POST to filters.admin.then(adminHandler::promote),
@@ -67,10 +70,10 @@ class AdminApiRouter(
             "/api/admin/tasks" bind Method.GET to
                 filters.admin.then(optionalHandler(backgroundTaskHandler?.let { it::listAll })),
             "/api/admin/telemetry/stats" bind Method.GET to filters.admin.then(::telemetryStats),
-            // Weblate translation sync
-            "/api/weblate/pull" bind Method.POST to weblateHandler::pull,
-            "/api/weblate/push" bind Method.POST to weblateHandler::push,
-            "/api/weblate/status" bind Method.GET to weblateHandler::status,
+            // Weblate translation sync (admin only)
+            "/api/weblate/pull" bind Method.POST to filters.admin.then(weblateHandler::pull),
+            "/api/weblate/push" bind Method.POST to filters.admin.then(weblateHandler::push),
+            "/api/weblate/status" bind Method.GET to filters.admin.then(weblateHandler::status),
         )
 
     // ─── Email providers ─────────────────────────────────────────────────────

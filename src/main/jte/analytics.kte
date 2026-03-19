@@ -3,6 +3,7 @@
 @import org.booktower.models.ReadingSessionDto
 @import org.booktower.services.AnalyticsSummary
 @param username: String?
+@param gravatarHash: String = ""
 @param summary: AnalyticsSummary
 @param recentSessions: List<ReadingSessionDto> = emptyList()
 @param themeCss: String
@@ -12,7 +13,7 @@
 @param i18n: I18nService
 @param isAdmin: Boolean = false
 
-@template.components.layout(title="${i18n.translate("page.analytics.title")} - BookTower", username=username, currentPage="analytics",
+@template.components.layout(title="${i18n.translate("page.analytics.title")} - BookTower", username=username, gravatarHash=gravatarHash, currentPage="analytics",
     themeCss=themeCss, currentTheme=currentTheme, lang=lang, themes=themes, i18n=i18n, searchQuery="", isAdmin=isAdmin, content = @`
 <div class="page-container" style="max-width:56rem;">
     <h1 class="page-title flex-center gap-sm" style="font-size:1.25rem;">

@@ -32,6 +32,8 @@ import org.http4k.core.body.form
 import org.http4k.core.cookie.Cookie
 import org.http4k.core.cookie.cookie
 import java.util.UUID
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.Executors
 
 class PageHandler(
     private val jwtService: JwtService,
@@ -47,19 +49,23 @@ class PageHandler(
     private val templateRenderer: TemplateRenderer,
     private val readingSessionService: ReadingSessionService? = null,
     private val libraryWatchService: org.booktower.services.LibraryWatchService? = null,
+    private val bookLinkService: org.booktower.services.BookLinkService? = null,
+    private val bookSharingService: org.booktower.services.BookSharingService? = null,
 ) {
     // ── Page routes ────────────────────────────────────────────────────────────
 
     fun libraries(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
         val ctx = WebContext(req)
+        val (username, gravatarHash) = userDisplayInfo(userId)
         val libraries = libraryService.getLibraries(userId)
         val shelves = magicShelfService.getShelves(userId)
         return htmlOk(
             templateRenderer.render(
                 "libraries.kte",
                 mapOf(
-                    "username" to null,
+                    "username" to username,
+                    "gravatarHash" to gravatarHash,
                     "libraries" to libraries,
                     "shelves" to shelves,
                     "themeCss" to ctx.themeCss,
@@ -77,6 +83,7 @@ class PageHandler(
     fun magicShelf(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
         val ctx = WebContext(req)
+        val (username, gravatarHash) = userDisplayInfo(userId)
         val shelfId = req.lastPathSegment().toUuidOrNull() ?: return Response(Status.NOT_FOUND)
         val shelf = magicShelfService.getShelf(userId, shelfId) ?: return Response(Status.NOT_FOUND)
         val books = magicShelfService.resolveBooks(userId, shelf)
@@ -84,7 +91,8 @@ class PageHandler(
             templateRenderer.render(
                 "shelf.kte",
                 mapOf(
-                    "username" to null,
+                    "username" to username,
+                    "gravatarHash" to gravatarHash,
                     "shelf" to shelf,
                     "books" to books,
                     "themeCss" to ctx.themeCss,
@@ -163,6 +171,7 @@ class PageHandler(
     fun library(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
         val ctx = WebContext(req)
+        val (username, gravatarHash) = userDisplayInfo(userId)
         val libId = req.lastPathSegment().toUuidOrNull() ?: return Response(Status.NOT_FOUND)
         val library = libraryService.getLibrary(userId, libId) ?: return Response(Status.NOT_FOUND)
         val sortParam = req.query("sort")
@@ -206,7 +215,8 @@ class PageHandler(
             templateRenderer.render(
                 "library.kte",
                 mapOf(
-                    "username" to null,
+                    "username" to username,
+                    "gravatarHash" to gravatarHash,
                     "library" to library,
                     "books" to result.getBooks(),
                     "currentSort" to sortBy.name,
@@ -233,22 +243,28 @@ class PageHandler(
     fun book(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
         val ctx = WebContext(req)
+        val (username, gravatarHash) = userDisplayInfo(userId)
         val bookId = req.lastPathSegment().toUuidOrNull() ?: return Response(Status.NOT_FOUND)
         val book = bookService.getBook(userId, bookId) ?: return Response(Status.NOT_FOUND)
         val bookmarks = bookmarkService.getBookmarks(userId, bookId)
         val libraries = libraryService.getLibraries(userId)
         val libraryName = libraries.firstOrNull { it.id == book.libraryId }?.name
         val chapters = bookService.getBookFiles(userId, bookId)
+        val linkedBook = bookLinkService?.getLinkForBook(userId, bookId)
+        val syncPosition = if (linkedBook != null) bookLinkService?.syncPosition(userId, bookId) else null
         return htmlOk(
             templateRenderer.render(
                 "book.kte",
                 mapOf(
-                    "username" to null,
+                    "username" to username,
+                    "gravatarHash" to gravatarHash,
                     "book" to book,
                     "libraryName" to libraryName,
                     "libraries" to libraries,
                     "bookmarks" to bookmarks,
                     "chapters" to chapters,
+                    "linkedBook" to linkedBook,
+                    "syncPosition" to syncPosition,
                     "themeCss" to ctx.themeCss,
                     "currentTheme" to ctx.theme,
                     "lang" to ctx.lang,
@@ -365,6 +381,7 @@ class PageHandler(
     fun search(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
         val ctx = WebContext(req)
+        val (username, gravatarHash) = userDisplayInfo(userId)
         val query = req.query("q") ?: ""
         val page = req.query("page")?.toIntOrNull() ?: 1
         val libId = req.query("libId")?.takeIf { it.isNotBlank() }
@@ -380,7 +397,8 @@ class PageHandler(
             templateRenderer.render(
                 "search.kte",
                 mapOf(
-                    "username" to null,
+                    "username" to username,
+                    "gravatarHash" to gravatarHash,
                     "query" to query,
                     "books" to (result?.getBooks() ?: emptyList<Any>()),
                     "total" to (result?.total ?: 0),
@@ -403,42 +421,62 @@ class PageHandler(
     fun dashboard(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
         val ctx = WebContext(req)
-        val libraries = libraryService.getLibraries(userId)
-        val recentBooks = bookService.getRecentBooks(userId, 6)
-        val recentlyAddedBooks = bookService.getRecentlyAddedBooks(userId, 6)
-        val recentlyFinishedBooks = bookService.getRecentlyFinishedBooks(userId, 6)
-        val totalBooks = libraries.sumOf { it.bookCount }
-        val currentlyReadingCount = bookService.countByStatus(userId, org.booktower.models.ReadStatus.READING)
+        val (username, gravatarHash) = userDisplayInfo(userId)
         val year =
             java.time.LocalDate
                 .now()
                 .year
-        val goal = userSettingsService.get(userId, "reading.goal.$year")?.toIntOrNull() ?: 0
-        val booksFinishedThisYear = bookService.countFinishedThisYear(userId, year)
-        return htmlOk(
-            templateRenderer.render(
-                "dashboard.kte",
-                mapOf(
-                    "username" to null,
-                    "libraries" to libraries,
-                    "recentBooks" to recentBooks,
-                    "recentlyAddedBooks" to recentlyAddedBooks,
-                    "recentlyFinishedBooks" to recentlyFinishedBooks,
-                    "libraryCount" to libraries.size,
-                    "totalBooks" to totalBooks,
-                    "currentlyReadingCount" to currentlyReadingCount,
-                    "goal" to goal,
-                    "booksFinishedThisYear" to booksFinishedThisYear,
-                    "year" to year,
-                    "themeCss" to ctx.themeCss,
-                    "currentTheme" to ctx.theme,
-                    "lang" to ctx.lang,
-                    "themes" to ThemeCatalog.allThemes(),
-                    "i18n" to ctx.i18n,
-                    "isAdmin" to authIsAdmin(req),
+
+        // Run all independent queries in parallel using virtual threads
+        val vt = Executors.newVirtualThreadPerTaskExecutor()
+        try {
+            val fLibraries = CompletableFuture.supplyAsync({ libraryService.getLibraries(userId) }, vt)
+            val fRecent = CompletableFuture.supplyAsync({ bookService.getRecentBooks(userId, 6) }, vt)
+            val fRecentlyAdded = CompletableFuture.supplyAsync({ bookService.getRecentlyAddedBooks(userId, 6) }, vt)
+            val fRecentlyFinished = CompletableFuture.supplyAsync({ bookService.getRecentlyFinishedBooks(userId, 6) }, vt)
+            val fReadingCount = CompletableFuture.supplyAsync({ bookService.countByStatus(userId, org.booktower.models.ReadStatus.READING) }, vt)
+            val fGoal = CompletableFuture.supplyAsync({ userSettingsService.get(userId, "reading.goal.$year")?.toIntOrNull() ?: 0 }, vt)
+            val fFinishedThisYear = CompletableFuture.supplyAsync({ bookService.countFinishedThisYear(userId, year) }, vt)
+
+            CompletableFuture.allOf(fLibraries, fRecent, fRecentlyAdded, fRecentlyFinished, fReadingCount, fGoal, fFinishedThisYear).join()
+
+            val libraries = fLibraries.get()
+            val recentBooks = fRecent.get()
+            val recentlyAddedBooks = fRecentlyAdded.get()
+            val recentlyFinishedBooks = fRecentlyFinished.get()
+            val currentlyReadingCount = fReadingCount.get()
+            val goal = fGoal.get()
+            val booksFinishedThisYear = fFinishedThisYear.get()
+            val totalBooks = libraries.sumOf { it.bookCount }
+
+            return htmlOk(
+                templateRenderer.render(
+                    "dashboard.kte",
+                    mapOf(
+                        "username" to username,
+                        "gravatarHash" to gravatarHash,
+                        "libraries" to libraries,
+                        "recentBooks" to recentBooks,
+                        "recentlyAddedBooks" to recentlyAddedBooks,
+                        "recentlyFinishedBooks" to recentlyFinishedBooks,
+                        "libraryCount" to libraries.size,
+                        "totalBooks" to totalBooks,
+                        "currentlyReadingCount" to currentlyReadingCount,
+                        "goal" to goal,
+                        "booksFinishedThisYear" to booksFinishedThisYear,
+                        "year" to year,
+                        "themeCss" to ctx.themeCss,
+                        "currentTheme" to ctx.theme,
+                        "lang" to ctx.lang,
+                        "themes" to ThemeCatalog.allThemes(),
+                        "i18n" to ctx.i18n,
+                        "isAdmin" to authIsAdmin(req),
+                    ),
                 ),
-            ),
-        )
+            )
+        } finally {
+            vt.close()
+        }
     }
 
     /** POST /ui/goal — save yearly reading goal */
@@ -463,7 +501,8 @@ class PageHandler(
             templateRenderer.render(
                 "profile.kte",
                 mapOf(
-                    "username" to null,
+                    "username" to (user?.username),
+                    "gravatarHash" to (user?.email?.let { gravatarHash(it) } ?: ""),
                     "userEmail" to (user?.email ?: ""),
                     "userUsername" to (user?.username ?: ""),
                     "memberSince" to (user?.createdAt?.toString()?.take(10) ?: ""),
@@ -480,16 +519,69 @@ class PageHandler(
         )
     }
 
+    fun sharedBook(req: Request): Response {
+        val userId = auth(req) ?: return redirectToLogin()
+        val svc = bookSharingService ?: return Response(Status.NOT_FOUND)
+        val token =
+            req.uri.path
+                .split("/")
+                .lastOrNull()
+                ?.takeIf { it.isNotBlank() }
+                ?: return Response(Status.NOT_FOUND)
+        val sharedBook = svc.getPublicBook(token) ?: return Response(Status.NOT_FOUND)
+        val ctx = WebContext(req)
+        val (username, gravatarHash) = userDisplayInfo(userId)
+        return htmlOk(
+            templateRenderer.render(
+                "shared-book.kte",
+                mapOf(
+                    "sharedBook" to sharedBook,
+                    "username" to username,
+                    "gravatarHash" to gravatarHash,
+                    "themeCss" to ctx.themeCss,
+                    "currentTheme" to ctx.theme,
+                    "lang" to ctx.lang,
+                    "themes" to ThemeCatalog.allThemes(),
+                    "i18n" to ctx.i18n,
+                    "isAdmin" to authIsAdmin(req),
+                ),
+            ),
+        )
+    }
+
+    fun activity(req: Request): Response {
+        val userId = auth(req) ?: return redirectToLogin()
+        val ctx = WebContext(req)
+        val (username, gravatarHash) = userDisplayInfo(userId)
+        return htmlOk(
+            templateRenderer.render(
+                "activity.kte",
+                mapOf(
+                    "username" to username,
+                    "gravatarHash" to gravatarHash,
+                    "themeCss" to ctx.themeCss,
+                    "currentTheme" to ctx.theme,
+                    "lang" to ctx.lang,
+                    "themes" to ThemeCatalog.allThemes(),
+                    "i18n" to ctx.i18n,
+                    "isAdmin" to authIsAdmin(req),
+                ),
+            ),
+        )
+    }
+
     fun analytics(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
         val ctx = WebContext(req)
+        val (username, gravatarHash) = userDisplayInfo(userId)
         val summary = analyticsService.getSummary(userId)
         val recentSessions = readingSessionService?.getRecentSessions(userId, 20) ?: emptyList()
         return htmlOk(
             templateRenderer.render(
                 "analytics.kte",
                 mapOf(
-                    "username" to null,
+                    "username" to username,
+                    "gravatarHash" to gravatarHash,
                     "summary" to summary,
                     "recentSessions" to recentSessions,
                     "themeCss" to ctx.themeCss,
@@ -755,6 +847,7 @@ class PageHandler(
     fun queue(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
         val ctx = WebContext(req)
+        val (username, gravatarHash) = userDisplayInfo(userId)
         val page = req.query("page")?.toIntOrNull() ?: 1
         val result =
             bookService.getBooks(
@@ -770,7 +863,8 @@ class PageHandler(
             templateRenderer.render(
                 "queue.kte",
                 mapOf(
-                    "username" to null,
+                    "username" to username,
+                    "gravatarHash" to gravatarHash,
                     "books" to result.getBooks(),
                     "total" to result.total,
                     "currentPage" to result.page,
@@ -790,12 +884,14 @@ class PageHandler(
     fun authorList(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
         val ctx = WebContext(req)
+        val (username, gravatarHash) = userDisplayInfo(userId)
         val authors = bookService.getAuthors(userId)
         return htmlOk(
             templateRenderer.render(
                 "author-list.kte",
                 mapOf(
-                    "username" to null,
+                    "username" to username,
+                    "gravatarHash" to gravatarHash,
                     "authors" to authors,
                     "themeCss" to ctx.themeCss,
                     "currentTheme" to ctx.theme,
@@ -812,6 +908,7 @@ class PageHandler(
     fun author(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
         val ctx = WebContext(req)
+        val (username, gravatarHash) = userDisplayInfo(userId)
         val name =
             req
                 .lastPathSegment()
@@ -822,7 +919,8 @@ class PageHandler(
             templateRenderer.render(
                 "author.kte",
                 mapOf(
-                    "username" to null,
+                    "username" to username,
+                    "gravatarHash" to gravatarHash,
                     "authorName" to name,
                     "books" to books,
                     "themeCss" to ctx.themeCss,
@@ -840,12 +938,14 @@ class PageHandler(
     fun seriesList(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
         val ctx = WebContext(req)
+        val (username, gravatarHash) = userDisplayInfo(userId)
         val series = bookService.getSeries(userId)
         return htmlOk(
             templateRenderer.render(
                 "series-list.kte",
                 mapOf(
-                    "username" to null,
+                    "username" to username,
+                    "gravatarHash" to gravatarHash,
                     "series" to series,
                     "themeCss" to ctx.themeCss,
                     "currentTheme" to ctx.theme,
@@ -862,6 +962,7 @@ class PageHandler(
     fun series(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
         val ctx = WebContext(req)
+        val (username, gravatarHash) = userDisplayInfo(userId)
         val name =
             req
                 .lastPathSegment()
@@ -872,7 +973,8 @@ class PageHandler(
             templateRenderer.render(
                 "series.kte",
                 mapOf(
-                    "username" to null,
+                    "username" to username,
+                    "gravatarHash" to gravatarHash,
                     "seriesName" to name,
                     "books" to books,
                     "themeCss" to ctx.themeCss,
@@ -890,12 +992,14 @@ class PageHandler(
     fun tagList(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
         val ctx = WebContext(req)
+        val (username, gravatarHash) = userDisplayInfo(userId)
         val tags = bookService.getTagsWithCounts(userId)
         return htmlOk(
             templateRenderer.render(
                 "tag-list.kte",
                 mapOf(
-                    "username" to null,
+                    "username" to username,
+                    "gravatarHash" to gravatarHash,
                     "tags" to tags,
                     "themeCss" to ctx.themeCss,
                     "currentTheme" to ctx.theme,
@@ -912,6 +1016,7 @@ class PageHandler(
     fun tag(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
         val ctx = WebContext(req)
+        val (username, gravatarHash) = userDisplayInfo(userId)
         val name =
             req
                 .lastPathSegment()
@@ -922,7 +1027,8 @@ class PageHandler(
             templateRenderer.render(
                 "tag.kte",
                 mapOf(
-                    "username" to null,
+                    "username" to username,
+                    "gravatarHash" to gravatarHash,
                     "tagName" to name,
                     "books" to books,
                     "themeCss" to ctx.themeCss,
@@ -942,6 +1048,19 @@ class PageHandler(
         val token = req.cookie("token")?.value ?: return null
         val userId = jwtService.extractUserId(token) ?: return null
         return if (authService.getUserById(userId) != null) userId else null
+    }
+
+    /** Returns the username and Gravatar hash for the authenticated user. */
+    private fun userDisplayInfo(userId: UUID): Pair<String?, String> {
+        val user = authService.getUserById(userId)
+        return Pair(user?.username, user?.email?.let { gravatarHash(it) } ?: "")
+    }
+
+    private fun gravatarHash(email: String): String {
+        val md = java.security.MessageDigest.getInstance("MD5")
+        return md
+            .digest(email.trim().lowercase().toByteArray())
+            .joinToString("") { "%02x".format(it) }
     }
 
     private fun authIsAdmin(req: Request): Boolean {

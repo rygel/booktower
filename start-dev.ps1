@@ -1,4 +1,4 @@
-# BookTower Development Startup Script
+# BookTower Development Startup Script (background mode)
 # Run again at any time to kill the old server and start fresh.
 # Logs go to data\booktower.log.
 
@@ -21,27 +21,57 @@ Write-Host "  BOOKTOWER DEVELOPMENT SERVER" -ForegroundColor Cyan
 Write-Host "====================================" -ForegroundColor Cyan
 Write-Host ""
 
-# ── Kill previous instance ────────────────────────────────────────────────────
+# ── Kill previous instance (3 strategies) ───────────────────────────────────
+$killed = $false
+
+# Strategy 1: Kill by saved PID file
 if (Test-Path $PidFile) {
     $savedPid = (Get-Content $PidFile -Raw).Trim()
     if ($savedPid -match '^\d+$') {
-        Write-Host "Stopping previous instance (PID $savedPid)..." -ForegroundColor Yellow
-        taskkill /F /T /PID $savedPid 2>$null | Out-Null
-        Start-Sleep -Seconds 1
+        Write-Host "Stopping previous instance (saved PID $savedPid)..." -ForegroundColor Yellow
+        Stop-Process -Id ([int]$savedPid) -Force -ErrorAction SilentlyContinue
+        $killed = $true
     }
     Remove-Item $PidFile -Force
-} else {
-    Write-Host "No previous instance found" -ForegroundColor Green
 }
 
+# Strategy 2: Kill by port — catches processes the PID file missed
+$conn = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
+if ($conn) {
+    @($conn | Select-Object -ExpandProperty OwningProcess -Unique) | ForEach-Object {
+        Write-Host "Stopping process on port $Port (PID $_)..." -ForegroundColor Yellow
+        Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue
+        $killed = $true
+    }
+}
+
+# Strategy 3: Kill orphaned java processes running BookTower
+Get-Process -Name "java" -ErrorAction SilentlyContinue | Where-Object {
+    try {
+        $cmdline = (Get-CimInstance Win32_Process -Filter "ProcessId = $($_.Id)").CommandLine
+        $cmdline -match "booktower|BookTowerApp"
+    } catch { $false }
+} | ForEach-Object {
+    Write-Host "Stopping orphaned BookTower Java process (PID $($_.Id))..." -ForegroundColor Yellow
+    Stop-Process -Id $_.Id -Force -ErrorAction SilentlyContinue
+    $killed = $true
+}
+
+if ($killed) {
+    Start-Sleep -Seconds 2
+    Write-Host "Previous instance stopped." -ForegroundColor Green
+} else {
+    Write-Host "No previous instance found." -ForegroundColor Green
+}
 Write-Host ""
 
 # ── Prerequisites ──────────────────────────────────────────────────────────────
-try { $null = mvn --version 2>&1; if ($LASTEXITCODE -ne 0) { throw } }
-catch { Write-Host "Maven not found. Please install Maven first." -ForegroundColor Red; exit 1 }
-
-try { $null = java -version 2>&1 }
-catch { Write-Host "Java not found. Please install Java 21+ first." -ForegroundColor Red; exit 1 }
+if (-not (Get-Command mvn -ErrorAction SilentlyContinue)) {
+    Write-Host "Maven not found. Please install Maven first." -ForegroundColor Red; exit 1
+}
+if (-not (Get-Command java -ErrorAction SilentlyContinue)) {
+    Write-Host "Java not found. Please install Java 21+ first." -ForegroundColor Red; exit 1
+}
 
 # ── Clean ──────────────────────────────────────────────────────────────────────
 if ($Clean) {
@@ -52,10 +82,16 @@ if ($Clean) {
     Write-Host ""
 }
 
+# ── Clear stale JTE caches ────────────────────────────────────────────────────
+if (Test-Path "target\jte-dynamic") {
+    Remove-Item -Recurse -Force "target\jte-dynamic" 2>$null
+    Write-Host "Cleared JTE dynamic cache" -ForegroundColor DarkGray
+}
+
 # ── Build ──────────────────────────────────────────────────────────────────────
 if (-not $SkipBuild) {
     Write-Host "Building BookTower..." -ForegroundColor Cyan
-    mvn compile -q -DskipTests
+    mvn compile -q -DskipTests "-Dflyway.skip=true"
     if ($LASTEXITCODE -ne 0) { Write-Host "Build failed!" -ForegroundColor Red; exit 1 }
     Write-Host "Build successful!" -ForegroundColor Green
     Write-Host ""
@@ -69,17 +105,15 @@ if (-not $SkipBuild) {
 # Rotate previous log
 if (Test-Path $LogFile) { Remove-Item $LogFile -Force }
 
-# ── Start in background (hidden window) ───────────────────────────────────────
+# ── Start in background (same shell, no new window) ──────────────────────────
 Write-Host "Starting BookTower..." -ForegroundColor Cyan
 
-$proc = Start-Process `
-    -FilePath "cmd.exe" `
-    -ArgumentList "/c mvn exec:java -q >> ""$LogFile"" 2>&1" `
-    -WorkingDirectory $PSScriptRoot `
-    -WindowStyle Hidden `
-    -PassThru
+$job = Start-Job -ScriptBlock {
+    Set-Location $using:PSScriptRoot
+    mvn exec:java -q "-Dflyway.skip=true" *>> $using:LogFile
+}
 
-$proc.Id | Out-File -FilePath $PidFile -Encoding ascii -NoNewline
+$job.Id | Out-File -FilePath $PidFile -Encoding ascii -NoNewline
 
 # ── Wait for ready ────────────────────────────────────────────────────────────
 Write-Host "Waiting for server" -ForegroundColor Yellow -NoNewline
@@ -95,8 +129,16 @@ for ($i = 0; $i -lt 40; $i++) {
 Write-Host ""
 
 if ($ready) {
+    # Save the actual process PID (found by port) for reliable kill on next run
+    $listenConn = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
+    if ($listenConn) {
+        $listenPid = @($listenConn | Select-Object -ExpandProperty OwningProcess -Unique) | Select-Object -First 1
+        $listenPid | Out-File -FilePath $PidFile -Encoding ascii -NoNewline
+    }
+
     Write-Host ""
     Write-Host "BookTower is running at $Url" -ForegroundColor Green
+    Write-Host "  Username: dev  |  Password: dev12345" -ForegroundColor Gray
     Write-Host "  Logs: $LogFile" -ForegroundColor Gray
     Write-Host "  Run this script again to restart." -ForegroundColor Gray
 

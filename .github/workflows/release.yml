@@ -97,6 +97,24 @@ jobs:
       - name: Build native binary
         run: mvn package -Pnative -DskipTests -Dflyway.skip=true -Denforcer.skip=true
 
+      - name: Smoke test native binary
+        shell: bash
+        run: |
+          chmod +x target/${{ matrix.binary }} 2>/dev/null || true
+          BOOKTOWER_QUICKSTART=true target/${{ matrix.binary }} &
+          PID=$!
+          for i in $(seq 1 20); do
+            if curl -sf http://localhost:9999/health > /dev/null 2>&1; then
+              echo "Native binary healthy after ${i}s"
+              kill $PID 2>/dev/null
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Native binary failed to start"
+          kill $PID 2>/dev/null
+          exit 1
+
       - name: Rename binary
         shell: bash
         run: |

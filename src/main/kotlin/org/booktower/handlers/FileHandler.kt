@@ -15,6 +15,7 @@ import org.http4k.core.Status
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.util.UUID
+import java.util.concurrent.TimeUnit
 
 private val logger = LoggerFactory.getLogger("booktower.FileHandler")
 
@@ -49,6 +50,13 @@ class FileHandler(
     private val fb2ReaderService: Fb2ReaderService = Fb2ReaderService(),
     private val calibreService: CalibreConversionService? = null,
 ) {
+    private val coverCache =
+        com.github.benmanes.caffeine.cache.Caffeine
+            .newBuilder()
+            .maximumSize(200)
+            .expireAfterWrite(10, TimeUnit.MINUTES)
+            .build<String, ByteArray>()
+
     fun upload(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
         val bookId =
@@ -384,6 +392,7 @@ class FileHandler(
         val coverFilename = "$bookId.$ext"
         val destFile = File(coversDir, coverFilename)
         destFile.writeBytes(bytes)
+        coverCache.invalidate(coverFilename)
 
         val updated = bookService.updateCoverPath(userId, bookId, coverFilename)
         if (!updated) {
@@ -413,15 +422,22 @@ class FileHandler(
                 .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Invalid filename")))
         }
 
-        val file = File(storageConfig.coversPath, filename)
-        if (!file.exists() || !file.isFile) {
-            return Response(Status.NOT_FOUND)
+        val bytes =
+            coverCache.getIfPresent(filename) ?: run {
+                val f = File(storageConfig.coversPath, filename)
+                if (f.exists() && f.isFile) {
+                    val data = f.readBytes()
+                    coverCache.put(filename, data)
+                    data
+                } else {
+                    null
+                }
+            } ?: return Response(Status.NOT_FOUND)
                 .header("Content-Type", "application/json")
                 .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "Cover not found")))
-        }
 
         val contentType =
-            when (file.extension.lowercase()) {
+            when (filename.substringAfterLast('.').lowercase()) {
                 "jpg", "jpeg" -> "image/jpeg"
                 "png" -> "image/png"
                 "webp" -> "image/webp"
@@ -431,8 +447,8 @@ class FileHandler(
         return Response(Status.OK)
             .header("Content-Type", contentType)
             .header("Cache-Control", "public, max-age=86400")
-            .header("Content-Length", file.length().toString())
-            .body(file.inputStream())
+            .header("Content-Length", bytes.size.toString())
+            .body(bytes.inputStream())
     }
 
     /** GET /api/books/{id}/chapters — list all chapter files for a book */

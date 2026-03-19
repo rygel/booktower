@@ -155,3 +155,4 @@ e2e-test.bat
 # Local configuration
 application-local.properties
 application-local.yml
+.claude/worktrees/

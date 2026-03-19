@@ -81,7 +81,7 @@ class UserPermissionsIntegrationTest : IntegrationTestBase() {
             "canUseApiTokens":true,"canManageJournal":true,"canManageReadingSessions":true,
             "canViewStats":true,"canEditProfile":true,"canChangePassword":true,
             "canChangeEmail":true,"canUseSearchFilters":true,"canViewAuditLog":false,
-            "canAccessKomgaApi":true,"canManageNotebooks":true,"canManageFonts":true,
+            "canManageNotebooks":true,"canManageFonts":true,
             "canAccessAdminPanel":false}"""
 
         val resp =
@@ -110,7 +110,7 @@ class UserPermissionsIntegrationTest : IntegrationTestBase() {
             "canUseApiTokens":true,"canManageJournal":true,"canManageReadingSessions":true,
             "canViewStats":true,"canEditProfile":true,"canChangePassword":true,
             "canChangeEmail":true,"canUseSearchFilters":true,"canViewAuditLog":false,
-            "canAccessKomgaApi":true,"canManageNotebooks":true,"canManageFonts":true,
+            "canManageNotebooks":true,"canManageFonts":true,
             "canAccessAdminPanel":false}"""
         app(
             Request(Method.PUT, "/api/admin/users/$userId/permissions")

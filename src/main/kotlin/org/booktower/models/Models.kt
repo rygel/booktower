@@ -124,7 +124,7 @@ enum class BookSortOrder(
     TITLE("b.title", "sort.title"),
     ADDED("b.added_at DESC, b.title", "sort.added"),
     AUTHOR("COALESCE(b.author, ''), b.title", "sort.author"),
-    PUBLISHED_DATE("COALESCE(b.published_date, '') DESC, b.title", "sort.published.date"),
+    PUBLISHED_DATE("COALESCE(CAST(b.published_date AS VARCHAR), '') DESC, b.title", "sort.published.date"),
 }
 
 enum class ReadStatus(
@@ -185,6 +185,7 @@ data class BookDto(
     val communityRatingCount: Int? = null,
     val communityRatingSource: String? = null,
     val contentSnippet: String? = null,
+    val shareToken: String? = null,
 )
 
 data class ComicMetadataRequest(
@@ -551,4 +552,28 @@ data class ScanJobStatus(
     val skipped: Int = 0,
     val errors: Int = 0,
     val message: String? = null,
+)
+
+// ── Whispersync (linked books) ──────────────────────────────────────────────
+
+data class LinkedBookDto(
+    val id: String,
+    val ebookId: String,
+    val audioId: String,
+    val ebookTitle: String,
+    val audioTitle: String,
+    val createdAt: String,
+)
+
+data class SyncPositionDto(
+    val targetBookId: String,
+    val targetTitle: String,
+    val targetFormat: String,
+    val chapterIndex: Int,
+    val chapterLabel: String?,
+    val positionInChapter: Double,
+)
+
+data class LinkBooksRequest(
+    val linkedBookId: String,
 )

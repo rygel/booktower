@@ -113,6 +113,53 @@ class AdminHandler(
             .body("")
     }
 
+    /** POST /admin/seed/full-demo — seeds demo data enriched with all features */
+    fun seedFullDemo(req: Request): Response {
+        val userId = AuthenticatedUser.from(req)
+        val ctx = WebContext(req)
+        val result =
+            seedService.seedFullDemo(userId)
+                ?: return Response(Status.CONFLICT)
+                    .header("HX-Trigger", toast(ctx.i18n.translate("msg.seed.already"), "info"))
+                    .body("")
+        val msg =
+            ctx.i18n
+                .translate("msg.seed.full-demo.done")
+                .replace("{0}", result.libraries.toString())
+                .replace("{1}", result.books.toString())
+        return Response(Status.OK)
+            .header("HX-Trigger", toast(msg))
+            .body("")
+    }
+
+    /** POST /admin/seed/comics — creates Public Domain Comics library and queues CBZ downloads */
+    fun seedComics(req: Request): Response {
+        val userId = AuthenticatedUser.from(req)
+        val ctx = WebContext(req)
+        val result =
+            seedService.seedComics(userId)
+                ?: return Response(Status.CONFLICT)
+                    .header("HX-Trigger", toast(ctx.i18n.translate("msg.seed.comics.already"), "info"))
+                    .body("")
+        val msg =
+            ctx.i18n
+                .translate("msg.seed.comics.queued")
+                .replace("{0}", result.queued.toString())
+        return Response(Status.OK)
+            .header("HX-Trigger", toast(msg))
+            .body("")
+    }
+
+    fun resetDatabase(req: Request): Response {
+        val userId = AuthenticatedUser.from(req)
+        val ctx = WebContext(req)
+        adminService.resetDatabase(userId)
+        return Response(Status.OK)
+            .header("HX-Trigger", toast(ctx.i18n.translate("admin.danger.reset.done")))
+            .header("HX-Refresh", "true")
+            .body("")
+    }
+
     /** GET /api/admin/password-reset-tokens — lists active (unused, unexpired) tokens for admin display */
     fun listResetTokens(req: Request): Response {
         val tokens = passwordResetService.listActiveTokens()

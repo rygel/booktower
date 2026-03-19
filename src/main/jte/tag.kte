@@ -2,6 +2,7 @@
 @import org.booktower.model.ThemeDefinition
 @import org.booktower.models.BookDto
 @param username: String?
+@param gravatarHash: String = ""
 @param tagName: String
 @param books: List<BookDto>
 @param themeCss: String
@@ -11,7 +12,7 @@
 @param i18n: I18nService
 @param isAdmin: Boolean = false
 
-@template.components.layout(title="${tagName} - BookTower", username=username, currentPage="tags",
+@template.components.layout(title="${tagName} - BookTower", username=username, gravatarHash=gravatarHash, currentPage="tags",
     themeCss=themeCss, currentTheme=currentTheme, lang=lang, themes=themes, i18n=i18n, searchQuery="", isAdmin=isAdmin, content = @`
 <div style="padding:2rem; max-width:72rem; margin:0 auto;">
 

@@ -2,6 +2,7 @@
 @import org.booktower.model.ThemeDefinition
 @import org.booktower.models.LibraryDto
 @param username: String?
+@param gravatarHash: String = ""
 @param userEmail: String
 @param userUsername: String
 @param memberSince: String
@@ -14,7 +15,7 @@
 @param i18n: I18nService
 @param isAdmin: Boolean = false
 
-@template.components.layout(title="${i18n.translate("page.profile.title")} - BookTower", username=username, currentPage="profile",
+@template.components.layout(title="${i18n.translate("page.profile.title")} - BookTower", username=username, gravatarHash=gravatarHash, currentPage="profile",
     themeCss=themeCss, currentTheme=currentTheme, lang=lang, themes=themes, i18n=i18n, searchQuery="", isAdmin=isAdmin, content = @`
 <div class="page-container" style="max-width:36rem;">
     <h1 class="page-title flex-center gap-sm" style="font-size:1.25rem;">
@@ -23,24 +24,60 @@
     </h1>
 
     <!-- Account Information -->
-    <div class="card card-padding-lg" style=" margin-bottom:1.25rem;">
-        <h2 class="section-title flex-center gap-sm" style="font-size:0.9rem; color:var(--bt-text-dim); margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem;">
-            <i class="ri-user-line" style="color:var(--bt-accent-dim);"></i>
+    <div class="card card-pad">
+        <h2 class="profile-section-title">
+            <i class="ri-user-line"></i>
             ${i18n.translate("page.profile.account.info")}
         </h2>
-        <dl style="display:grid; grid-template-columns:auto 1fr; gap:0.5rem 1.5rem; font-size:0.85rem;">
-            <dt style="color:var(--bt-subtle); font-weight:500;">${i18n.translate("page.profile.label.username")}</dt>
-            <dd style="color:var(--bt-text); margin:0;">${userUsername}</dd>
-            <dt style="color:var(--bt-subtle); font-weight:500;">${i18n.translate("page.profile.label.email")}</dt>
-            <dd style="color:var(--bt-text); margin:0;">${userEmail}</dd>
-            <dt style="color:var(--bt-subtle); font-weight:500;">${i18n.translate("page.profile.label.member.since")}</dt>
-            <dd style="color:var(--bt-text); margin:0;">${memberSince}</dd>
+        <dl class="profile-dl">
+            <dt>${i18n.translate("page.profile.label.username")}</dt>
+            <dd>${userUsername}</dd>
+            <dt>${i18n.translate("page.profile.label.email")}</dt>
+            <dd>${userEmail}</dd>
+            <dt>${i18n.translate("page.profile.label.member.since")}</dt>
+            <dd>${memberSince}</dd>
         </dl>
     </div>
 
+    <!-- Preferences -->
+    <div class="card card-pad">
+        <h2 class="profile-section-title">
+            <i class="ri-palette-line"></i>
+            ${i18n.translate("page.profile.preferences")}
+        </h2>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem;">
+            <div>
+                <label style="display:block; font-size:0.8rem; color:var(--bt-text-dim); margin-bottom:0.375rem; font-weight:500;">${i18n.translate("sidebar.themes")}</label>
+                <select name="theme" hx-post="/preferences/theme" hx-trigger="change" hx-target="#theme-style" hx-swap="outerHTML"
+                        style="width:100%; font-size:0.875rem; padding:0.5rem 0.75rem; border-radius:0.5rem; border:1px solid var(--bt-border-input); background:var(--bt-bg); color:var(--bt-text); cursor:pointer;">
+                    @for(theme in themes)
+                        @if(theme.id == currentTheme)
+                            <option value="${theme.id}" selected>${theme.name}</option>
+                        @else
+                            <option value="${theme.id}">${theme.name}</option>
+                        @endif
+                    @endfor
+                </select>
+            </div>
+            <div>
+                <label style="display:block; font-size:0.8rem; color:var(--bt-text-dim); margin-bottom:0.375rem; font-weight:500;">${i18n.translate("sidebar.language")}</label>
+                <select name="lang" hx-post="/preferences/lang" hx-trigger="change"
+                        style="width:100%; font-size:0.875rem; padding:0.5rem 0.75rem; border-radius:0.5rem; border:1px solid var(--bt-border-input); background:var(--bt-bg); color:var(--bt-text); cursor:pointer;">
+                    @for(code in listOf("en","fr","de","es","pt","it","nl","pl","ja","zh"))
+                        @if(code == lang)
+                            <option value="${code}" selected>${i18n.translate("language.$code")}</option>
+                        @else
+                            <option value="${code}">${i18n.translate("language.$code")}</option>
+                        @endif
+                    @endfor
+                </select>
+            </div>
+        </div>
+    </div>
+
     <!-- Reading Analytics toggle -->
-    <div class="card card-padding-lg" style=" margin-bottom:1.25rem;">
-        <h2 class="section-title flex-center gap-sm" style="font-size:0.9rem; color:var(--bt-text-dim); margin-bottom:0.5rem; display:flex; align-items:center; gap:0.5rem;">
+    <div class="card card-pad">
+        <h2 class="profile-section-title">
             <i class="ri-bar-chart-2-line" style="color:var(--bt-accent-dim);"></i>
             ${i18n.translate("page.profile.analytics")}
         </h2>
@@ -60,8 +97,8 @@
     </div>
 
     <!-- Change Email -->
-    <div class="card card-padding-lg" style=" margin-bottom:1.25rem;">
-        <h2 class="section-title flex-center gap-sm" style="font-size:0.9rem; color:var(--bt-text-dim); margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem;">
+    <div class="card card-pad">
+        <h2 class="profile-section-title">
             <i class="ri-mail-settings-line" style="color:var(--bt-accent-dim);"></i>
             ${i18n.translate("page.profile.change.email")}
         </h2>
@@ -83,8 +120,8 @@
     </div>
 
     <!-- API Tokens -->
-    <div class="card card-padding-lg" style=" margin-bottom:1.25rem;">
-        <h2 class="section-title flex-center gap-sm" style="font-size:0.9rem; color:var(--bt-text-dim); margin-bottom:0.5rem; display:flex; align-items:center; gap:0.5rem;">
+    <div class="card card-pad">
+        <h2 class="profile-section-title">
             <i class="ri-key-2-line" style="color:var(--bt-accent-dim);"></i>
             ${i18n.translate("page.profile.api.tokens")}
         </h2>
@@ -106,8 +143,8 @@
     </div>
 
     <!-- Data Export -->
-    <div class="card card-padding-lg" style=" margin-bottom:1.25rem;">
-        <h2 class="section-title flex-center gap-sm" style="font-size:0.9rem; color:var(--bt-text-dim); margin-bottom:0.5rem; display:flex; align-items:center; gap:0.5rem;">
+    <div class="card card-pad">
+        <h2 class="profile-section-title">
             <i class="ri-database-2-line" style="color:var(--bt-accent-dim);"></i>
             ${i18n.translate("page.profile.export")}
         </h2>
@@ -118,8 +155,8 @@
     </div>
 
     <!-- Goodreads Import -->
-    <div class="card card-padding-lg" style=" margin-bottom:1.25rem;">
-        <h2 class="section-title flex-center gap-sm" style="font-size:0.9rem; color:var(--bt-text-dim); margin-bottom:0.5rem; display:flex; align-items:center; gap:0.5rem;">
+    <div class="card card-pad">
+        <h2 class="profile-section-title">
             <i class="ri-upload-2-line" style="color:var(--bt-accent-dim);"></i>
             ${i18n.translate("page.profile.import.goodreads")}
         </h2>
@@ -145,8 +182,8 @@
     </div>
 
     <!-- Change Password -->
-    <div class="card card-padding-lg" style="">
-        <h2 class="section-title flex-center gap-sm" style="font-size:0.9rem; color:var(--bt-text-dim); margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem;">
+    <div class="card card-pad">
+        <h2 class="profile-section-title">
             <i class="ri-lock-password-line" style="color:var(--bt-accent-dim);"></i>
             ${i18n.translate("page.profile.change.password")}
         </h2>

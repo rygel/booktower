@@ -1142,6 +1142,12 @@ class BookService(
                 } catch (_: Exception) {
                     null
                 },
+            shareToken =
+                try {
+                    row.getColumn("share_token", String::class.java)
+                } catch (_: Exception) {
+                    null
+                },
         )
     }
 
@@ -1188,18 +1194,21 @@ class BookService(
                 .bind(0, userId.toString())
                 .bind(1, bookId.toString())
                 .execute()
-            moods.filter { it.isNotBlank() }.forEach { mood ->
-                h
-                    .createUpdate("INSERT INTO book_moods (id, user_id, book_id, mood) VALUES (?, ?, ?, ?)")
-                    .bind(
-                        0,
-                        java.util.UUID
-                            .randomUUID()
-                            .toString(),
-                    ).bind(1, userId.toString())
-                    .bind(2, bookId.toString())
-                    .bind(3, mood)
-                    .execute()
+            val cleanMoods = moods.filter { it.isNotBlank() }
+            if (cleanMoods.isNotEmpty()) {
+                val batch =
+                    h.prepareBatch(
+                        "INSERT INTO book_moods (id, user_id, book_id, mood) VALUES (?, ?, ?, ?)",
+                    )
+                cleanMoods.forEach { mood ->
+                    batch
+                        .bind(0, UUID.randomUUID().toString())
+                        .bind(1, userId.toString())
+                        .bind(2, bookId.toString())
+                        .bind(3, mood)
+                        .add()
+                }
+                batch.execute()
             }
         }
         return true
@@ -1305,18 +1314,21 @@ class BookService(
                 .bind(0, userId.toString())
                 .bind(1, bookId.toString())
                 .execute()
-            categories.filter { it.isNotBlank() }.forEach { cat ->
-                h
-                    .createUpdate("INSERT INTO book_categories (id, user_id, book_id, category) VALUES (?, ?, ?, ?)")
-                    .bind(
-                        0,
-                        java.util.UUID
-                            .randomUUID()
-                            .toString(),
-                    ).bind(1, userId.toString())
-                    .bind(2, bookId.toString())
-                    .bind(3, cat)
-                    .execute()
+            val cleanCategories = categories.filter { it.isNotBlank() }
+            if (cleanCategories.isNotEmpty()) {
+                val batch =
+                    h.prepareBatch(
+                        "INSERT INTO book_categories (id, user_id, book_id, category) VALUES (?, ?, ?, ?)",
+                    )
+                cleanCategories.forEach { cat ->
+                    batch
+                        .bind(0, UUID.randomUUID().toString())
+                        .bind(1, userId.toString())
+                        .bind(2, bookId.toString())
+                        .bind(3, cat)
+                        .add()
+                }
+                batch.execute()
             }
         }
         return true
@@ -1362,19 +1374,20 @@ class BookService(
 
         jdbi.useHandle<Exception> { h ->
             h.createUpdate("DELETE FROM book_authors WHERE book_id = ?").bind(0, bookId.toString()).execute()
-            authors.forEachIndexed { idx, name ->
-                h
-                    .createUpdate(
+            if (authors.isNotEmpty()) {
+                val batch =
+                    h.prepareBatch(
                         "INSERT INTO book_authors (id, book_id, author_name, author_order) VALUES (?, ?, ?, ?)",
-                    ).bind(
-                        0,
-                        java.util.UUID
-                            .randomUUID()
-                            .toString(),
-                    ).bind(1, bookId.toString())
-                    .bind(2, name)
-                    .bind(3, idx)
-                    .execute()
+                    )
+                authors.forEachIndexed { idx, name ->
+                    batch
+                        .bind(0, UUID.randomUUID().toString())
+                        .bind(1, bookId.toString())
+                        .bind(2, name)
+                        .bind(3, idx)
+                        .add()
+                }
+                batch.execute()
             }
             // Also sync the legacy author column with the primary author
             val primary = authors.firstOrNull()
@@ -1410,12 +1423,13 @@ class BookService(
         }
     }
 
-    /** Returns all books for a user matching a shelf rule (no pagination limit). Used by MagicShelfService. */
+    /** Returns books for a user matching a shelf rule. Used by MagicShelfService. */
     fun getBooksForShelf(
         userId: UUID,
         statusFilter: String? = null,
         tagFilter: String? = null,
         ratingGte: Int? = null,
+        limit: Int = 200,
     ): List<BookDto> {
         val statusClause = if (statusFilter != null) " AND bs.status = ?" else ""
         val tagClause =
@@ -1437,6 +1451,7 @@ class BookService(
                 LEFT JOIN book_ratings br ON br.book_id = b.id AND br.user_id = ?
                 WHERE l.user_id = ?${statusClause}${tagClause}$ratingGteClause
                 ORDER BY b.title
+                LIMIT ?
                 """,
                     )
                 q.bind(0, userId.toString())
@@ -1449,6 +1464,7 @@ class BookService(
                     q.bind(idx++, tagFilter)
                 }
                 if (ratingGte != null) q.bind(idx++, ratingGte)
+                q.bind(idx++, limit)
                 q.map { row -> mapBook(row) }.list()
             }
         val tagMap = fetchTagsForBooks(userId, books.map { it.id })
@@ -1482,19 +1498,20 @@ class BookService(
                 .bind(0, userId.toString())
                 .bind(1, bookId.toString())
                 .execute()
-            for (tag in cleanTags) {
-                handle
-                    .createUpdate(
+            if (cleanTags.isNotEmpty()) {
+                val batch =
+                    handle.prepareBatch(
                         "INSERT INTO book_tags (id, user_id, book_id, tag) VALUES (?, ?, ?, ?)",
-                    ).bind(
-                        0,
-                        java.util.UUID
-                            .randomUUID()
-                            .toString(),
-                    ).bind(1, userId.toString())
-                    .bind(2, bookId.toString())
-                    .bind(3, tag)
-                    .execute()
+                    )
+                for (tag in cleanTags) {
+                    batch
+                        .bind(0, UUID.randomUUID().toString())
+                        .bind(1, userId.toString())
+                        .bind(2, bookId.toString())
+                        .bind(3, tag)
+                        .add()
+                }
+                batch.execute()
             }
         }
         logger.info("Tags set for book $bookId: $cleanTags")
@@ -1652,7 +1669,7 @@ class BookService(
                     """
                 SELECT COUNT(*) FROM book_status
                 WHERE user_id = ? AND status = 'FINISHED'
-                  AND SUBSTRING(updated_at, 1, 4) = ?
+                  AND SUBSTRING(CAST(updated_at AS VARCHAR), 1, 4) = ?
                 """,
                 ).bind(0, userId.toString())
                 .bind(1, year.toString())
@@ -1785,15 +1802,20 @@ class BookService(
                     .createUpdate("DELETE FROM book_tags WHERE book_id = ?")
                     .bind(0, bookId.toString())
                     .execute()
-                tags.forEach { tag ->
-                    handle
-                        .createUpdate(
+                if (tags.isNotEmpty()) {
+                    val batch =
+                        handle.prepareBatch(
                             "INSERT INTO book_tags (id, user_id, book_id, tag) VALUES (?, ?, ?, ?)",
-                        ).bind(0, UUID.randomUUID().toString())
-                        .bind(1, userId.toString())
-                        .bind(2, bookId.toString())
-                        .bind(3, tag)
-                        .execute()
+                        )
+                    tags.forEach { tag ->
+                        batch
+                            .bind(0, UUID.randomUUID().toString())
+                            .bind(1, userId.toString())
+                            .bind(2, bookId.toString())
+                            .bind(3, tag)
+                            .add()
+                    }
+                    batch.execute()
                 }
                 true
             }
@@ -1908,6 +1930,41 @@ class BookService(
                     )
                 }.list()
         }
+
+    /** Batch-load book files for multiple books in a single query. Returns a map of bookId -> files. */
+    fun getBookFilesForBooks(
+        userId: UUID,
+        bookIds: List<UUID>,
+    ): Map<String, List<BookFileDto>> {
+        if (bookIds.isEmpty()) return emptyMap()
+        val placeholders = bookIds.joinToString(",") { "?" }
+        return jdbi.withHandle<Map<String, List<BookFileDto>>, Exception> { handle ->
+            val query =
+                handle.createQuery(
+                    """SELECT bf.id, bf.book_id, bf.track_index, bf.title, bf.duration_sec, bf.file_size, bf.file_path
+                       FROM book_files bf
+                       INNER JOIN books b ON b.id = bf.book_id
+                       INNER JOIN libraries l ON l.id = b.library_id
+                       WHERE bf.book_id IN ($placeholders) AND l.user_id = ?
+                       ORDER BY bf.book_id, bf.track_index""",
+                )
+            bookIds.forEachIndexed { i, id -> query.bind(i, id.toString()) }
+            query.bind(bookIds.size, userId.toString())
+            query
+                .map { row ->
+                    row.getColumn("book_id", String::class.java) to
+                        BookFileDto(
+                            id = row.getColumn("id", String::class.java),
+                            trackIndex = row.getColumn("track_index", java.lang.Integer::class.java)?.toInt() ?: 0,
+                            title = row.getColumn("title", String::class.java),
+                            durationSec = row.getColumn("duration_sec", java.lang.Integer::class.java)?.toInt(),
+                            fileSize = row.getColumn("file_size", java.lang.Long::class.java)?.toLong() ?: 0L,
+                            filePath = row.getColumn("file_path", String::class.java),
+                        )
+                }.list()
+                .groupBy({ it.first }, { it.second })
+        }
+    }
 
     fun getBookFilePath(
         userId: UUID,

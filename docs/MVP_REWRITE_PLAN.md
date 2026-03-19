@@ -79,7 +79,6 @@ The MVP is a **working e-book library** that allows users to:
 |---------|----------|-------|
 | **Kobo Sync** | P3 | Complex integration |
 | **KOReader Sync** | P3 | Complex integration |
-| **Komga Integration** | P3 | External service |
 | **Hardcover Sync** | P3 | External service |
 | **Advanced Analytics** | P3 | Future enhancement |
 | **Mobile Apps** | P3 | Separate project |

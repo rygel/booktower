@@ -225,7 +225,7 @@ class AlternativeCoverIntegrationTest {
             )
         val metadataApiRouter = MetadataApiRouter(filters, MetadataFetchService(), bookService, null, null, null)
         val audiobookApiRouter = AudiobookApiRouter(filters, null, null, null, storage)
-        val deviceSyncRouter = DeviceSyncRouter(filters, null, null, null, opdsHandler)
+        val deviceSyncRouter = DeviceSyncRouter(filters, null, null, opdsHandler)
 
         val appHandler =
             AppHandler(fileHandler, storage, false, authRouter, oidcRouter, pageRouter, bookApiRouter, libraryApiRouter, userApiRouter, adminApiRouter, metadataApiRouter, audiobookApiRouter, deviceSyncRouter)

@@ -8,7 +8,9 @@ import org.booktower.handlers.GoodreadsImportHandler
 import org.booktower.handlers.UserSettingsHandler
 import org.booktower.services.BookDeliveryService
 import org.booktower.services.BookService
+import org.booktower.services.CollectionService
 import org.booktower.services.ContentRestrictionsService
+import org.booktower.services.CreateCollectionRequest
 import org.booktower.services.FilterPresetService
 import org.booktower.services.HardcoverSyncService
 import org.booktower.services.NotificationService
@@ -21,6 +23,7 @@ import org.http4k.core.Method
 import org.http4k.core.Request
 import org.http4k.core.Response
 import org.http4k.core.Status
+import org.http4k.core.body.form
 import org.http4k.core.then
 import org.http4k.routing.RoutingHttpHandler
 import org.http4k.routing.bind
@@ -42,6 +45,7 @@ class UserApiRouter(
     private val apiTokenHandler: ApiTokenHandler,
     private val exportHandler: ExportHandler,
     private val goodreadsImportHandler: GoodreadsImportHandler,
+    private val collectionService: CollectionService? = null,
 ) {
     @Suppress("LongMethod")
     fun routes(): List<RoutingHttpHandler> =
@@ -99,7 +103,71 @@ class UserApiRouter(
                 filters.auth.then(optionalHandler(backgroundTaskHandler?.let { it::list })),
             "/api/tasks/{id}" bind Method.DELETE to
                 filters.auth.then(optionalHandler(backgroundTaskHandler?.let { it::dismiss })),
+            // Collections
+            "/api/collections" bind Method.GET to filters.auth.then(::listCollections),
+            "/api/collections" bind Method.POST to filters.auth.then(::createCollection),
+            "/api/collections/{id}" bind Method.DELETE to filters.auth.then(::deleteCollection),
+            "/api/collections/{id}/books/{bookId}" bind Method.POST to filters.auth.then(::addBookToCollection),
+            "/api/collections/{id}/books/{bookId}" bind Method.DELETE to filters.auth.then(::removeBookFromCollection),
         )
+
+    // ─── Collections ────────────────────────────────────────────────────────
+
+    private fun listCollections(req: Request): Response {
+        val svc = collectionService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val userId = AuthenticatedUser.from(req)
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(svc.getCollections(userId)),
+            )
+    }
+
+    private fun createCollection(req: Request): Response {
+        val svc = collectionService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val userId = AuthenticatedUser.from(req)
+        val name = req.form("name")?.trim() ?: return Response(Status.BAD_REQUEST)
+        if (name.isBlank() || name.length > 100) return Response(Status.BAD_REQUEST)
+        val desc = req.form("description")?.trim()?.takeIf { it.isNotBlank() }
+        val collection = svc.createCollection(userId, CreateCollectionRequest(name, desc))
+        return Response(Status.CREATED)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(collection),
+            )
+    }
+
+    private fun deleteCollection(req: Request): Response {
+        val svc = collectionService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val userId = AuthenticatedUser.from(req)
+        val id =
+            req.uri.path
+                .split("/")
+                .lastOrNull()
+                ?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() }
+                ?: return Response(Status.BAD_REQUEST)
+        return if (svc.deleteCollection(userId, id)) Response(Status.NO_CONTENT) else Response(Status.NOT_FOUND)
+    }
+
+    private fun addBookToCollection(req: Request): Response {
+        val svc = collectionService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val userId = AuthenticatedUser.from(req)
+        val parts = req.uri.path.split("/")
+        val collId = parts.getOrNull(3)?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() } ?: return Response(Status.BAD_REQUEST)
+        val bookId = parts.getOrNull(5)?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() } ?: return Response(Status.BAD_REQUEST)
+        return if (svc.addBook(userId, collId, bookId)) Response(Status.OK) else Response(Status.NOT_FOUND)
+    }
+
+    private fun removeBookFromCollection(req: Request): Response {
+        val svc = collectionService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val userId = AuthenticatedUser.from(req)
+        val parts = req.uri.path.split("/")
+        val collId = parts.getOrNull(3)?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() } ?: return Response(Status.BAD_REQUEST)
+        val bookId = parts.getOrNull(5)?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() } ?: return Response(Status.BAD_REQUEST)
+        return if (svc.removeBook(userId, collId, bookId)) Response(Status.NO_CONTENT) else Response(Status.NOT_FOUND)
+    }
 
     // ─── Inline handler methods ──────────────────────────────────────────────
 

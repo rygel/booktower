@@ -18,7 +18,6 @@ import org.booktower.handlers.GoodreadsImportHandler
 import org.booktower.handlers.JournalHandler
 import org.booktower.handlers.KOReaderSyncHandler
 import org.booktower.handlers.KoboSyncHandler
-import org.booktower.handlers.KomgaApiHandler
 import org.booktower.handlers.LibraryHandler2
 import org.booktower.handlers.OidcHandler
 import org.booktower.handlers.OpdsHandler
@@ -49,9 +48,11 @@ import org.booktower.services.BackgroundTaskService
 import org.booktower.services.BookDeliveryService
 import org.booktower.services.BookDropService
 import org.booktower.services.BookFilesService
+import org.booktower.services.BookLinkService
 import org.booktower.services.BookNotebookService
 import org.booktower.services.BookReviewService
 import org.booktower.services.BookService
+import org.booktower.services.BookSharingService
 import org.booktower.services.BookmarkService
 import org.booktower.services.BulkCoverService
 import org.booktower.services.CalibreConversionService
@@ -71,7 +72,6 @@ import org.booktower.services.JournalService
 import org.booktower.services.JwtService
 import org.booktower.services.KOReaderSyncService
 import org.booktower.services.KoboSyncService
-import org.booktower.services.KomgaApiService
 import org.booktower.services.LibraryAccessService
 import org.booktower.services.LibraryHealthService
 import org.booktower.services.LibraryService
@@ -142,7 +142,20 @@ val appModule =
         single { ExportService(get<Database>().getJdbi()) }
         single { GoodreadsImportService(get()) }
         single { ComicService() }
-        single { SeedService(get(), get(), get<AppConfig>().storage.coversPath, get<AppConfig>().storage.booksPath) }
+        single {
+            SeedService(
+                get(),
+                get(),
+                get<AppConfig>().storage.coversPath,
+                get<AppConfig>().storage.booksPath,
+                get(),
+                get<BookmarkService>(),
+                get<ReadingSessionService>(),
+                get<MagicShelfService>(),
+                get<UserSettingsService>(),
+                get<Database>().getJdbi(),
+            )
+        }
         single { ScanScheduleService(get<Database>().getJdbi(), get(), get<AppConfig>().autoScanMinutes) }
         single { LibraryWatchService(get<Database>().getJdbi(), get()) }
         single { DuplicateDetectionService(get<Database>().getJdbi()) }
@@ -159,7 +172,6 @@ val appModule =
         single { OidcService(get<AppConfig>().oidc) }
         single { KoboSyncService(get<Database>().getJdbi(), get(), get<AppConfig>().baseUrl, get()) }
         single { KOReaderSyncService(get<Database>().getJdbi(), get()) }
-        single { KomgaApiService(get<Database>().getJdbi(), get(), get(), get<AppConfig>().baseUrl) }
         single { org.booktower.services.FontService(get<Database>().getJdbi(), "${get<AppConfig>().storage.booksPath}/fonts") }
         single { ReaderPreferencesService(get()) }
         single { org.booktower.services.FtsService(get<Database>().getJdbi(), get<AppConfig>().fts.enabled) }
@@ -188,7 +200,10 @@ val appModule =
         single { FilterPresetService(get<Database>().getJdbi()) }
         single { TelemetryService(get<Database>().getJdbi(), get()) }
         single { org.booktower.services.CommunityRatingService(get<Database>().getJdbi()) }
+        single { BookLinkService(get<Database>().getJdbi(), get<BookService>()) }
+        single { BookSharingService(get<Database>().getJdbi(), get<BookService>()) }
         single { WeblateHandler(get<AppConfig>().weblate) }
+        single { org.booktower.services.CollectionService(get<Database>().getJdbi()) }
 
         // ── Handler objects ──────────────────────────────────────────────────
         single {
@@ -241,6 +256,8 @@ val appModule =
                 get(),
                 get(),
                 get(),
+                getOrNull(),
+                getOrNull(),
             )
         }
         single { BackgroundTaskHandler(get()) }
@@ -248,7 +265,6 @@ val appModule =
         single { OidcHandler(get(), get()) }
         single { KoboSyncHandler(get()) }
         single { KOReaderSyncHandler(get()) }
-        single { KomgaApiHandler(get()) }
         single { FontHandler(get()) }
         single { ReaderPreferencesHandler(get()) }
         single {
@@ -291,6 +307,7 @@ val appModule =
                 get<JwtService>(),
                 get<TemplateRenderer>(),
                 get<AppConfig>().registrationOpen,
+                get<UserSettingsService>(),
             )
         }
         single {
@@ -316,6 +333,8 @@ val appModule =
                 bookReviewService = get<BookReviewService>(),
                 bookNotebookService = get<BookNotebookService>(),
                 duplicateDetectionService = get<DuplicateDetectionService>(),
+                bookLinkService = get<BookLinkService>(),
+                bookSharingService = get<BookSharingService>(),
             )
         }
         single {
@@ -345,6 +364,7 @@ val appModule =
                 apiTokenHandler = get<ApiTokenHandler>(),
                 exportHandler = get<ExportHandler>(),
                 goodreadsImportHandler = get<GoodreadsImportHandler>(),
+                collectionService = get<org.booktower.services.CollectionService>(),
             )
         }
         single {
@@ -383,7 +403,6 @@ val appModule =
                 get<FilterSet>(),
                 get<KoboSyncHandler>(),
                 get<KOReaderSyncHandler>(),
-                get<KomgaApiHandler>(),
                 get<OpdsHandler>(),
             )
         }

@@ -5,6 +5,7 @@
 @import org.booktower.models.BookDto
 @import org.booktower.models.ReadStatus
 @param username: String?
+@param gravatarHash: String = ""
 @param library: LibraryDto
 @param books: List<BookDto>
 @param currentSort: String = "TITLE"
@@ -24,19 +25,19 @@
 @param i18n: I18nService
 @param isAdmin: Boolean = false
 
-@template.components.layout(title="${library.name} - BookTower", username=username, currentPage="library",
+@template.components.layout(title="${library.name} - BookTower", username=username, gravatarHash=gravatarHash, currentPage="library",
     themeCss=themeCss, currentTheme=currentTheme, lang=lang, themes=themes, i18n=i18n, searchQuery="", isAdmin=isAdmin, content = @`
-<div style="padding:2rem;">
+<div class="page-container">
 
     <!-- Breadcrumb -->
     @template.components.breadcrumb(items = listOf(i18n.translate("nav.libraries") to "/libraries", library.name to null))
 
-    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.75rem; flex-wrap:wrap; gap:1rem;">
+    <div class="flex-between mb-3" style="flex-wrap:wrap; gap:1rem;">
         <div>
-            <h1 style="font-size:1.5rem; font-weight:700; color:var(--bt-text); margin-bottom:0.25rem;">${library.name}</h1>
-            <p style="font-size:0.8rem; color:var(--bt-subtle);">${library.bookCount} ${i18n.translate("label.books")} &middot; <span style="font-family:monospace; color:var(--bt-faint);">${library.path}</span></p>
+            <h1 class="page-title mb-0" style="margin-bottom:0.25rem;">${library.name}</h1>
+            <p class="text-sm text-subtle">${library.bookCount} ${i18n.translate("label.books")} &middot; <span style="font-family:monospace; color:var(--bt-faint);">${library.path}</span></p>
         </div>
-        <div style="display:flex; gap:0.75rem; align-items:center;">
+        <div class="flex-center gap-md">
             <form action="/search" method="get" style="display:flex;">
                 <input type="hidden" name="libId" value="${library.id}">
                 <input type="text" name="q" placeholder="${i18n.translate("placeholder.search.books")}"
@@ -47,27 +48,27 @@
                 </button>
             </form>
             <select onchange="window.location.href='/libraries/${library.id}?sort='+this.value+'&status=${currentStatus}&tag=${currentTag}&rating=${currentRating}'"
-                style="border-radius:0.5rem; border:1px solid var(--bt-border-input); padding:0.4rem 0.75rem; font-size:0.8rem; background:var(--bt-input-bg); color:var(--bt-muted); cursor:pointer;">
+                class="filter-select">
                 @for(opt in sortOptions)
                     <option value="${opt.name}" selected="${opt.name == currentSort}">${i18n.translate(opt.label)}</option>
                 @endfor
             </select>
             <select onchange="window.location.href='/libraries/${library.id}?sort=${currentSort}&status='+this.value+'&tag=${currentTag}&rating=${currentRating}'"
-                style="border-radius:0.5rem; border:1px solid var(--bt-border-input); padding:0.4rem 0.75rem; font-size:0.8rem; background:var(--bt-input-bg); color:var(--bt-muted); cursor:pointer;">
+                class="filter-select">
                 <option value="ALL" selected="${currentStatus == "ALL"}">${i18n.translate("filter.all")}</option>
                 @for(opt in statusOptions)
                     <option value="${opt.name}" selected="${opt.name == currentStatus}">${i18n.translate(opt.label)}</option>
                 @endfor
             </select>
             <select onchange="window.location.href='/libraries/${library.id}?sort=${currentSort}&status=${currentStatus}&tag='+this.value+'&rating=${currentRating}'"
-                style="border-radius:0.5rem; border:1px solid var(--bt-border-input); padding:0.4rem 0.75rem; font-size:0.8rem; background:var(--bt-input-bg); color:var(--bt-muted); cursor:pointer;">
+                class="filter-select">
                 <option value="">${i18n.translate("filter.all.tags")}</option>
                 @for(tag in userTags)
                     <option value="${tag}" selected="${tag == currentTag}">${tag}</option>
                 @endfor
             </select>
             <select onchange="window.location.href='/libraries/${library.id}?sort=${currentSort}&status=${currentStatus}&tag=${currentTag}&rating='+this.value"
-                style="border-radius:0.5rem; border:1px solid var(--bt-border-input); padding:0.4rem 0.75rem; font-size:0.8rem; background:var(--bt-input-bg); color:var(--bt-muted); cursor:pointer;">
+                class="filter-select">
                 <option value="0" selected="${currentRating == 0}">${i18n.translate("filter.all.ratings")}</option>
                 <option value="1" selected="${currentRating == 1}">\u2605 ${i18n.translate("filter.rating.andabove")}</option>
                 <option value="2" selected="${currentRating == 2}">\u2605\u2605 ${i18n.translate("filter.rating.andabove")}</option>
@@ -163,6 +164,15 @@
             </div>
         </form>
     `)
+
+    <!-- Drop zone overlay -->
+    <div id="drop-overlay" style="display:none; position:fixed; inset:0; z-index:50; background:rgba(0,0,0,0.5); display:none; align-items:center; justify-content:center;">
+        <div style="background:var(--bt-surface); border:3px dashed var(--bt-accent); border-radius:1rem; padding:3rem 4rem; text-align:center;">
+            <i class="ri-upload-cloud-2-line" style="font-size:3rem; color:var(--bt-accent); display:block; margin-bottom:1rem;"></i>
+            <p style="font-size:1.125rem; font-weight:600; color:var(--bt-text);">${i18n.translate("page.library.drop.title")}</p>
+            <p style="font-size:0.85rem; color:var(--bt-subtle); margin-top:0.25rem;">${i18n.translate("page.library.drop.hint")}</p>
+        </div>
+    </div>
 
     <!-- Books grid -->
     <div id="books-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:1rem;">
@@ -389,5 +399,66 @@ async function scanLibrary(libraryId) {
         btn.innerHTML = '<i class="ri-folder-search-line"></i> ${i18n.translate("page.library.scan")}';
     }
 }
+
+// ── Drag & drop file upload ──────────────────────────────────────────
+(function() {
+    var ALLOWED = ['epub','pdf','cbz','cbr','fb2','mobi','azw3','djvu','mp3','m4b','m4a','ogg','flac'];
+    var overlay = document.getElementById('drop-overlay');
+    var dragCount = 0;
+
+    document.addEventListener('dragenter', function(e) {
+        e.preventDefault();
+        dragCount++;
+        if (overlay) overlay.style.display = 'flex';
+    });
+    document.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        dragCount--;
+        if (dragCount <= 0 && overlay) { overlay.style.display = 'none'; dragCount = 0; }
+    });
+    document.addEventListener('dragover', function(e) { e.preventDefault(); });
+    document.addEventListener('drop', function(e) {
+        e.preventDefault();
+        dragCount = 0;
+        if (overlay) overlay.style.display = 'none';
+        var files = Array.from(e.dataTransfer.files).filter(function(f) {
+            var ext = f.name.split('.').pop().toLowerCase();
+            return ALLOWED.indexOf(ext) >= 0;
+        });
+        if (files.length === 0) return;
+        uploadDroppedFiles(files);
+    });
+
+    async function uploadDroppedFiles(files) {
+        var libId = '${library.id}';
+        for (var i = 0; i < files.length; i++) {
+            var file = files[i];
+            var name = file.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ');
+            // Create book entry
+            var createResp = await fetch('/ui/libraries/' + libId + '/books', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: 'title=' + encodeURIComponent(name)
+            });
+            if (!createResp.ok) continue;
+            var html = createResp.text ? await createResp.text() : '';
+            // Extract book ID from the response (the HTMX response includes a link to /books/{id})
+            var match = html.match(/\/books\/([a-f0-9-]+)/);
+            if (!match) continue;
+            var bookId = match[1];
+            // Upload file
+            await fetch('/api/books/' + bookId + '/upload', {
+                method: 'POST',
+                headers: {'X-Filename': file.name, 'Content-Type': 'application/octet-stream'},
+                body: file
+            });
+            document.dispatchEvent(new CustomEvent('showToast', {
+                detail: {message: file.name + ' uploaded', type: 'success'}
+            }));
+        }
+        // Reload to show new books
+        setTimeout(function() { window.location.reload(); }, 500);
+    }
+})();
 </script>
 `)

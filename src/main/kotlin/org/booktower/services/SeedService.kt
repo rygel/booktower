@@ -3,11 +3,16 @@ package org.booktower.services
 import com.fasterxml.jackson.databind.JsonNode
 import org.booktower.config.Json
 import org.booktower.models.CreateBookRequest
+import org.booktower.models.CreateBookmarkRequest
 import org.booktower.models.CreateLibraryRequest
+import org.booktower.models.CreateMagicShelfRequest
 import org.booktower.models.ReadStatus
+import org.booktower.models.ShelfRuleType
 import org.booktower.models.UpdateBookRequest
+import org.jdbi.v3.core.Jdbi
 import org.slf4j.LoggerFactory
 import java.io.File
+import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -351,6 +356,61 @@ private val SEED_LIBRARIES =
         ),
     )
 
+private data class SeedComic(
+    val title: String,
+    val author: String,
+    val description: String,
+    val archiveId: String,
+    val fileName: String,
+    val tags: List<String> = emptyList(),
+)
+
+private const val COMICS_LIBRARY_NAME = "Public Domain Comics"
+
+private val COMIC_SEED_BOOKS =
+    listOf(
+        SeedComic(
+            title = "Atom Age Combat #1",
+            author = "St. John Publications",
+            description = "Cold War-era science fiction and action comic from 1952. Features stories of atomic-age warfare and adventure.",
+            archiveId = "Atom_Age_Combat_",
+            fileName = "Atom_Age_Combat_Volume_01_Number_01_1952_.cbz",
+            tags = listOf("sci-fi", "action", "golden-age", "comic"),
+        ),
+        SeedComic(
+            title = "Atom Age Combat #4",
+            author = "St. John Publications",
+            description = "Science fiction combat stories from 1953, part of the Atom Age Combat series.",
+            archiveId = "Atom_Age_Combat_",
+            fileName = "Atom_Age_Combat_Volume_01_Number_04_1953_.cbz",
+            tags = listOf("sci-fi", "action", "golden-age", "comic"),
+        ),
+        SeedComic(
+            title = "Forbidden Worlds #25",
+            author = "American Comics Group",
+            description = "Horror and supernatural anthology comic from January 1954. Features tales of the strange and unexplained.",
+            archiveId = "Forbidden_Worlds_25_to_32__895",
+            fileName = "ForbiddenWorldsNo25Jan1954.cbz",
+            tags = listOf("horror", "supernatural", "golden-age", "comic"),
+        ),
+        SeedComic(
+            title = "Forbidden Worlds #30",
+            author = "American Comics Group",
+            description = "Horror and mystery anthology from June 1954.",
+            archiveId = "Forbidden_Worlds_25_to_32__895",
+            fileName = "ForbiddenWorldsNo30Jun1954.cbz",
+            tags = listOf("horror", "supernatural", "golden-age", "comic"),
+        ),
+        SeedComic(
+            title = "Forbidden Worlds #32",
+            author = "American Comics Group",
+            description = "Supernatural tales from August 1954. The final issue in the Forbidden Worlds #25-32 collection.",
+            archiveId = "Forbidden_Worlds_25_to_32__895",
+            fileName = "ForbiddenWorldsNo32Aug1954.cbz",
+            tags = listOf("horror", "supernatural", "golden-age", "comic"),
+        ),
+    )
+
 /** Converts a bare year like "1898" to "1898-01-01"; returns null for non-parseable values. */
 private fun normalizeSeedDate(date: String?): String? =
     when {
@@ -365,6 +425,12 @@ class SeedService(
     private val libraryService: LibraryService,
     private val coversPath: String,
     private val booksPath: String,
+    private val backgroundTaskService: BackgroundTaskService = BackgroundTaskService(),
+    private val bookmarkService: BookmarkService? = null,
+    private val readingSessionService: ReadingSessionService? = null,
+    private val magicShelfService: MagicShelfService? = null,
+    private val userSettingsService: UserSettingsService? = null,
+    private val jdbi: Jdbi? = null,
 ) {
     private val coverExecutor: ExecutorService = Executors.newFixedThreadPool(4)
 
@@ -529,13 +595,308 @@ class SeedService(
         return SeedFilesResult(queued, 0)
     }
 
+    /**
+     * Creates a "Public Domain Comics" library and queues CBZ downloads from Archive.org.
+     * Returns null if the library already exists (idempotent).
+     */
+    fun seedComics(userId: UUID): SeedFilesResult? {
+        val existing = libraryService.getLibraries(userId)
+        if (existing.any { it.name == COMICS_LIBRARY_NAME }) return null
+
+        val lib =
+            libraryService.createLibrary(
+                userId,
+                CreateLibraryRequest(COMICS_LIBRARY_NAME, "./data/libraries/comics"),
+            )
+
+        var queued = 0
+        COMIC_SEED_BOOKS.forEach { comic ->
+            bookService
+                .createBook(
+                    userId,
+                    CreateBookRequest(comic.title, comic.author, comic.description, lib.id),
+                ).onSuccess { b ->
+                    val bookId = UUID.fromString(b.id)
+                    if (comic.tags.isNotEmpty()) bookService.setTags(userId, bookId, comic.tags)
+
+                    coverExecutor.submit {
+                        downloadComic(userId, bookId, comic)
+                    }
+                    queued++
+                }
+        }
+
+        logger.info("Comic seed: queued $queued downloads for user $userId")
+        return SeedFilesResult(queued, 0)
+    }
+
+    /**
+     * Seeds a comprehensive demo touching all features: libraries, books, categories, moods,
+     * authors, bookmarks, reading sessions, reading goal, smart shelves, journal entries,
+     * notebooks, reviews, and filter presets.
+     * Returns null if the basic seed fails (e.g. user already has libraries).
+     */
+    fun seedFullDemo(userId: UUID): SeedResult? {
+        // Step 1: Create basic libraries and books
+        val basicResult = seed(userId) ?: return null
+
+        val libraries = libraryService.getLibraries(userId)
+        val allBooks =
+            libraries.flatMap { lib ->
+                bookService.getBooks(userId, lib.id, page = 1, pageSize = 100).getBooks()
+            }
+
+        // Step 2: Set categories on some books
+        allBooks.take(10).forEachIndexed { i, book ->
+            val bookId = UUID.fromString(book.id)
+            val cats =
+                when (i % 4) {
+                    0 -> listOf("Fiction", "Classic Literature")
+                    1 -> listOf("Science Fiction", "Adventure")
+                    2 -> listOf("Philosophy", "Non-Fiction")
+                    else -> listOf("Fantasy", "Young Adult")
+                }
+            bookService.setCategories(userId, bookId, cats)
+        }
+
+        // Step 3: Set moods on some books
+        allBooks.take(8).forEachIndexed { i, book ->
+            val bookId = UUID.fromString(book.id)
+            val moods =
+                when (i % 4) {
+                    0 -> listOf("dark", "atmospheric")
+                    1 -> listOf("adventurous", "exciting")
+                    2 -> listOf("thoughtful", "philosophical")
+                    else -> listOf("whimsical", "lighthearted")
+                }
+            bookService.setMoods(userId, bookId, moods)
+        }
+
+        // Step 4: Set multiple authors on some books
+        allBooks.take(3).forEach { book ->
+            val bookId = UUID.fromString(book.id)
+            bookService.setAuthors(userId, bookId, listOf(book.author ?: "Unknown", "Editor Name"))
+        }
+
+        // Step 5: Create bookmarks
+        bookmarkService?.let { svc ->
+            allBooks.take(5).forEach { book ->
+                svc.createBookmark(userId, CreateBookmarkRequest(book.id, 42, "Important passage", "This part was really interesting"))
+                svc.createBookmark(userId, CreateBookmarkRequest(book.id, 100, "Chapter 5 start", null))
+            }
+        }
+
+        // Step 6: Record reading sessions (for analytics)
+        readingSessionService?.let { svc ->
+            allBooks.take(6).forEachIndexed { i, book ->
+                val bookId = UUID.fromString(book.id)
+                repeat(3) { j ->
+                    svc.recordSession(userId, bookId, (i + 1) * 10 + j * 5, (i + 1) * 10 + j * 5 + 8, 8)
+                }
+            }
+        }
+
+        // Step 7: Set reading goal
+        val year =
+            java.time.LocalDate
+                .now()
+                .year
+        userSettingsService?.set(userId, "reading.goal.$year", "24")
+
+        // Step 8: Create smart shelves
+        magicShelfService?.let { svc ->
+            svc.createShelf(userId, CreateMagicShelfRequest("Currently Reading", ShelfRuleType.STATUS, "READING"))
+            svc.createShelf(userId, CreateMagicShelfRequest("Sci-Fi Collection", ShelfRuleType.TAG, "sci-fi"))
+            svc.createShelf(userId, CreateMagicShelfRequest("Top Rated", ShelfRuleType.RATING_GTE, "4"))
+        }
+
+        // Step 9: Create journal entries (direct JDBI)
+        jdbi?.let { db ->
+            allBooks.take(3).forEach { book ->
+                db.useHandle<Exception> { handle ->
+                    handle
+                        .createUpdate(
+                            """
+                            INSERT INTO book_journal_entries (id, user_id, book_id, title, content, created_at, updated_at)
+                            VALUES (?, ?, ?, ?, ?, ?, ?)
+                            """,
+                        ).bind(0, UUID.randomUUID().toString())
+                        .bind(1, userId.toString())
+                        .bind(2, book.id)
+                        .bind(3, "Reading Notes")
+                        .bind(4, "Started reading ${book.title}. The opening chapter sets a great tone.")
+                        .bind(5, Instant.now().toString())
+                        .bind(6, Instant.now().toString())
+                        .execute()
+                }
+            }
+
+            // Step 10: Create notebooks
+            allBooks.take(2).forEach { book ->
+                db.useHandle<Exception> { handle ->
+                    handle
+                        .createUpdate(
+                            """
+                            INSERT INTO book_notebooks (id, book_id, user_id, title, content, created_at, updated_at)
+                            VALUES (?, ?, ?, ?, ?, ?, ?)
+                            """,
+                        ).bind(0, UUID.randomUUID().toString())
+                        .bind(1, book.id)
+                        .bind(2, userId.toString())
+                        .bind(3, "Character Notes")
+                        .bind(4, "Main character: interesting development arc. Supporting cast adds depth.")
+                        .bind(5, Instant.now().toString())
+                        .bind(6, Instant.now().toString())
+                        .execute()
+                }
+            }
+
+            // Step 11: Create reviews
+            allBooks.take(4).forEachIndexed { i, book ->
+                db.useHandle<Exception> { handle ->
+                    handle
+                        .createUpdate(
+                            """
+                            INSERT INTO book_reviews (id, book_id, user_id, rating, title, body, spoiler, created_at, updated_at)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            """,
+                        ).bind(0, UUID.randomUUID().toString())
+                        .bind(1, book.id)
+                        .bind(2, userId.toString())
+                        .bind(3, 3 + (i % 3))
+                        .bind(4, if (i % 2 == 0) "A compelling read" else "Thought-provoking")
+                        .bind(5, "This book offers ${if (i % 2 == 0) "a gripping narrative" else "deep insights"}. Well worth the time.")
+                        .bind(6, false)
+                        .bind(7, Instant.now().toString())
+                        .bind(8, Instant.now().toString())
+                        .execute()
+                }
+            }
+
+            // Step 12: Create annotations
+            allBooks.take(3).forEachIndexed { i, book ->
+                db.useHandle<Exception> { handle ->
+                    handle
+                        .createUpdate(
+                            """
+                            INSERT INTO book_annotations (id, user_id, book_id, page, selected_text, color, created_at)
+                            VALUES (?, ?, ?, ?, ?, ?, ?)
+                            """,
+                        ).bind(0, UUID.randomUUID().toString())
+                        .bind(1, userId.toString())
+                        .bind(2, book.id)
+                        .bind(3, 15 + i * 10)
+                        .bind(4, "A particularly striking passage that captures the essence of the narrative.")
+                        .bind(5, listOf("yellow", "blue", "green")[i % 3])
+                        .bind(6, Instant.now().toString())
+                        .execute()
+                }
+            }
+
+            // Step 13: Create filter presets
+            db.useHandle<Exception> { handle ->
+                handle
+                    .createUpdate(
+                        """
+                        INSERT INTO filter_presets (id, user_id, name, filters, created_at, updated_at)
+                        VALUES (?, ?, ?, ?, ?, ?)
+                        """,
+                    ).bind(0, UUID.randomUUID().toString())
+                    .bind(1, userId.toString())
+                    .bind(2, "Unread Sci-Fi")
+                    .bind(3, """{"tagFilter":"sci-fi","statusFilter":"WANT_TO_READ"}""")
+                    .bind(4, Instant.now().toString())
+                    .bind(5, Instant.now().toString())
+                    .execute()
+
+                handle
+                    .createUpdate(
+                        """
+                        INSERT INTO filter_presets (id, user_id, name, filters, created_at, updated_at)
+                        VALUES (?, ?, ?, ?, ?, ?)
+                        """,
+                    ).bind(0, UUID.randomUUID().toString())
+                    .bind(1, userId.toString())
+                    .bind(2, "Highly Rated")
+                    .bind(3, """{"ratingGte":4}""")
+                    .bind(4, Instant.now().toString())
+                    .bind(5, Instant.now().toString())
+                    .execute()
+            }
+        }
+
+        // Auto-trigger file downloads so books are readable
+        seedFiles(userId)
+        seedLibrivox(userId)
+        seedComics(userId)
+
+        logger.info(
+            "Full demo seed complete for $userId: enriched ${allBooks.size} books with categories, moods, " +
+                "bookmarks, sessions, shelves, journals, notebooks, reviews, annotations, presets, downloads",
+        )
+        return basicResult
+    }
+
+    private fun downloadComic(
+        userId: UUID,
+        bookId: UUID,
+        comic: SeedComic,
+    ) {
+        val taskId = backgroundTaskService.start(userId, "download-comic", "Downloading comic: ${comic.title}")
+        try {
+            val url = "https://archive.org/download/${comic.archiveId}/${java.net.URLEncoder.encode(comic.fileName, "UTF-8")}"
+            val libDir = File("./data/libraries/comics")
+            if (!libDir.exists() && !libDir.mkdirs()) logger.warn("Could not create directory: ${libDir.absolutePath}")
+            val destFile = File(libDir, "$bookId.cbz")
+
+            if (destFile.exists() && destFile.length() > 0) {
+                logger.info("Skipping download for '${comic.title}' — file already exists (${destFile.length()} bytes)")
+                backgroundTaskService.complete(taskId, "Already downloaded")
+                return
+            }
+
+            val conn =
+                java.net
+                    .URI(url)
+                    .toURL()
+                    .openConnection() as java.net.HttpURLConnection
+            conn.connectTimeout = 30_000
+            conn.readTimeout = 300_000 // comics can be large
+            conn.setRequestProperty("User-Agent", "BookTower/1.0 comic-seed")
+            conn.instanceFollowRedirects = true
+            if (conn.responseCode != 200) {
+                logger.warn("Comic download failed for '${comic.title}': HTTP ${conn.responseCode}")
+                backgroundTaskService.fail(taskId, "HTTP ${conn.responseCode}")
+                return
+            }
+            conn.inputStream.use { input -> destFile.outputStream().use { input.copyTo(it) } }
+
+            bookService.updateFileInfo(userId, bookId, destFile.absolutePath, destFile.length())
+            logger.info("Downloaded comic '${comic.title}' (${destFile.length() / 1024}KB)")
+            backgroundTaskService.complete(taskId, "Downloaded ${destFile.length() / 1024}KB")
+        } catch (e: Exception) {
+            logger.warn("Comic download failed for '${comic.title}': ${e.message}")
+            backgroundTaskService.fail(taskId, e.message)
+        }
+    }
+
     private fun downloadLibrivoxChapters(
         userId: UUID,
         bookId: UUID,
         librivoxId: Int,
         title: String,
     ) {
+        val taskId = backgroundTaskService.start(userId, "download-audiobook", "Downloading audiobook: $title")
         try {
+            // Check if at least one chapter file already exists (resumable)
+            val booksDir = File(booksPath)
+            val existingChapters = booksDir.listFiles { f -> f.name.startsWith("$bookId-") && f.name.endsWith(".mp3") && f.length() > 0 }
+            if (existingChapters != null && existingChapters.isNotEmpty()) {
+                logger.info("Skipping download for '$title' — ${existingChapters.size} chapter files already exist")
+                backgroundTaskService.complete(taskId, "Already downloaded")
+                return
+            }
+
             val conn =
                 java.net
                     .URI("https://librivox.org/rss/$librivoxId")
@@ -546,6 +907,7 @@ class SeedService(
             conn.setRequestProperty("User-Agent", "BookTower/1.0 librivox-seed")
             if (conn.responseCode != 200) {
                 logger.warn("LibriVox RSS returned ${conn.responseCode} for '$title' (id=$librivoxId)")
+                backgroundTaskService.fail(taskId, "RSS HTTP ${conn.responseCode}")
                 return
             }
 
@@ -559,13 +921,11 @@ class SeedService(
             val items = conn.inputStream.use { dbf.newDocumentBuilder().parse(it) }.getElementsByTagName("item")
             if (items.length == 0) {
                 logger.warn("No items in LibriVox RSS for '$title'")
+                backgroundTaskService.fail(taskId, "No chapters found in RSS")
                 return
             }
 
-            val booksDir =
-                File(
-                    booksPath,
-                ).also { if (!it.mkdirs() && !it.exists()) logger.warn("Could not create directory: ${it.absolutePath}") }
+            if (!booksDir.exists() && !booksDir.mkdirs()) logger.warn("Could not create directory: ${booksDir.absolutePath}")
             var downloaded = 0
             for (idx in 0 until items.length) {
                 if (downloadChapter(userId, bookId, items.item(idx) as org.w3c.dom.Element, booksDir, idx, title)) {
@@ -576,8 +936,10 @@ class SeedService(
                 bookService.updateBookFileAggregateSize(bookId)
                 logger.info("LibriVox download complete for '$title': $downloaded/${items.length} chapters")
             }
+            backgroundTaskService.complete(taskId, "Downloaded $downloaded/${items.length} chapters")
         } catch (e: Exception) {
             logger.warn("LibriVox download failed for '$title' (id=$librivoxId): ${e.message}")
+            backgroundTaskService.fail(taskId, e.message)
         }
     }
 
@@ -648,11 +1010,18 @@ class SeedService(
         gutenbergId: Int,
         title: String,
     ) {
+        val taskId = backgroundTaskService.start(userId, "download-epub", "Downloading EPUB: $title")
         try {
             val url = "https://www.gutenberg.org/cache/epub/$gutenbergId/pg$gutenbergId.epub"
             val booksDir = File(booksPath)
             if (!booksDir.exists() && !booksDir.mkdirs()) logger.warn("Could not create directory: ${booksDir.absolutePath}")
             val destFile = File(booksDir, "$bookId.epub")
+
+            if (destFile.exists() && destFile.length() > 0) {
+                logger.info("Skipping download for '$title' — file already exists (${destFile.length()} bytes)")
+                backgroundTaskService.complete(taskId, "Already downloaded")
+                return
+            }
 
             val conn =
                 java.net
@@ -665,14 +1034,17 @@ class SeedService(
             conn.instanceFollowRedirects = true
             if (conn.responseCode != 200) {
                 logger.warn("Gutenberg download failed for '$title' (id=$gutenbergId): HTTP ${conn.responseCode}")
+                backgroundTaskService.fail(taskId, "HTTP ${conn.responseCode}")
                 return
             }
             conn.inputStream.use { input -> destFile.outputStream().use { input.copyTo(it) } }
 
             bookService.updateFileInfo(userId, bookId, destFile.absolutePath, destFile.length())
             logger.info("Downloaded EPUB for '$title' (${destFile.length()} bytes)")
+            backgroundTaskService.complete(taskId, "Downloaded ${destFile.length() / 1024}KB")
         } catch (e: Exception) {
             logger.warn("Gutenberg download failed for '$title': ${e.message}")
+            backgroundTaskService.fail(taskId, e.message)
         }
     }
 

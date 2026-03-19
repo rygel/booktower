@@ -83,11 +83,12 @@ class MagicShelfService(
     fun resolveBooks(
         userId: UUID,
         shelf: MagicShelfDto,
+        limit: Int = 200,
     ): List<BookDto> =
         when (shelf.ruleType) {
-            ShelfRuleType.STATUS -> bookService.getBooksForShelf(userId, statusFilter = shelf.ruleValue)
-            ShelfRuleType.TAG -> bookService.getBooksForShelf(userId, tagFilter = shelf.ruleValue)
-            ShelfRuleType.RATING_GTE -> bookService.getBooksForShelf(userId, ratingGte = shelf.ruleValue?.toIntOrNull())
+            ShelfRuleType.STATUS -> bookService.getBooksForShelf(userId, statusFilter = shelf.ruleValue, limit = limit)
+            ShelfRuleType.TAG -> bookService.getBooksForShelf(userId, tagFilter = shelf.ruleValue, limit = limit)
+            ShelfRuleType.RATING_GTE -> bookService.getBooksForShelf(userId, ratingGte = shelf.ruleValue?.toIntOrNull(), limit = limit)
         }
 
     // ── Private ───────────────────────────────────────────────────────────────

@@ -214,7 +214,9 @@ abstract class IntegrationTestBase {
                 magicShelfService,
                 TestFixture.templateRenderer,
                 readingSessionService,
-                null,
+                null, // libraryWatchService
+                null, // bookLinkService
+                org.booktower.services.BookSharingService(jdbi, bookService),
             )
         val backgroundTaskHandler = BackgroundTaskHandler(backgroundTaskService)
         val journalHandler = JournalHandler(journalService)
@@ -262,6 +264,8 @@ abstract class IntegrationTestBase {
                 bookReviewService,
                 bookNotebookService,
                 duplicateDetectionService,
+                null, // bookLinkService
+                org.booktower.services.BookSharingService(jdbi, bookService),
             )
         val libraryApiRouter = LibraryApiRouter(filters, libraryHandler, libraryService, null, null)
         val userApiRouter =
@@ -316,7 +320,6 @@ abstract class IntegrationTestBase {
                 filters,
                 koboSyncHandler,
                 null,
-                null,
                 opdsHandler,
             )
 
@@ -353,6 +356,34 @@ abstract class IntegrationTestBase {
                     .body("""{"username":"$username","email":"$username@test.com","password":"password123"}"""),
             )
         return Json.mapper.readValue(response.bodyString(), LoginResponse::class.java).token
+    }
+
+    /** Create a test user directly in the database (bypasses AuthService). PostgreSQL-compatible. */
+    protected fun createTestUserDirect(
+        jdbi: org.jdbi.v3.core.Jdbi,
+        userId: String,
+        username: String,
+        email: String = "$username@test.com",
+        passwordHash: String = "hash",
+        isAdmin: Boolean = false,
+    ) {
+        val now =
+            java.time.Instant
+                .now()
+                .toString()
+        jdbi.useHandle<Exception> { h ->
+            h
+                .createUpdate(
+                    "INSERT INTO users (id, username, email, password_hash, created_at, updated_at, is_admin) VALUES (?,?,?,?,?,?,?)",
+                ).bind(0, userId)
+                .bind(1, username)
+                .bind(2, email)
+                .bind(3, passwordHash)
+                .bind(4, now)
+                .bind(5, now)
+                .bind(6, isAdmin)
+                .execute()
+        }
     }
 
     protected fun createLibrary(

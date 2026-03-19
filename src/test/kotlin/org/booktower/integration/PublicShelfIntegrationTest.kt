@@ -77,7 +77,7 @@ class PublicShelfIntegrationTest : IntegrationTestBase() {
                 .get("shareToken")
                 .asText()
 
-        val publicResp = app(Request(Method.GET, "/public/shelf/$shareToken"))
+        val publicResp = app(Request(Method.GET, "/shared/shelf/$shareToken").header("Cookie", "token=$token"))
         assertEquals(Status.OK, publicResp.status)
         val body = Json.mapper.readTree(publicResp.bodyString())
         assertNotNull(body.get("name"))
@@ -105,7 +105,7 @@ class PublicShelfIntegrationTest : IntegrationTestBase() {
                 ).get("shareToken")
                 .asText()
 
-        val resp = app(Request(Method.GET, "/public/shelf/$shareToken"))
+        val resp = app(Request(Method.GET, "/shared/shelf/$shareToken").header("Cookie", "token=$token"))
         assertEquals(Status.OK, resp.status)
         val books = Json.mapper.readTree(resp.bodyString()).get("books")
         assertTrue(books.any { it.get("id").asText() == bookId })
@@ -113,7 +113,12 @@ class PublicShelfIntegrationTest : IntegrationTestBase() {
 
     @Test
     fun `GET unknown share token returns 404`() {
-        val resp = app(Request(Method.GET, "/public/shelf/00000000-0000-0000-0000-000000000000"))
+        val token = registerAndGetToken()
+        val resp =
+            app(
+                Request(Method.GET, "/shared/shelf/00000000-0000-0000-0000-000000000000")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.NOT_FOUND, resp.status)
     }
 
@@ -135,7 +140,7 @@ class PublicShelfIntegrationTest : IntegrationTestBase() {
             )
         assertEquals(Status.NO_CONTENT, deleteResp.status)
 
-        val publicResp = app(Request(Method.GET, "/public/shelf/$shareToken"))
+        val publicResp = app(Request(Method.GET, "/shared/shelf/$shareToken").header("Cookie", "token=$token"))
         assertEquals(Status.NOT_FOUND, publicResp.status)
     }
 

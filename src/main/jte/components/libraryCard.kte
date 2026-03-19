@@ -8,7 +8,7 @@
     <a href="/libraries/${lib.id}" style="flex:1; display:block; padding:1.25rem; text-decoration:none; border-radius:0.75rem 0.75rem 0 0;">
         <div style="display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:0.875rem;">
             <div style="background:var(--bt-icon-bg); color:var(--bt-icon-text); border-radius:0.5rem; padding:0.625rem;">
-                <i class="ri-book-shelf-line" style="font-size:1.25rem;"></i>
+                <i class="ri-stack-line" style="font-size:1.25rem;"></i>
             </div>
             <span style="font-size:0.75rem; color:var(--bt-subtle); background:var(--bt-bg); border-radius:9999px; padding:0.25rem 0.75rem; font-weight:500;">${lib.bookCount} ${i18n.translate("label.books")}</span>
         </div>

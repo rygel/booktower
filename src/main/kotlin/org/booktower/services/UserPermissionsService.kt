@@ -1,9 +1,11 @@
 package org.booktower.services
 
+import com.github.benmanes.caffeine.cache.Caffeine
 import org.jdbi.v3.core.Jdbi
 import org.jdbi.v3.core.result.RowView
 import java.time.Instant
 import java.util.UUID
+import java.util.concurrent.TimeUnit
 
 data class UserPermissions(
     val userId: String,
@@ -30,7 +32,6 @@ data class UserPermissions(
     val canChangeEmail: Boolean = true,
     val canUseSearchFilters: Boolean = true,
     val canViewAuditLog: Boolean = false,
-    val canAccessKomgaApi: Boolean = true,
     val canManageNotebooks: Boolean = true,
     val canManageFonts: Boolean = true,
     val canAccessAdminPanel: Boolean = false,
@@ -39,8 +40,17 @@ data class UserPermissions(
 class UserPermissionsService(
     private val jdbi: Jdbi,
 ) {
+    private val cache =
+        Caffeine
+            .newBuilder()
+            .maximumSize(200)
+            .expireAfterWrite(5, TimeUnit.MINUTES)
+            .build<UUID, UserPermissions>()
+
     /** Returns permissions for a user, creating default row if not yet set. */
-    fun getPermissions(userId: UUID): UserPermissions {
+    fun getPermissions(userId: UUID): UserPermissions = cache.get(userId) { loadPermissions(it) }
+
+    private fun loadPermissions(userId: UUID): UserPermissions {
         val existing =
             jdbi.withHandle<UserPermissions?, Exception> { h ->
                 h
@@ -83,7 +93,7 @@ class UserPermissionsService(
                         can_use_koreader_sync = ?, can_use_opds = ?, can_use_api_tokens = ?,
                         can_manage_journal = ?, can_manage_reading_sessions = ?, can_view_stats = ?,
                         can_edit_profile = ?, can_change_password = ?, can_change_email = ?,
-                        can_use_search_filters = ?, can_view_audit_log = ?, can_access_komga_api = ?,
+                        can_use_search_filters = ?, can_view_audit_log = ?,
                         can_manage_notebooks = ?, can_manage_fonts = ?, can_access_admin_panel = ?,
                         updated_at = ?
                     WHERE user_id = ?
@@ -94,6 +104,7 @@ class UserPermissionsService(
         } else {
             insertPermissions(permissions.copy(userId = userId.toString()))
         }
+        cache.invalidate(userId)
         return getPermissions(userId)
     }
 
@@ -110,9 +121,9 @@ class UserPermissionsService(
                     can_use_koreader_sync, can_use_opds, can_use_api_tokens,
                     can_manage_journal, can_manage_reading_sessions, can_view_stats,
                     can_edit_profile, can_change_password, can_change_email,
-                    can_use_search_filters, can_view_audit_log, can_access_komga_api,
+                    can_use_search_filters, can_view_audit_log,
                     can_manage_notebooks, can_manage_fonts, can_access_admin_panel, updated_at
-                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
             """,
                 ).bind(0, p.userId)
                 .bind(1, p.canManageLibraries)
@@ -138,11 +149,10 @@ class UserPermissionsService(
                 .bind(21, p.canChangeEmail)
                 .bind(22, p.canUseSearchFilters)
                 .bind(23, p.canViewAuditLog)
-                .bind(24, p.canAccessKomgaApi)
-                .bind(25, p.canManageNotebooks)
-                .bind(26, p.canManageFonts)
-                .bind(27, p.canAccessAdminPanel)
-                .bind(28, Instant.now().toString())
+                .bind(24, p.canManageNotebooks)
+                .bind(25, p.canManageFonts)
+                .bind(26, p.canAccessAdminPanel)
+                .bind(27, Instant.now().toString())
                 .execute()
         }
     }
@@ -184,7 +194,6 @@ class UserPermissionsService(
             canChangeEmail = boolD("can_change_email", true),
             canUseSearchFilters = boolD("can_use_search_filters", true),
             canViewAuditLog = bool("can_view_audit_log"),
-            canAccessKomgaApi = boolD("can_access_komga_api", true),
             canManageNotebooks = boolD("can_manage_notebooks", true),
             canManageFonts = boolD("can_manage_fonts", true),
             canAccessAdminPanel = bool("can_access_admin_panel"),
@@ -221,9 +230,8 @@ private fun org.jdbi.v3.core.statement.Update.bindAll(
         .bind(20, p.canChangeEmail)
         .bind(21, p.canUseSearchFilters)
         .bind(22, p.canViewAuditLog)
-        .bind(23, p.canAccessKomgaApi)
-        .bind(24, p.canManageNotebooks)
-        .bind(25, p.canManageFonts)
-        .bind(26, p.canAccessAdminPanel)
-        .bind(27, Instant.now().toString())
-        .bind(28, userId.toString())
+        .bind(23, p.canManageNotebooks)
+        .bind(24, p.canManageFonts)
+        .bind(25, p.canAccessAdminPanel)
+        .bind(26, Instant.now().toString())
+        .bind(27, userId.toString())
