@@ -594,7 +594,7 @@ class UserManagementE2ETest : IntegrationTestBase() {
                             Request(Method.POST, "/api/libraries")
                                 .header("Cookie", "token=$token")
                                 .header("Content-Type", "application/json")
-                                .body("""{"name":"Lib of $username","path":"./data/conc50-${System.nanoTime()}"}"""),
+                                .body("""{"name":"Lib of $username","path":"./data/conc50-$username"}"""),
                         )
                     if (libResp.status.code != 201) {
                         errors.add("$username library creation failed: ${libResp.status}")
