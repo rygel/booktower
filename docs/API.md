@@ -225,7 +225,23 @@ Annotation endpoints are served via the HTMX UI layer:
 
 ---
 
-## 10. Reading & Listening Stats
+## 10. Book Sharing
+
+Share individual books with other authenticated users on the same instance. See [ADR-001](adr/001-book-sharing-authenticated-only.md) for design rationale.
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| `POST` | `/api/books/{id}/share` | Yes | Generate a share token for a book |
+| `DELETE` | `/api/books/{id}/share` | Yes | Revoke the share token |
+| `GET` | `/api/books/{id}/share` | Yes | Check if a book is shared (returns token or null) |
+| `GET` | `/shared/book/{token}` | Yes | View a shared book (any authenticated user) |
+| `GET` | `/shared/book/{token}/download` | Yes | Download a shared book file |
+
+**Note:** Shared book links require the viewer to be logged in. Anonymous visitors are redirected to `/login`.
+
+---
+
+## 11. Reading & Listening Stats
 
 | Method | Path | Auth | Description |
 |---|---|---|---|

@@ -50,6 +50,7 @@ class PageHandler(
     private val readingSessionService: ReadingSessionService? = null,
     private val libraryWatchService: org.booktower.services.LibraryWatchService? = null,
     private val bookLinkService: org.booktower.services.BookLinkService? = null,
+    private val bookSharingService: org.booktower.services.BookSharingService? = null,
 ) {
     // ── Page routes ────────────────────────────────────────────────────────────
 
@@ -507,6 +508,36 @@ class PageHandler(
                     "memberSince" to (user?.createdAt?.toString()?.take(10) ?: ""),
                     "analyticsEnabled" to analyticsEnabled,
                     "libraries" to libraries,
+                    "themeCss" to ctx.themeCss,
+                    "currentTheme" to ctx.theme,
+                    "lang" to ctx.lang,
+                    "themes" to ThemeCatalog.allThemes(),
+                    "i18n" to ctx.i18n,
+                    "isAdmin" to authIsAdmin(req),
+                ),
+            ),
+        )
+    }
+
+    fun sharedBook(req: Request): Response {
+        val userId = auth(req) ?: return redirectToLogin()
+        val svc = bookSharingService ?: return Response(Status.NOT_FOUND)
+        val token =
+            req.uri.path
+                .split("/")
+                .lastOrNull()
+                ?.takeIf { it.isNotBlank() }
+                ?: return Response(Status.NOT_FOUND)
+        val sharedBook = svc.getPublicBook(token) ?: return Response(Status.NOT_FOUND)
+        val ctx = WebContext(req)
+        val (username, gravatarHash) = userDisplayInfo(userId)
+        return htmlOk(
+            templateRenderer.render(
+                "shared-book.kte",
+                mapOf(
+                    "sharedBook" to sharedBook,
+                    "username" to username,
+                    "gravatarHash" to gravatarHash,
                     "themeCss" to ctx.themeCss,
                     "currentTheme" to ctx.theme,
                     "lang" to ctx.lang,

@@ -23,12 +23,12 @@
     </div>
 
     <div style="overflow-x:auto;">
-        <table style="width:100%; border-collapse:collapse; font-size:0.875rem;">
+        <table class="bt-table">
             <thead>
-                <tr style="border-bottom:2px solid var(--bt-border);">
-                    <th style="text-align:left; padding:0.625rem 1rem; color:var(--bt-muted); font-weight:600; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em;">${i18n.translate("field.username")}</th>
-                    <th style="text-align:left; padding:0.625rem 1rem; color:var(--bt-muted); font-weight:600; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em;">${i18n.translate("field.email")}</th>
-                    <th style="text-align:left; padding:0.625rem 1rem; color:var(--bt-muted); font-weight:600; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em;">${i18n.translate("label.added")}</th>
+                <tr>
+                    <th >${i18n.translate("field.username")}</th>
+                    <th >${i18n.translate("field.email")}</th>
+                    <th >${i18n.translate("label.added")}</th>
                     <th style="text-align:center; padding:0.625rem 1rem; color:var(--bt-muted); font-weight:600; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em;">${i18n.translate("label.admin")}</th>
                     <th style="text-align:right; padding:0.625rem 1rem; color:var(--bt-muted); font-weight:600; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em;">${i18n.translate("label.actions")}</th>
                 </tr>
@@ -73,9 +73,7 @@
                                 hx-post="/api/admin/users/${user.id}/promote"
                                 hx-target="#user-row-${user.id}"
                                 hx-swap="none"
-                                style="font-size:0.75rem; padding:0.3rem 0.625rem; border-radius:0.4rem; border:1px solid var(--bt-border-input); background:transparent; color:var(--bt-muted); cursor:pointer;"
-                                onmouseover="this.style.borderColor='var(--bt-accent-dim)';this.style.color='var(--bt-accent-dim)'"
-                                onmouseout="this.style.borderColor='var(--bt-border-input)';this.style.color='var(--bt-muted)'">
+                                class="btn-outline">
                                 <i class="ri-arrow-up-line"></i> ${i18n.translate("admin.user.promote")}
                             </button>
                             @endif
@@ -84,9 +82,7 @@
                                 hx-target="#user-row-${user.id}"
                                 hx-swap="outerHTML"
                                 hx-confirm="${i18n.translate("admin.user.delete.confirm")}"
-                                style="font-size:0.75rem; padding:0.3rem 0.625rem; border-radius:0.4rem; border:1px solid var(--bt-border-input); background:transparent; color:var(--bt-muted); cursor:pointer;"
-                                onmouseover="this.style.borderColor='var(--bt-danger)';this.style.color='var(--bt-danger)'"
-                                onmouseout="this.style.borderColor='var(--bt-border-input)';this.style.color='var(--bt-muted)'">
+                                class="btn-outline btn-danger">
                                 <i class="ri-delete-bin-line"></i> ${i18n.translate("action.delete")}
                             </button>
                         </div>
