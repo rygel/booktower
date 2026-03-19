@@ -69,7 +69,15 @@ class OidcHandler(
 
         val isAdminByGroup =
             oidcService.config.adminGroupPattern?.let { pattern ->
-                userInfo.groups.any { group -> group.matches(Regex(pattern)) }
+                try {
+                    val regex = Regex(pattern)
+                    userInfo.groups.any { group -> group.matches(regex) }
+                } catch (_: Exception) {
+                    org.slf4j.LoggerFactory
+                        .getLogger("booktower.OidcHandler")
+                        .error("Invalid adminGroupPattern regex: {}", pattern)
+                    false
+                }
             } ?: false
 
         val loginResponse =

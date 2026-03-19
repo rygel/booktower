@@ -1925,6 +1925,41 @@ class BookService(
                 }.list()
         }
 
+    /** Batch-load book files for multiple books in a single query. Returns a map of bookId -> files. */
+    fun getBookFilesForBooks(
+        userId: UUID,
+        bookIds: List<UUID>,
+    ): Map<String, List<BookFileDto>> {
+        if (bookIds.isEmpty()) return emptyMap()
+        val placeholders = bookIds.joinToString(",") { "?" }
+        return jdbi.withHandle<Map<String, List<BookFileDto>>, Exception> { handle ->
+            val query =
+                handle.createQuery(
+                    """SELECT bf.id, bf.book_id, bf.track_index, bf.title, bf.duration_sec, bf.file_size, bf.file_path
+                       FROM book_files bf
+                       INNER JOIN books b ON b.id = bf.book_id
+                       INNER JOIN libraries l ON l.id = b.library_id
+                       WHERE bf.book_id IN ($placeholders) AND l.user_id = ?
+                       ORDER BY bf.book_id, bf.track_index""",
+                )
+            bookIds.forEachIndexed { i, id -> query.bind(i, id.toString()) }
+            query.bind(bookIds.size, userId.toString())
+            query
+                .map { row ->
+                    row.getColumn("book_id", String::class.java) to
+                        BookFileDto(
+                            id = row.getColumn("id", String::class.java),
+                            trackIndex = row.getColumn("track_index", java.lang.Integer::class.java)?.toInt() ?: 0,
+                            title = row.getColumn("title", String::class.java),
+                            durationSec = row.getColumn("duration_sec", java.lang.Integer::class.java)?.toInt(),
+                            fileSize = row.getColumn("file_size", java.lang.Long::class.java)?.toLong() ?: 0L,
+                            filePath = row.getColumn("file_path", String::class.java),
+                        )
+                }.list()
+                .groupBy({ it.first }, { it.second })
+        }
+    }
+
     fun getBookFilePath(
         userId: UUID,
         bookId: UUID,
