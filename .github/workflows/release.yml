@@ -97,23 +97,35 @@ jobs:
       - name: Build native binary
         run: mvn package -Pnative -DskipTests -Dflyway.skip=true -Denforcer.skip=true
 
-      - name: Smoke test native binary
+      - name: Start native binary
         shell: bash
         run: |
           chmod +x target/${{ matrix.binary }} 2>/dev/null || true
-          BOOKTOWER_QUICKSTART=true target/${{ matrix.binary }} &
-          PID=$!
-          for i in $(seq 1 20); do
+          BOOKTOWER_QUICKSTART=true BOOKTOWER_JWT_SECRET=ci-release-test target/${{ matrix.binary }} &
+          echo "APP_PID=$!" >> "$GITHUB_ENV"
+          for i in $(seq 1 30); do
             if curl -sf http://localhost:9999/health > /dev/null 2>&1; then
               echo "Native binary healthy after ${i}s"
-              kill $PID 2>/dev/null
-              exit 0
+              break
             fi
+            [ "$i" -eq 30 ] && { echo "Native binary failed to start"; exit 1; }
             sleep 2
           done
-          echo "Native binary failed to start"
-          kill $PID 2>/dev/null
-          exit 1
+
+      - name: Run E2E tests against native binary
+        shell: bash
+        run: |
+          chmod +x e2e-test.sh 2>/dev/null || true
+          BASE_URL=http://localhost:9999 ./e2e-test.sh
+
+      - name: Run integration tests against native binary
+        shell: bash
+        run: mvn test -P e2e-external -De2e.baseUrl=http://localhost:9999 -Dflyway.skip=true
+
+      - name: Stop native binary
+        if: always()
+        shell: bash
+        run: kill "$APP_PID" 2>/dev/null || true
 
       - name: Rename binary
         shell: bash

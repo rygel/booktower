@@ -90,18 +90,41 @@ import org.booktower.services.TelemetryService
 import org.booktower.services.UserPermissionsService
 import org.booktower.services.UserSettingsService
 import org.booktower.weblate.WeblateHandler
+import org.http4k.client.JavaHttpClient
 import org.http4k.core.HttpHandler
 import org.http4k.core.Method
 import org.http4k.core.Request
+import org.http4k.core.Uri
 import org.http4k.core.then
 import org.junit.jupiter.api.BeforeEach
 
 abstract class IntegrationTestBase {
     protected lateinit var app: HttpHandler
 
+    companion object {
+        /** Set via -De2e.baseUrl=http://localhost:9999 to run tests against an external instance. */
+        fun externalBaseUrl(): String? = System.getProperty("e2e.baseUrl")?.takeIf { it.isNotBlank() }
+
+        fun isExternal(): Boolean = externalBaseUrl() != null
+    }
+
     @BeforeEach
     open fun setupApp() {
-        app = buildApp()
+        val baseUrl = externalBaseUrl()
+        app =
+            if (baseUrl != null) {
+                createExternalClient(baseUrl)
+            } else {
+                buildApp()
+            }
+    }
+
+    private fun createExternalClient(baseUrl: String): HttpHandler {
+        val client = JavaHttpClient()
+        return { req: Request ->
+            val targetUri = Uri.of(baseUrl + req.uri.path + (if (req.uri.query.isNotBlank()) "?${req.uri.query}" else ""))
+            client(req.uri(targetUri))
+        }
     }
 
     @Suppress("LongMethod")
