@@ -34,6 +34,7 @@ class AdminApiRouter(
     fun routes(): List<RoutingHttpHandler> =
         listOf(
             "/admin/seed" bind Method.POST to filters.admin.then(adminHandler::seed),
+            "/admin/seed/full-demo" bind Method.POST to filters.admin.then(adminHandler::seedFullDemo),
             "/admin/seed/files" bind Method.POST to filters.admin.then(adminHandler::seedFiles),
             "/admin/seed/librivox" bind Method.POST to filters.admin.then(adminHandler::seedLibrivox),
             "/admin/seed/comics" bind Method.POST to filters.admin.then(adminHandler::seedComics),

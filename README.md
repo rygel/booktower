@@ -76,6 +76,7 @@ A self-hosted personal book, audiobook, and comic manager with a built-in reader
 
 ### User Features
 
+- **Whispersync**: link an ebook and audiobook, seamlessly switch between reading and listening at the matching position
 - Bookmarks and annotations
 - Reading journals
 - Notebooks per book
@@ -86,6 +87,7 @@ A self-hosted personal book, audiobook, and comic manager with a built-in reader
 - Recommendations engine
 - Smart shelves (auto-populated virtual collections)
 - Content restrictions support
+- Saved filter presets
 
 ### Analytics
 
