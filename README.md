@@ -24,6 +24,7 @@ A self-hosted personal book, audiobook, and comic manager with a built-in reader
 | Hardcover.app sync | **Experimental** | API integration exists; not tested with real accounts |
 | Email delivery | **Experimental** | SMTP sending works; not tested with Kindle/device delivery |
 | Full-text search | **Experimental** | PostgreSQL only; requires `BOOKTOWER_FTS_ENABLED=true` |
+| Whispersync (ebook↔audiobook) | **Experimental** | Chapter-proportional position mapping; works well with LibriVox + Gutenberg |
 
 ## Features
 
@@ -69,6 +70,7 @@ A self-hosted personal book, audiobook, and comic manager with a built-in reader
 
 ### User Features
 
+- **Whispersync**: link an ebook and audiobook, seamlessly switch between reading and listening at the matching position
 - Bookmarks and annotations
 - Reading journals
 - Notebooks per book
@@ -79,6 +81,7 @@ A self-hosted personal book, audiobook, and comic manager with a built-in reader
 - Recommendations engine
 - Smart shelves (auto-populated virtual collections)
 - Content restrictions support
+- Saved filter presets
 
 ### Analytics
 
