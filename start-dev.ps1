@@ -66,11 +66,12 @@ if ($killed) {
 Write-Host ""
 
 # ── Prerequisites ──────────────────────────────────────────────────────────────
-try { $null = mvn --version 2>&1; if ($LASTEXITCODE -ne 0) { throw } }
-catch { Write-Host "Maven not found. Please install Maven first." -ForegroundColor Red; exit 1 }
-
-try { $null = java -version 2>&1 }
-catch { Write-Host "Java not found. Please install Java 21+ first." -ForegroundColor Red; exit 1 }
+if (-not (Get-Command mvn -ErrorAction SilentlyContinue)) {
+    Write-Host "Maven not found. Please install Maven first." -ForegroundColor Red; exit 1
+}
+if (-not (Get-Command java -ErrorAction SilentlyContinue)) {
+    Write-Host "Java not found. Please install Java 21+ first." -ForegroundColor Red; exit 1
+}
 
 # ── Clean ──────────────────────────────────────────────────────────────────────
 if ($Clean) {
@@ -104,32 +105,15 @@ if (-not $SkipBuild) {
 # Rotate previous log
 if (Test-Path $LogFile) { Remove-Item $LogFile -Force }
 
-# ── Start in background ───────────────────────────────────────────────────────
+# ── Start in background (same shell, no new window) ──────────────────────────
 Write-Host "Starting BookTower..." -ForegroundColor Cyan
 
-$proc = Start-Process `
-    -FilePath "mvn" `
-    -ArgumentList 'exec:java -q -Dflyway.skip=true' `
-    -WorkingDirectory $PSScriptRoot `
-    -WindowStyle Hidden `
-    -PassThru
-
-# Save the actual process ID
-$proc.Id | Out-File -FilePath $PidFile -Encoding ascii -NoNewline
-
-# Wait a moment then find the Java child process and save that PID too
-Start-Sleep -Seconds 3
-$javaProc = Get-Process -Name "java" -ErrorAction SilentlyContinue | Where-Object {
-    try {
-        $cmdline = (Get-CimInstance Win32_Process -Filter "ProcessId = $($_.Id)").CommandLine
-        $cmdline -match "BookTowerApp"
-    } catch { $false }
-} | Select-Object -First 1
-
-if ($javaProc) {
-    # Overwrite PID file with the Java process ID (the one that holds the port)
-    $javaProc.Id | Out-File -FilePath $PidFile -Encoding ascii -NoNewline
+$job = Start-Job -ScriptBlock {
+    Set-Location $using:PSScriptRoot
+    mvn exec:java -q "-Dflyway.skip=true" *>> $using:LogFile
 }
+
+$job.Id | Out-File -FilePath $PidFile -Encoding ascii -NoNewline
 
 # ── Wait for ready ────────────────────────────────────────────────────────────
 Write-Host "Waiting for server" -ForegroundColor Yellow -NoNewline
@@ -145,6 +129,13 @@ for ($i = 0; $i -lt 40; $i++) {
 Write-Host ""
 
 if ($ready) {
+    # Save the actual process PID (found by port) for reliable kill on next run
+    $listenConn = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
+    if ($listenConn) {
+        $listenPid = @($listenConn | Select-Object -ExpandProperty OwningProcess -Unique) | Select-Object -First 1
+        $listenPid | Out-File -FilePath $PidFile -Encoding ascii -NoNewline
+    }
+
     Write-Host ""
     Write-Host "BookTower is running at $Url" -ForegroundColor Green
     Write-Host "  Username: dev  |  Password: dev12345" -ForegroundColor Gray
