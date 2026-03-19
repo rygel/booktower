@@ -1190,9 +1190,10 @@ class BookService(
                 .execute()
             val cleanMoods = moods.filter { it.isNotBlank() }
             if (cleanMoods.isNotEmpty()) {
-                val batch = h.prepareBatch(
-                    "INSERT INTO book_moods (id, user_id, book_id, mood) VALUES (?, ?, ?, ?)",
-                )
+                val batch =
+                    h.prepareBatch(
+                        "INSERT INTO book_moods (id, user_id, book_id, mood) VALUES (?, ?, ?, ?)",
+                    )
                 cleanMoods.forEach { mood ->
                     batch
                         .bind(0, UUID.randomUUID().toString())
@@ -1309,9 +1310,10 @@ class BookService(
                 .execute()
             val cleanCategories = categories.filter { it.isNotBlank() }
             if (cleanCategories.isNotEmpty()) {
-                val batch = h.prepareBatch(
-                    "INSERT INTO book_categories (id, user_id, book_id, category) VALUES (?, ?, ?, ?)",
-                )
+                val batch =
+                    h.prepareBatch(
+                        "INSERT INTO book_categories (id, user_id, book_id, category) VALUES (?, ?, ?, ?)",
+                    )
                 cleanCategories.forEach { cat ->
                     batch
                         .bind(0, UUID.randomUUID().toString())
@@ -1367,9 +1369,10 @@ class BookService(
         jdbi.useHandle<Exception> { h ->
             h.createUpdate("DELETE FROM book_authors WHERE book_id = ?").bind(0, bookId.toString()).execute()
             if (authors.isNotEmpty()) {
-                val batch = h.prepareBatch(
-                    "INSERT INTO book_authors (id, book_id, author_name, author_order) VALUES (?, ?, ?, ?)",
-                )
+                val batch =
+                    h.prepareBatch(
+                        "INSERT INTO book_authors (id, book_id, author_name, author_order) VALUES (?, ?, ?, ?)",
+                    )
                 authors.forEachIndexed { idx, name ->
                     batch
                         .bind(0, UUID.randomUUID().toString())
@@ -1487,9 +1490,10 @@ class BookService(
                 .bind(1, bookId.toString())
                 .execute()
             if (cleanTags.isNotEmpty()) {
-                val batch = handle.prepareBatch(
-                    "INSERT INTO book_tags (id, user_id, book_id, tag) VALUES (?, ?, ?, ?)",
-                )
+                val batch =
+                    handle.prepareBatch(
+                        "INSERT INTO book_tags (id, user_id, book_id, tag) VALUES (?, ?, ?, ?)",
+                    )
                 for (tag in cleanTags) {
                     batch
                         .bind(0, UUID.randomUUID().toString())
@@ -1790,9 +1794,10 @@ class BookService(
                     .bind(0, bookId.toString())
                     .execute()
                 if (tags.isNotEmpty()) {
-                    val batch = handle.prepareBatch(
-                        "INSERT INTO book_tags (id, user_id, book_id, tag) VALUES (?, ?, ?, ?)",
-                    )
+                    val batch =
+                        handle.prepareBatch(
+                            "INSERT INTO book_tags (id, user_id, book_id, tag) VALUES (?, ?, ?, ?)",
+                        )
                     tags.forEach { tag ->
                         batch
                             .bind(0, UUID.randomUUID().toString())

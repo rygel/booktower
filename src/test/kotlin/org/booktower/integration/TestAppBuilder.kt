@@ -286,6 +286,7 @@ fun buildTestApp(
             bookReviewService,
             bookNotebookService,
             duplicateDetectionService,
+            null, // bookLinkService
         )
     val libraryApiRouter = LibraryApiRouter(filters, libraryHandler, lib, libraryHealthService, bookDropService)
     val userApiRouter =

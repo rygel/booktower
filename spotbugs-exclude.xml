@@ -85,4 +85,9 @@
         <Bug pattern="SR_NOT_CHECKED" />
         <Package name="~org\.booktower\..*" />
     </Match>
+    <!-- BookLinkService: intentional fallback for when both books have same format -->
+    <Match>
+        <Class name="org.booktower.services.BookLinkService" />
+        <Bug pattern="DB_DUPLICATE_BRANCHES" />
+    </Match>
 </FindBugsFilter>
