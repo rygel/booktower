@@ -1,0 +1,73 @@
+@import org.booktower.i18n.I18nService
+@import org.booktower.model.ThemeDefinition
+@import org.booktower.services.SharedBookDto
+@param sharedBook: SharedBookDto
+@param username: String?
+@param gravatarHash: String = ""
+@param themeCss: String
+@param currentTheme: String
+@param lang: String
+@param themes: List<ThemeDefinition>
+@param i18n: I18nService
+@param isAdmin: Boolean = false
+
+@template.components.layout(title="${sharedBook.title} - BookTower", username=username, gravatarHash=gravatarHash, currentPage="",
+    themeCss=themeCss, currentTheme=currentTheme, lang=lang, themes=themes, i18n=i18n, searchQuery="", isAdmin=isAdmin, content = @`
+<div style="padding:2rem; max-width:42rem; margin:0 auto;">
+
+    <!-- Shared indicator -->
+    <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:1.5rem; font-size:0.8rem; color:var(--bt-accent-dim);">
+        <i class="ri-share-line"></i>
+        <span>${i18n.translate("page.shared.book.label")}</span>
+    </div>
+
+    <div class="card" style="padding:1.5rem;">
+        <div style="display:flex; gap:1.5rem;">
+            <!-- Cover -->
+            <div style="flex-shrink:0; width:10rem; height:14rem; background:var(--bt-border); border-radius:0.5rem; overflow:hidden; display:flex; align-items:center; justify-content:center;">
+                @if(sharedBook.coverUrl != null)
+                    <img src="${sharedBook.coverUrl}" alt="${sharedBook.title}" style="width:100%; height:100%; object-fit:cover;">
+                @else
+                    @template.components.coverPlaceholder(title=sharedBook.title, author=sharedBook.author)
+                @endif
+            </div>
+
+            <!-- Info -->
+            <div style="flex:1; min-width:0;">
+                <h1 style="font-size:1.5rem; font-weight:700; color:var(--bt-text); margin-bottom:0.375rem;">${sharedBook.title}</h1>
+                @if(sharedBook.author != null)
+                    <p style="font-size:1rem; color:var(--bt-accent-dim); margin-bottom:0.75rem;">${sharedBook.author}</p>
+                @endif
+
+                @if(sharedBook.description != null)
+                    <p style="font-size:0.875rem; color:var(--bt-subtle); margin-bottom:1rem;">${sharedBook.description}</p>
+                @endif
+
+                <div style="display:flex; flex-wrap:wrap; gap:1rem; font-size:0.8rem; color:var(--bt-subtle); margin-bottom:1.25rem;">
+                    @if(sharedBook.pageCount != null)
+                        <span><i class="ri-file-list-line"></i> ${sharedBook.pageCount} ${i18n.translate("label.pages")}</span>
+                    @endif
+                    @if(sharedBook.publisher != null)
+                        <span><i class="ri-building-line"></i> ${sharedBook.publisher}</span>
+                    @endif
+                    @if(sharedBook.publishedDate != null)
+                        <span><i class="ri-calendar-event-line"></i> ${sharedBook.publishedDate}</span>
+                    @endif
+                    @if(sharedBook.isbn != null)
+                        <span><i class="ri-barcode-line"></i> ${sharedBook.isbn}</span>
+                    @endif
+                    @if(sharedBook.bookFormat != null)
+                        <span><i class="ri-book-line"></i> ${sharedBook.bookFormat}</span>
+                    @endif
+                </div>
+
+                @if(sharedBook.downloadUrl != null)
+                    <a href="${sharedBook.downloadUrl}" class="btn-primary" style="display:inline-flex; align-items:center; gap:0.5rem; text-decoration:none;">
+                        <i class="ri-download-line"></i> ${i18n.translate("action.download")}
+                    </a>
+                @endif
+            </div>
+        </div>
+    </div>
+</div>
+`)

@@ -171,7 +171,7 @@ class BookApiRouter(
             "/api/books/{id}/share" bind Method.POST to filters.auth.then(::shareBook),
             "/api/books/{id}/share" bind Method.DELETE to filters.auth.then(::unshareBook),
             "/api/books/{id}/share" bind Method.GET to filters.auth.then(::getBookShareToken),
-            "/shared/book/{token}" bind Method.GET to filters.auth.then(::getPublicBook),
+            // GET /shared/book/{token} is handled by PageRouter (renders HTML page)
             "/shared/book/{token}/download" bind Method.GET to filters.auth.then(::downloadSharedBook),
             // Notebooks
             "/api/books/{id}/notebooks" bind Method.GET to filters.auth.then(::listNotebooks),

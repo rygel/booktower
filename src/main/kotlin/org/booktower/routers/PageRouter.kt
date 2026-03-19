@@ -47,6 +47,7 @@ class PageRouter(
             "/tags/{name}" bind Method.GET to filters.auth.then(pageHandler::tag),
             "/profile" bind Method.GET to pageHandler::profile,
             "/activity" bind Method.GET to filters.auth.then(pageHandler::activity),
+            "/shared/book/{token}" bind Method.GET to pageHandler::sharedBook,
             "/analytics" bind Method.GET to pageHandler::analytics,
             "/ui/preferences/analytics" bind Method.POST to pageHandler::setAnalytics,
             "/admin" bind Method.GET to filters.admin.then(adminHandler::adminPage),

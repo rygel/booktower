@@ -214,7 +214,9 @@ abstract class IntegrationTestBase {
                 magicShelfService,
                 TestFixture.templateRenderer,
                 readingSessionService,
-                null,
+                null, // libraryWatchService
+                null, // bookLinkService
+                org.booktower.services.BookSharingService(jdbi, bookService),
             )
         val backgroundTaskHandler = BackgroundTaskHandler(backgroundTaskService)
         val journalHandler = JournalHandler(journalService)

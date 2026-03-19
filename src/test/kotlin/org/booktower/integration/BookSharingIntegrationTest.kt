@@ -33,14 +33,15 @@ class BookSharingIntegrationTest : IntegrationTestBase() {
                 .asText()
         assertNotNull(shareToken, "Share token should not be null")
 
-        // Another authenticated user can access the shared book
+        // Another authenticated user can access the shared book HTML page
         val viewResp =
             app(
                 Request(Method.GET, "/shared/book/$shareToken")
                     .header("Cookie", "token=$viewerToken"),
             )
         assertEquals(Status.OK, viewResp.status, "Authenticated user should access shared book")
-        assertTrue(viewResp.bodyString().contains("Shared Book"), "Response should contain book title")
+        val html = viewResp.bodyString()
+        assertTrue(html.contains("Shared Book"), "HTML page should contain book title")
     }
 
     @Test
@@ -60,9 +61,12 @@ class BookSharingIntegrationTest : IntegrationTestBase() {
                 .get("shareToken")
                 .asText()
 
-        // Unauthenticated access should return 401
+        // Unauthenticated access should redirect to login
         val anonResp = app(Request(Method.GET, "/shared/book/$shareToken"))
-        assertEquals(Status.UNAUTHORIZED, anonResp.status, "Anonymous access should return 401")
+        assertTrue(
+            anonResp.status.code in listOf(302, 303, 401),
+            "Anonymous access should redirect to login or return 401, got ${anonResp.status}",
+        )
     }
 
     @Test
