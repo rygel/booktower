@@ -13,10 +13,9 @@ $Url  = "http://localhost:$Port"
 # Find ALL processes listening on the port (catches both mvn and java)
 $conn = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
 if ($conn) {
-    $pids = $conn | Select-Object -ExpandProperty OwningProcess -Unique
-    foreach ($pid in $pids) {
-        Write-Host "Stopping process on port $Port (PID $pid)..." -ForegroundColor Yellow
-        taskkill /F /T /PID $pid 2>$null | Out-Null
+    @($conn | Select-Object -ExpandProperty OwningProcess -Unique) | ForEach-Object {
+        Write-Host "Stopping process on port $Port (PID $_)..." -ForegroundColor Yellow
+        Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue
     }
     Start-Sleep -Seconds 2
 }
@@ -29,7 +28,7 @@ Get-Process -Name "java" -ErrorAction SilentlyContinue | Where-Object {
     } catch { $false }
 } | ForEach-Object {
     Write-Host "Stopping orphaned BookTower process (PID $($_.Id))..." -ForegroundColor Yellow
-    taskkill /F /T /PID $_.Id 2>$null | Out-Null
+    Stop-Process -Id $_.Id -Force -ErrorAction SilentlyContinue
 }
 
 # ── Clean stale JTE caches ────────────────────────────────────────────────────
@@ -40,7 +39,7 @@ if (Test-Path "target\jte-dynamic") {
 
 # ── Build ─────────────────────────────────────────────────────────────────────
 Write-Host "Building..." -ForegroundColor Cyan
-mvn compile -q -Dflyway.skip=true
+mvn compile -q "-Dflyway.skip=true"
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Build failed." -ForegroundColor Red
     exit 1
@@ -58,4 +57,4 @@ Write-Host "  Username: dev  |  Password: dev12345" -ForegroundColor Gray
 Write-Host "  Press Ctrl+C to stop." -ForegroundColor Gray
 Write-Host ""
 
-mvn exec:java "-Dexec.mainClass=org.booktower.BookTowerAppKt" -Dflyway.skip=true
+mvn exec:java "-Dexec.mainClass=org.booktower.BookTowerAppKt" "-Dflyway.skip=true"

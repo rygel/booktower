@@ -29,7 +29,7 @@ if (Test-Path $PidFile) {
     $savedPid = (Get-Content $PidFile -Raw).Trim()
     if ($savedPid -match '^\d+$') {
         Write-Host "Stopping previous instance (saved PID $savedPid)..." -ForegroundColor Yellow
-        taskkill /F /T /PID $savedPid 2>$null | Out-Null
+        Stop-Process -Id ([int]$savedPid) -Force -ErrorAction SilentlyContinue
         $killed = $true
     }
     Remove-Item $PidFile -Force
@@ -38,10 +38,9 @@ if (Test-Path $PidFile) {
 # Strategy 2: Kill by port — catches processes the PID file missed
 $conn = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
 if ($conn) {
-    $pids = $conn | Select-Object -ExpandProperty OwningProcess -Unique
-    foreach ($pid in $pids) {
-        Write-Host "Stopping process on port $Port (PID $pid)..." -ForegroundColor Yellow
-        taskkill /F /T /PID $pid 2>$null | Out-Null
+    @($conn | Select-Object -ExpandProperty OwningProcess -Unique) | ForEach-Object {
+        Write-Host "Stopping process on port $Port (PID $_)..." -ForegroundColor Yellow
+        Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue
         $killed = $true
     }
 }
@@ -54,7 +53,7 @@ Get-Process -Name "java" -ErrorAction SilentlyContinue | Where-Object {
     } catch { $false }
 } | ForEach-Object {
     Write-Host "Stopping orphaned BookTower Java process (PID $($_.Id))..." -ForegroundColor Yellow
-    taskkill /F /T /PID $_.Id 2>$null | Out-Null
+    Stop-Process -Id $_.Id -Force -ErrorAction SilentlyContinue
     $killed = $true
 }
 
@@ -91,7 +90,7 @@ if (Test-Path "target\jte-dynamic") {
 # ── Build ──────────────────────────────────────────────────────────────────────
 if (-not $SkipBuild) {
     Write-Host "Building BookTower..." -ForegroundColor Cyan
-    mvn compile -q -DskipTests -Dflyway.skip=true
+    mvn compile -q -DskipTests "-Dflyway.skip=true"
     if ($LASTEXITCODE -ne 0) { Write-Host "Build failed!" -ForegroundColor Red; exit 1 }
     Write-Host "Build successful!" -ForegroundColor Green
     Write-Host ""
@@ -110,7 +109,7 @@ Write-Host "Starting BookTower..." -ForegroundColor Cyan
 
 $proc = Start-Process `
     -FilePath "mvn" `
-    -ArgumentList "exec:java -q -Dflyway.skip=true" `
+    -ArgumentList 'exec:java -q -Dflyway.skip=true' `
     -WorkingDirectory $PSScriptRoot `
     -WindowStyle Hidden `
     -PassThru
