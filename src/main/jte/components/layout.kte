@@ -52,6 +52,7 @@
                     <i class="ri-search-line bt-search-icon"></i>
                     <input type="search" name="q"
                            value="${searchQuery}"
+                           aria-label="${i18n.translate("placeholder.search")}"
                            placeholder="${i18n.translate("placeholder.search")}"
                            class="bt-search-input">
                 </div>
@@ -59,6 +60,7 @@
             <div class="bt-header-actions">
                 @if(username != null)
                 <button id="notif-btn" onclick="toggleNotifPanel()" class="btn-icon"
+                        aria-label="${i18n.translate("label.notifications")}"
                         title="${i18n.translate("label.notifications")}">
                     <i class="ri-notification-3-line"></i>
                     <span id="notif-badge" class="notif-badge"></span>
@@ -91,7 +93,7 @@
     <div class="bt-body">
 
         <!-- Sidebar -->
-        <nav class="bt-sidebar">
+        <nav class="bt-sidebar" role="navigation" aria-label="${i18n.translate("nav.section")}">
             <div class="bt-sidebar-nav">
                 <p class="bt-sidebar-section">${i18n.translate("nav.section")}</p>
                 <a href="/" class="sidebar-link ${if (currentPage == "home") "active" else ""}">
