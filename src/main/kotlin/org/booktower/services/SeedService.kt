@@ -404,6 +404,17 @@ private fun normalizeSeedDate(date: String?): String? =
         else -> null
     }
 
+/** Converts a title to a filesystem-safe filename, preserving readability. */
+private fun safeFilename(
+    title: String,
+    ext: String,
+): String =
+    title
+        .replace(Regex("[^a-zA-Z0-9\\s._-]"), "")
+        .replace(Regex("\\s+"), "_")
+        .take(80)
+        .trimEnd('_', '.') + ".$ext"
+
 class SeedService(
     private val bookService: BookService,
     private val libraryService: LibraryService,
@@ -851,7 +862,7 @@ class SeedService(
             val url = "https://archive.org/download/${comic.archiveId}/$encodedName"
             val libDir = File("./data/libraries/comics")
             if (!libDir.exists() && !libDir.mkdirs()) logger.warn("Could not create directory: ${libDir.absolutePath}")
-            val destFile = File(libDir, "$bookId.cbz")
+            val destFile = File(libDir, safeFilename(comic.title, "cbz"))
 
             if (destFile.exists() && destFile.length() > 0) {
                 logger.info("Skipping download for '${comic.title}' — file already exists (${destFile.length()} bytes)")
@@ -922,7 +933,8 @@ class SeedService(
         try {
             // Check if at least one chapter file already exists (resumable)
             val booksDir = File(booksPath)
-            val existingChapters = booksDir.listFiles { f -> f.name.startsWith("$bookId-") && f.name.endsWith(".mp3") && f.length() > 0 }
+            val safeTitle = title.replace(Regex("[^a-zA-Z0-9._-]"), "_").take(60).trimEnd('_')
+            val existingChapters = booksDir.listFiles { f -> (f.name.startsWith("$safeTitle-") || f.name.startsWith("$bookId-")) && f.name.endsWith(".mp3") && f.length() > 0 }
             if (existingChapters != null && existingChapters.isNotEmpty()) {
                 logger.info("Skipping download for '$title' — ${existingChapters.size} chapter files already exist")
                 backgroundTaskService.complete(taskId, "Already downloaded")
@@ -1000,7 +1012,8 @@ class SeedService(
             parseDuration(
                 item.getElementsByTagNameNS("http://www.itunes.com/dtds/podcast-1.0.dtd", "duration").item(0)?.textContent,
             )
-        val destFile = File(booksDir, "$bookId-${idx.toString().padStart(4, '0')}.mp3")
+        val safeTitle = title.replace(Regex("[^a-zA-Z0-9._-]"), "_").take(60).trimEnd('_')
+        val destFile = File(booksDir, "$safeTitle-${idx.toString().padStart(4, '0')}.mp3")
         if (destFile.exists()) return false
         return try {
             val mp3Conn =
@@ -1047,7 +1060,7 @@ class SeedService(
             val url = "https://www.gutenberg.org/cache/epub/$gutenbergId/pg$gutenbergId.epub"
             val booksDir = File(booksPath)
             if (!booksDir.exists() && !booksDir.mkdirs()) logger.warn("Could not create directory: ${booksDir.absolutePath}")
-            val destFile = File(booksDir, "$bookId.epub")
+            val destFile = File(booksDir, safeFilename(title, "epub"))
 
             if (destFile.exists() && destFile.length() > 0) {
                 logger.info("Skipping download for '$title' — file already exists (${destFile.length()} bytes)")

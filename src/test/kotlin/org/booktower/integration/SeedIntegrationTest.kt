@@ -199,6 +199,65 @@ class SeedIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `seeded book titles are never UUIDs`() {
+        val token = registerAdminAndGetToken()
+        app(Request(Method.POST, "/admin/seed").header("Cookie", "token=$token"))
+
+        val booksResponse =
+            app(
+                Request(Method.GET, "/api/books?pageSize=100")
+                    .header("Cookie", "token=$token"),
+            )
+        val books = Json.mapper.readValue(booksResponse.bodyString(), BookListDto::class.java).getBooks()
+        val uuidPattern = Regex("[0-9a-f]{8}[- ][0-9a-f]{4}[- ][0-9a-f]{4}[- ][0-9a-f]{4}[- ][0-9a-f]{12}", RegexOption.IGNORE_CASE)
+        val uuidTitles = books.filter { uuidPattern.containsMatchIn(it.title) }
+        assertTrue(
+            uuidTitles.isEmpty(),
+            "No book title should look like a UUID, but found: ${uuidTitles.map { it.title }}",
+        )
+    }
+
+    @Test
+    fun `comic seed creates books with proper titles`() {
+        val token = registerAdminAndGetToken("comictitle")
+        val response = app(Request(Method.POST, "/admin/seed/comics").header("Cookie", "token=$token"))
+        assertEquals(Status.OK, response.status)
+
+        val booksResponse =
+            app(Request(Method.GET, "/api/books?pageSize=50").header("Cookie", "token=$token"))
+        val books = Json.mapper.readValue(booksResponse.bodyString(), BookListDto::class.java).getBooks()
+        assertTrue(books.isNotEmpty(), "Comic seed should create books")
+        assertTrue(
+            books.any { it.title.contains("Dances With Demons", ignoreCase = true) || it.title.contains("Detective Comics", ignoreCase = true) || it.title.contains("Daring Comics", ignoreCase = true) },
+            "Comic titles should be human-readable, got: ${books.map { it.title }}",
+        )
+        val uuidPattern = Regex("[0-9a-f]{8}[- ][0-9a-f]{4}[- ][0-9a-f]{4}[- ][0-9a-f]{4}[- ][0-9a-f]{12}", RegexOption.IGNORE_CASE)
+        val uuidTitles = books.filter { uuidPattern.containsMatchIn(it.title) }
+        assertTrue(
+            uuidTitles.isEmpty(),
+            "Comic titles must not be UUIDs, but found: ${uuidTitles.map { it.title }}",
+        )
+    }
+
+    @Test
+    fun `librivox seed creates books with proper titles`() {
+        val token = registerAdminAndGetToken("lvtitle")
+        val response = app(Request(Method.POST, "/admin/seed/librivox").header("Cookie", "token=$token"))
+        assertEquals(Status.OK, response.status)
+
+        val booksResponse =
+            app(Request(Method.GET, "/api/books?pageSize=50").header("Cookie", "token=$token"))
+        val books = Json.mapper.readValue(booksResponse.bodyString(), BookListDto::class.java).getBooks()
+        assertTrue(books.isNotEmpty(), "LibriVox seed should create books")
+        val uuidPattern = Regex("[0-9a-f]{8}[- ][0-9a-f]{4}[- ][0-9a-f]{4}[- ][0-9a-f]{4}[- ][0-9a-f]{12}", RegexOption.IGNORE_CASE)
+        val uuidTitles = books.filter { uuidPattern.containsMatchIn(it.title) }
+        assertTrue(
+            uuidTitles.isEmpty(),
+            "Audiobook titles must not be UUIDs, but found: ${uuidTitles.map { it.title }}",
+        )
+    }
+
+    @Test
     fun `seed for non-admin user with existing libraries returns 409`() {
         // Create a non-seed user with their own library, then try seeding as admin of fresh account
         val adminToken = registerAdminAndGetToken()
