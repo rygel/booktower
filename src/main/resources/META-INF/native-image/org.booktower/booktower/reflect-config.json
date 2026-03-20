@@ -32,6 +32,18 @@
   { "name": "org.booktower.model.ThemeDefinition",       "allDeclaredConstructors": true, "allDeclaredFields": true, "allPublicMethods": true },
   { "name": "org.booktower.services.PdfMetadata",        "allDeclaredConstructors": true, "allDeclaredFields": true, "allPublicMethods": true },
 
+  { "name": "org.booktower.config.AppWrapper",      "allDeclaredConstructors": true, "allDeclaredFields": true, "allPublicMethods": true },
+  { "name": "org.booktower.config.AppConfig",       "allDeclaredConstructors": true, "allDeclaredFields": true, "allPublicMethods": true },
+  { "name": "org.booktower.config.DatabaseConfig",  "allDeclaredConstructors": true, "allDeclaredFields": true, "allPublicMethods": true },
+  { "name": "org.booktower.config.SecurityConfig",  "allDeclaredConstructors": true, "allDeclaredFields": true, "allPublicMethods": true },
+  { "name": "org.booktower.config.StorageConfig",   "allDeclaredConstructors": true, "allDeclaredFields": true, "allPublicMethods": true },
+  { "name": "org.booktower.config.CsrfConfig",      "allDeclaredConstructors": true, "allDeclaredFields": true, "allPublicMethods": true },
+  { "name": "org.booktower.config.WeblateConfig",   "allDeclaredConstructors": true, "allDeclaredFields": true, "allPublicMethods": true },
+  { "name": "org.booktower.config.OidcConfig",      "allDeclaredConstructors": true, "allDeclaredFields": true, "allPublicMethods": true },
+  { "name": "org.booktower.config.MetadataConfig",  "allDeclaredConstructors": true, "allDeclaredFields": true, "allPublicMethods": true },
+  { "name": "org.booktower.config.FtsConfig",       "allDeclaredConstructors": true, "allDeclaredFields": true, "allPublicMethods": true },
+  { "name": "org.booktower.config.SmtpConfig",      "allDeclaredConstructors": true, "allDeclaredFields": true, "allPublicMethods": true },
+
   { "name": "org.h2.Driver",                                  "allDeclaredConstructors": true, "allPublicMethods": true },
   { "name": "org.h2.engine.Engine",                           "allDeclaredConstructors": true, "allPublicMethods": true },
   { "name": "org.h2.store.fs.FilePathDisk",                   "allDeclaredConstructors": true },
