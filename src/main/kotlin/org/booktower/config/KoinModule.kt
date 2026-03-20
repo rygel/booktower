@@ -228,16 +228,18 @@ val appModule =
         single { UserSettingsHandler(get()) }
         single {
             AdminHandler(
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
+                get(), // adminService
+                get<JwtService>(),
+                get<AuthService>(),
+                get(), // templateRenderer
+                get(), // passwordResetService
+                get(), // seedService
+                get(), // emailService
                 get<AppConfig>().baseUrl,
-                get(),
-                get(),
-                get(),
-                get(),
+                get(), // duplicateDetectionService
+                get(), // auditService
+                get(), // userPermissionsService
+                get(), // libraryAccessService
                 get<org.booktower.services.ComicPageHashService>(),
             )
         }

@@ -1,21 +1,13 @@
 @import gg.jte.Content
-@import org.booktower.i18n.I18nService
-@import org.booktower.model.ThemeDefinition
+@import org.booktower.web.PageContext
+@param pc: PageContext
 @param title: String
-@param username: String?
 @param currentPage: String = ""
-@param themeCss: String
-@param currentTheme: String
-@param lang: String
-@param themes: List<ThemeDefinition>
-@param i18n: I18nService
 @param searchQuery: String = ""
-@param gravatarHash: String = ""
-@param isAdmin: Boolean = false
 @param content: Content
 
 <!DOCTYPE html>
-<html lang="${lang}">
+<html lang="${pc.lang}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -26,7 +18,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="BookTower">
-    <style id="theme-style" data-theme="${currentTheme}">${themeCss}</style>
+    <style id="theme-style" data-theme="${pc.currentTheme}">${pc.themeCss}</style>
     <link rel="stylesheet" href="/static/css/app.css">
     <link rel="stylesheet" href="/static/vendor/remixicon.css">
     <script src="/static/vendor/htmx.min.js" defer></script>
@@ -34,7 +26,7 @@
 </head>
 <body class="bt-app">
 
-    @if(username != null)
+    @if(pc.username != null)
     <div id="global-progress" class="bt-progress-bar">
         <div id="global-progress-bar" class="bt-progress-fill"></div>
     </div>
@@ -45,45 +37,45 @@
         <div class="bt-header-inner">
             <a href="/" class="bt-logo">
                 <i class="ri-building-2-fill"></i>
-                <span>${i18n.translate("app.title")}</span>
+                <span>${pc.i18n.translate("app.title")}</span>
             </a>
             <form method="GET" action="/search" role="search" class="bt-search-form">
                 <div class="bt-search-wrap">
                     <i class="ri-search-line bt-search-icon"></i>
                     <input type="search" name="q"
                            value="${searchQuery}"
-                           aria-label="${i18n.translate("placeholder.search")}"
-                           placeholder="${i18n.translate("placeholder.search")}"
+                           aria-label="${pc.i18n.translate("placeholder.search")}"
+                           placeholder="${pc.i18n.translate("placeholder.search")}"
                            class="bt-search-input">
                 </div>
             </form>
             <div class="bt-header-actions">
-                @if(username != null)
+                @if(pc.username != null)
                 <button id="notif-btn" onclick="toggleNotifPanel()" class="btn-icon"
-                        aria-label="${i18n.translate("label.notifications")}"
-                        title="${i18n.translate("label.notifications")}">
+                        aria-label="${pc.i18n.translate("label.notifications")}"
+                        title="${pc.i18n.translate("label.notifications")}">
                     <i class="ri-notification-3-line"></i>
                     <span id="notif-badge" class="notif-badge"></span>
                 </button>
                 @endif
-                !{val isDark = themes.firstOrNull { it.id == currentTheme }?.type != "light"}
+                !{val isDark = pc.themes.firstOrNull { it.id == pc.currentTheme }?.type != "light"}
                 <button id="theme-toggle"
                         onclick="toggleDarkMode()"
                         class="btn-icon"
-                        title="${i18n.translate("label.toggle.theme")}">
+                        title="${pc.i18n.translate("label.toggle.theme")}">
                     <i class="${if (isDark) "ri-sun-line" else "ri-moon-line"}"></i>
                 </button>
                 <a href="/profile" class="bt-user-link">
-                    @if(gravatarHash.isNotEmpty())
-                        <img src="https://www.gravatar.com/avatar/${gravatarHash}?s=28&d=identicon"
-                             alt="${username}" class="bt-avatar">
+                    @if(pc.gravatarHash.isNotEmpty())
+                        <img src="https://www.gravatar.com/avatar/${pc.gravatarHash}?s=28&d=identicon"
+                             alt="${pc.username}" class="bt-avatar">
                     @else
                         <i class="ri-user-line" style="font-size:1.1rem; color:var(--bt-muted);"></i>
                     @endif
-                    <span class="bt-username">${username}</span>
+                    <span class="bt-username">${pc.username}</span>
                 </a>
                 <button hx-post="/auth/logout" class="btn-outline btn-danger">
-                    ${i18n.translate("auth.logout")}
+                    ${pc.i18n.translate("auth.logout")}
                 </button>
             </div>
         </div>
@@ -93,53 +85,53 @@
     <div class="bt-body">
 
         <!-- Sidebar -->
-        <nav class="bt-sidebar" role="navigation" aria-label="${i18n.translate("nav.section")}">
+        <nav class="bt-sidebar" role="navigation" aria-label="${pc.i18n.translate("nav.section")}">
             <div class="bt-sidebar-nav">
-                <p class="bt-sidebar-section">${i18n.translate("nav.section")}</p>
+                <p class="bt-sidebar-section">${pc.i18n.translate("nav.section")}</p>
                 <a href="/" class="sidebar-link ${if (currentPage == "home") "active" else ""}">
                     <i class="ri-home-line"></i>
-                    ${i18n.translate("nav.home")}
+                    ${pc.i18n.translate("nav.home")}
                 </a>
                 <a href="/libraries" class="sidebar-link ${if (currentPage == "libraries" || currentPage == "library") "active" else ""}">
                     <i class="ri-stack-line"></i>
-                    ${i18n.translate("nav.libraries")}
+                    ${pc.i18n.translate("nav.libraries")}
                 </a>
                 <a href="/search" class="sidebar-link ${if (currentPage == "search") "active" else ""}">
                     <i class="ri-search-line"></i>
-                    ${i18n.translate("nav.search")}
+                    ${pc.i18n.translate("nav.search")}
                 </a>
                 <a href="/queue" class="sidebar-link ${if (currentPage == "queue") "active" else ""}">
                     <i class="ri-bookmark-line"></i>
-                    ${i18n.translate("nav.queue")}
+                    ${pc.i18n.translate("nav.queue")}
                 </a>
                 <a href="/series" class="sidebar-link ${if (currentPage == "series") "active" else ""}">
                     <i class="ri-stack-line"></i>
-                    ${i18n.translate("nav.series")}
+                    ${pc.i18n.translate("nav.series")}
                 </a>
                 <a href="/authors" class="sidebar-link ${if (currentPage == "authors") "active" else ""}">
                     <i class="ri-user-2-line"></i>
-                    ${i18n.translate("nav.authors")}
+                    ${pc.i18n.translate("nav.authors")}
                 </a>
                 <a href="/tags" class="sidebar-link ${if (currentPage == "tags") "active" else ""}">
                     <i class="ri-price-tag-3-line"></i>
-                    ${i18n.translate("nav.tags")}
+                    ${pc.i18n.translate("nav.tags")}
                 </a>
                 <a href="/analytics" class="sidebar-link ${if (currentPage == "analytics") "active" else ""}">
                     <i class="ri-bar-chart-line"></i>
-                    ${i18n.translate("nav.analytics")}
+                    ${pc.i18n.translate("nav.analytics")}
                 </a>
                 <a href="/activity" class="sidebar-link ${if (currentPage == "activity") "active" else ""}">
                     <i class="ri-history-line"></i>
-                    ${i18n.translate("nav.activity")}
+                    ${pc.i18n.translate("nav.activity")}
                 </a>
                 <a href="/profile" class="sidebar-link ${if (currentPage == "profile") "active" else ""}">
                     <i class="ri-user-settings-line"></i>
-                    ${i18n.translate("nav.profile")}
+                    ${pc.i18n.translate("nav.profile")}
                 </a>
-                @if(isAdmin)
+                @if(pc.isAdmin)
                 <a href="/admin" class="sidebar-link ${if (currentPage == "admin") "active" else ""}">
                     <i class="ri-shield-user-line"></i>
-                    ${i18n.translate("nav.admin")}
+                    ${pc.i18n.translate("nav.admin")}
                 </a>
                 @endif
             </div>
@@ -154,16 +146,16 @@
     <!-- Footer -->
     <footer class="bt-footer">
         <div class="bt-footer-inner">
-            <span>&copy; 2026 BookTower v${org.booktower.services.VersionService.info.display}. ${i18n.translate("footer.rights")}</span>
-            <span>${i18n.translate("footer.made.with")} <i class="ri-heart-fill" style="color:var(--bt-danger);"></i> Kotlin &amp; http4k</span>
+            <span>&copy; 2026 BookTower v${org.booktower.services.VersionService.info.display}. ${pc.i18n.translate("footer.rights")}</span>
+            <span>${pc.i18n.translate("footer.made.with")} <i class="ri-heart-fill" style="color:var(--bt-danger);"></i> Kotlin &amp; http4k</span>
         </div>
     </footer>
 
     <!-- Notification panel (hidden by default) -->
     <div id="notif-panel" class="bt-notif-panel">
         <div class="bt-notif-header">
-            <span class="bt-notif-title">${i18n.translate("label.notifications")}</span>
-            <button onclick="markAllRead()" class="bt-notif-action">${i18n.translate("action.mark.all.read")}</button>
+            <span class="bt-notif-title">${pc.i18n.translate("label.notifications")}</span>
+            <button onclick="markAllRead()" class="bt-notif-action">${pc.i18n.translate("action.mark.all.read")}</button>
         </div>
         <div id="notif-list" style="padding:0.5rem;"></div>
     </div>
@@ -172,14 +164,14 @@
     <div id="toast-container"></div>
     <script src="/static/js/toasts.js" defer></script>
 
-    @if(username != null)
+    @if(pc.username != null)
     <script src="/static/js/notifications.js" defer
-            data-i18n-no-notifications="${i18n.translate("label.no.notifications")}"
-            data-i18n-new-notification="${i18n.translate("label.new.notification")}"
-            data-i18n-new-notifications="${i18n.translate("label.new.notifications")}"></script>
+            data-i18n-no-notifications="${pc.i18n.translate("label.no.notifications")}"
+            data-i18n-new-notification="${pc.i18n.translate("label.new.notification")}"
+            data-i18n-new-notifications="${pc.i18n.translate("label.new.notifications")}"></script>
     @endif
 
-    @if(username != null)
+    @if(pc.username != null)
     <!-- Download progress indicator -->
     <div id="dl-indicator" class="bt-dl-indicator">
         <button id="dl-toggle" onclick="toggleDlPanel()" class="bt-dl-btn">

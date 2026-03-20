@@ -1,42 +1,35 @@
-@import org.booktower.i18n.I18nService
-@import org.booktower.model.ThemeDefinition
 @import org.booktower.models.BookDto
 @import org.booktower.models.MagicShelfDto
 @import org.booktower.models.ShelfRuleType
-@param username: String?
-@param gravatarHash: String = ""
+@import org.booktower.web.PageContext
+@param pc: PageContext
 @param shelf: MagicShelfDto
 @param books: List<BookDto>
-@param themeCss: String
-@param currentTheme: String
-@param lang: String
-@param themes: List<ThemeDefinition>
-@param i18n: I18nService
-@param isAdmin: Boolean = false
 
-@template.components.layout(title="${shelf.name} - BookTower", username=username, gravatarHash=gravatarHash, currentPage="libraries",
-    themeCss=themeCss, currentTheme=currentTheme, lang=lang, themes=themes, i18n=i18n, searchQuery="", isAdmin=isAdmin, content = @`
+
+@template.components.layout(title="${shelf.name} - BookTower", pc=pc, currentPage="libraries",
+    content = @`
 <div style="padding:2rem;">
 
     <!-- Breadcrumb -->
-    @template.components.breadcrumb(items = listOf(i18n.translate("nav.libraries") to "/libraries", shelf.name to null))
+    @template.components.breadcrumb(items = listOf(pc.i18n.translate("nav.libraries") to "/libraries", shelf.name to null))
 
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.75rem; flex-wrap:wrap; gap:1rem;">
         <div>
             <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.25rem;">
                 <h1 style="font-size:1.5rem; font-weight:700; color:var(--bt-text);">${shelf.name}</h1>
                 <span style="display:inline-flex; align-items:center; gap:0.25rem; font-size:0.7rem; background:var(--bt-accent-dim); color:var(--bt-accent); border-radius:9999px; padding:0.2rem 0.6rem; font-weight:600;">
-                    <i class="ri-sparkling-line"></i> ${i18n.translate("label.smart.shelf")}
+                    <i class="ri-sparkling-line"></i> ${pc.i18n.translate("label.smart.shelf")}
                 </span>
             </div>
             <p style="font-size:0.8rem; color:var(--bt-subtle);">
-                ${shelf.bookCount} ${i18n.translate("label.books")} &middot;
+                ${shelf.bookCount} ${pc.i18n.translate("label.books")} &middot;
                 @if(shelf.ruleType == ShelfRuleType.STATUS)
-                    <span>${i18n.translate("label.status")}: <strong>${i18n.translate("status." + shelf.ruleValue!!.lowercase().replace("_", "."))}</strong></span>
+                    <span>${pc.i18n.translate("label.status")}: <strong>${pc.i18n.translate("status." + shelf.ruleValue!!.lowercase().replace("_", "."))}</strong></span>
                 @elseif(shelf.ruleType == ShelfRuleType.TAG)
-                    <span>${i18n.translate("label.tag")}: <strong>${shelf.ruleValue}</strong></span>
+                    <span>${pc.i18n.translate("label.tag")}: <strong>${shelf.ruleValue}</strong></span>
                 @elseif(shelf.ruleType == ShelfRuleType.RATING_GTE)
-                    <span>${i18n.translate("label.rating")}: <strong>${shelf.ruleValue}+ &#9733;</strong></span>
+                    <span>${pc.i18n.translate("label.rating")}: <strong>${shelf.ruleValue}+ &#9733;</strong></span>
                 @endif
             </p>
         </div>
@@ -45,13 +38,13 @@
     <!-- Books grid -->
     <div id="books-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:1rem;">
         @for(book in books)
-            @template.components.bookCard(book=book, i18n=i18n)
+            @template.components.bookCard(book=book, i18n=pc.i18n)
         @endfor
     </div>
 
     @if(books.isEmpty())
-        @template.components.emptyState(icon = "ri-sparkling-line", message = i18n.translate("page.shelf.empty.title"), action = @`
-            <p style="font-size:0.875rem; margin-top:0.375rem; color:var(--bt-faint);">${i18n.translate("page.shelf.empty.hint")}</p>
+        @template.components.emptyState(icon = "ri-sparkling-line", message = pc.i18n.translate("page.shelf.empty.title"), action = @`
+            <p style="font-size:0.875rem; margin-top:0.375rem; color:var(--bt-faint);">${pc.i18n.translate("page.shelf.empty.hint")}</p>
         `)
     @endif
 

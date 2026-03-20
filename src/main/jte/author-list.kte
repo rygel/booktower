@@ -1,34 +1,27 @@
-@import org.booktower.i18n.I18nService
-@import org.booktower.model.ThemeDefinition
 @import org.booktower.models.AuthorDto
-@param username: String?
-@param gravatarHash: String = ""
+@import org.booktower.web.PageContext
+@param pc: PageContext
 @param authors: List<AuthorDto>
-@param themeCss: String
-@param currentTheme: String
-@param lang: String
-@param themes: List<ThemeDefinition>
-@param i18n: I18nService
-@param isAdmin: Boolean = false
 
-@template.components.layout(title="${i18n.translate("page.authors.title")} - BookTower", username=username, gravatarHash=gravatarHash, currentPage="authors",
-    themeCss=themeCss, currentTheme=currentTheme, lang=lang, themes=themes, i18n=i18n, searchQuery="", isAdmin=isAdmin, content = @`
+
+@template.components.layout(title="${pc.i18n.translate("page.authors.title")} - BookTower", pc=pc, currentPage="authors",
+    content = @`
 <div style="padding:2rem; max-width:72rem; margin:0 auto;">
 
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.75rem;">
         <div>
             <h1 style="font-size:1.5rem; font-weight:700; color:var(--bt-text); margin-bottom:0.25rem;">
-                <i class="ri-user-2-line" style="color:var(--bt-accent-dim); margin-right:0.5rem;"></i>${i18n.translate("page.authors.list.title")}
+                <i class="ri-user-2-line" style="color:var(--bt-accent-dim); margin-right:0.5rem;"></i>${pc.i18n.translate("page.authors.list.title")}
             </h1>
-            <p style="font-size:0.8rem; color:var(--bt-subtle);">${authors.size} ${i18n.translate("field.author").lowercase()}</p>
+            <p style="font-size:0.8rem; color:var(--bt-subtle);">${authors.size} ${pc.i18n.translate("field.author").lowercase()}</p>
         </div>
     </div>
 
     @if(authors.isEmpty())
         <div style="text-align:center; padding:5rem 0;">
             <i class="ri-user-2-line" style="font-size:4rem; display:block; margin-bottom:1rem; color:var(--bt-border);"></i>
-            <p style="font-size:1.125rem; font-weight:500; color:var(--bt-subtle);">${i18n.translate("page.authors.empty.title")}</p>
-            <p style="font-size:0.875rem; margin-top:0.375rem; color:var(--bt-faint);">${i18n.translate("page.authors.empty.hint")}</p>
+            <p style="font-size:1.125rem; font-weight:500; color:var(--bt-subtle);">${pc.i18n.translate("page.authors.empty.title")}</p>
+            <p style="font-size:0.875rem; margin-top:0.375rem; color:var(--bt-faint);">${pc.i18n.translate("page.authors.empty.hint")}</p>
         </div>
     @else
         <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(9rem, 1fr)); gap:1.25rem;">
@@ -45,7 +38,7 @@
                         </div>
                         <div style="padding:0.625rem 0.75rem;">
                             <p style="font-size:0.8rem; font-weight:600; color:var(--bt-text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${a.name}</p>
-                            <p style="font-size:0.7rem; color:var(--bt-subtle); margin-top:0.125rem;">${i18n.translate("page.authors.book.count", a.bookCount)}</p>
+                            <p style="font-size:0.7rem; color:var(--bt-subtle); margin-top:0.125rem;">${pc.i18n.translate("page.authors.book.count", a.bookCount)}</p>
                             @if(a.readingCount > 0 || a.finishedCount > 0)
                                 <div class="author-status-counts" style="display:flex; gap:0.5rem; margin-top:0.25rem; flex-wrap:wrap;">
                                     @if(a.readingCount > 0)

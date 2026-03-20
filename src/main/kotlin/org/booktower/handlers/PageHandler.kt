@@ -52,29 +52,22 @@ class PageHandler(
     private val bookLinkService: org.booktower.services.BookLinkService? = null,
     private val bookSharingService: org.booktower.services.BookSharingService? = null,
 ) {
+    /** Build a PageContext for any authenticated request. */
+    private fun pageContext(req: Request): org.booktower.web.PageContext =
+        org.booktower.web.PageContext
+            .from(req, jwtService, authService)
+
     // ── Page routes ────────────────────────────────────────────────────────────
 
     fun libraries(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
-        val ctx = WebContext(req)
-        val (username, gravatarHash) = userDisplayInfo(userId)
+        val pc = pageContext(req)
         val libraries = libraryService.getLibraries(userId)
         val shelves = magicShelfService.getShelves(userId)
         return htmlOk(
             templateRenderer.render(
                 "libraries.kte",
-                mapOf(
-                    "username" to username,
-                    "gravatarHash" to gravatarHash,
-                    "libraries" to libraries,
-                    "shelves" to shelves,
-                    "themeCss" to ctx.themeCss,
-                    "currentTheme" to ctx.theme,
-                    "lang" to ctx.lang,
-                    "themes" to ThemeCatalog.allThemes(),
-                    "i18n" to ctx.i18n,
-                    "isAdmin" to authIsAdmin(req),
-                ),
+                pc.toMap("libraries" to libraries, "shelves" to shelves),
             ),
         )
     }
@@ -82,25 +75,16 @@ class PageHandler(
     /** GET /shelves/{id} */
     fun magicShelf(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
-        val ctx = WebContext(req)
-        val (username, gravatarHash) = userDisplayInfo(userId)
+        val pc = pageContext(req)
         val shelfId = req.lastPathSegment().toUuidOrNull() ?: return Response(Status.NOT_FOUND)
         val shelf = magicShelfService.getShelf(userId, shelfId) ?: return Response(Status.NOT_FOUND)
         val books = magicShelfService.resolveBooks(userId, shelf)
         return htmlOk(
             templateRenderer.render(
                 "shelf.kte",
-                mapOf(
-                    "username" to username,
-                    "gravatarHash" to gravatarHash,
+                pc.toMap(
                     "shelf" to shelf,
                     "books" to books,
-                    "themeCss" to ctx.themeCss,
-                    "currentTheme" to ctx.theme,
-                    "lang" to ctx.lang,
-                    "themes" to ThemeCatalog.allThemes(),
-                    "i18n" to ctx.i18n,
-                    "isAdmin" to authIsAdmin(req),
                 ),
             ),
         )
@@ -170,8 +154,7 @@ class PageHandler(
 
     fun library(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
-        val ctx = WebContext(req)
-        val (username, gravatarHash) = userDisplayInfo(userId)
+        val pc = pageContext(req)
         val libId = req.lastPathSegment().toUuidOrNull() ?: return Response(Status.NOT_FOUND)
         val library = libraryService.getLibrary(userId, libId) ?: return Response(Status.NOT_FOUND)
         val sortParam = req.query("sort")
@@ -214,9 +197,7 @@ class PageHandler(
         return htmlOk(
             templateRenderer.render(
                 "library.kte",
-                mapOf(
-                    "username" to username,
-                    "gravatarHash" to gravatarHash,
+                pc.toMap(
                     "library" to library,
                     "books" to result.getBooks(),
                     "currentSort" to sortBy.name,
@@ -229,12 +210,6 @@ class PageHandler(
                     "currentPage" to currentPage,
                     "totalPages" to totalPages,
                     "totalBooks" to result.total,
-                    "themeCss" to ctx.themeCss,
-                    "currentTheme" to ctx.theme,
-                    "lang" to ctx.lang,
-                    "themes" to ThemeCatalog.allThemes(),
-                    "i18n" to ctx.i18n,
-                    "isAdmin" to authIsAdmin(req),
                 ),
             ),
         )
@@ -242,8 +217,7 @@ class PageHandler(
 
     fun book(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
-        val ctx = WebContext(req)
-        val (username, gravatarHash) = userDisplayInfo(userId)
+        val pc = pageContext(req)
         val bookId = req.lastPathSegment().toUuidOrNull() ?: return Response(Status.NOT_FOUND)
         val book = bookService.getBook(userId, bookId) ?: return Response(Status.NOT_FOUND)
         val bookmarks = bookmarkService.getBookmarks(userId, bookId)
@@ -255,9 +229,7 @@ class PageHandler(
         return htmlOk(
             templateRenderer.render(
                 "book.kte",
-                mapOf(
-                    "username" to username,
-                    "gravatarHash" to gravatarHash,
+                pc.toMap(
                     "book" to book,
                     "libraryName" to libraryName,
                     "libraries" to libraries,
@@ -265,12 +237,6 @@ class PageHandler(
                     "chapters" to chapters,
                     "linkedBook" to linkedBook,
                     "syncPosition" to syncPosition,
-                    "themeCss" to ctx.themeCss,
-                    "currentTheme" to ctx.theme,
-                    "lang" to ctx.lang,
-                    "themes" to ThemeCatalog.allThemes(),
-                    "i18n" to ctx.i18n,
-                    "isAdmin" to authIsAdmin(req),
                 ),
             ),
         )
@@ -380,8 +346,7 @@ class PageHandler(
 
     fun search(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
-        val ctx = WebContext(req)
-        val (username, gravatarHash) = userDisplayInfo(userId)
+        val pc = pageContext(req)
         val query = req.query("q") ?: ""
         val page = req.query("page")?.toIntOrNull() ?: 1
         val libId = req.query("libId")?.takeIf { it.isNotBlank() }
@@ -396,9 +361,7 @@ class PageHandler(
         return htmlOk(
             templateRenderer.render(
                 "search.kte",
-                mapOf(
-                    "username" to username,
-                    "gravatarHash" to gravatarHash,
+                pc.toMap(
                     "query" to query,
                     "books" to (result?.getBooks() ?: emptyList<Any>()),
                     "total" to (result?.total ?: 0),
@@ -407,12 +370,6 @@ class PageHandler(
                     "statusOptions" to
                         org.booktower.models.ReadStatus.entries
                             .toList(),
-                    "themeCss" to ctx.themeCss,
-                    "currentTheme" to ctx.theme,
-                    "lang" to ctx.lang,
-                    "themes" to ThemeCatalog.allThemes(),
-                    "i18n" to ctx.i18n,
-                    "isAdmin" to authIsAdmin(req),
                 ),
             ),
         )
@@ -420,8 +377,7 @@ class PageHandler(
 
     fun dashboard(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
-        val ctx = WebContext(req)
-        val (username, gravatarHash) = userDisplayInfo(userId)
+        val pc = pageContext(req)
         val year =
             java.time.LocalDate
                 .now()
@@ -452,9 +408,7 @@ class PageHandler(
             return htmlOk(
                 templateRenderer.render(
                     "dashboard.kte",
-                    mapOf(
-                        "username" to username,
-                        "gravatarHash" to gravatarHash,
+                    pc.toMap(
                         "libraries" to libraries,
                         "recentBooks" to recentBooks,
                         "recentlyAddedBooks" to recentlyAddedBooks,
@@ -465,12 +419,6 @@ class PageHandler(
                         "goal" to goal,
                         "booksFinishedThisYear" to booksFinishedThisYear,
                         "year" to year,
-                        "themeCss" to ctx.themeCss,
-                        "currentTheme" to ctx.theme,
-                        "lang" to ctx.lang,
-                        "themes" to ThemeCatalog.allThemes(),
-                        "i18n" to ctx.i18n,
-                        "isAdmin" to authIsAdmin(req),
                     ),
                 ),
             )
@@ -493,27 +441,19 @@ class PageHandler(
 
     fun profile(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
-        val ctx = WebContext(req)
+        val pc = pageContext(req)
         val user = authService.getUserById(userId)
         val analyticsEnabled = userSettingsService.get(userId, "analytics.enabled") == "true"
         val libraries = libraryService.getLibraries(userId)
         return htmlOk(
             templateRenderer.render(
                 "profile.kte",
-                mapOf(
-                    "username" to (user?.username),
-                    "gravatarHash" to (user?.email?.let { gravatarHash(it) } ?: ""),
+                pc.toMap(
                     "userEmail" to (user?.email ?: ""),
                     "userUsername" to (user?.username ?: ""),
                     "memberSince" to (user?.createdAt?.toString()?.take(10) ?: ""),
                     "analyticsEnabled" to analyticsEnabled,
                     "libraries" to libraries,
-                    "themeCss" to ctx.themeCss,
-                    "currentTheme" to ctx.theme,
-                    "lang" to ctx.lang,
-                    "themes" to ThemeCatalog.allThemes(),
-                    "i18n" to ctx.i18n,
-                    "isAdmin" to authIsAdmin(req),
                 ),
             ),
         )
@@ -529,21 +469,12 @@ class PageHandler(
                 ?.takeIf { it.isNotBlank() }
                 ?: return Response(Status.NOT_FOUND)
         val sharedBook = svc.getPublicBook(token) ?: return Response(Status.NOT_FOUND)
-        val ctx = WebContext(req)
-        val (username, gravatarHash) = userDisplayInfo(userId)
+        val pc = pageContext(req)
         return htmlOk(
             templateRenderer.render(
                 "shared-book.kte",
-                mapOf(
+                pc.toMap(
                     "sharedBook" to sharedBook,
-                    "username" to username,
-                    "gravatarHash" to gravatarHash,
-                    "themeCss" to ctx.themeCss,
-                    "currentTheme" to ctx.theme,
-                    "lang" to ctx.lang,
-                    "themes" to ThemeCatalog.allThemes(),
-                    "i18n" to ctx.i18n,
-                    "isAdmin" to authIsAdmin(req),
                 ),
             ),
         )
@@ -551,45 +482,26 @@ class PageHandler(
 
     fun activity(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
-        val ctx = WebContext(req)
-        val (username, gravatarHash) = userDisplayInfo(userId)
+        val pc = pageContext(req)
         return htmlOk(
             templateRenderer.render(
                 "activity.kte",
-                mapOf(
-                    "username" to username,
-                    "gravatarHash" to gravatarHash,
-                    "themeCss" to ctx.themeCss,
-                    "currentTheme" to ctx.theme,
-                    "lang" to ctx.lang,
-                    "themes" to ThemeCatalog.allThemes(),
-                    "i18n" to ctx.i18n,
-                    "isAdmin" to authIsAdmin(req),
-                ),
+                pc.toMap(),
             ),
         )
     }
 
     fun analytics(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
-        val ctx = WebContext(req)
-        val (username, gravatarHash) = userDisplayInfo(userId)
+        val pc = pageContext(req)
         val summary = analyticsService.getSummary(userId)
         val recentSessions = readingSessionService?.getRecentSessions(userId, 20) ?: emptyList()
         return htmlOk(
             templateRenderer.render(
                 "analytics.kte",
-                mapOf(
-                    "username" to username,
-                    "gravatarHash" to gravatarHash,
+                pc.toMap(
                     "summary" to summary,
                     "recentSessions" to recentSessions,
-                    "themeCss" to ctx.themeCss,
-                    "currentTheme" to ctx.theme,
-                    "lang" to ctx.lang,
-                    "themes" to ThemeCatalog.allThemes(),
-                    "i18n" to ctx.i18n,
-                    "isAdmin" to authIsAdmin(req),
                 ),
             ),
         )
@@ -846,8 +758,7 @@ class PageHandler(
     /** GET /queue — Want to Read books across all libraries, sorted by date added */
     fun queue(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
-        val ctx = WebContext(req)
-        val (username, gravatarHash) = userDisplayInfo(userId)
+        val pc = pageContext(req)
         val page = req.query("page")?.toIntOrNull() ?: 1
         val result =
             bookService.getBooks(
@@ -862,19 +773,11 @@ class PageHandler(
         return htmlOk(
             templateRenderer.render(
                 "queue.kte",
-                mapOf(
-                    "username" to username,
-                    "gravatarHash" to gravatarHash,
+                pc.toMap(
                     "books" to result.getBooks(),
                     "total" to result.total,
                     "currentPage" to result.page,
                     "totalPages" to totalPages,
-                    "themeCss" to ctx.themeCss,
-                    "currentTheme" to ctx.theme,
-                    "lang" to ctx.lang,
-                    "themes" to ThemeCatalog.allThemes(),
-                    "i18n" to ctx.i18n,
-                    "isAdmin" to authIsAdmin(req),
                 ),
             ),
         )
@@ -883,22 +786,13 @@ class PageHandler(
     /** GET /authors — list all authors for the user */
     fun authorList(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
-        val ctx = WebContext(req)
-        val (username, gravatarHash) = userDisplayInfo(userId)
+        val pc = pageContext(req)
         val authors = bookService.getAuthors(userId)
         return htmlOk(
             templateRenderer.render(
                 "author-list.kte",
-                mapOf(
-                    "username" to username,
-                    "gravatarHash" to gravatarHash,
+                pc.toMap(
                     "authors" to authors,
-                    "themeCss" to ctx.themeCss,
-                    "currentTheme" to ctx.theme,
-                    "lang" to ctx.lang,
-                    "themes" to ThemeCatalog.allThemes(),
-                    "i18n" to ctx.i18n,
-                    "isAdmin" to authIsAdmin(req),
                 ),
             ),
         )
@@ -907,8 +801,7 @@ class PageHandler(
     /** GET /authors/{name} — books by a specific author */
     fun author(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
-        val ctx = WebContext(req)
-        val (username, gravatarHash) = userDisplayInfo(userId)
+        val pc = pageContext(req)
         val name =
             req
                 .lastPathSegment()
@@ -918,17 +811,9 @@ class PageHandler(
         return htmlOk(
             templateRenderer.render(
                 "author.kte",
-                mapOf(
-                    "username" to username,
-                    "gravatarHash" to gravatarHash,
+                pc.toMap(
                     "authorName" to name,
                     "books" to books,
-                    "themeCss" to ctx.themeCss,
-                    "currentTheme" to ctx.theme,
-                    "lang" to ctx.lang,
-                    "themes" to ThemeCatalog.allThemes(),
-                    "i18n" to ctx.i18n,
-                    "isAdmin" to authIsAdmin(req),
                 ),
             ),
         )
@@ -937,22 +822,13 @@ class PageHandler(
     /** GET /series — list all series for the user */
     fun seriesList(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
-        val ctx = WebContext(req)
-        val (username, gravatarHash) = userDisplayInfo(userId)
+        val pc = pageContext(req)
         val series = bookService.getSeries(userId)
         return htmlOk(
             templateRenderer.render(
                 "series-list.kte",
-                mapOf(
-                    "username" to username,
-                    "gravatarHash" to gravatarHash,
+                pc.toMap(
                     "series" to series,
-                    "themeCss" to ctx.themeCss,
-                    "currentTheme" to ctx.theme,
-                    "lang" to ctx.lang,
-                    "themes" to ThemeCatalog.allThemes(),
-                    "i18n" to ctx.i18n,
-                    "isAdmin" to authIsAdmin(req),
                 ),
             ),
         )
@@ -961,8 +837,7 @@ class PageHandler(
     /** GET /series/{name} — books in a specific series */
     fun series(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
-        val ctx = WebContext(req)
-        val (username, gravatarHash) = userDisplayInfo(userId)
+        val pc = pageContext(req)
         val name =
             req
                 .lastPathSegment()
@@ -972,17 +847,9 @@ class PageHandler(
         return htmlOk(
             templateRenderer.render(
                 "series.kte",
-                mapOf(
-                    "username" to username,
-                    "gravatarHash" to gravatarHash,
+                pc.toMap(
                     "seriesName" to name,
                     "books" to books,
-                    "themeCss" to ctx.themeCss,
-                    "currentTheme" to ctx.theme,
-                    "lang" to ctx.lang,
-                    "themes" to ThemeCatalog.allThemes(),
-                    "i18n" to ctx.i18n,
-                    "isAdmin" to authIsAdmin(req),
                 ),
             ),
         )
@@ -991,22 +858,13 @@ class PageHandler(
     /** GET /tags — list all tags for the user */
     fun tagList(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
-        val ctx = WebContext(req)
-        val (username, gravatarHash) = userDisplayInfo(userId)
+        val pc = pageContext(req)
         val tags = bookService.getTagsWithCounts(userId)
         return htmlOk(
             templateRenderer.render(
                 "tag-list.kte",
-                mapOf(
-                    "username" to username,
-                    "gravatarHash" to gravatarHash,
+                pc.toMap(
                     "tags" to tags,
-                    "themeCss" to ctx.themeCss,
-                    "currentTheme" to ctx.theme,
-                    "lang" to ctx.lang,
-                    "themes" to ThemeCatalog.allThemes(),
-                    "i18n" to ctx.i18n,
-                    "isAdmin" to authIsAdmin(req),
                 ),
             ),
         )
@@ -1015,8 +873,7 @@ class PageHandler(
     /** GET /tags/{name} — books with a specific tag */
     fun tag(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
-        val ctx = WebContext(req)
-        val (username, gravatarHash) = userDisplayInfo(userId)
+        val pc = pageContext(req)
         val name =
             req
                 .lastPathSegment()
@@ -1026,17 +883,9 @@ class PageHandler(
         return htmlOk(
             templateRenderer.render(
                 "tag.kte",
-                mapOf(
-                    "username" to username,
-                    "gravatarHash" to gravatarHash,
+                pc.toMap(
                     "tagName" to name,
                     "books" to books,
-                    "themeCss" to ctx.themeCss,
-                    "currentTheme" to ctx.theme,
-                    "lang" to ctx.lang,
-                    "themes" to ThemeCatalog.allThemes(),
-                    "i18n" to ctx.i18n,
-                    "isAdmin" to authIsAdmin(req),
                 ),
             ),
         )

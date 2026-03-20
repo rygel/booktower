@@ -210,6 +210,8 @@ fun buildTestApp(
     val adminHandler =
         AdminHandler(
             adminService,
+            jwt,
+            auth,
             TestFixture.templateRenderer,
             passwordResetService,
             seedService,
