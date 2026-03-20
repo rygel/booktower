@@ -1,0 +1,32 @@
+app:
+  name: BookTower
+  host: 0.0.0.0
+  port: 9999
+
+  csrf:
+    allowedHosts:
+      - localhost
+      - 127.0.0.1
+      - 0.0.0.0
+
+  database:
+    url: "jdbc:h2:mem:booktower-test;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1"
+    username: sa
+    password: ""
+    driver: org.h2.Driver
+
+  security:
+    jwtSecret: "test-secret-key-not-for-production"
+    jwtIssuer: booktower
+    sessionTimeout: 86400
+
+  storage:
+    booksPath: "./data/test-books"
+    coversPath: "./data/test-covers"
+    tempPath: "./data/test-temp"
+
+  weblate:
+    url: ""
+    apiToken: ""
+    component: "booktower/translations"
+    enabled: false

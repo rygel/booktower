@@ -90,18 +90,41 @@ import org.booktower.services.TelemetryService
 import org.booktower.services.UserPermissionsService
 import org.booktower.services.UserSettingsService
 import org.booktower.weblate.WeblateHandler
+import org.http4k.client.JavaHttpClient
 import org.http4k.core.HttpHandler
 import org.http4k.core.Method
 import org.http4k.core.Request
+import org.http4k.core.Uri
 import org.http4k.core.then
 import org.junit.jupiter.api.BeforeEach
 
 abstract class IntegrationTestBase {
     protected lateinit var app: HttpHandler
 
+    companion object {
+        /** Set via -De2e.baseUrl=http://localhost:9999 to run tests against an external instance. */
+        fun externalBaseUrl(): String? = System.getProperty("e2e.baseUrl")?.takeIf { it.isNotBlank() }
+
+        fun isExternal(): Boolean = externalBaseUrl() != null
+    }
+
     @BeforeEach
     open fun setupApp() {
-        app = buildApp()
+        val baseUrl = externalBaseUrl()
+        app =
+            if (baseUrl != null) {
+                createExternalClient(baseUrl)
+            } else {
+                buildApp()
+            }
+    }
+
+    private fun createExternalClient(baseUrl: String): HttpHandler {
+        val client = JavaHttpClient()
+        return { req: Request ->
+            val targetUri = Uri.of(baseUrl + req.uri.path + (if (req.uri.query.isNotBlank()) "?${req.uri.query}" else ""))
+            client(req.uri(targetUri))
+        }
     }
 
     @Suppress("LongMethod")
@@ -140,7 +163,8 @@ abstract class IntegrationTestBase {
         val epubMetadataService = EpubMetadataService(jdbi, config.storage.coversPath)
         val comicService = ComicService()
         val goodreadsImportService = GoodreadsImportService(bookService)
-        val seedService = SeedService(bookService, libraryService, config.storage.coversPath, config.storage.booksPath)
+        val backgroundTaskService = org.booktower.services.BackgroundTaskService()
+        val seedService = SeedService(bookService, libraryService, config.storage.coversPath, config.storage.booksPath, backgroundTaskService)
         val userPermissionsService = UserPermissionsService(jdbi)
         val koboSyncService = KoboSyncService(jdbi, bookService, "http://localhost:9999", userSettingsService)
         val opdsCredentialsService = OpdsCredentialsService(jdbi)
@@ -166,7 +190,6 @@ abstract class IntegrationTestBase {
         val auditService = org.booktower.services.AuditService(jdbi, geoIpService)
         val oidcService = if (oidcForceOnly) OidcService(OidcConfig(enabled = true, forceOnlyMode = true)) else null
         val journalService = JournalService(jdbi)
-        val backgroundTaskService = org.booktower.services.BackgroundTaskService()
 
         // ── Handler objects ──────────────────────────────────────────────
         val authHandler =
@@ -189,6 +212,8 @@ abstract class IntegrationTestBase {
         val adminHandler =
             AdminHandler(
                 adminService,
+                jwtService,
+                authService,
                 TestFixture.templateRenderer,
                 passwordResetService,
                 seedService,
@@ -229,12 +254,14 @@ abstract class IntegrationTestBase {
         val bulkBookHandler = BulkBookHandler(bookService)
 
         // ── Shared filters ───────────────────────────────────────────────
-        val authFilter = jwtAuthFilter(jwtService) { userId: java.util.UUID -> authService.getUserById(userId) != null }
+        val userExistsCheck = { userId: java.util.UUID -> authService.getUserById(userId) != null }
+        val authFilter = jwtAuthFilter(jwtService, userExistsCheck)
         val filters =
             FilterSet(
                 auth = authFilter,
                 admin = authFilter.then(adminFilter()),
                 authRateLimit = RateLimitFilter(maxRequests = 10, windowSeconds = 60),
+                optionalAuth = org.booktower.filters.optionalAuthFilter(jwtService, userExistsCheck),
             )
 
         // ── Domain routers ───────────────────────────────────────────────

@@ -305,6 +305,78 @@ class AdminIntegrationTest : IntegrationTestBase() {
         )
     }
 
+    // ── Admin sidebar visibility on pages without auth filter ───────────
+
+    @Test
+    fun `admin sees admin link in sidebar on home page`() {
+        val token = registerAdminAndGetToken("sidebar1")
+        val body =
+            app(
+                Request(Method.GET, "/")
+                    .header("Cookie", "token=$token"),
+            ).bodyString()
+        assertTrue(
+            body.contains("href=\"/admin\""),
+            "Admin user should see admin link in sidebar on home page",
+        )
+    }
+
+    @Test
+    fun `admin sees admin link in sidebar on profile page`() {
+        val token = registerAdminAndGetToken("sidebar2")
+        val body =
+            app(
+                Request(Method.GET, "/profile")
+                    .header("Cookie", "token=$token"),
+            ).bodyString()
+        assertTrue(
+            body.contains("href=\"/admin\""),
+            "Admin user should see admin link in sidebar on profile page",
+        )
+    }
+
+    @Test
+    fun `admin sees admin link in sidebar on libraries page`() {
+        val token = registerAdminAndGetToken("sidebar3")
+        val body =
+            app(
+                Request(Method.GET, "/libraries")
+                    .header("Cookie", "token=$token"),
+            ).bodyString()
+        assertTrue(
+            body.contains("href=\"/admin\""),
+            "Admin user should see admin link in sidebar on libraries page",
+        )
+    }
+
+    @Test
+    fun `admin sees admin link in sidebar on downloads page`() {
+        val token = registerAdminAndGetToken("sidebar4")
+        val body =
+            app(
+                Request(Method.GET, "/downloads")
+                    .header("Cookie", "token=$token"),
+            ).bodyString()
+        assertTrue(
+            body.contains("href=\"/admin\""),
+            "Admin user should see admin link in sidebar on downloads page",
+        )
+    }
+
+    @Test
+    fun `non-admin does not see admin link in sidebar`() {
+        val token = registerAndGetToken("nonadminsidebar")
+        val body =
+            app(
+                Request(Method.GET, "/")
+                    .header("Cookie", "token=$token"),
+            ).bodyString()
+        assertFalse(
+            body.contains("href=\"/admin\""),
+            "Non-admin user should NOT see admin link in sidebar",
+        )
+    }
+
     @Test
     fun `admin cannot delete themselves`() {
         val adminToken = registerAdminAndGetToken()

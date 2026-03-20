@@ -114,8 +114,9 @@ class NotificationIntegrationTest : IntegrationTestBase() {
         val resp = app(Request(Method.GET, "/api/notifications/stream").header("Cookie", "token=$token"))
         assertEquals(Status.OK, resp.status)
         assertTrue(resp.header("Content-Type")?.contains("text/event-stream") == true)
-        val body = resp.bodyString()
-        assertTrue(body.contains("event: heartbeat"))
+        // Read only the initial batch (stream keeps connection open with heartbeats)
+        val body = readInitialSSEBatch(resp)
+        assertTrue(body.contains("event: heartbeat"), "Initial batch should contain heartbeat, got: $body")
     }
 
     @Test
@@ -124,9 +125,33 @@ class NotificationIntegrationTest : IntegrationTestBase() {
         publishDirect(token, "task.done", "Export complete")
 
         val resp = app(Request(Method.GET, "/api/notifications/stream").header("Cookie", "token=$token"))
-        val body = resp.bodyString()
-        assertTrue(body.contains("event: notification"))
-        assertTrue(body.contains("task.done"))
+        val body = readInitialSSEBatch(resp)
+        assertTrue(body.contains("event: notification"), "Stream should contain notification event, got: $body")
+        assertTrue(body.contains("task.done"), "Stream should contain task.done type, got: $body")
+    }
+
+    /**
+     * Reads the initial SSE batch from a streaming response.
+     * Reads until the first heartbeat event is complete, then stops.
+     */
+    private fun readInitialSSEBatch(resp: org.http4k.core.Response): String {
+        val stream = resp.body.stream
+        val buf = StringBuilder()
+        val deadline = System.currentTimeMillis() + 5_000
+        while (System.currentTimeMillis() < deadline) {
+            val available = stream.available()
+            if (available > 0) {
+                val bytes = ByteArray(available)
+                val read = stream.read(bytes)
+                if (read > 0) buf.append(String(bytes, 0, read))
+                // Stop after we've received the heartbeat (end of initial batch)
+                if (buf.contains("event: heartbeat\ndata: {}\n\n")) break
+            } else {
+                Thread.sleep(50)
+            }
+        }
+        stream.close()
+        return buf.toString()
     }
 
     @Test

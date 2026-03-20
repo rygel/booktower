@@ -13,6 +13,8 @@ data class FilterSet(
     val auth: Filter,
     val admin: Filter,
     val authRateLimit: Filter,
+    /** Sets auth headers when a valid token exists but does not reject guests. */
+    val optionalAuth: Filter,
 )
 
 /** Returns the handler if non-null, or a 503 SERVICE_UNAVAILABLE fallback. */

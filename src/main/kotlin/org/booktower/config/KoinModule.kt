@@ -3,6 +3,7 @@ package org.booktower.config
 import org.booktower.filters.RateLimitFilter
 import org.booktower.filters.adminFilter
 import org.booktower.filters.jwtAuthFilter
+import org.booktower.filters.optionalAuthFilter
 import org.booktower.handlers.AdminHandler
 import org.booktower.handlers.ApiTokenHandler
 import org.booktower.handlers.AppHandler
@@ -228,16 +229,18 @@ val appModule =
         single { UserSettingsHandler(get()) }
         single {
             AdminHandler(
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
+                get(), // adminService
+                get<JwtService>(),
+                get<AuthService>(),
+                get(), // templateRenderer
+                get(), // passwordResetService
+                get(), // seedService
+                get(), // emailService
                 get<AppConfig>().baseUrl,
-                get(),
-                get(),
-                get(),
-                get(),
+                get(), // duplicateDetectionService
+                get(), // auditService
+                get(), // userPermissionsService
+                get(), // libraryAccessService
                 get<org.booktower.services.ComicPageHashService>(),
             )
         }
@@ -258,6 +261,7 @@ val appModule =
                 get(),
                 getOrNull(),
                 getOrNull(),
+                get<BackgroundTaskService>(),
             )
         }
         single { BackgroundTaskHandler(get()) }
@@ -285,14 +289,15 @@ val appModule =
                     .maximumSize(1_000)
                     .expireAfterWrite(30, java.util.concurrent.TimeUnit.SECONDS)
                     .build<java.util.UUID, Boolean>()
-            val authFilter =
-                jwtAuthFilter(jwtService) { userId: java.util.UUID ->
-                    userExistsCache.get(userId) { authService.getUserById(it) != null }!!
-                }
+            val userExistsCheck = { userId: java.util.UUID ->
+                userExistsCache.get(userId) { authService.getUserById(it) != null }!!
+            }
+            val authFilter = jwtAuthFilter(jwtService, userExistsCheck)
             FilterSet(
                 auth = authFilter,
                 admin = authFilter.then(adminFilter()),
                 authRateLimit = RateLimitFilter(maxRequests = 10, windowSeconds = 60),
+                optionalAuth = optionalAuthFilter(jwtService, userExistsCheck),
             )
         }
 

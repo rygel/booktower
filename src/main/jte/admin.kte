@@ -1,24 +1,18 @@
-@import org.booktower.i18n.I18nService
-@import org.booktower.model.ThemeDefinition
 @import org.booktower.models.UserAdminDto
+@import org.booktower.web.PageContext
+@param pc: PageContext
 @param users: List<UserAdminDto>
 @param currentUserId: String
-@param themeCss: String
-@param currentTheme: String
-@param lang: String
-@param themes: List<ThemeDefinition>
-@param i18n: I18nService
-@param isAdmin: Boolean = false
 
-@template.components.layout(title="${i18n.translate("page.admin.title")} - BookTower", username=null, currentPage="admin",
-    themeCss=themeCss, currentTheme=currentTheme, lang=lang, themes=themes, i18n=i18n, searchQuery="", isAdmin=isAdmin, content = @`
+@template.components.layout(title="${pc.i18n.translate("page.admin.title")} - BookTower", pc=pc, currentPage="admin",
+    content = @`
 <div class="page-container">
 
     <div class="flex-center gap-md mb-3">
         <i class="ri-shield-user-line" style="font-size:1.5rem; color:var(--bt-accent-dim);"></i>
         <div>
-            <h1 class="page-title mb-0">${i18n.translate("page.admin.title")}</h1>
-            <p style="font-size:0.875rem; color:var(--bt-subtle);">${users.size} ${i18n.translate("label.users")}</p>
+            <h1 class="page-title mb-0">${pc.i18n.translate("page.admin.title")}</h1>
+            <p style="font-size:0.875rem; color:var(--bt-subtle);">${users.size} ${pc.i18n.translate("label.users")}</p>
         </div>
     </div>
 
@@ -26,11 +20,11 @@
         <table class="bt-table">
             <thead>
                 <tr>
-                    <th >${i18n.translate("field.username")}</th>
-                    <th >${i18n.translate("field.email")}</th>
-                    <th >${i18n.translate("label.added")}</th>
-                    <th style="text-align:center; padding:0.625rem 1rem; color:var(--bt-muted); font-weight:600; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em;">${i18n.translate("label.admin")}</th>
-                    <th style="text-align:right; padding:0.625rem 1rem; color:var(--bt-muted); font-weight:600; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em;">${i18n.translate("label.actions")}</th>
+                    <th >${pc.i18n.translate("field.username")}</th>
+                    <th >${pc.i18n.translate("field.email")}</th>
+                    <th >${pc.i18n.translate("label.added")}</th>
+                    <th style="text-align:center; padding:0.625rem 1rem; color:var(--bt-muted); font-weight:600; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em;">${pc.i18n.translate("label.admin")}</th>
+                    <th style="text-align:right; padding:0.625rem 1rem; color:var(--bt-muted); font-weight:600; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em;">${pc.i18n.translate("label.actions")}</th>
                 </tr>
             </thead>
             <tbody>
@@ -39,7 +33,7 @@
                     <td style="padding:0.875rem 1rem; color:var(--bt-text); font-weight:500;">
                         ${user.username}
                         @if(user.id == currentUserId)
-                        <span style="font-size:0.7rem; color:var(--bt-subtle); margin-left:0.375rem;">${i18n.translate("admin.user.you")}</span>
+                        <span style="font-size:0.7rem; color:var(--bt-subtle); margin-left:0.375rem;">${pc.i18n.translate("admin.user.you")}</span>
                         @endif
                     </td>
                     <td style="padding:0.875rem 1rem; color:var(--bt-muted);">${user.email}</td>
@@ -47,11 +41,11 @@
                     <td style="padding:0.875rem 1rem; text-align:center;">
                         @if(user.isAdmin)
                         <span style="display:inline-flex; align-items:center; gap:0.25rem; font-size:0.75rem; color:var(--bt-accent-dim); background:rgba(var(--bt-accent-rgb,100,108,255),0.1); padding:0.2rem 0.5rem; border-radius:0.375rem; font-weight:600;">
-                            <i class="ri-shield-check-line"></i> ${i18n.translate("label.admin")}
+                            <i class="ri-shield-check-line"></i> ${pc.i18n.translate("label.admin")}
                         </span>
                         @else
                         <span style="display:inline-flex; align-items:center; gap:0.25rem; font-size:0.75rem; color:var(--bt-subtle); background:var(--bt-surface); padding:0.2rem 0.5rem; border-radius:0.375rem;">
-                            <i class="ri-user-line"></i> ${i18n.translate("label.user")}
+                            <i class="ri-user-line"></i> ${pc.i18n.translate("label.user")}
                         </span>
                         @endif
                     </td>
@@ -66,7 +60,7 @@
                                 style="font-size:0.75rem; padding:0.3rem 0.625rem; border-radius:0.4rem; border:1px solid var(--bt-border-input); background:transparent; color:var(--bt-muted); cursor:pointer;"
                                 onmouseover="this.style.borderColor='var(--bt-accent-dim)';this.style.color='var(--bt-accent-dim)'"
                                 onmouseout="this.style.borderColor='var(--bt-border-input)';this.style.color='var(--bt-muted)'">
-                                <i class="ri-arrow-down-line"></i> ${i18n.translate("admin.user.demote")}
+                                <i class="ri-arrow-down-line"></i> ${pc.i18n.translate("admin.user.demote")}
                             </button>
                             @else
                             <button
@@ -74,16 +68,16 @@
                                 hx-target="#user-row-${user.id}"
                                 hx-swap="none"
                                 class="btn-outline">
-                                <i class="ri-arrow-up-line"></i> ${i18n.translate("admin.user.promote")}
+                                <i class="ri-arrow-up-line"></i> ${pc.i18n.translate("admin.user.promote")}
                             </button>
                             @endif
                             <button
                                 hx-delete="/api/admin/users/${user.id}"
                                 hx-target="#user-row-${user.id}"
                                 hx-swap="outerHTML"
-                                hx-confirm="${i18n.translate("admin.user.delete.confirm")}"
+                                hx-confirm="${pc.i18n.translate("admin.user.delete.confirm")}"
                                 class="btn-outline btn-danger">
-                                <i class="ri-delete-bin-line"></i> ${i18n.translate("action.delete")}
+                                <i class="ri-delete-bin-line"></i> ${pc.i18n.translate("action.delete")}
                             </button>
                         </div>
                         @endif
@@ -99,9 +93,9 @@
     <div style="margin-top:2.5rem; padding:1.5rem; background:var(--bt-surface); border:2px solid var(--bt-accent); border-radius:0.75rem;">
         <h2 style="font-size:1rem; font-weight:600; color:var(--bt-text); margin:0 0 0.375rem; display:flex; align-items:center; gap:0.5rem;">
             <i class="ri-magic-line" style="color:var(--bt-accent-dim);"></i>
-            ${i18n.translate("admin.seed.full-demo.title")}
+            ${pc.i18n.translate("admin.seed.full-demo.title")}
         </h2>
-        <p style="font-size:0.8rem; color:var(--bt-subtle); margin:0 0 1rem;">${i18n.translate("admin.seed.full-demo.hint")}</p>
+        <p style="font-size:0.8rem; color:var(--bt-subtle); margin:0 0 1rem;">${pc.i18n.translate("admin.seed.full-demo.hint")}</p>
         <button
             hx-post="/admin/seed/full-demo"
             hx-swap="none"
@@ -109,7 +103,7 @@
             style="display:inline-flex; align-items:center; gap:0.5rem; font-size:0.875rem; padding:0.5rem 1.25rem; border-radius:0.5rem; border:1px solid var(--bt-accent-dim); background:var(--bt-accent); color:#fff; cursor:pointer; font-weight:500;"
             onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
             <i class="ri-magic-line"></i>
-            ${i18n.translate("admin.seed.full-demo.button")}
+            ${pc.i18n.translate("admin.seed.full-demo.button")}
             <span id="seed-demo-spinner" class="htmx-indicator" style="font-size:0.75rem; opacity:0.8;">...</span>
         </button>
     </div>
@@ -118,9 +112,9 @@
     <div style="margin-top:1.5rem; padding:1.5rem; background:var(--bt-surface); border:1px solid var(--bt-border); border-radius:0.75rem;">
         <h2 style="font-size:1rem; font-weight:600; color:var(--bt-text); margin:0 0 0.375rem; display:flex; align-items:center; gap:0.5rem;">
             <i class="ri-seedling-line" style="color:var(--bt-accent-dim);"></i>
-            ${i18n.translate("admin.seed.title")}
+            ${pc.i18n.translate("admin.seed.title")}
         </h2>
-        <p style="font-size:0.8rem; color:var(--bt-subtle); margin:0 0 1rem;">${i18n.translate("admin.seed.hint")}</p>
+        <p style="font-size:0.8rem; color:var(--bt-subtle); margin:0 0 1rem;">${pc.i18n.translate("admin.seed.hint")}</p>
         <button
             hx-post="/admin/seed"
             hx-swap="none"
@@ -128,7 +122,7 @@
             style="display:inline-flex; align-items:center; gap:0.5rem; font-size:0.875rem; padding:0.5rem 1.25rem; border-radius:0.5rem; border:1px solid var(--bt-accent-dim); background:var(--bt-accent); color:#fff; cursor:pointer; font-weight:500;"
             onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
             <i class="ri-seedling-line"></i>
-            ${i18n.translate("admin.seed.button")}
+            ${pc.i18n.translate("admin.seed.button")}
             <span id="seed-spinner" class="htmx-indicator" style="font-size:0.75rem; opacity:0.8;">…</span>
         </button>
     </div>
@@ -137,9 +131,9 @@
     <div style="margin-top:1.5rem; padding:1.5rem; background:var(--bt-surface); border:1px solid var(--bt-border); border-radius:0.75rem;">
         <h2 style="font-size:1rem; font-weight:600; color:var(--bt-text); margin:0 0 0.375rem; display:flex; align-items:center; gap:0.5rem;">
             <i class="ri-book-download-line" style="color:var(--bt-accent-dim);"></i>
-            ${i18n.translate("admin.seed.files.title")}
+            ${pc.i18n.translate("admin.seed.files.title")}
         </h2>
-        <p style="font-size:0.8rem; color:var(--bt-subtle); margin:0 0 1rem;">${i18n.translate("admin.seed.files.hint")}</p>
+        <p style="font-size:0.8rem; color:var(--bt-subtle); margin:0 0 1rem;">${pc.i18n.translate("admin.seed.files.hint")}</p>
         <button
             hx-post="/admin/seed/files"
             hx-swap="none"
@@ -147,7 +141,7 @@
             style="display:inline-flex; align-items:center; gap:0.5rem; font-size:0.875rem; padding:0.5rem 1.25rem; border-radius:0.5rem; border:1px solid var(--bt-accent-dim); background:var(--bt-accent); color:#fff; cursor:pointer; font-weight:500;"
             onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
             <i class="ri-download-line"></i>
-            ${i18n.translate("admin.seed.files.button")}
+            ${pc.i18n.translate("admin.seed.files.button")}
             <span id="seed-files-spinner" class="htmx-indicator" style="font-size:0.75rem; opacity:0.8;">…</span>
         </button>
     </div>
@@ -156,9 +150,9 @@
     <div style="margin-top:1.5rem; padding:1.5rem; background:var(--bt-surface); border:1px solid var(--bt-border); border-radius:0.75rem;">
         <h2 style="font-size:1rem; font-weight:600; color:var(--bt-text); margin:0 0 0.375rem; display:flex; align-items:center; gap:0.5rem;">
             <i class="ri-headphone-line" style="color:var(--bt-accent-dim);"></i>
-            ${i18n.translate("admin.seed.librivox.title")}
+            ${pc.i18n.translate("admin.seed.librivox.title")}
         </h2>
-        <p style="font-size:0.8rem; color:var(--bt-subtle); margin:0 0 1rem;">${i18n.translate("admin.seed.librivox.hint")}</p>
+        <p style="font-size:0.8rem; color:var(--bt-subtle); margin:0 0 1rem;">${pc.i18n.translate("admin.seed.librivox.hint")}</p>
         <button
             hx-post="/admin/seed/librivox"
             hx-swap="none"
@@ -166,7 +160,7 @@
             style="display:inline-flex; align-items:center; gap:0.5rem; font-size:0.875rem; padding:0.5rem 1.25rem; border-radius:0.5rem; border:1px solid var(--bt-accent-dim); background:var(--bt-accent); color:#fff; cursor:pointer; font-weight:500;"
             onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
             <i class="ri-headphone-line"></i>
-            ${i18n.translate("admin.seed.librivox.button")}
+            ${pc.i18n.translate("admin.seed.librivox.button")}
             <span id="seed-librivox-spinner" class="htmx-indicator" style="font-size:0.75rem; opacity:0.8;">…</span>
         </button>
     </div>
@@ -175,9 +169,9 @@
     <div style="margin-top:1.5rem; padding:1.5rem; background:var(--bt-surface); border:1px solid var(--bt-border); border-radius:0.75rem;">
         <h2 style="font-size:1rem; font-weight:600; color:var(--bt-text); margin:0 0 0.375rem; display:flex; align-items:center; gap:0.5rem;">
             <i class="ri-image-line" style="color:var(--bt-accent-dim);"></i>
-            ${i18n.translate("admin.seed.comics.title")}
+            ${pc.i18n.translate("admin.seed.comics.title")}
         </h2>
-        <p style="font-size:0.8rem; color:var(--bt-subtle); margin:0 0 1rem;">${i18n.translate("admin.seed.comics.hint")}</p>
+        <p style="font-size:0.8rem; color:var(--bt-subtle); margin:0 0 1rem;">${pc.i18n.translate("admin.seed.comics.hint")}</p>
         <button
             hx-post="/admin/seed/comics"
             hx-swap="none"
@@ -185,7 +179,7 @@
             style="display:inline-flex; align-items:center; gap:0.5rem; font-size:0.875rem; padding:0.5rem 1.25rem; border-radius:0.5rem; border:1px solid var(--bt-accent-dim); background:var(--bt-accent); color:#fff; cursor:pointer; font-weight:500;"
             onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
             <i class="ri-image-line"></i>
-            ${i18n.translate("admin.seed.comics.button")}
+            ${pc.i18n.translate("admin.seed.comics.button")}
             <span id="seed-comics-spinner" class="htmx-indicator" style="font-size:0.75rem; opacity:0.8;">...</span>
         </button>
     </div>
@@ -194,16 +188,16 @@
     <div style="margin-top:3rem; padding:1.5rem; background:rgba(243,139,168,0.05); border:2px solid var(--bt-danger); border-radius:0.75rem;">
         <h2 style="font-size:1rem; font-weight:600; color:var(--bt-danger); margin:0 0 0.375rem; display:flex; align-items:center; gap:0.5rem;">
             <i class="ri-error-warning-line"></i>
-            ${i18n.translate("admin.danger.title")}
+            ${pc.i18n.translate("admin.danger.title")}
         </h2>
-        <p style="font-size:0.8rem; color:var(--bt-subtle); margin:0 0 1rem;">${i18n.translate("admin.danger.reset.hint")}</p>
+        <p style="font-size:0.8rem; color:var(--bt-subtle); margin:0 0 1rem;">${pc.i18n.translate("admin.danger.reset.hint")}</p>
         <button id="reset-db-btn"
             onclick="if(prompt('Type RESET to confirm deleting ALL data:') === 'RESET') { htmx.ajax('POST', '/admin/reset-database', {target:'#reset-db-btn', swap:'none'}); }"
             style="display:inline-flex; align-items:center; gap:0.5rem; font-size:0.875rem; padding:0.5rem 1.25rem; border-radius:0.5rem; border:2px solid var(--bt-danger); background:transparent; color:var(--bt-danger); cursor:pointer; font-weight:600;"
             onmouseover="this.style.background='var(--bt-danger)';this.style.color='#fff'"
             onmouseout="this.style.background='transparent';this.style.color='var(--bt-danger)'">
             <i class="ri-delete-bin-line"></i>
-            ${i18n.translate("admin.danger.reset.button")}
+            ${pc.i18n.translate("admin.danger.reset.button")}
         </button>
     </div>
 
@@ -211,9 +205,9 @@
     <div style="margin-top:2.5rem;">
         <h2 style="font-size:1rem; font-weight:600; color:var(--bt-text); margin-bottom:0.75rem; display:flex; align-items:center; gap:0.5rem;">
             <i class="ri-key-2-line" style="color:var(--bt-accent-dim);"></i>
-            ${i18n.translate("admin.reset.tokens.title")}
+            ${pc.i18n.translate("admin.reset.tokens.title")}
         </h2>
-        <p style="font-size:0.8rem; color:var(--bt-subtle); margin-bottom:1rem;">${i18n.translate("admin.reset.tokens.hint")}</p>
+        <p style="font-size:0.8rem; color:var(--bt-subtle); margin-bottom:1rem;">${pc.i18n.translate("admin.reset.tokens.hint")}</p>
         <div id="reset-tokens-table" style="overflow-x:auto;">
             <p id="reset-tokens-loading" style="font-size:0.875rem; color:var(--bt-faint);">…</p>
         </div>
@@ -231,14 +225,14 @@
             var tokens = await resp.json();
             var container = document.getElementById('reset-tokens-table');
             if (!tokens || tokens.length === 0) {
-                container.innerHTML = '<p style="font-size:0.875rem; color:var(--bt-faint);">${i18n.translate("admin.reset.tokens.empty")}</p>';
+                container.innerHTML = '<p style="font-size:0.875rem; color:var(--bt-faint);">${pc.i18n.translate("admin.reset.tokens.empty")}</p>';
                 return;
             }
             var html = '<table style="width:100%; border-collapse:collapse; font-size:0.875rem;">' +
                 '<thead><tr style="border-bottom:2px solid var(--bt-border);">' +
-                '<th style="text-align:left; padding:0.5rem 1rem; color:var(--bt-muted); font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em;">${i18n.translate("admin.reset.tokens.user")}</th>' +
+                '<th style="text-align:left; padding:0.5rem 1rem; color:var(--bt-muted); font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em;">${pc.i18n.translate("admin.reset.tokens.user")}</th>' +
                 '<th style="text-align:left; padding:0.5rem 1rem; color:var(--bt-muted); font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em;">Token ID</th>' +
-                '<th style="text-align:left; padding:0.5rem 1rem; color:var(--bt-muted); font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em;">${i18n.translate("admin.reset.tokens.expires")}</th>' +
+                '<th style="text-align:left; padding:0.5rem 1rem; color:var(--bt-muted); font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em;">${pc.i18n.translate("admin.reset.tokens.expires")}</th>' +
                 '</tr></thead><tbody>';
             tokens.forEach(function(t) {
                 html += '<tr style="border-bottom:1px solid var(--bt-border);">' +

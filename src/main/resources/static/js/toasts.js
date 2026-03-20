@@ -7,8 +7,13 @@
         var icon = type === 'success' ? 'ri-checkbox-circle-line'
                  : type === 'error'   ? 'ri-error-warning-line'
                  :                      'ri-information-line';
-        var safe = message.replace(/&/g, '&amp;').replace(/</g, '&lt;');
-        toast.innerHTML = '<i class="' + icon + '" style="font-size:1rem;"></i><span>' + safe + '</span>';
+        var iconEl = document.createElement('i');
+        iconEl.className = icon;
+        iconEl.style.fontSize = '1rem';
+        var textEl = document.createElement('span');
+        textEl.textContent = message;
+        toast.appendChild(iconEl);
+        toast.appendChild(textEl);
         container.appendChild(toast);
         setTimeout(function () { toast.remove(); }, 3500);
     }

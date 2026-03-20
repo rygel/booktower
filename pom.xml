@@ -86,7 +86,7 @@
         <commons-csv.version>1.14.1</commons-csv.version>
         <commons-io.version>2.21.0</commons-io.version>
         <junrar.version>7.5.8</junrar.version>
-        <typesafe-config.version>1.4.6</typesafe-config.version>
+        <hoplite.version>2.9.0</hoplite.version>
         <koin.version>4.2.0</koin.version>
         <simplejavamail.version>8.12.6</simplejavamail.version>
         <greenmail.version>2.1.8</greenmail.version>
@@ -201,9 +201,9 @@
                 <version>${http4k.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.typesafe</groupId>
-                <artifactId>config</artifactId>
-                <version>${typesafe-config.version}</version>
+                <groupId>com.sksamuel.hoplite</groupId>
+                <artifactId>hoplite-yaml</artifactId>
+                <version>${hoplite.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.auth0</groupId>
@@ -278,9 +278,19 @@
             <version>${kotlin-logging.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.typesafe</groupId>
-            <artifactId>config</artifactId>
-            <version>${typesafe-config.version}</version>
+            <groupId>com.sksamuel.hoplite</groupId>
+            <artifactId>hoplite-yaml</artifactId>
+            <version>${hoplite.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.jetbrains.kotlin</groupId>
+                    <artifactId>kotlin-stdlib-jdk7</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.jetbrains.kotlin</groupId>
+                    <artifactId>kotlin-stdlib-jdk8</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.jdbi</groupId>
@@ -532,7 +542,7 @@
                 <version>${maven-surefire-plugin.version}</version>
                 <configuration>
                     <argLine>-Dapp.name=booktower-test</argLine>
-                    <excludedGroups>browser</excludedGroups>
+                    <excludedGroups>browser,e2e-network</excludedGroups>
                 </configuration>
             </plugin>
 
@@ -936,6 +946,68 @@
     </build>
 
     <profiles>
+        <!-- E2E tests against an external instance (native binary, Docker, etc.)
+             Usage: mvn test -P e2e-external -De2e.baseUrl=http://localhost:9999 -->
+        <profile>
+            <id>e2e-external</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <version>${maven-surefire-plugin.version}</version>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <e2e.baseUrl>${e2e.baseUrl}</e2e.baseUrl>
+                            </systemPropertyVariables>
+                            <!-- Exclude tests that need direct DB access -->
+                            <excludes>
+                                <exclude>**/AdminIntegrationTest.java</exclude>
+                                <exclude>**/AlternativeCoverIntegrationTest.java</exclude>
+                                <exclude>**/AuditIntegrationTest.java</exclude>
+                                <exclude>**/AuthorMetadataIntegrationTest.java</exclude>
+                                <exclude>**/BackgroundTaskIntegrationTest.java</exclude>
+                                <exclude>**/BookDeliveryIntegrationTest.java</exclude>
+                                <exclude>**/BookDropIntegrationTest.java</exclude>
+                                <exclude>**/BulkOperationsIntegrationTest.java</exclude>
+                                <exclude>**/ComicPageHashIntegrationTest.java</exclude>
+                                <exclude>**/DuplicateDetectionIntegrationTest.java</exclude>
+                                <exclude>**/EmailProviderIntegrationTest.java</exclude>
+                                <exclude>**/EpubMetadataIntegrationTest.java</exclude>
+                                <exclude>**/FilenameMetadataIntegrationTest.java</exclude>
+                                <exclude>**/FontIntegrationTest.java</exclude>
+                                <exclude>**/FtsIntegrationTest.java</exclude>
+                                <exclude>**/GeoIpAuditIntegrationTest.java</exclude>
+                                <exclude>**/GoodreadsImportIntegrationTest.java</exclude>
+                                <exclude>**/JournalIntegrationTest.java</exclude>
+                                <exclude>**/KOReaderSyncIntegrationTest.java</exclude>
+                                <exclude>**/KoboSyncIntegrationTest.java</exclude>
+                                <exclude>**/LibraryAccessIntegrationTest.java</exclude>
+                                <exclude>**/LibraryHealthIntegrationTest.java</exclude>
+                                <exclude>**/NotificationIntegrationTest.java</exclude>
+                                <exclude>**/RatingFilterIntegrationTest.java</exclude>
+                                <exclude>**/ReaderPreferencesIntegrationTest.java</exclude>
+                                <exclude>**/RecommendationIntegrationTest.java</exclude>
+                                <exclude>**/RoundTripIntegrationTest.java</exclude>
+                                <exclude>**/ScheduledTaskIntegrationTest.java</exclude>
+                                <exclude>**/SeedIntegrationTest.java</exclude>
+                                <exclude>**/SidecarMetadataIntegrationTest.java</exclude>
+                                <exclude>**/TelemetryIntegrationTest.java</exclude>
+                                <exclude>**/UserManagementE2ETest.java</exclude>
+                                <exclude>**/UserPermissionsIntegrationTest.java</exclude>
+                                <exclude>**/WeblateIntegrationTest.java</exclude>
+                                <!-- Also exclude browser tests (need Playwright) -->
+                                <exclude>**/browser/**</exclude>
+                                <!-- Exclude unit tests (they don't use app) -->
+                                <exclude>**/services/**</exclude>
+                                <exclude>**/handlers/**</exclude>
+                                <exclude>**/i18n/**</exclude>
+                            </excludes>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
         <!-- i18n validation: mvn verify -P i18n-check (local only, requires i18n-tools installed) -->
         <profile>
             <id>i18n-check</id>
@@ -1103,6 +1175,25 @@
                                 </configuration>
                             </execution>
                         </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>e2e-network-tests</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <version>${maven-surefire-plugin.version}</version>
+                        <configuration>
+                            <argLine>-Dapp.name=booktower-test</argLine>
+                            <excludedGroups combine.self="override"></excludedGroups>
+                            <groups>e2e-network</groups>
+                            <forkedProcessTimeoutInSeconds>600</forkedProcessTimeoutInSeconds>
+                        </configuration>
                     </plugin>
                 </plugins>
             </build>
