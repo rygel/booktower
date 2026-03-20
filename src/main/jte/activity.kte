@@ -1,20 +1,13 @@
-@import org.booktower.i18n.I18nService
-@import org.booktower.model.ThemeDefinition
-@param username: String?
-@param gravatarHash: String = ""
-@param themeCss: String
-@param currentTheme: String
-@param lang: String
-@param themes: List<ThemeDefinition>
-@param i18n: I18nService
-@param isAdmin: Boolean = false
+@import org.booktower.web.PageContext
+@param pc: PageContext
 
-@template.components.layout(title="${i18n.translate("page.activity.title")} - BookTower", username=username, gravatarHash=gravatarHash, currentPage="activity",
-    themeCss=themeCss, currentTheme=currentTheme, lang=lang, themes=themes, i18n=i18n, searchQuery="", isAdmin=isAdmin, content = @`
+
+@template.components.layout(title="${pc.i18n.translate("page.activity.title")} - BookTower", pc=pc, currentPage="activity",
+    content = @`
 <div class="page-container">
     <div class="flex-center gap-md mb-3">
         <i class="ri-history-line" style="font-size:1.5rem; color:var(--bt-accent-dim);"></i>
-        <h1 class="page-title mb-0">${i18n.translate("page.activity.title")}</h1>
+        <h1 class="page-title mb-0">${pc.i18n.translate("page.activity.title")}</h1>
     </div>
 
     <div id="activity-list" style="display:flex; flex-direction:column; gap:0.5rem;">

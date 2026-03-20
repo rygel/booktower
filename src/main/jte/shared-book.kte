@@ -1,24 +1,17 @@
-@import org.booktower.i18n.I18nService
-@import org.booktower.model.ThemeDefinition
 @import org.booktower.services.SharedBookDto
+@import org.booktower.web.PageContext
+@param pc: PageContext
 @param sharedBook: SharedBookDto
-@param username: String?
-@param gravatarHash: String = ""
-@param themeCss: String
-@param currentTheme: String
-@param lang: String
-@param themes: List<ThemeDefinition>
-@param i18n: I18nService
-@param isAdmin: Boolean = false
 
-@template.components.layout(title="${sharedBook.title} - BookTower", username=username, gravatarHash=gravatarHash, currentPage="",
-    themeCss=themeCss, currentTheme=currentTheme, lang=lang, themes=themes, i18n=i18n, searchQuery="", isAdmin=isAdmin, content = @`
+
+@template.components.layout(title="${sharedBook.title} - BookTower", pc=pc, currentPage="",
+    content = @`
 <div style="padding:2rem; max-width:42rem; margin:0 auto;">
 
     <!-- Shared indicator -->
     <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:1.5rem; font-size:0.8rem; color:var(--bt-accent-dim);">
         <i class="ri-share-line"></i>
-        <span>${i18n.translate("page.shared.book.label")}</span>
+        <span>${pc.i18n.translate("page.shared.book.label")}</span>
     </div>
 
     <div class="card" style="padding:1.5rem;">
@@ -45,7 +38,7 @@
 
                 <div style="display:flex; flex-wrap:wrap; gap:1rem; font-size:0.8rem; color:var(--bt-subtle); margin-bottom:1.25rem;">
                     @if(sharedBook.pageCount != null)
-                        <span><i class="ri-file-list-line"></i> ${sharedBook.pageCount} ${i18n.translate("label.pages")}</span>
+                        <span><i class="ri-file-list-line"></i> ${sharedBook.pageCount} ${pc.i18n.translate("label.pages")}</span>
                     @endif
                     @if(sharedBook.publisher != null)
                         <span><i class="ri-building-line"></i> ${sharedBook.publisher}</span>
@@ -63,7 +56,7 @@
 
                 @if(sharedBook.downloadUrl != null)
                     <a href="${sharedBook.downloadUrl}" class="btn-primary" style="display:inline-flex; align-items:center; gap:0.5rem; text-decoration:none;">
-                        <i class="ri-download-line"></i> ${i18n.translate("action.download")}
+                        <i class="ri-download-line"></i> ${pc.i18n.translate("action.download")}
                     </a>
                 @endif
             </div>

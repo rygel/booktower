@@ -84,9 +84,11 @@ data class PageContext(
                 .joinToString("") { "%02x".format(it) }
     }
 
-    /** Convert to a map for template rendering — merges with page-specific params. */
+    /** Convert to a map for template rendering — includes pc itself + page-specific params. */
     fun toMap(vararg extra: Pair<String, Any?>): Map<String, Any?> =
         mapOf(
+            "pc" to this,
+            // Keep individual fields for backward compat with templates not yet migrated
             "username" to username,
             "gravatarHash" to gravatarHash,
             "themeCss" to themeCss,

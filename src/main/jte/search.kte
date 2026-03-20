@@ -1,58 +1,51 @@
-@import org.booktower.i18n.I18nService
-@import org.booktower.model.ThemeDefinition
 @import org.booktower.models.BookDto
 @import org.booktower.models.ReadStatus
-@param username: String?
-@param gravatarHash: String = ""
+@import org.booktower.web.PageContext
+@param pc: PageContext
 @param query: String
 @param books: List<BookDto>
 @param total: Int
 @param currentStatus: String = "ALL"
 @param currentRating: Int = 0
 @param statusOptions: List<ReadStatus> = emptyList()
-@param themeCss: String
-@param currentTheme: String
-@param lang: String
-@param themes: List<ThemeDefinition>
-@param i18n: I18nService
-@param isAdmin: Boolean = false
 
-@template.components.layout(title="${i18n.translate("page.search.title")} - BookTower", username=username, gravatarHash=gravatarHash, currentPage="search",
-    themeCss=themeCss, currentTheme=currentTheme, lang=lang, themes=themes, i18n=i18n, searchQuery=query, isAdmin=isAdmin, content = @`
+
+@template.components.layout(title="${pc.i18n.translate("page.search.title")} - BookTower", pc=pc, currentPage="search",
+    searchQuery=query, content = @`
 <div class="page-container">
-    <h1 class="page-title">${i18n.translate("page.search.title")}</h1>
+    <h1 class="page-title">${pc.i18n.translate("page.search.title")}</h1>
 
     <form action="/search" method="get" class="flex-center gap-md mb-3" style="flex-wrap:wrap;">
         <input type="text" name="q" value="${query}" autofocus
-            placeholder="${i18n.translate("placeholder.search")}"
+            placeholder="${pc.i18n.translate("placeholder.search")}"
             style="flex:1; min-width:12rem; padding:0.75rem 1rem;">
         <select name="status">
-            <option value="ALL" selected="${currentStatus == "ALL"}">${i18n.translate("filter.all")}</option>
+            <option value="ALL" selected="${currentStatus == "ALL"}">${pc.i18n.translate("filter.all")}</option>
             @for(opt in statusOptions)
-                <option value="${opt.name}" selected="${opt.name == currentStatus}">${i18n.translate(opt.label)}</option>
+                <option value="${opt.name}" selected="${opt.name == currentStatus}">${pc.i18n.translate(opt.label)}</option>
             @endfor
         </select>
         <select name="rating">
-            <option value="0" selected="${currentRating == 0}">${i18n.translate("filter.all.ratings")}</option>
-            <option value="1" selected="${currentRating == 1}">\u2605 ${i18n.translate("filter.rating.andabove")}</option>
-            <option value="2" selected="${currentRating == 2}">\u2605\u2605 ${i18n.translate("filter.rating.andabove")}</option>
-            <option value="3" selected="${currentRating == 3}">\u2605\u2605\u2605 ${i18n.translate("filter.rating.andabove")}</option>
-            <option value="4" selected="${currentRating == 4}">\u2605\u2605\u2605\u2605 ${i18n.translate("filter.rating.andabove")}</option>
+            <option value="0" selected="${currentRating == 0}">${pc.i18n.translate("filter.all.ratings")}</option>
+            <option value="1" selected="${currentRating == 1}">\u2605 ${pc.i18n.translate("filter.rating.andabove")}</option>
+            <option value="2" selected="${currentRating == 2}">\u2605\u2605 ${pc.i18n.translate("filter.rating.andabove")}</option>
+            <option value="3" selected="${currentRating == 3}">\u2605\u2605\u2605 ${pc.i18n.translate("filter.rating.andabove")}</option>
+            <option value="4" selected="${currentRating == 4}">\u2605\u2605\u2605\u2605 ${pc.i18n.translate("filter.rating.andabove")}</option>
             <option value="5" selected="${currentRating == 5}">\u2605\u2605\u2605\u2605\u2605</option>
         </select>
         <button type="submit" class="btn-primary flex-center gap-sm" style="padding:0.75rem 1.5rem;">
-            <i class="ri-search-line"></i> ${i18n.translate("nav.search")}
+            <i class="ri-search-line"></i> ${pc.i18n.translate("nav.search")}
         </button>
     </form>
 
     @if(query.isNotBlank())
         <p class="text-sm text-subtle mb-2">
             @if(total == 0)
-                ${i18n.translate("page.search.no.results")} <strong style="color:var(--bt-text-dim);">${query}</strong>
+                ${pc.i18n.translate("page.search.no.results")} <strong style="color:var(--bt-text-dim);">${query}</strong>
             @elseif(total == 1)
-                ${i18n.translate("page.search.one.result")} <strong style="color:var(--bt-text-dim);">${query}</strong>
+                ${pc.i18n.translate("page.search.one.result")} <strong style="color:var(--bt-text-dim);">${query}</strong>
             @else
-                ${i18n.translate("page.search.many.results", total)} <strong style="color:var(--bt-text-dim);">${query}</strong>
+                ${pc.i18n.translate("page.search.many.results", total)} <strong style="color:var(--bt-text-dim);">${query}</strong>
             @endif
         </p>
     @endif
@@ -60,15 +53,15 @@
     @if(books.isNotEmpty())
         <div class="book-grid" style="grid-template-columns:repeat(auto-fill, minmax(150px, 1fr));">
             @for(book in books)
-                @template.components.bookCard(book=book, i18n=i18n)
+                @template.components.bookCard(book=book, i18n=pc.i18n)
             @endfor
         </div>
     @elseif(query.isNotBlank())
-        @template.components.emptyState(icon = "ri-search-line", message = i18n.translate("page.search.empty.title"), action = @`
-            <p class="text-sm text-subtle" style="margin-top:0.375rem;">${i18n.translate("page.search.empty.hint")}</p>
+        @template.components.emptyState(icon = "ri-search-line", message = pc.i18n.translate("page.search.empty.title"), action = @`
+            <p class="text-sm text-subtle" style="margin-top:0.375rem;">${pc.i18n.translate("page.search.empty.hint")}</p>
         `)
     @else
-        @template.components.emptyState(icon = "ri-search-line", message = i18n.translate("page.search.prompt"), action = @``)
+        @template.components.emptyState(icon = "ri-search-line", message = pc.i18n.translate("page.search.prompt"), action = @``)
     @endif
 </div>
 `)

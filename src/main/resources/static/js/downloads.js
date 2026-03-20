@@ -43,15 +43,25 @@
                 countEl.textContent = running.length;
                 countEl.style.display = running.length > 0 ? 'flex' : 'none';
 
-                listEl.innerHTML = all.map(function(t) {
+                listEl.textContent = '';
+                all.forEach(function(t) {
                     var icon = t.status === 'RUNNING' ? 'ri-loader-4-line' :
                                  t.status === 'DONE' ? 'ri-check-line' : 'ri-error-warning-line';
                     var color = t.status === 'RUNNING' ? 'var(--bt-accent)' :
                                   t.status === 'DONE' ? 'var(--bt-text)' : 'var(--bt-danger)';
-                    return '<div style="display:flex;align-items:center;gap:0.5rem;padding:0.375rem 0;font-size:0.75rem;color:' + color + ';">' +
-                        '<i class="' + icon + '" style="flex-shrink:0;' + (t.status === 'RUNNING' ? 'animation:bt-spin 1s linear infinite;' : '') + '"></i>' +
-                        '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + t.label + '</span></div>';
-                }).join('');
+                    var row = document.createElement('div');
+                    row.style.cssText = 'display:flex;align-items:center;gap:0.5rem;padding:0.375rem 0;font-size:0.75rem;color:' + color + ';';
+                    var iconEl = document.createElement('i');
+                    iconEl.className = icon;
+                    iconEl.style.flexShrink = '0';
+                    if (t.status === 'RUNNING') iconEl.style.animation = 'bt-spin 1s linear infinite';
+                    var label = document.createElement('span');
+                    label.style.cssText = 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+                    label.textContent = t.label;
+                    row.appendChild(iconEl);
+                    row.appendChild(label);
+                    listEl.appendChild(row);
+                });
 
                 var progressBar = document.getElementById('global-progress-bar');
                 if (progressBar) {

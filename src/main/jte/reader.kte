@@ -1,7 +1,7 @@
 @import org.booktower.i18n.I18nService
 @import org.booktower.models.BookDto
-@import org.booktower.models.BookmarkDto
 @import org.booktower.models.BookFileDto
+@import org.booktower.models.BookmarkDto
 @param book: BookDto
 @param bookmarks: List<BookmarkDto>
 @param readerType: String

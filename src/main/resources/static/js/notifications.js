@@ -55,19 +55,32 @@
     function renderList(items) {
         var list = document.getElementById('notif-list');
         if (!list) return;
+        list.textContent = '';
         if (items.length === 0) {
-            list.innerHTML = '<p style="font-size:0.78rem;color:var(--bt-muted);text-align:center;padding:1rem;">' + i18nNoNotifications + '</p>';
+            var empty = document.createElement('p');
+            empty.style.cssText = 'font-size:0.78rem;color:var(--bt-muted);text-align:center;padding:1rem;';
+            empty.textContent = i18nNoNotifications;
+            list.appendChild(empty);
             return;
         }
-        list.innerHTML = items.map(function (n) {
-            var safe = (n.title || '').replace(/&/g,'&amp;').replace(/</g,'&lt;');
-            var body = n.body ? '<span style="display:block;font-size:0.72rem;color:var(--bt-muted);margin-top:0.15rem;">' + n.body.replace(/&/g,'&amp;').replace(/</g,'&lt;') + '</span>' : '';
-            return '<div style="padding:0.5rem 0.625rem;border-radius:0.4rem;cursor:pointer;transition:background 0.12s;" '
-                 + 'onmouseover="this.style.background=\'var(--bt-bg)\'" onmouseout="this.style.background=\'\'" '
-                 + 'onclick="dismissNotif(\'' + n.id + '\',this)">'
-                 + '<span style="font-size:0.78rem;color:var(--bt-text);font-weight:500;">' + safe + '</span>' + body
-                 + '</div>';
-        }).join('');
+        items.forEach(function (n) {
+            var div = document.createElement('div');
+            div.style.cssText = 'padding:0.5rem 0.625rem;border-radius:0.4rem;cursor:pointer;transition:background 0.12s;';
+            div.addEventListener('mouseover', function() { this.style.background = 'var(--bt-bg)'; });
+            div.addEventListener('mouseout', function() { this.style.background = ''; });
+            div.addEventListener('click', function() { dismissNotif(n.id, this); });
+            var title = document.createElement('span');
+            title.style.cssText = 'font-size:0.78rem;color:var(--bt-text);font-weight:500;';
+            title.textContent = n.title || '';
+            div.appendChild(title);
+            if (n.body) {
+                var body = document.createElement('span');
+                body.style.cssText = 'display:block;font-size:0.72rem;color:var(--bt-muted);margin-top:0.15rem;';
+                body.textContent = n.body;
+                div.appendChild(body);
+            }
+            list.appendChild(div);
+        });
     }
 
     window.dismissNotif = function (id, el) {
@@ -81,7 +94,7 @@
             .then(function () {
                 setBadge(0);
                 var list = document.getElementById('notif-list');
-                if (list) list.innerHTML = '<p style="font-size:0.78rem;color:var(--bt-muted);text-align:center;padding:1rem;">' + i18nNoNotifications + '</p>';
+                if (list) { list.textContent = ''; var p = document.createElement('p'); p.style.cssText = 'font-size:0.78rem;color:var(--bt-muted);text-align:center;padding:1rem;'; p.textContent = i18nNoNotifications; list.appendChild(p); }
             })
             .catch(function () {});
     };
