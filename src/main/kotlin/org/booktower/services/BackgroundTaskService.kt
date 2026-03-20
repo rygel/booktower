@@ -18,6 +18,8 @@ data class BackgroundTask(
     val startedAt: String,
     val completedAt: String? = null,
     val detail: String? = null,
+    /** Opaque metadata for retry — e.g. bookId, source URL, etc. */
+    val retryMeta: Map<String, String>? = null,
 )
 
 /**
@@ -33,6 +35,7 @@ class BackgroundTaskService(
         userId: UUID,
         type: String,
         label: String,
+        retryMeta: Map<String, String>? = null,
     ): String {
         val id = UUID.randomUUID().toString()
         val task =
@@ -43,6 +46,7 @@ class BackgroundTaskService(
                 label = label,
                 status = TaskStatus.RUNNING,
                 startedAt = Instant.now().toString(),
+                retryMeta = retryMeta,
             )
         evictIfNeeded()
         tasks[id] = task
