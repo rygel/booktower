@@ -163,7 +163,8 @@ abstract class IntegrationTestBase {
         val epubMetadataService = EpubMetadataService(jdbi, config.storage.coversPath)
         val comicService = ComicService()
         val goodreadsImportService = GoodreadsImportService(bookService)
-        val seedService = SeedService(bookService, libraryService, config.storage.coversPath, config.storage.booksPath)
+        val backgroundTaskService = org.booktower.services.BackgroundTaskService()
+        val seedService = SeedService(bookService, libraryService, config.storage.coversPath, config.storage.booksPath, backgroundTaskService)
         val userPermissionsService = UserPermissionsService(jdbi)
         val koboSyncService = KoboSyncService(jdbi, bookService, "http://localhost:9999", userSettingsService)
         val opdsCredentialsService = OpdsCredentialsService(jdbi)
@@ -189,7 +190,6 @@ abstract class IntegrationTestBase {
         val auditService = org.booktower.services.AuditService(jdbi, geoIpService)
         val oidcService = if (oidcForceOnly) OidcService(OidcConfig(enabled = true, forceOnlyMode = true)) else null
         val journalService = JournalService(jdbi)
-        val backgroundTaskService = org.booktower.services.BackgroundTaskService()
 
         // ── Handler objects ──────────────────────────────────────────────
         val authHandler =

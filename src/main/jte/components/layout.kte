@@ -124,6 +124,10 @@
                     <i class="ri-history-line"></i>
                     ${pc.i18n.translate("nav.activity")}
                 </a>
+                <a href="/downloads" class="sidebar-link ${if (currentPage == "downloads") "active" else ""}">
+                    <i class="ri-download-line"></i>
+                    ${pc.i18n.translate("nav.downloads")}
+                </a>
                 <a href="/profile" class="sidebar-link ${if (currentPage == "profile") "active" else ""}">
                     <i class="ri-user-settings-line"></i>
                     ${pc.i18n.translate("nav.profile")}

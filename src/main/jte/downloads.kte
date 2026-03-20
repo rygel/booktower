@@ -1,0 +1,116 @@
+@import org.booktower.services.BackgroundTask
+@import org.booktower.services.TaskStatus
+@import org.booktower.web.PageContext
+@param pc: PageContext
+@param tasks: List<BackgroundTask>
+
+@template.components.layout(pc=pc, title="${pc.i18n.translate("page.downloads.title")} - BookTower", currentPage="downloads", content = @`
+<div class="page-container" style="max-width:56rem;">
+
+    <div class="flex-between mb-3">
+        <h1 class="page-title mb-0">${pc.i18n.translate("page.downloads.title")}</h1>
+        <span class="text-sm text-subtle">${tasks.size} ${pc.i18n.translate("page.downloads.total")}</span>
+    </div>
+
+    !{val running = tasks.filter { it.status == TaskStatus.RUNNING }}
+    !{val failed = tasks.filter { it.status == TaskStatus.FAILED }}
+    !{val done = tasks.filter { it.status == TaskStatus.DONE }}
+
+    @if(running.isNotEmpty())
+    <div class="section">
+        <h2 class="section-heading mb-2">
+            <i class="ri-loader-4-line" style="animation:bt-spin 1s linear infinite;"></i>
+            ${pc.i18n.translate("page.downloads.in.progress")} (${running.size})
+        </h2>
+        <div style="display:flex; flex-direction:column; gap:0.5rem;">
+            @for(task in running)
+                <div class="card" style="padding:0.875rem 1rem; display:flex; align-items:center; gap:0.75rem;">
+                    <i class="ri-loader-4-line" style="color:var(--bt-accent); font-size:1.1rem; animation:bt-spin 1s linear infinite; flex-shrink:0;"></i>
+                    <div style="flex:1; min-width:0;">
+                        <p style="font-size:0.85rem; font-weight:500; color:var(--bt-text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${task.label}</p>
+                        <p style="font-size:0.7rem; color:var(--bt-subtle); margin-top:0.125rem;">${task.type} &middot; ${pc.i18n.translate("page.downloads.started")} ${task.startedAt.take(19).replace("T", " ")}</p>
+                    </div>
+                    <div class="progress-bar" style="width:6rem;">
+                        <div class="progress-bar-fill" style="width:50%; animation: bt-progress-pulse 2s ease-in-out infinite;"></div>
+                    </div>
+                </div>
+            @endfor
+        </div>
+    </div>
+    @endif
+
+    @if(failed.isNotEmpty())
+    <div class="section">
+        <h2 class="section-heading mb-2" style="color:var(--bt-danger);">
+            <i class="ri-error-warning-line"></i>
+            ${pc.i18n.translate("page.downloads.failed")} (${failed.size})
+        </h2>
+        <div style="display:flex; flex-direction:column; gap:0.5rem;">
+            @for(task in failed)
+                <div class="card" style="padding:0.875rem 1rem; border-left:3px solid var(--bt-danger);">
+                    <div style="display:flex; align-items:center; gap:0.75rem;">
+                        <i class="ri-error-warning-line" style="color:var(--bt-danger); font-size:1.1rem; flex-shrink:0;"></i>
+                        <div style="flex:1; min-width:0;">
+                            <p style="font-size:0.85rem; font-weight:500; color:var(--bt-text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${task.label}</p>
+                            <p style="font-size:0.7rem; color:var(--bt-subtle); margin-top:0.125rem;">${task.type} &middot; ${task.startedAt.take(19).replace("T", " ")}</p>
+                        </div>
+                        <button hx-delete="/api/tasks/${task.id}" hx-swap="none"
+                                hx-on:htmx:after-request="if(event.detail.successful){this.closest('.card').remove()}"
+                                class="btn-outline" style="font-size:0.75rem; padding:0.25rem 0.5rem;">
+                            ${pc.i18n.translate("action.dismiss")}
+                        </button>
+                    </div>
+                    @if(task.detail != null)
+                        <div style="margin-top:0.5rem; padding:0.5rem 0.625rem; background:rgba(248,113,113,0.08); border-radius:0.375rem; font-size:0.78rem; color:var(--bt-danger);">
+                            <i class="ri-information-line" style="margin-right:0.25rem;"></i>${task.detail}
+                        </div>
+                    @endif
+                </div>
+            @endfor
+        </div>
+    </div>
+    @endif
+
+    @if(done.isNotEmpty())
+    <div class="section">
+        <h2 class="section-heading mb-2">
+            <i class="ri-check-line" style="color:var(--bt-accent);"></i>
+            ${pc.i18n.translate("page.downloads.completed")} (${done.size})
+        </h2>
+        <div style="display:flex; flex-direction:column; gap:0.5rem;">
+            @for(task in done)
+                <div class="card" style="padding:0.875rem 1rem; display:flex; align-items:center; gap:0.75rem;">
+                    <i class="ri-check-line" style="color:var(--bt-accent); font-size:1.1rem; flex-shrink:0;"></i>
+                    <div style="flex:1; min-width:0;">
+                        <p style="font-size:0.85rem; font-weight:500; color:var(--bt-text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${task.label}</p>
+                        <p style="font-size:0.7rem; color:var(--bt-subtle); margin-top:0.125rem;">
+                            @if(task.detail != null)${task.detail} &middot; @endif
+                            ${task.completedAt?.take(19)?.replace("T", " ") ?: ""}
+                        </p>
+                    </div>
+                    <button hx-delete="/api/tasks/${task.id}" hx-swap="none"
+                            hx-on:htmx:after-request="if(event.detail.successful){this.closest('.card').remove()}"
+                            class="btn-outline" style="font-size:0.75rem; padding:0.25rem 0.5rem;">
+                            ${pc.i18n.translate("action.dismiss")}
+                    </button>
+                </div>
+            @endfor
+        </div>
+    </div>
+    @endif
+
+    @if(tasks.isEmpty())
+        @template.components.emptyState(icon = "ri-download-line", message = pc.i18n.translate("page.downloads.empty"), action = @`
+            <p class="text-sm text-subtle" style="margin-top:0.375rem;">${pc.i18n.translate("page.downloads.empty.hint")}</p>
+        `)
+    @endif
+
+</div>
+
+<script>
+@if(running.isNotEmpty())
+// Auto-refresh while downloads are in progress
+setTimeout(function() { window.location.reload(); }, 5000);
+@endif
+</script>
+`)

@@ -51,6 +51,7 @@ class PageHandler(
     private val libraryWatchService: org.booktower.services.LibraryWatchService? = null,
     private val bookLinkService: org.booktower.services.BookLinkService? = null,
     private val bookSharingService: org.booktower.services.BookSharingService? = null,
+    private val backgroundTaskService: org.booktower.services.BackgroundTaskService? = null,
 ) {
     /** Build a PageContext for any authenticated request. */
     private fun pageContext(req: Request): org.booktower.web.PageContext =
@@ -476,6 +477,18 @@ class PageHandler(
                 pc.toMap(
                     "sharedBook" to sharedBook,
                 ),
+            ),
+        )
+    }
+
+    fun downloads(req: Request): Response {
+        val userId = auth(req) ?: return redirectToLogin()
+        val pc = pageContext(req)
+        val tasks = backgroundTaskService?.listForUser(userId) ?: emptyList()
+        return htmlOk(
+            templateRenderer.render(
+                "downloads.kte",
+                pc.toMap("tasks" to tasks),
             ),
         )
     }
