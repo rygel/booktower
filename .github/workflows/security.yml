@@ -44,7 +44,7 @@ jobs:
           zizmor --format sarif .github/workflows/ > zizmor.sarif || true
 
       - name: Upload zizmor SARIF to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v4
+        uses: github/codeql-action/upload-sarif@c6f931105cb2c34c8f901cc885ba1e2e259cf745 # v4
         if: always()
         with:
           sarif_file: zizmor.sarif
@@ -73,7 +73,7 @@ jobs:
           cache: maven
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@c6f931105cb2c34c8f901cc885ba1e2e259cf745 # v4
         with:
           languages: java-kotlin
 
@@ -81,7 +81,7 @@ jobs:
         run: mvn package -DskipTests -Dflyway.skip=true -q
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@c6f931105cb2c34c8f901cc885ba1e2e259cf745 # v4
         with:
           category: codeql-java-kotlin
 
@@ -119,7 +119,7 @@ jobs:
           no-fail: true
 
       - name: Upload Hadolint SARIF to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v4
+        uses: github/codeql-action/upload-sarif@c6f931105cb2c34c8f901cc885ba1e2e259cf745 # v4
         if: always()
         with:
           sarif_file: hadolint.sarif
@@ -143,7 +143,7 @@ jobs:
           soft_fail: true
 
       - name: Upload Checkov SARIF to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v4
+        uses: github/codeql-action/upload-sarif@c6f931105cb2c34c8f901cc885ba1e2e259cf745 # v4
         if: always()
         with:
           sarif_file: checkov.sarif
@@ -173,7 +173,7 @@ jobs:
           publish_results: true
 
       - name: Upload Scorecard SARIF to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v4
+        uses: github/codeql-action/upload-sarif@c6f931105cb2c34c8f901cc885ba1e2e259cf745 # v4
         if: always()
         with:
           sarif_file: scorecard.sarif
