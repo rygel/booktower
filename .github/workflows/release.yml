@@ -5,15 +5,15 @@ on:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'    # stable only: v0.5.1, v1.0.0 (not v0.5.1-beta.*)
 
-permissions:
-  contents: write    # needed to create GitHub Releases and upload assets
-  packages: write    # needed to push Docker images to ghcr.io
+permissions: {}  # minimal default — each job declares what it needs
 
 jobs:
   # ── Fat JAR — runs fast on Linux, uploaded once ─────────────────────────
   fat-jar:
     name: Fat JAR
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
@@ -24,12 +24,7 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
-
-      - uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-maven-
+          cache: maven
 
       - name: Build fat JAR
         run: mvn package -DskipTests -Dflyway.skip=true
@@ -50,6 +45,8 @@ jobs:
   native:
     name: Native (${{ matrix.label }})
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
     strategy:
       fail-fast: false
       matrix:
@@ -91,12 +88,7 @@ jobs:
           java-version: '21'
           distribution: 'graalvm-community'
           github-token: ${{ secrets.GITHUB_TOKEN }}
-
-      - uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-native-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-maven-
+          cache: maven
 
       # Skip the maven-enforcer exact-version check — GraalVM reports a
       # slightly different java.version string than stock Temurin.
@@ -153,9 +145,14 @@ jobs:
   docker:
     name: Docker Image
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
 
       - name: Set up QEMU (for ARM64 builds)
         uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3
@@ -199,9 +196,13 @@ jobs:
     name: Publish Release
     needs: [ fat-jar, native, docker ]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
 
       - name: Download all artifacts
         uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
