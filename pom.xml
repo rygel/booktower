@@ -86,7 +86,7 @@
         <commons-csv.version>1.14.1</commons-csv.version>
         <commons-io.version>2.21.0</commons-io.version>
         <junrar.version>7.5.8</junrar.version>
-        <typesafe-config.version>1.4.6</typesafe-config.version>
+        <hoplite.version>2.9.0</hoplite.version>
         <koin.version>4.2.0</koin.version>
         <simplejavamail.version>8.12.6</simplejavamail.version>
         <greenmail.version>2.1.8</greenmail.version>
@@ -201,9 +201,9 @@
                 <version>${http4k.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.typesafe</groupId>
-                <artifactId>config</artifactId>
-                <version>${typesafe-config.version}</version>
+                <groupId>com.sksamuel.hoplite</groupId>
+                <artifactId>hoplite-yaml</artifactId>
+                <version>${hoplite.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.auth0</groupId>
@@ -278,9 +278,9 @@
             <version>${kotlin-logging.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.typesafe</groupId>
-            <artifactId>config</artifactId>
-            <version>${typesafe-config.version}</version>
+            <groupId>com.sksamuel.hoplite</groupId>
+            <artifactId>hoplite-yaml</artifactId>
+            <version>${hoplite.version}</version>
         </dependency>
         <dependency>
             <groupId>org.jdbi</groupId>
