@@ -51,9 +51,12 @@ jobs:
           category: zizmor
 
   # ── CodeQL: deep semantic analysis of Kotlin/Java source code ────────────
+  # Note: CodeQL's Kotlin extractor may lag behind the latest Kotlin version.
+  # If the build fails with "Kotlin version too recent", wait for a CodeQL update.
   codeql:
     name: CodeQL
     runs-on: ubuntu-latest
+    continue-on-error: true   # don't block PRs if CodeQL can't parse latest Kotlin
     permissions:
       contents: read
       security-events: write
