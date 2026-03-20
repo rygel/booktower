@@ -30,16 +30,16 @@ class PageRouter(
     fun routes(): List<RoutingHttpHandler> =
         listOf(
             // HTML pages
-            "/" bind Method.GET to ::index,
+            "/" bind Method.GET to filters.optionalAuth.then(::index),
             "/login" bind Method.GET to ::loginPage,
             "/register" bind Method.GET to ::registerPage,
             "/forgot-password" bind Method.GET to ::forgotPasswordPage,
             "/reset-password" bind Method.GET to ::resetPasswordPage,
-            "/libraries" bind Method.GET to pageHandler::libraries,
-            "/libraries/{id}" bind Method.GET to pageHandler::library,
-            "/books/{id}" bind Method.GET to pageHandler::book,
-            "/books/{id}/read" bind Method.GET to pageHandler::reader,
-            "/search" bind Method.GET to pageHandler::search,
+            "/libraries" bind Method.GET to filters.optionalAuth.then(pageHandler::libraries),
+            "/libraries/{id}" bind Method.GET to filters.optionalAuth.then(pageHandler::library),
+            "/books/{id}" bind Method.GET to filters.optionalAuth.then(pageHandler::book),
+            "/books/{id}/read" bind Method.GET to filters.optionalAuth.then(pageHandler::reader),
+            "/search" bind Method.GET to filters.optionalAuth.then(pageHandler::search),
             "/queue" bind Method.GET to filters.auth.then(pageHandler::queue),
             "/series" bind Method.GET to filters.auth.then(pageHandler::seriesList),
             "/series/{name}" bind Method.GET to filters.auth.then(pageHandler::series),
@@ -47,11 +47,11 @@ class PageRouter(
             "/authors/{name}" bind Method.GET to filters.auth.then(pageHandler::author),
             "/tags" bind Method.GET to filters.auth.then(pageHandler::tagList),
             "/tags/{name}" bind Method.GET to filters.auth.then(pageHandler::tag),
-            "/profile" bind Method.GET to pageHandler::profile,
+            "/profile" bind Method.GET to filters.optionalAuth.then(pageHandler::profile),
             "/activity" bind Method.GET to filters.auth.then(pageHandler::activity),
-            "/downloads" bind Method.GET to pageHandler::downloads,
-            "/shared/book/{token}" bind Method.GET to pageHandler::sharedBook,
-            "/analytics" bind Method.GET to pageHandler::analytics,
+            "/downloads" bind Method.GET to filters.optionalAuth.then(pageHandler::downloads),
+            "/shared/book/{token}" bind Method.GET to filters.optionalAuth.then(pageHandler::sharedBook),
+            "/analytics" bind Method.GET to filters.optionalAuth.then(pageHandler::analytics),
             "/ui/preferences/analytics" bind Method.POST to pageHandler::setAnalytics,
             "/admin" bind Method.GET to filters.admin.then(adminHandler::adminPage),
             // HTMX UI mutations
@@ -83,8 +83,7 @@ class PageRouter(
         )
 
     private fun index(req: Request): Response {
-        val token = req.cookie("token")?.value
-        val isAuth = token != null && jwtService.extractUserId(token) != null
+        val isAuth = req.header("X-Auth-User-Id") != null
         if (isAuth) {
             return pageHandler.dashboard(req)
         }

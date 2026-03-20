@@ -253,12 +253,14 @@ fun buildTestApp(
     val bulkBookHandler = BulkBookHandler(book)
 
     // ── Shared filters ───────────────────────────────────────────────────
-    val authFilter = jwtAuthFilter(jwt) { userId: java.util.UUID -> auth.getUserById(userId) != null }
+    val userExistsCheck = { userId: java.util.UUID -> auth.getUserById(userId) != null }
+    val authFilter = jwtAuthFilter(jwt, userExistsCheck)
     val filters =
         FilterSet(
             auth = authFilter,
             admin = authFilter.then(adminFilter()),
             authRateLimit = RateLimitFilter(maxRequests = 10, windowSeconds = 60),
+            optionalAuth = org.booktower.filters.optionalAuthFilter(jwt, userExistsCheck),
         )
 
     // ── Domain routers ───────────────────────────────────────────────────

@@ -40,13 +40,13 @@ data class PageContext(
             val ctx = WebContext(req)
             val userId = extractUserId(req, jwtService)
             val user = userId?.let { authService.getUserById(it) }
+            val isAdmin = req.header("X-Auth-Is-Admin")?.toBoolean() ?: false
             val gravatarHash =
                 user
                     ?.email
                     ?.trim()
                     ?.lowercase()
                     ?.let { md5(it) } ?: ""
-            val isAdmin = req.header("X-Auth-Is-Admin")?.toBoolean() ?: false
 
             return PageContext(
                 username = user?.username,

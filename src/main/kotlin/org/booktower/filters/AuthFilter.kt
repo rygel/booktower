@@ -29,9 +29,42 @@ object AuthenticatedUser {
     fun isAdmin(request: Request): Boolean = request.header(IS_ADMIN_HEADER)?.toBoolean() ?: false
 }
 
+/**
+ * Resolves auth headers from the JWT cookie without rejecting unauthenticated requests.
+ * Sets X-Auth-User-Id and X-Auth-Is-Admin when a valid token is present; passes through
+ * unchanged otherwise. Use this on pages that work for both guests and logged-in users.
+ */
+fun optionalAuthFilter(
+    jwtService: JwtService,
+    userExists: ((UUID) -> Boolean)? = null,
+): Filter =
+    Filter { next ->
+        { req ->
+            val token = req.cookie("token")?.value
+            val claims = token?.let { jwtService.extractClaims(it) }
+            val userId = claims?.first
+            val isAdmin = claims?.second ?: false
+            val authenticated = userId != null && (userExists == null || userExists(userId))
+
+            if (authenticated) {
+                next(
+                    req
+                        .header(AuthenticatedUser.USER_ID_HEADER, userId.toString())
+                        .header(AuthenticatedUser.IS_ADMIN_HEADER, isAdmin.toString()),
+                )
+            } else {
+                next(req)
+            }
+        }
+    }
+
+/**
+ * Requires a valid JWT cookie. Sets X-Auth-User-Id and X-Auth-Is-Admin on success;
+ * returns 401 on failure. Use this on endpoints that must be authenticated.
+ */
 fun jwtAuthFilter(
     jwtService: JwtService,
-    userExists: ((java.util.UUID) -> Boolean)? = null,
+    userExists: ((UUID) -> Boolean)? = null,
 ): Filter =
     Filter { next ->
         { req ->
