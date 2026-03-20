@@ -600,20 +600,62 @@ class UserApiRouter(
             .body("""{"count":$count}""")
     }
 
+    companion object {
+        private const val SSE_HEARTBEAT_SECONDS = 15L
+    }
+
     private fun streamNotifications(req: Request): Response {
         val svc = notificationService ?: return Response(Status.SERVICE_UNAVAILABLE)
         val userId = AuthenticatedUser.from(req)
-        val items = svc.list(userId, unreadOnly = true)
-        val sb = StringBuilder()
-        for (item in items) {
-            sb.append("event: notification\n")
-            sb.append("data: ${org.booktower.config.Json.mapper.writeValueAsString(item)}\n\n")
-        }
-        sb.append("event: heartbeat\ndata: {}\n\n")
+
+        // Build an InputStream that streams SSE events. The initial batch is written
+        // synchronously so it's immediately available; a daemon thread then appends
+        // heartbeats and new-notification checks every SSE_HEARTBEAT_SECONDS.
+        val pipeIn = java.io.PipedInputStream(4096)
+        val pipeOut = java.io.PipedOutputStream(pipeIn)
+
+        val thread =
+            Thread {
+                try {
+                    pipeOut.use { out ->
+                        fun write(s: String) = out.write(s.toByteArray()).also { out.flush() }
+
+                        // Send initial unread notifications
+                        val items = svc.list(userId, unreadOnly = true)
+                        for (item in items) {
+                            write("event: notification\ndata: ${org.booktower.config.Json.mapper.writeValueAsString(item)}\n\n")
+                        }
+                        write("event: heartbeat\ndata: {}\n\n")
+
+                        // Keep alive: heartbeat + check for new notifications
+                        var lastCount = items.size
+                        while (!Thread.currentThread().isInterrupted) {
+                            Thread.sleep(SSE_HEARTBEAT_SECONDS * 1000)
+                            val current = svc.list(userId, unreadOnly = true)
+                            if (current.size > lastCount) {
+                                current.take(current.size - lastCount).forEach { item ->
+                                    write("event: notification\ndata: ${org.booktower.config.Json.mapper.writeValueAsString(item)}\n\n")
+                                }
+                            }
+                            lastCount = current.size
+                            write("event: heartbeat\ndata: {}\n\n")
+                        }
+                    }
+                } catch (_: java.io.IOException) {
+                    // Client disconnected — expected
+                } catch (_: InterruptedException) {
+                    // Shutdown — expected
+                }
+            }
+        thread.isDaemon = true
+        thread.name = "sse-notif-$userId"
+        thread.start()
+
         return Response(Status.OK)
             .header("Content-Type", "text/event-stream")
             .header("Cache-Control", "no-cache")
-            .body(sb.toString())
+            .header("Connection", "keep-alive")
+            .body(pipeIn)
     }
 
     private fun markNotificationRead(req: Request): Response {
