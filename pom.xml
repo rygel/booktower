@@ -1125,9 +1125,11 @@
                                 <buildArg>-H:+ReportExceptionStackTraces</buildArg>
                                 <!-- Include all charsets for international text -->
                                 <buildArg>-H:+AddAllCharsets</buildArg>
-                                <!-- kotlin-compiler-embeddable bundles jline native-image configs
-                                     that reference missing resources — exclude them -->
-                                <buildArg>-H:ExcludeResources=META-INF/native-image/org.jline/.*</buildArg>
+                                <!-- kotlin-compiler-embeddable bundles broken jline native-image
+                                     configs — exclude all native-image config from that JAR -->
+                                <buildArg>--exclude-config</buildArg>
+                                <buildArg>kotlin-compiler-embeddable.*</buildArg>
+                                <buildArg>META-INF/native-image/.*</buildArg>
                             </buildArgs>
                         </configuration>
                         <executions>

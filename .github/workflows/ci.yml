@@ -124,7 +124,7 @@ jobs:
 
       - name: Run tests
         shell: bash
-        run: mvn test -Dflyway.skip=true
+        run: mvn test -Dflyway.skip=true -Dsurefire.forkCount=1.5C
 
       - name: Upload test results
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
