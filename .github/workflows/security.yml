@@ -19,20 +19,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Run actionlint
-        uses: rhysd/actionlint@v1.7.11
+        uses: rhysd/actionlint@393031adb9afb225ee52ae2ccd7a5af5525e03e8 # v1.7.11
 
   # ── zizmor: audit workflows for security vulnerabilities ──────────────────
-  # Detects issues like script injection, overly-broad permissions,
-  # unsafe use of pull_request_target, etc.
   zizmor:
     name: zizmor
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           persist-credentials: false
 
@@ -44,35 +42,139 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           zizmor --format sarif .github/workflows/ > zizmor.sarif || true
-        # continue-on-error so the SARIF upload still runs even when findings exist
 
       - name: Upload zizmor SARIF to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v4
+        uses: github/codeql-action/upload-sarif@c6f931105cb2c34c8f901cc885ba1e2e259cf745 # v4
         if: always()
         with:
           sarif_file: zizmor.sarif
           category: zizmor
 
-  # ── Checkov: scan Dockerfile for misconfigurations ────────────────────────
+  # ── CodeQL: deep semantic analysis of Kotlin/Java source code ────────────
+  # Note: CodeQL's Kotlin extractor may lag behind the latest Kotlin version.
+  # If the build fails with "Kotlin version too recent", wait for a CodeQL update.
+  codeql:
+    name: CodeQL
+    runs-on: ubuntu-latest
+    continue-on-error: true   # CodeQL doesn't support Kotlin 2.3.20 yet — remove when they catch up
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@c6f931105cb2c34c8f901cc885ba1e2e259cf745 # v4
+        with:
+          languages: java-kotlin
+
+      - name: Build for CodeQL
+        run: mvn package -DskipTests -Dflyway.skip=true -q
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@c6f931105cb2c34c8f901cc885ba1e2e259cf745 # v4
+        with:
+          category: codeql-java-kotlin
+
+  # ── Gitleaks: scan for secrets, API keys, tokens in code and history ─────
+  gitleaks:
+    name: Gitleaks
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+          fetch-depth: 0   # full history for scanning commits
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2
+        env:
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ── Hadolint: Dockerfile best practices and ShellCheck for RUN commands ──
+  hadolint:
+    name: Hadolint (Dockerfile)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Run Hadolint
+        uses: hadolint/hadolint-action@2332a7b74a6de0dda2e2221d575162eba76ba5e5 # v3.3.0
+        with:
+          dockerfile: Dockerfile
+          format: sarif
+          output-file: hadolint.sarif
+          no-fail: true
+
+      - name: Upload Hadolint SARIF to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@c6f931105cb2c34c8f901cc885ba1e2e259cf745 # v4
+        if: always()
+        with:
+          sarif_file: hadolint.sarif
+          category: hadolint
+
+  # ── Checkov: scan Dockerfile for security misconfigurations ─────────────
   checkov:
     name: Checkov (Dockerfile)
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Run Checkov
-        uses: bridgecrewio/checkov-action@v12
+        uses: bridgecrewio/checkov-action@99bb2caf247dfd9f03cf984373bc6043d4e32ebf # v12
         with:
           directory: .
           framework: dockerfile
           output_format: sarif
-          output_file_path: checkov.sarif
-          soft_fail: true   # report findings but don't fail the job
+          output_file_path: .
+          soft_fail: true
 
       - name: Upload Checkov SARIF to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v4
+        uses: github/codeql-action/upload-sarif@c6f931105cb2c34c8f901cc885ba1e2e259cf745 # v4
         if: always()
         with:
-          sarif_file: checkov.sarif
+          sarif_file: results.sarif
           category: checkov
+
+  # ── OSSF Scorecard: assess project security posture ─────────────────────
+  scorecard:
+    name: OSSF Scorecard
+    runs-on: ubuntu-latest
+    # Only run on main branch pushes and schedule (not PRs, to avoid token issues)
+    if: github.event_name != 'pull_request'
+    permissions:
+      contents: read
+      security-events: write
+      id-token: write   # needed for Scorecard's OIDC publish
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+
+      - name: Run OSSF Scorecard
+        uses: ossf/scorecard-action@4eaacf0543bb3f2c246792bd56e8cdeffafb205a # v2.4.3
+        with:
+          results_file: scorecard.sarif
+          results_format: sarif
+          publish_results: true
+
+      - name: Upload Scorecard SARIF to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@c6f931105cb2c34c8f901cc885ba1e2e259cf745 # v4
+        if: always()
+        with:
+          sarif_file: scorecard.sarif
+          category: scorecard
