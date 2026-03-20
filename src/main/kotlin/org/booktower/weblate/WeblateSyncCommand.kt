@@ -1,5 +1,6 @@
 package org.booktower.weblate
 
+import org.booktower.config.AppConfig
 import org.booktower.config.WeblateConfig
 
 object WeblateSyncCommand {
@@ -60,13 +61,9 @@ object WeblateSyncCommand {
 
     private fun loadConfig(): WeblateConfig =
         try {
-            val config =
-                com.typesafe.config.ConfigFactory
-                    .load()
-            val app = config.getConfig("app")
-            WeblateConfig.load(app.getConfig("weblate"))
+            AppConfig.load().weblate
         } catch (e: Exception) {
-            WeblateConfig("", "", "", false)
+            WeblateConfig()
         }
 
     private fun getTranslationsDir(): java.io.File {
