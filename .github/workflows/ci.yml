@@ -35,12 +35,7 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
-
-      - uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-maven-
+          cache: maven
 
       - name: Auto-fix formatting (prevents Spotless version drift failures)
         run: mvn spotless:apply -q
@@ -87,12 +82,7 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
-
-      - uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-maven-
+          cache: maven
 
       - name: Run tests
         run: mvn test -Dflyway.skip=true
@@ -130,12 +120,7 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
-
-      - uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-maven-
+          cache: maven
 
       - name: Run tests
         shell: bash
@@ -164,12 +149,7 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
-
-      - uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-browser-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-maven-
+          cache: maven
 
       # Cache the downloaded Chromium binary (~250 MB) to avoid re-downloading
       - uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
@@ -207,12 +187,7 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
-
-      - uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-maven-
+          cache: maven
 
       - name: Package application
         shell: bash
@@ -292,12 +267,7 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
-
-      - uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-pg-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-maven-
+          cache: maven
 
       - name: Run full test suite against PostgreSQL
         env:
@@ -333,12 +303,7 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
-
-      - uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-e2e-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-maven-
+          cache: maven
 
       - name: Build application
         run: mvn package -DskipTests -Dflyway.skip=true
