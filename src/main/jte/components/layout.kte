@@ -192,20 +192,17 @@
     @endif
 
     <script>
-    // Dark mode toggle
-    var __themePairs = {
-        'catppuccin-mocha': 'catppuccin-latte', 'catppuccin-latte': 'catppuccin-mocha',
-        'dark': 'light', 'light': 'dark',
-        'dracula': 'catppuccin-latte', 'one-dark': 'solarized-light',
-        'monokai': 'gruvbox-light', 'gruvbox-light': 'monokai',
-        'tokyo-night': 'rose-pine-dawn', 'tokyo-storm': 'rose-pine-dawn',
-        'rose-pine': 'rose-pine-dawn', 'rose-pine-dawn': 'rose-pine',
-        'rose-pine-moon': 'rose-pine-dawn', 'solarized-light': 'one-dark',
-        'ayu-dark': 'catppuccin-latte', 'night-owl': 'catppuccin-latte',
-    };
+    // Dark mode toggle — reads preferred pair from cookies, falls back to defaults
+    function __getCookie(name) {
+        var m = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+        return m ? m[2] : null;
+    }
     function toggleDarkMode() {
         var current = document.getElementById('theme-style').getAttribute('data-theme') || 'catppuccin-mocha';
-        var target = __themePairs[current] || (current.indexOf('light') >= 0 || current === 'catppuccin-latte' ? 'catppuccin-mocha' : 'catppuccin-latte');
+        var prefDark = __getCookie('pref_dark_theme') || 'catppuccin-mocha';
+        var prefLight = __getCookie('pref_light_theme') || 'catppuccin-latte';
+        var isDarkNow = document.getElementById('theme-style').textContent.indexOf('color-scheme: dark') >= 0;
+        var target = isDarkNow ? prefLight : prefDark;
         fetch('/preferences/theme', {
             method: 'POST',
             headers: {'Content-Type': 'application/x-www-form-urlencoded'},

@@ -75,6 +75,7 @@ class PageRouter(
             "/ui/annotations/{id}" bind Method.DELETE to pageHandler::deleteAnnotation,
             // Preferences
             "/preferences/theme" bind Method.POST to ::setTheme,
+            "/preferences/theme-pair" bind Method.POST to ::setThemePair,
             "/preferences/lang" bind Method.POST to ::setLanguage,
             // Smart shelves (UI)
             "/shelves/{id}" bind Method.GET to pageHandler::magicShelf,
@@ -212,6 +213,20 @@ class PageRouter(
             .cookie(langCookie)
             .header("HX-Refresh", "true")
             .body("")
+    }
+
+    private fun setThemePair(req: Request): Response {
+        val userId = authenticatedUserId(req) ?: return Response(Status.UNAUTHORIZED)
+        val darkTheme = req.form("darkTheme")?.trim()?.takeIf { ThemeCatalog.isValid(it) }
+        val lightTheme = req.form("lightTheme")?.trim()?.takeIf { ThemeCatalog.isValid(it) }
+        if (darkTheme != null) userSettingsService?.set(userId, "pref.theme.dark", darkTheme)
+        if (lightTheme != null) userSettingsService?.set(userId, "pref.theme.light", lightTheme)
+        var resp = Response(Status.OK)
+            .header("HX-Trigger", """{"showToast":{"message":"Theme pair saved","type":"success"}}""")
+            .body("")
+        if (darkTheme != null) resp = resp.cookie(Cookie(name = "pref_dark_theme", value = darkTheme, path = "/", maxAge = 365L * 24 * 3600))
+        if (lightTheme != null) resp = resp.cookie(Cookie(name = "pref_light_theme", value = lightTheme, path = "/", maxAge = 365L * 24 * 3600))
+        return resp
     }
 
     private fun authenticatedUserId(req: Request): java.util.UUID? {

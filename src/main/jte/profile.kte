@@ -6,6 +6,8 @@
 @param memberSince: String
 @param analyticsEnabled: Boolean = false
 @param libraries: List<LibraryDto> = emptyList()
+@param prefDarkTheme: String = "catppuccin-mocha"
+@param prefLightTheme: String = "catppuccin-latte"
 
 
 @template.components.layout(title="${pc.i18n.translate("page.profile.title")} - BookTower", pc=pc, currentPage="profile",
@@ -61,6 +63,38 @@
                             <option value="${code}" selected>${pc.i18n.translate("language.$code")}</option>
                         @else
                             <option value="${code}">${pc.i18n.translate("language.$code")}</option>
+                        @endif
+                    @endfor
+                </select>
+            </div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-top:1rem;">
+            <div>
+                <label style="display:block; font-size:0.8rem; color:var(--bt-text-dim); margin-bottom:0.375rem; font-weight:500;">
+                    <i class="ri-moon-line" style="font-size:0.75rem;"></i> ${pc.i18n.translate("label.preferred.dark.theme")}
+                </label>
+                <select name="darkTheme" hx-post="/preferences/theme-pair" hx-trigger="change" hx-include="[name=lightTheme]"
+                        style="width:100%; font-size:0.875rem; padding:0.5rem 0.75rem; border-radius:0.5rem; border:1px solid var(--bt-border-input); background:var(--bt-bg); color:var(--bt-text); cursor:pointer;">
+                    @for(theme in pc.themes.filter { it.type == "dark" })
+                        @if(theme.id == prefDarkTheme)
+                            <option value="${theme.id}" selected>${theme.name}</option>
+                        @else
+                            <option value="${theme.id}">${theme.name}</option>
+                        @endif
+                    @endfor
+                </select>
+            </div>
+            <div>
+                <label style="display:block; font-size:0.8rem; color:var(--bt-text-dim); margin-bottom:0.375rem; font-weight:500;">
+                    <i class="ri-sun-line" style="font-size:0.75rem;"></i> ${pc.i18n.translate("label.preferred.light.theme")}
+                </label>
+                <select name="lightTheme" hx-post="/preferences/theme-pair" hx-trigger="change" hx-include="[name=darkTheme]"
+                        style="width:100%; font-size:0.875rem; padding:0.5rem 0.75rem; border-radius:0.5rem; border:1px solid var(--bt-border-input); background:var(--bt-bg); color:var(--bt-text); cursor:pointer;">
+                    @for(theme in pc.themes.filter { it.type == "light" })
+                        @if(theme.id == prefLightTheme)
+                            <option value="${theme.id}" selected>${theme.name}</option>
+                        @else
+                            <option value="${theme.id}">${theme.name}</option>
                         @endif
                     @endfor
                 </select>

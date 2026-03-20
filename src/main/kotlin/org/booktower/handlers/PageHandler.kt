@@ -446,6 +446,8 @@ class PageHandler(
         val user = authService.getUserById(userId)
         val analyticsEnabled = userSettingsService.get(userId, "analytics.enabled") == "true"
         val libraries = libraryService.getLibraries(userId)
+        val prefDarkTheme = userSettingsService.get(userId, "pref.theme.dark") ?: "catppuccin-mocha"
+        val prefLightTheme = userSettingsService.get(userId, "pref.theme.light") ?: "catppuccin-latte"
         return htmlOk(
             templateRenderer.render(
                 "profile.kte",
@@ -455,6 +457,8 @@ class PageHandler(
                     "memberSince" to (user?.createdAt?.toString()?.take(10) ?: ""),
                     "analyticsEnabled" to analyticsEnabled,
                     "libraries" to libraries,
+                    "prefDarkTheme" to prefDarkTheme,
+                    "prefLightTheme" to prefLightTheme,
                 ),
             ),
         )
