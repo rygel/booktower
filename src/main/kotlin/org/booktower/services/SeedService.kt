@@ -370,44 +370,28 @@ private const val COMICS_LIBRARY_NAME = "Public Domain Comics"
 private val COMIC_SEED_BOOKS =
     listOf(
         SeedComic(
-            title = "Atom Age Combat #1",
-            author = "St. John Publications",
-            description = "Cold War-era science fiction and action comic from 1952. Features stories of atomic-age warfare and adventure.",
-            archiveId = "Atom_Age_Combat_",
-            fileName = "Atom_Age_Combat_Volume_01_Number_01_1952_.cbz",
-            tags = listOf("sci-fi", "action", "golden-age", "comic"),
+            title = "Dances With Demons #4",
+            author = "Marvel UK",
+            description = "Dark supernatural comic from 1993, featuring occult themes and horror elements in a British setting.",
+            archiveId = "199312DancesWithDemonsV1004",
+            fileName = "199312 Dances with Demons v1 004.cbz",
+            tags = listOf("horror", "supernatural", "comic"),
         ),
         SeedComic(
-            title = "Atom Age Combat #4",
-            author = "St. John Publications",
-            description = "Science fiction combat stories from 1953, part of the Atom Age Combat series.",
-            archiveId = "Atom_Age_Combat_",
-            fileName = "Atom_Age_Combat_Volume_01_Number_04_1953_.cbz",
-            tags = listOf("sci-fi", "action", "golden-age", "comic"),
+            title = "Daring Comics #11",
+            author = "Timely Comics",
+            description = "Golden age superhero comic from 1945, published by Timely Comics (the predecessor to Marvel). Features wartime heroes and adventure stories.",
+            archiveId = "daring-comics-011-timely-1945",
+            fileName = "Daring Comics 011 (Timely, 1945) (c2c) (Mark Bowen+Superscan).cbz",
+            tags = listOf("superhero", "golden-age", "comic"),
         ),
         SeedComic(
-            title = "Forbidden Worlds #25",
-            author = "American Comics Group",
-            description = "Horror and supernatural anthology comic from January 1954. Features tales of the strange and unexplained.",
-            archiveId = "Forbidden_Worlds_25_to_32__895",
-            fileName = "ForbiddenWorldsNo25Jan1954.cbz",
-            tags = listOf("horror", "supernatural", "golden-age", "comic"),
-        ),
-        SeedComic(
-            title = "Forbidden Worlds #30",
-            author = "American Comics Group",
-            description = "Horror and mystery anthology from June 1954.",
-            archiveId = "Forbidden_Worlds_25_to_32__895",
-            fileName = "ForbiddenWorldsNo30Jun1954.cbz",
-            tags = listOf("horror", "supernatural", "golden-age", "comic"),
-        ),
-        SeedComic(
-            title = "Forbidden Worlds #32",
-            author = "American Comics Group",
-            description = "Supernatural tales from August 1954. The final issue in the Forbidden Worlds #25-32 collection.",
-            archiveId = "Forbidden_Worlds_25_to_32__895",
-            fileName = "ForbiddenWorldsNo32Aug1954.cbz",
-            tags = listOf("horror", "supernatural", "golden-age", "comic"),
+            title = "Detective Comics #26",
+            author = "DC Comics",
+            description = "Early detective and mystery anthology comic from 1939, published by DC Comics before Batman's debut issue. Features hard-boiled detective stories.",
+            archiveId = "detective-comics-026",
+            fileName = "Detective Comics 026 (DC) (Apr 1939) (c2c) (Mark Bowen+Superscan).cbz",
+            tags = listOf("detective", "mystery", "golden-age", "comic"),
         ),
     )
 
@@ -863,7 +847,8 @@ class SeedService(
     ) {
         val taskId = backgroundTaskService.start(userId, "download-comic", "Downloading comic: ${comic.title}")
         try {
-            val url = "https://archive.org/download/${comic.archiveId}/${java.net.URLEncoder.encode(comic.fileName, "UTF-8")}"
+            val encodedName = java.net.URLEncoder.encode(comic.fileName, "UTF-8").replace("+", "%20")
+            val url = "https://archive.org/download/${comic.archiveId}/$encodedName"
             val libDir = File("./data/libraries/comics")
             if (!libDir.exists() && !libDir.mkdirs()) logger.warn("Could not create directory: ${libDir.absolutePath}")
             val destFile = File(libDir, "$bookId.cbz")
@@ -872,6 +857,33 @@ class SeedService(
                 logger.info("Skipping download for '${comic.title}' — file already exists (${destFile.length()} bytes)")
                 backgroundTaskService.complete(taskId, "Already downloaded")
                 return
+            }
+
+            // Verify item is freely accessible via metadata API
+            try {
+                val metaConn =
+                    java.net.URI("https://archive.org/metadata/${comic.archiveId}").toURL()
+                        .openConnection() as java.net.HttpURLConnection
+                metaConn.connectTimeout = 10_000
+                metaConn.readTimeout = 10_000
+                metaConn.setRequestProperty("User-Agent", "BookTower/1.0 comic-seed")
+                if (metaConn.responseCode == 200) {
+                    val meta = metaConn.inputStream.use { Json.mapper.readTree(it) }
+                    val collections = meta.get("metadata")?.get("collection")
+                    val isRestricted = when {
+                        collections == null -> false
+                        collections.isArray -> collections.any { it.asText() == "loggedin" || it.asText() == "patron-library-collection" }
+                        else -> collections.asText() in listOf("loggedin", "patron-library-collection")
+                    }
+                    if (isRestricted) {
+                        val reason = "Item '${comic.archiveId}' is access-restricted on archive.org (requires login)"
+                        logger.warn("Comic download skipped for '${comic.title}': $reason")
+                        backgroundTaskService.fail(taskId, reason)
+                        return
+                    }
+                }
+            } catch (e: Exception) {
+                logger.debug("Metadata check failed for '${comic.archiveId}', proceeding with download: ${e.message}")
             }
 
             val conn =
