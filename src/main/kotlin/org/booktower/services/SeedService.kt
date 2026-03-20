@@ -837,6 +837,25 @@ class SeedService(
         return basicResult
     }
 
+    /** Human-readable error message for HTTP status codes. */
+    private fun httpErrorMessage(
+        code: Int,
+        host: String,
+    ): String {
+        val reason =
+            when (code) {
+                401 -> "Source requires authentication"
+                403 -> "Access forbidden by the source server"
+                404 -> "File not found on the source server"
+                429 -> "Rate limited — too many requests, try again later"
+                500 -> "Source server error"
+                502 -> "Source server gateway error"
+                503 -> "Source server temporarily unavailable"
+                else -> "Server returned HTTP $code"
+            }
+        return "$reason (HTTP $code from $host)"
+    }
+
     private fun downloadComic(
         userId: UUID,
         bookId: UUID,
@@ -865,8 +884,9 @@ class SeedService(
             conn.setRequestProperty("User-Agent", "BookTower/1.0 comic-seed")
             conn.instanceFollowRedirects = true
             if (conn.responseCode != 200) {
-                logger.warn("Comic download failed for '${comic.title}': HTTP ${conn.responseCode}")
-                backgroundTaskService.fail(taskId, "HTTP ${conn.responseCode}")
+                val reason = httpErrorMessage(conn.responseCode, conn.url.host)
+                logger.warn("Comic download failed for '${comic.title}': $reason")
+                backgroundTaskService.fail(taskId, reason)
                 return
             }
             conn.inputStream.use { input -> destFile.outputStream().use { input.copyTo(it) } }
@@ -1033,8 +1053,9 @@ class SeedService(
             conn.setRequestProperty("User-Agent", "BookTower/1.0 gutenberg-seed")
             conn.instanceFollowRedirects = true
             if (conn.responseCode != 200) {
-                logger.warn("Gutenberg download failed for '$title' (id=$gutenbergId): HTTP ${conn.responseCode}")
-                backgroundTaskService.fail(taskId, "HTTP ${conn.responseCode}")
+                val reason = httpErrorMessage(conn.responseCode, conn.url.host)
+                logger.warn("Gutenberg download failed for '$title' (id=$gutenbergId): $reason")
+                backgroundTaskService.fail(taskId, reason)
                 return
             }
             conn.inputStream.use { input -> destFile.outputStream().use { input.copyTo(it) } }

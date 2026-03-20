@@ -581,6 +581,7 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.5); }
    ======================================== */
 
 @keyframes bt-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes bt-progress-pulse { 0%, 100% { width: 30%; } 50% { width: 70%; } }
 
 /* ========================================
    RESPONSIVE

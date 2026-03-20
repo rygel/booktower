@@ -260,6 +260,7 @@ val appModule =
                 get(),
                 getOrNull(),
                 getOrNull(),
+                get<BackgroundTaskService>(),
             )
         }
         single { BackgroundTaskHandler(get()) }
