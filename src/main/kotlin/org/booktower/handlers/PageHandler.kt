@@ -531,6 +531,7 @@ class PageHandler(
     fun setRating(req: Request): Response {
         val userId = auth(req) ?: return Response(Status.UNAUTHORIZED)
         val bookId = req.secondToLastPathSegment().toUuidOrNull() ?: return Response(Status.BAD_REQUEST)
+        bookService.getBook(userId, bookId) ?: return Response(Status.NOT_FOUND)
         val rating = req.form("rating")?.toIntOrNull()
         bookService.setRating(userId, bookId, rating)
         return Response(Status.OK)
@@ -540,6 +541,7 @@ class PageHandler(
     fun setTags(req: Request): Response {
         val userId = auth(req) ?: return Response(Status.UNAUTHORIZED)
         val bookId = req.secondToLastPathSegment().toUuidOrNull() ?: return Response(Status.BAD_REQUEST)
+        bookService.getBook(userId, bookId) ?: return Response(Status.NOT_FOUND)
         val tagsRaw = req.form("tags") ?: ""
         val tags = tagsRaw.split(",").map { it.trim() }.filter { it.isNotBlank() }
         bookService.setTags(userId, bookId, tags)
@@ -550,6 +552,7 @@ class PageHandler(
     fun setStatus(req: Request): Response {
         val userId = auth(req) ?: return Response(Status.UNAUTHORIZED)
         val bookId = req.secondToLastPathSegment().toUuidOrNull() ?: return Response(Status.BAD_REQUEST)
+        bookService.getBook(userId, bookId) ?: return Response(Status.NOT_FOUND)
         val statusName = req.form("status")?.takeIf { it.isNotBlank() && it != "NONE" }
         val status = statusName?.let { n -> ReadStatus.entries.firstOrNull { it.name == n } }
         bookService.setStatus(userId, bookId, status)

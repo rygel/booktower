@@ -202,6 +202,8 @@ class BookApiRouter(
                 .lastOrNull()
                 ?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() }
                 ?: return Response(Status.BAD_REQUEST)
+        // Verify the book belongs to this user
+        bookService.getBook(userId, bookId) ?: return Response(Status.NOT_FOUND)
         val body =
             runCatching {
                 org.booktower.config.Json.mapper
