@@ -149,6 +149,8 @@ class AlternativeCoverIntegrationTest {
         val adminHandler =
             AdminHandler(
                 adminService,
+                jwtService,
+                authService,
                 TestFixture.templateRenderer,
                 passwordResetService,
                 seedService,

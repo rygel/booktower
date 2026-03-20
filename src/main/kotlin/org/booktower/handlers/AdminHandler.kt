@@ -8,9 +8,11 @@ import org.booktower.models.ErrorResponse
 import org.booktower.models.SuccessResponse
 import org.booktower.services.AdminService
 import org.booktower.services.AuditService
+import org.booktower.services.AuthService
 import org.booktower.services.ComicPageHashService
 import org.booktower.services.DuplicateDetectionService
 import org.booktower.services.EmailService
+import org.booktower.services.JwtService
 import org.booktower.services.LibraryAccessService
 import org.booktower.services.PasswordResetService
 import org.booktower.services.SeedService
@@ -26,6 +28,8 @@ import java.util.UUID
 
 class AdminHandler(
     private val adminService: AdminService,
+    private val jwtService: JwtService,
+    private val authService: AuthService,
     private val templateRenderer: TemplateRenderer,
     private val passwordResetService: PasswordResetService,
     private val seedService: SeedService,
@@ -38,21 +42,16 @@ class AdminHandler(
     private val comicPageHashService: ComicPageHashService? = null,
 ) {
     fun adminPage(req: Request): Response {
-        val ctx = WebContext(req)
+        val pc =
+            org.booktower.web.PageContext
+                .from(req, jwtService, authService)
         val users = adminService.listUsers()
-        val currentUserId = AuthenticatedUser.from(req).toString()
         val content =
             templateRenderer.render(
                 "admin.kte",
-                mapOf(
+                pc.toMap(
                     "users" to users,
-                    "currentUserId" to currentUserId,
-                    "themeCss" to ctx.themeCss,
-                    "currentTheme" to ctx.theme,
-                    "lang" to ctx.lang,
-                    "themes" to ThemeCatalog.allThemes(),
-                    "i18n" to ctx.i18n,
-                    "isAdmin" to true,
+                    "currentUserId" to AuthenticatedUser.from(req).toString(),
                 ),
             )
         return Response(Status.OK).header("Content-Type", "text/html; charset=utf-8").body(content)
