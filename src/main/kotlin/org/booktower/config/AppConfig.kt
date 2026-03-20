@@ -37,6 +37,9 @@ data class AppConfig(
     val fts: FtsConfig = FtsConfig(),
 ) {
     companion object {
+        /** Read an env var, returning null if absent or blank. */
+        private fun env(name: String): String? = System.getenv(name)?.takeIf { it.isNotBlank() }
+
         fun load(): AppConfig {
             val config =
                 ConfigLoaderBuilder
@@ -46,9 +49,72 @@ data class AppConfig(
                     .loadConfigOrThrow<AppWrapper>()
 
             val app = config.app
+
+            // Apply BOOKTOWER_* env var overrides (backward compat with existing deployments)
             val resolved =
                 app.copy(
-                    baseUrl = app.baseUrl.ifBlank { "http://${app.host}:${app.port}" },
+                    host = env("BOOKTOWER_HOST") ?: app.host,
+                    port = env("BOOKTOWER_PORT")?.toIntOrNull() ?: app.port,
+                    baseUrl = env("BOOKTOWER_BASE_URL") ?: app.baseUrl.ifBlank { "http://${app.host}:${app.port}" },
+                    registrationOpen = env("BOOKTOWER_REGISTRATION_OPEN")?.lowercase() != "false" && app.registrationOpen,
+                    autoScanMinutes = env("BOOKTOWER_AUTO_SCAN_MINUTES")?.toLongOrNull() ?: app.autoScanMinutes,
+                    demoMode = env("BOOKTOWER_DEMO_MODE")?.lowercase() == "true" || app.demoMode,
+                    database =
+                        app.database.copy(
+                            url = env("BOOKTOWER_DB_URL") ?: app.database.url,
+                            username = env("BOOKTOWER_DB_USERNAME") ?: app.database.username,
+                            password = env("BOOKTOWER_DB_PASSWORD") ?: app.database.password,
+                            driver = env("BOOKTOWER_DB_DRIVER") ?: app.database.driver,
+                        ),
+                    security =
+                        app.security.copy(
+                            jwtSecret = env("BOOKTOWER_JWT_SECRET") ?: app.security.jwtSecret,
+                        ),
+                    storage =
+                        app.storage.copy(
+                            booksPath = env("BOOKTOWER_BOOKS_PATH") ?: app.storage.booksPath,
+                            coversPath = env("BOOKTOWER_COVERS_PATH") ?: app.storage.coversPath,
+                            tempPath = env("BOOKTOWER_TEMP_PATH") ?: app.storage.tempPath,
+                        ),
+                    fts =
+                        app.fts.copy(
+                            enabled = env("BOOKTOWER_FTS_ENABLED")?.lowercase() == "true" || app.fts.enabled,
+                        ),
+                    smtp =
+                        app.smtp.copy(
+                            host = env("BOOKTOWER_SMTP_HOST") ?: app.smtp.host,
+                            port = env("BOOKTOWER_SMTP_PORT")?.toIntOrNull() ?: app.smtp.port,
+                            username = env("BOOKTOWER_SMTP_USER") ?: app.smtp.username,
+                            password = env("BOOKTOWER_SMTP_PASS") ?: app.smtp.password,
+                            from = env("BOOKTOWER_SMTP_FROM") ?: app.smtp.from,
+                        ),
+                    oidc =
+                        app.oidc.copy(
+                            enabled = env("OIDC_ISSUER")?.isNotBlank() == true || app.oidc.enabled,
+                            issuer = env("OIDC_ISSUER") ?: app.oidc.issuer,
+                            clientId = env("OIDC_CLIENT_ID") ?: app.oidc.clientId,
+                            clientSecret = env("OIDC_CLIENT_SECRET") ?: app.oidc.clientSecret,
+                            redirectUri = env("OIDC_REDIRECT_URI") ?: app.oidc.redirectUri,
+                            scope = env("OIDC_SCOPE") ?: app.oidc.scope,
+                            forceOnlyMode = env("OIDC_FORCE_ONLY")?.lowercase() == "true" || app.oidc.forceOnlyMode,
+                            adminGroupPattern = env("OIDC_ADMIN_GROUP_PATTERN") ?: app.oidc.adminGroupPattern,
+                            groupsClaim = env("OIDC_GROUPS_CLAIM") ?: app.oidc.groupsClaim,
+                        ),
+                    metadata =
+                        app.metadata.copy(
+                            hardcoverApiKey = env("BOOKTOWER_HARDCOVER_API_KEY") ?: app.metadata.hardcoverApiKey,
+                            comicvineApiKey = env("BOOKTOWER_COMICVINE_API_KEY") ?: app.metadata.comicvineApiKey,
+                        ),
+                    csrf =
+                        app.csrf.copy(
+                            allowedHosts =
+                                env("BOOKTOWER_CSRF_ALLOWED_HOSTS")
+                                    ?.split(",")
+                                    ?.map { it.trim() }
+                                    ?.filter { it.isNotEmpty() }
+                                    ?.toSet()
+                                    ?: app.csrf.allowedHosts,
+                        ),
                 )
 
             // Validate JWT secret in production
