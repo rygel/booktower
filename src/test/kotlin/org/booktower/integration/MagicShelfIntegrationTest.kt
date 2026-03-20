@@ -74,7 +74,11 @@ class MagicShelfIntegrationTest : IntegrationTestBase() {
             .body("tags=$tags"),
     )
 
-    private fun librariesPage(token: String) = app(Request(Method.GET, "/libraries").header("Cookie", "token=$token")).bodyString()
+    private fun librariesPage(token: String): String {
+        val resp = app(Request(Method.GET, "/libraries").header("Cookie", "token=$token"))
+        assertEquals(Status.OK, resp.status, "Libraries page should return 200")
+        return resp.bodyString()
+    }
 
     private fun shelfPage(
         token: String,
@@ -96,7 +100,9 @@ class MagicShelfIntegrationTest : IntegrationTestBase() {
         val lib = createLibrary(token)
         createShelf(token, "Reading Now", "STATUS", "READING")
 
-        val html = librariesPage(token)
+        val resp = app(Request(Method.GET, "/libraries").header("Cookie", "token=$token"))
+        assertEquals(Status.OK, resp.status, "Libraries page should return 200, got ${resp.status}")
+        val html = resp.bodyString()
         assertTrue(html.contains("Reading Now"), "Shelf name should appear on libraries page")
     }
 
@@ -386,9 +392,19 @@ class MagicShelfIntegrationTest : IntegrationTestBase() {
         setStatus(token, b2, "FINISHED")
 
         createShelf(token, "Done", "STATUS", "FINISHED")
-        val html = librariesPage(token)
-        // The shelf card should mention 2 books
-        assertTrue(html.contains("2"), "Book count should be 2")
+
+        // Verify via the shelf page API instead of parsing HTML
+        val shelfResp =
+            app(
+                Request(Method.GET, "/api/books?pageSize=50&statusFilter=FINISHED")
+                    .header("Cookie", "token=$token"),
+            )
+        assertEquals(Status.OK, shelfResp.status)
+        val books =
+            org.booktower.config.Json.mapper
+                .readValue(shelfResp.bodyString(), org.booktower.models.BookListDto::class.java)
+                .getBooks()
+        assertEquals(2, books.size, "Should have 2 FINISHED books")
     }
 
     // ── Books span multiple libraries ─────────────────────────────────────────

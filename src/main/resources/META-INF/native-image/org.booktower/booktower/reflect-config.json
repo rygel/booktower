@@ -1,5 +1,4 @@
 [
-  { "comment": "=== JTE precompiled templates ===" },
   { "name": "gg.jte.generated.precompiled.index_kte",             "allDeclaredConstructors": true, "allPublicMethods": true },
   { "name": "gg.jte.generated.precompiled.book_kte",              "allDeclaredConstructors": true, "allPublicMethods": true },
   { "name": "gg.jte.generated.precompiled.libraries_kte",         "allDeclaredConstructors": true, "allPublicMethods": true },
@@ -14,7 +13,6 @@
   { "name": "gg.jte.generated.precompiled.components.bookmarkItem_kte",  "allDeclaredConstructors": true, "allPublicMethods": true },
   { "name": "gg.jte.generated.precompiled.components.libraryCard_kte",   "allDeclaredConstructors": true, "allPublicMethods": true },
 
-  { "comment": "=== BookTower model/DTO classes (Jackson serialisation) ===" },
   { "name": "org.booktower.models.BookDto",              "allDeclaredConstructors": true, "allDeclaredFields": true, "allPublicMethods": true },
   { "name": "org.booktower.models.BookListDto",          "allDeclaredConstructors": true, "allDeclaredFields": true, "allPublicMethods": true },
   { "name": "org.booktower.models.LibraryDto",           "allDeclaredConstructors": true, "allDeclaredFields": true, "allPublicMethods": true },
@@ -34,14 +32,24 @@
   { "name": "org.booktower.model.ThemeDefinition",       "allDeclaredConstructors": true, "allDeclaredFields": true, "allPublicMethods": true },
   { "name": "org.booktower.services.PdfMetadata",        "allDeclaredConstructors": true, "allDeclaredFields": true, "allPublicMethods": true },
 
-  { "comment": "=== H2 JDBC driver ===" },
+  { "name": "org.booktower.config.AppWrapper",      "allDeclaredConstructors": true, "allDeclaredFields": true, "allPublicMethods": true },
+  { "name": "org.booktower.config.AppConfig",       "allDeclaredConstructors": true, "allDeclaredFields": true, "allPublicMethods": true },
+  { "name": "org.booktower.config.DatabaseConfig",  "allDeclaredConstructors": true, "allDeclaredFields": true, "allPublicMethods": true },
+  { "name": "org.booktower.config.SecurityConfig",  "allDeclaredConstructors": true, "allDeclaredFields": true, "allPublicMethods": true },
+  { "name": "org.booktower.config.StorageConfig",   "allDeclaredConstructors": true, "allDeclaredFields": true, "allPublicMethods": true },
+  { "name": "org.booktower.config.CsrfConfig",      "allDeclaredConstructors": true, "allDeclaredFields": true, "allPublicMethods": true },
+  { "name": "org.booktower.config.WeblateConfig",   "allDeclaredConstructors": true, "allDeclaredFields": true, "allPublicMethods": true },
+  { "name": "org.booktower.config.OidcConfig",      "allDeclaredConstructors": true, "allDeclaredFields": true, "allPublicMethods": true },
+  { "name": "org.booktower.config.MetadataConfig",  "allDeclaredConstructors": true, "allDeclaredFields": true, "allPublicMethods": true },
+  { "name": "org.booktower.config.FtsConfig",       "allDeclaredConstructors": true, "allDeclaredFields": true, "allPublicMethods": true },
+  { "name": "org.booktower.config.SmtpConfig",      "allDeclaredConstructors": true, "allDeclaredFields": true, "allPublicMethods": true },
+
   { "name": "org.h2.Driver",                                  "allDeclaredConstructors": true, "allPublicMethods": true },
   { "name": "org.h2.engine.Engine",                           "allDeclaredConstructors": true, "allPublicMethods": true },
   { "name": "org.h2.store.fs.FilePathDisk",                   "allDeclaredConstructors": true },
   { "name": "org.h2.store.fs.FilePathMem",                    "allDeclaredConstructors": true },
   { "name": "org.h2.store.fs.FilePathUnstable",               "allDeclaredConstructors": true },
 
-  { "comment": "=== Logback ===" },
   { "name": "ch.qos.logback.classic.Logger",                  "allDeclaredConstructors": true, "allPublicMethods": true },
   { "name": "ch.qos.logback.classic.PatternLayout",           "allDeclaredConstructors": true },
   { "name": "ch.qos.logback.core.ConsoleAppender",            "allDeclaredConstructors": true },
@@ -49,7 +57,6 @@
   { "name": "ch.qos.logback.classic.encoder.PatternLayoutEncoder", "allDeclaredConstructors": true },
   { "name": "ch.qos.logback.core.encoder.LayoutWrappingEncoder","allDeclaredConstructors": true },
 
-  { "comment": "=== Kotlin reflection ===" },
   { "name": "kotlin.KotlinVersion",   "allDeclaredFields": true },
   { "name": "kotlin.Unit",            "allDeclaredFields": true }
 ]

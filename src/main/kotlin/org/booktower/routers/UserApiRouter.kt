@@ -103,6 +103,8 @@ class UserApiRouter(
                 filters.auth.then(optionalHandler(backgroundTaskHandler?.let { it::list })),
             "/api/tasks/{id}" bind Method.DELETE to
                 filters.auth.then(optionalHandler(backgroundTaskHandler?.let { it::dismiss })),
+            "/api/tasks/{id}/retry" bind Method.POST to
+                filters.auth.then(optionalHandler(backgroundTaskHandler?.let { it::retry })),
             // Collections
             "/api/collections" bind Method.GET to filters.auth.then(::listCollections),
             "/api/collections" bind Method.POST to filters.auth.then(::createCollection),

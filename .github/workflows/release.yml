@@ -5,15 +5,15 @@ on:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'    # stable only: v0.5.1, v1.0.0 (not v0.5.1-beta.*)
 
-permissions:
-  contents: write    # needed to create GitHub Releases and upload assets
-  packages: write    # needed to push Docker images to ghcr.io
+permissions: {}  # minimal default — each job declares what it needs
 
 jobs:
   # ── Fat JAR — runs fast on Linux, uploaded once ─────────────────────────
   fat-jar:
     name: Fat JAR
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
@@ -24,12 +24,7 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
-
-      - uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-maven-
+          cache: maven
 
       - name: Build fat JAR
         run: mvn package -DskipTests -Dflyway.skip=true
@@ -41,7 +36,7 @@ jobs:
           FAT=$(find target/ -name "booktower-*-fat.jar" | head -1)
           cp "$FAT" "target/booktower-${REF_NAME}.jar"
 
-      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+      - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
         with:
           name: fat-jar
           path: target/booktower-${{ github.ref_name }}.jar
@@ -50,6 +45,8 @@ jobs:
   native:
     name: Native (${{ matrix.label }})
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
     strategy:
       fail-fast: false
       matrix:
@@ -86,22 +83,18 @@ jobs:
 
       # GraalVM CE — includes native-image out of the box
       - name: Set up GraalVM
-        uses: graalvm/setup-graalvm@03e8abf916fd0e281b2efe7b2da3378bb0a1d085 # v1
+        uses: graalvm/setup-graalvm@f744c72a42b1995d7b0cbc314bde4bace7ac1fe1 # v1
         with:
           java-version: '21'
           distribution: 'graalvm-community'
           github-token: ${{ secrets.GITHUB_TOKEN }}
-
-      - uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-native-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-maven-
+          cache: maven
 
       # Skip the maven-enforcer exact-version check — GraalVM reports a
       # slightly different java.version string than stock Temurin.
       - name: Build native binary
-        run: mvn package -Pnative -DskipTests -Dflyway.skip=true -Denforcer.skip=true
+        shell: bash
+        run: mvn package -Pnative -DskipTests "-Dflyway.skip=true" "-Denforcer.skip=true"
 
       - name: Start native binary
         shell: bash
@@ -143,7 +136,7 @@ jobs:
         run: |
           cp "target/${MATRIX_BINARY}" "target/${MATRIX_ASSET}"
 
-      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+      - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
         with:
           name: native-${{ matrix.label }}
           path: target/${{ matrix.asset }}
@@ -152,18 +145,23 @@ jobs:
   docker:
     name: Docker Image
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
 
       - name: Set up QEMU (for ARM64 builds)
-        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3
+        uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # v4
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4
 
       - name: Log in to GitHub Container Registry
-        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -181,7 +179,7 @@ jobs:
           echo "major_minor=$MAJOR_MINOR" >> "$GITHUB_OUTPUT"
 
       - name: Build and push
-        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294 # v7
         with:
           context: .
           platforms: linux/amd64,linux/arm64
@@ -198,12 +196,16 @@ jobs:
     name: Publish Release
     needs: [ fat-jar, native, docker ]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
 
       - name: Download all artifacts
-        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           path: dist/
 

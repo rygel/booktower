@@ -6,7 +6,7 @@
 
     <groupId>org.booktower</groupId>
     <artifactId>booktower</artifactId>
-    <version>0.6.0</version>
+    <version>0.6.5</version>
     <packaging>jar</packaging>
 
     <properties>
@@ -1112,7 +1112,7 @@
                                 <!-- PDF rendering needs headless AWT -->
                                 <buildArg>-Djava.awt.headless=true</buildArg>
                                 <!-- Classes safe to initialise at build time -->
-                                <buildArg>--initialize-at-build-time=org.slf4j,ch.qos.logback,kotlin.KotlinVersion</buildArg>
+                                <buildArg>--initialize-at-build-time=org.slf4j,ch.qos.logback,kotlin.KotlinVersion,kotlin.KotlinVersion$Companion,org.xml.sax</buildArg>
                                 <!-- Needed for HTTP client calls (Weblate integration) -->
                                 <buildArg>--enable-url-protocols=http,https</buildArg>
                                 <!--
@@ -1125,6 +1125,11 @@
                                 <buildArg>-H:+ReportExceptionStackTraces</buildArg>
                                 <!-- Include all charsets for international text -->
                                 <buildArg>-H:+AddAllCharsets</buildArg>
+                                <!-- kotlin-compiler-embeddable bundles broken jline native-image
+                                     configs — exclude all native-image config from that JAR -->
+                                <buildArg>--exclude-config</buildArg>
+                                <buildArg>kotlin-compiler-embeddable.*</buildArg>
+                                <buildArg>META-INF/native-image/.*</buildArg>
                             </buildArgs>
                         </configuration>
                         <executions>

@@ -430,6 +430,47 @@ class SeedService(
     private val coverExecutor: ExecutorService = Executors.newFixedThreadPool(4)
 
     /**
+     * Retries a failed download task using its stored metadata.
+     * Returns true if the retry was queued, false if the task can't be retried.
+     */
+    fun retryDownload(
+        userId: UUID,
+        task: BackgroundTask,
+    ): Boolean {
+        val meta = task.retryMeta ?: return false
+        val bookId = meta["bookId"]?.let { UUID.fromString(it) } ?: return false
+
+        return when (task.type) {
+            "download-comic" -> {
+                val archiveId = meta["archiveId"] ?: return false
+                val fileName = meta["fileName"] ?: return false
+                val title = meta["title"] ?: "Comic"
+                coverExecutor.submit {
+                    downloadComic(userId, bookId, SeedComic(title, "", "", archiveId, fileName))
+                }
+                true
+            }
+            "download-epub" -> {
+                val gutenbergId = meta["gutenbergId"]?.toIntOrNull() ?: return false
+                val title = meta["title"] ?: "Book"
+                coverExecutor.submit {
+                    downloadEpub(userId, bookId, gutenbergId, title)
+                }
+                true
+            }
+            "download-audiobook" -> {
+                val librivoxId = meta["librivoxId"]?.toIntOrNull() ?: return false
+                val title = meta["title"] ?: "Audiobook"
+                coverExecutor.submit {
+                    downloadLibrivoxChapters(userId, bookId, librivoxId, title)
+                }
+                true
+            }
+            else -> false
+        }
+    }
+
+    /**
      * Seeds demo data for [userId]. Returns null if the user already has libraries (idempotent guard).
      */
     fun seed(userId: UUID): SeedResult? {
@@ -856,7 +897,10 @@ class SeedService(
         bookId: UUID,
         comic: SeedComic,
     ) {
-        val taskId = backgroundTaskService.start(userId, "download-comic", "Downloading comic: ${comic.title}")
+        val taskId = backgroundTaskService.start(
+            userId, "download-comic", "Downloading comic: ${comic.title}",
+            retryMeta = mapOf("bookId" to bookId.toString(), "archiveId" to comic.archiveId, "fileName" to comic.fileName, "title" to comic.title),
+        )
         try {
             val encodedName = java.net.URLEncoder.encode(comic.fileName, "UTF-8").replace("+", "%20")
             val url = "https://archive.org/download/${comic.archiveId}/$encodedName"
@@ -929,7 +973,10 @@ class SeedService(
         librivoxId: Int,
         title: String,
     ) {
-        val taskId = backgroundTaskService.start(userId, "download-audiobook", "Downloading audiobook: $title")
+        val taskId = backgroundTaskService.start(
+            userId, "download-audiobook", "Downloading audiobook: $title",
+            retryMeta = mapOf("bookId" to bookId.toString(), "librivoxId" to librivoxId.toString(), "title" to title),
+        )
         try {
             // Check if at least one chapter file already exists (resumable)
             val booksDir = File(booksPath)
@@ -1055,7 +1102,10 @@ class SeedService(
         gutenbergId: Int,
         title: String,
     ) {
-        val taskId = backgroundTaskService.start(userId, "download-epub", "Downloading EPUB: $title")
+        val taskId = backgroundTaskService.start(
+            userId, "download-epub", "Downloading EPUB: $title",
+            retryMeta = mapOf("bookId" to bookId.toString(), "gutenbergId" to gutenbergId.toString(), "title" to title),
+        )
         try {
             val url = "https://www.gutenberg.org/cache/epub/$gutenbergId/pg$gutenbergId.epub"
             val booksDir = File(booksPath)

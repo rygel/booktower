@@ -264,7 +264,7 @@ val appModule =
                 get<BackgroundTaskService>(),
             )
         }
-        single { BackgroundTaskHandler(get()) }
+        single { BackgroundTaskHandler(get(), get()) }
         single { JournalHandler(get()) }
         single { OidcHandler(get(), get()) }
         single { KoboSyncHandler(get()) }
