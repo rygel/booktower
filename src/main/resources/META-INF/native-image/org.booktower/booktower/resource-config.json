@@ -4,7 +4,7 @@
       { "pattern": "messages\\.properties" },
       { "pattern": "messages_.*\\.properties" },
       { "pattern": "themes\\.json" },
-      { "pattern": "application\\.conf" },
+      { "pattern": "application\\.yaml" },
       { "pattern": "reference\\.conf" },
       { "pattern": "logback\\.xml" },
       { "pattern": "db/migration/.*\\.sql" },

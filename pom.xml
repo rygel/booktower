@@ -1112,7 +1112,7 @@
                                 <!-- PDF rendering needs headless AWT -->
                                 <buildArg>-Djava.awt.headless=true</buildArg>
                                 <!-- Classes safe to initialise at build time -->
-                                <buildArg>--initialize-at-build-time=org.slf4j,ch.qos.logback,kotlin.KotlinVersion</buildArg>
+                                <buildArg>--initialize-at-build-time=org.slf4j,ch.qos.logback,kotlin.KotlinVersion,kotlin.KotlinVersion$Companion,org.xml.sax</buildArg>
                                 <!-- Needed for HTTP client calls (Weblate integration) -->
                                 <buildArg>--enable-url-protocols=http,https</buildArg>
                                 <!--
