@@ -25,8 +25,6 @@ jobs:
         uses: rhysd/actionlint@v1.7.11
 
   # ── zizmor: audit workflows for security vulnerabilities ──────────────────
-  # Detects issues like script injection, overly-broad permissions,
-  # unsafe use of pull_request_target, etc.
   zizmor:
     name: zizmor
     runs-on: ubuntu-latest
@@ -44,7 +42,6 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           zizmor --format sarif .github/workflows/ > zizmor.sarif || true
-        # continue-on-error so the SARIF upload still runs even when findings exist
 
       - name: Upload zizmor SARIF to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v4
@@ -54,7 +51,6 @@ jobs:
           category: zizmor
 
   # ── CodeQL: deep semantic analysis of Kotlin/Java source code ────────────
-  # Detects SQL injection, path traversal, XSS, insecure crypto, etc.
   codeql:
     name: CodeQL
     runs-on: ubuntu-latest
@@ -86,7 +82,47 @@ jobs:
         with:
           category: codeql-java-kotlin
 
-  # ── Checkov: scan Dockerfile for misconfigurations ────────────────────────
+  # ── Gitleaks: scan for secrets, API keys, tokens in code and history ─────
+  gitleaks:
+    name: Gitleaks
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+          fetch-depth: 0   # full history for scanning commits
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ── Hadolint: Dockerfile best practices and ShellCheck for RUN commands ──
+  hadolint:
+    name: Hadolint (Dockerfile)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Run Hadolint
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile
+          format: sarif
+          output-file: hadolint.sarif
+          no-fail: true
+
+      - name: Upload Hadolint SARIF to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        with:
+          sarif_file: hadolint.sarif
+          category: hadolint
+
+  # ── Checkov: scan Dockerfile for security misconfigurations ─────────────
   checkov:
     name: Checkov (Dockerfile)
     runs-on: ubuntu-latest
@@ -101,7 +137,7 @@ jobs:
           framework: dockerfile
           output_format: sarif
           output_file_path: checkov.sarif
-          soft_fail: true   # report findings but don't fail the job
+          soft_fail: true
 
       - name: Upload Checkov SARIF to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v4
@@ -109,3 +145,33 @@ jobs:
         with:
           sarif_file: checkov.sarif
           category: checkov
+
+  # ── OSSF Scorecard: assess project security posture ─────────────────────
+  scorecard:
+    name: OSSF Scorecard
+    runs-on: ubuntu-latest
+    # Only run on main branch pushes and schedule (not PRs, to avoid token issues)
+    if: github.event_name != 'pull_request'
+    permissions:
+      contents: read
+      security-events: write
+      id-token: write   # needed for Scorecard's OIDC publish
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+
+      - name: Run OSSF Scorecard
+        uses: ossf/scorecard-action@v2.4.1
+        with:
+          results_file: scorecard.sarif
+          results_format: sarif
+          publish_results: true
+
+      - name: Upload Scorecard SARIF to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        with:
+          sarif_file: scorecard.sarif
+          category: scorecard
