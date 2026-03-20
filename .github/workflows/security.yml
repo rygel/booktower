@@ -53,6 +53,39 @@ jobs:
           sarif_file: zizmor.sarif
           category: zizmor
 
+  # ── CodeQL: deep semantic analysis of Kotlin/Java source code ────────────
+  # Detects SQL injection, path traversal, XSS, insecure crypto, etc.
+  codeql:
+    name: CodeQL
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-java@v5
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: java-kotlin
+
+      - name: Build for CodeQL
+        run: mvn package -DskipTests -Dflyway.skip=true -q
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: codeql-java-kotlin
+
   # ── Checkov: scan Dockerfile for misconfigurations ────────────────────────
   checkov:
     name: Checkov (Dockerfile)
