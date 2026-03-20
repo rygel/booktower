@@ -404,6 +404,17 @@ private fun normalizeSeedDate(date: String?): String? =
         else -> null
     }
 
+/** Converts a title to a filesystem-safe filename, preserving readability. */
+private fun safeFilename(
+    title: String,
+    ext: String,
+): String =
+    title
+        .replace(Regex("[^a-zA-Z0-9\\s._-]"), "")
+        .replace(Regex("\\s+"), "_")
+        .take(80)
+        .trimEnd('_', '.') + ".$ext"
+
 class SeedService(
     private val bookService: BookService,
     private val libraryService: LibraryService,
@@ -851,7 +862,7 @@ class SeedService(
             val url = "https://archive.org/download/${comic.archiveId}/$encodedName"
             val libDir = File("./data/libraries/comics")
             if (!libDir.exists() && !libDir.mkdirs()) logger.warn("Could not create directory: ${libDir.absolutePath}")
-            val destFile = File(libDir, "$bookId.cbz")
+            val destFile = File(libDir, safeFilename(comic.title, "cbz"))
 
             if (destFile.exists() && destFile.length() > 0) {
                 logger.info("Skipping download for '${comic.title}' — file already exists (${destFile.length()} bytes)")
@@ -1047,7 +1058,7 @@ class SeedService(
             val url = "https://www.gutenberg.org/cache/epub/$gutenbergId/pg$gutenbergId.epub"
             val booksDir = File(booksPath)
             if (!booksDir.exists() && !booksDir.mkdirs()) logger.warn("Could not create directory: ${booksDir.absolutePath}")
-            val destFile = File(booksDir, "$bookId.epub")
+            val destFile = File(booksDir, safeFilename(title, "epub"))
 
             if (destFile.exists() && destFile.length() > 0) {
                 logger.info("Skipping download for '$title' — file already exists (${destFile.length()} bytes)")
