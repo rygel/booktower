@@ -153,8 +153,8 @@ jobs:
   scorecard:
     name: OSSF Scorecard
     runs-on: ubuntu-latest
-    # Only run on main branch pushes and schedule (not PRs, to avoid token issues)
-    if: github.event_name != 'pull_request'
+    # Scorecard only supports the default branch (main)
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     permissions:
       contents: read
       security-events: write
