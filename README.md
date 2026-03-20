@@ -16,21 +16,32 @@ A self-hosted personal book, audiobook, and comic manager with a built-in reader
 | Area | Status | How tested |
 |------|--------|------------|
 | Core (libraries, books, auth, search) | **Stable** | 1600+ integration tests, CI on Linux/macOS/Windows |
-| EPUB/PDF/Comic readers | **Stable** | Playwright browser tests + manual testing |
-| Metadata fetching | **Stable** | Integration tests against live APIs |
-| Bookmarks, journals, notebooks, reviews | **Stable** | Integration tests |
+| EPUB reader | **Stable** | Playwright browser tests + manual testing |
+| PDF reader | **Stable** | Integration tests |
+| Bookmarks, journals, notebooks, reviews | **Stable** | Integration tests (API-level, not manually verified in UI) |
 | Reading/listening stats & analytics | **Stable** | Integration tests |
 | Smart shelves & filter presets | **Stable** | Integration tests |
-| Whispersync (ebook↔audiobook) | **Experimental** | Integration tests only; chapter mapping is approximate |
-| Docker image | **Stable** | CI builds image and runs smoke test (health + login page) |
-| PostgreSQL 17/18 | **Stable** | Full 1600+ test suite runs against real PostgreSQL in CI |
-| Native binaries (GraalVM) | **Experimental** | CI builds for 5 platforms with smoke test on release |
+| PostgreSQL 17/18 | **Stable** | Full test suite runs against real PostgreSQL in CI |
+| Docker image | **Stable** | CI builds image and runs smoke test |
+| Book sharing | **Works** | Integration tests, not manually verified |
+| Collections | **API only** | API exists, no UI yet |
+| Comic reader (CBZ/CBR) | **Broken** | Seed downloads fail (archive.org auth required); reader untested with real files |
+| Audiobook player | **Untested** | Code exists; never tested with real audio files end-to-end |
+| Metadata fetching | **Partially working** | OpenLibrary/Google Books tested; Hardcover/ComicVine/Audible untested |
+| Demo data seeding | **Broken** | EPUB seeds work; comic and audiobook downloads fail silently |
+| Download progress UI | **Minimal** | Shows count only; no error messages, no retry, no per-file status |
+| Whispersync (ebook↔audiobook) | **Untested** | Integration tests only; never tested with real books |
+| Native binaries (GraalVM) | **Untested** | CI builds but no E2E tests run against binaries yet |
 | Kobo / KOReader sync | **Untested** | Implements protocols; never tested with real hardware |
 | OPDS catalog | **Untested** | Basic tests; not verified with real client apps |
 | OIDC / SSO | **Untested** | Implements OIDC spec; tested only with mock providers |
 | Hardcover.app sync | **Untested** | API integration exists; not tested with real accounts |
 | Email delivery | **Untested** | SMTP works with GreenMail mock; not tested with real SMTP or Kindle |
 | Full-text search | **Untested** | PostgreSQL only; requires `BOOKTOWER_FTS_ENABLED=true` |
+| Dark mode toggle | **Works** | Not tested systematically |
+| Keyboard shortcuts | **Works** | Not tested |
+| Drag-and-drop upload | **Untested** | Code exists; never tested with real files |
+| PWA / Service worker | **Untested** | Registered but offline behavior not verified |
 
 ## Features
 
