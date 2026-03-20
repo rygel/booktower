@@ -56,6 +56,7 @@ jobs:
   codeql:
     name: CodeQL
     runs-on: ubuntu-latest
+    continue-on-error: true   # CodeQL doesn't support Kotlin 2.3.20 yet — remove when they catch up
     permissions:
       contents: read
       security-events: write
