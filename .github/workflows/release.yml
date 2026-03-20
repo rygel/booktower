@@ -101,7 +101,8 @@ jobs:
       # Skip the maven-enforcer exact-version check — GraalVM reports a
       # slightly different java.version string than stock Temurin.
       - name: Build native binary
-        run: mvn package -Pnative -DskipTests -Dflyway.skip=true -Denforcer.skip=true
+        shell: bash
+        run: mvn package -Pnative -DskipTests "-Dflyway.skip=true" "-Denforcer.skip=true"
 
       - name: Start native binary
         shell: bash
