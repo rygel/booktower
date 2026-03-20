@@ -44,6 +44,18 @@
   { "name": "org.booktower.config.FtsConfig",       "allDeclaredConstructors": true, "allDeclaredFields": true, "allPublicMethods": true },
   { "name": "org.booktower.config.SmtpConfig",      "allDeclaredConstructors": true, "allDeclaredFields": true, "allPublicMethods": true },
 
+  { "name": "org.jdbi.v3.core.config.internal.ConfigCaches", "allDeclaredConstructors": true, "allPublicMethods": true },
+  { "name": "org.jdbi.v3.core.statement.SqlStatements",    "allDeclaredConstructors": true, "allPublicMethods": true },
+  { "name": "org.jdbi.v3.core.mapper.RowMappers",          "allDeclaredConstructors": true, "allPublicMethods": true },
+  { "name": "org.jdbi.v3.core.mapper.ColumnMappers",       "allDeclaredConstructors": true, "allPublicMethods": true },
+  { "name": "org.jdbi.v3.core.argument.Arguments",         "allDeclaredConstructors": true, "allPublicMethods": true },
+  { "name": "org.jdbi.v3.core.collector.JdbiCollectors",   "allDeclaredConstructors": true, "allPublicMethods": true },
+  { "name": "org.jdbi.v3.core.qualifier.Qualifiers",       "allDeclaredConstructors": true, "allPublicMethods": true },
+  { "name": "org.jdbi.v3.core.mapper.MapMappers",          "allDeclaredConstructors": true, "allPublicMethods": true },
+  { "name": "org.jdbi.v3.core.extension.Extensions",       "allDeclaredConstructors": true, "allPublicMethods": true },
+  { "name": "org.jdbi.v3.sqlobject.SqlObjectFactory",      "allDeclaredConstructors": true, "allPublicMethods": true },
+  { "name": "org.postgresql.Driver",                              "allDeclaredConstructors": true, "allPublicMethods": true },
+
   { "name": "org.h2.Driver",                                  "allDeclaredConstructors": true, "allPublicMethods": true },
   { "name": "org.h2.engine.Engine",                           "allDeclaredConstructors": true, "allPublicMethods": true },
   { "name": "org.h2.store.fs.FilePathDisk",                   "allDeclaredConstructors": true },
