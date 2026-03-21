@@ -1023,7 +1023,11 @@ class SeedService(
                 javax.xml.parsers.DocumentBuilderFactory
                     .newInstance()
                     .also {
-                        it.setFeature("http://apache.org/xml/features/disallow-doctype-decl", false)
+                        // Prevent XXE — block external entities while allowing DOCTYPE for RSS feeds
+                        it.setFeature("http://xml.org/sax/features/external-general-entities", false)
+                        it.setFeature("http://xml.org/sax/features/external-parameter-entities", false)
+                        it.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false)
+                        it.isXIncludeAware = false
                         it.isNamespaceAware = true
                     }
             val items = conn.inputStream.use { dbf.newDocumentBuilder().parse(it) }.getElementsByTagName("item")
