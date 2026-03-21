@@ -21,22 +21,22 @@
 
         <!-- Maven Plugin Versions -->
         <kotlin-maven-plugin.version>${kotlin.version}</kotlin-maven-plugin.version>
-        <maven-compiler-plugin.version>3.14.0</maven-compiler-plugin.version>
-        <maven-clean-plugin.version>3.2.0</maven-clean-plugin.version>
-        <maven-install-plugin.version>3.1.2</maven-install-plugin.version>
+        <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
+        <maven-clean-plugin.version>3.5.0</maven-clean-plugin.version>
+        <maven-install-plugin.version>3.1.4</maven-install-plugin.version>
         <maven-site-plugin.version>3.21.0</maven-site-plugin.version>
-        <maven-deploy-plugin.version>3.1.2</maven-deploy-plugin.version>
-        <maven-jar-plugin.version>3.4.2</maven-jar-plugin.version>
-        <maven-surefire-plugin.version>3.5.3</maven-surefire-plugin.version>
-        <maven-enforcer-plugin.version>3.5.0</maven-enforcer-plugin.version>
-        <maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
+        <maven-deploy-plugin.version>3.1.4</maven-deploy-plugin.version>
+        <maven-jar-plugin.version>3.5.0</maven-jar-plugin.version>
+        <maven-surefire-plugin.version>3.5.5</maven-surefire-plugin.version>
+        <maven-enforcer-plugin.version>3.6.2</maven-enforcer-plugin.version>
+        <maven-resources-plugin.version>3.5.0</maven-resources-plugin.version>
         <flyway-maven-plugin.version>12.1.1</flyway-maven-plugin.version>
         <exec-maven-plugin.version>3.6.3</exec-maven-plugin.version>
         <jte-maven-plugin.version>3.2.3</jte-maven-plugin.version>
         <detekt-maven-plugin.version>1.23.8</detekt-maven-plugin.version>
         <jacoco-maven-plugin.version>0.8.14</jacoco-maven-plugin.version>
         <native-maven-plugin.version>0.11.5</native-maven-plugin.version>
-        <maven-shade-plugin.version>3.6.0</maven-shade-plugin.version>
+        <maven-shade-plugin.version>3.6.2</maven-shade-plugin.version>
         <fizzed-watcher-maven-plugin.version>1.10.6</fizzed-watcher-maven-plugin.version>
 
         <!-- Dependency Versions -->
@@ -55,7 +55,7 @@
         <checkstyle.version>3.6.0</checkstyle.version>
         <pmd.version>3.28.0</pmd.version>
         <errorprone.version>2.48.0</errorprone.version>
-        <spotless.version>3.3.0</spotless.version>
+        <spotless.version>3.4.0</spotless.version>
         <ktlint.version>3.5.0</ktlint.version>
         <sonar-scanner.version>5.5.0.6356</sonar-scanner.version>
         <duplicate-finder.version>2.0.1</duplicate-finder.version>
