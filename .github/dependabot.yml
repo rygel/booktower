@@ -10,6 +10,53 @@ updates:
     open-pull-requests-limit: 10
     labels:
       - "dependencies"
+    groups:
+      kotlin:
+        patterns:
+          - "org.jetbrains.kotlin*"
+          - "kotlin-*"
+      http4k:
+        patterns:
+          - "org.http4k*"
+      jetty:
+        patterns:
+          - "org.eclipse.jetty*"
+      jackson:
+        patterns:
+          - "com.fasterxml.jackson*"
+          - "tools.jackson*"
+      database:
+        patterns:
+          - "org.jdbi*"
+          - "com.h2database*"
+          - "org.postgresql*"
+          - "com.zaxxer*"
+          - "org.flywaydb*"
+      testing:
+        patterns:
+          - "org.junit*"
+          - "io.mockk*"
+          - "org.testcontainers*"
+          - "com.microsoft.playwright*"
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+        exclude-patterns:
+          - "org.jetbrains.kotlin*"
+          - "org.http4k*"
+          - "org.eclipse.jetty*"
+          - "com.fasterxml.jackson*"
+          - "tools.jackson*"
+          - "org.jdbi*"
+          - "com.h2database*"
+          - "org.postgresql*"
+          - "com.zaxxer*"
+          - "org.flywaydb*"
+          - "org.junit*"
+          - "io.mockk*"
+          - "org.testcontainers*"
+          - "com.microsoft.playwright*"
 
   # GitHub Actions
   - package-ecosystem: "github-actions"
@@ -22,3 +69,7 @@ updates:
     labels:
       - "dependencies"
       - "github-actions"
+    groups:
+      actions:
+        patterns:
+          - "*"
