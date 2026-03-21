@@ -290,6 +290,7 @@
                 <img id="comic-img" src="" alt="${i18n.translate("page.reader.comic.loading")}">
                 <img id="comic-img-2" src="" alt="" style="display:none;">
             </div>
+            <div id="comic-continuous" style="display:none; flex-direction:column; align-items:center; gap:4px; width:100%;"></div>
             <img id="comic-preload-1" style="display:none;" aria-hidden="true">
             <img id="comic-preload-2" style="display:none;" aria-hidden="true">
         </div>
@@ -518,6 +519,7 @@
                     <button class="pref-btn active" data-pref="layout" data-val="single">${i18n.translate("page.reader.prefs.layout.single")}</button>
                     <button class="pref-btn" data-pref="layout" data-val="double">${i18n.translate("page.reader.prefs.layout.double")}</button>
                     <button class="pref-btn" data-pref="layout" data-val="double-no-cover">${i18n.translate("page.reader.prefs.layout.double.nocover")}</button>
+                    <button class="pref-btn" data-pref="layout" data-val="continuous">${i18n.translate("page.reader.prefs.layout.continuous")}</button>
                 </div>
             </div>
             <div class="pref-section">
@@ -1812,14 +1814,57 @@ var BT_DEVICE = (function() {
             b.classList.toggle('active', b.dataset.val === (comicRtl ? 'rtl' : 'ltr'));
         });
     }
+    var continuousContainer = document.getElementById('comic-continuous');
+    var pagesContainer = document.getElementById('comic-pages');
+    var continuousLoaded = new Set();
+
     function applyComicLayout() {
         document.querySelectorAll('[data-pref="layout"]').forEach(function(b) {
             b.classList.toggle('active', b.dataset.val === comicLayout);
         });
-        comicImg2.style.display = comicLayout === 'single' ? 'none' : '';
-        if (comicLayout === 'single') {
-            comicImg2.src = '';
+        if (comicLayout === 'continuous') {
+            pagesContainer.style.display = 'none';
+            continuousContainer.style.display = 'flex';
+            buildContinuousView();
+        } else {
+            pagesContainer.style.display = 'flex';
+            continuousContainer.style.display = 'none';
+            comicImg2.style.display = (comicLayout === 'single') ? 'none' : '';
+            if (comicLayout === 'single') comicImg2.src = '';
         }
+    }
+
+    function buildContinuousView() {
+        if (totalPages === 0) return;
+        continuousContainer.textContent = '';
+        continuousLoaded.clear();
+        for (var i = 0; i < totalPages; i++) {
+            var img = document.createElement('img');
+            img.dataset.page = i;
+            img.alt = '${i18n.translate("label.page")} ' + (i + 1);
+            img.style.cssText = 'max-width:100%; display:block; margin:0 auto;';
+            img.loading = 'lazy';
+            img.src = '/api/books/' + BOOK_ID + '/comic/' + i;
+            continuousContainer.appendChild(img);
+        }
+        // Track scroll position for page indicator
+        var wrap = document.getElementById('comic-wrap');
+        wrap.addEventListener('scroll', function() {
+            if (comicLayout !== 'continuous') return;
+            var images = continuousContainer.querySelectorAll('img');
+            var wrapTop = wrap.scrollTop + wrap.offsetTop;
+            for (var j = images.length - 1; j >= 0; j--) {
+                if (images[j].offsetTop <= wrapTop + 100) {
+                    var pg = parseInt(images[j].dataset.page) + 1;
+                    if (pg !== currentPage) {
+                        currentPage = pg;
+                        pageInfo.textContent = currentPage + ' / ' + totalPages;
+                        scheduleSave(currentPage);
+                    }
+                    break;
+                }
+            }
+        });
     }
     function saveComicPrefs() {
         clearTimeout(comicPrefSaveTimer);
