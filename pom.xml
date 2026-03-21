@@ -79,7 +79,7 @@
         <jdbi3.version>3.51.0</jdbi3.version>
         <hikari.version>7.0.2</hikari.version>
         <http4k.version>6.36.0.0</http4k.version>
-        <kotlin-logging.version>7.0.7</kotlin-logging.version>
+        <kotlin-logging.version>8.0.01</kotlin-logging.version>
         <!-- kotlin-logging 8.x is available but is a pre-release rewrite; 7.0.7 is latest stable -->
         <testcontainers.version>1.21.4</testcontainers.version>
         <commons-compress.version>1.28.0</commons-compress.version>
