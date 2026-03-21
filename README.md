@@ -203,6 +203,40 @@ chmod +x booktower-linux-x64
 ./booktower-linux-x64
 ```
 
+## Support Matrix
+
+### Deployment Options
+
+| Method | JDK Required | Platforms | Notes |
+|--------|-------------|-----------|-------|
+| **Docker** | No | linux/amd64, linux/arm64 | Recommended for production |
+| **Native Binary** | No | Linux x64/arm64, macOS x64/arm64, Windows x64 | Built with GraalVM 25 CE |
+| **Fat JAR** | Java 21+ | Any OS with JDK | Temurin, Corretto, GraalVM all work |
+
+### Operating Systems
+
+| OS | Fat JAR | Native Binary | Docker | CI Tested |
+|----|---------|--------------|--------|-----------|
+| Ubuntu / Debian | Yes | Yes (x64, arm64) | Yes | Yes |
+| macOS (Intel) | Yes | Yes | Via Docker Desktop | Yes |
+| macOS (Apple Silicon) | Yes | Yes | Via Docker Desktop | Yes |
+| Windows 10/11 | Yes | Yes (x64) | Via WSL2/Docker Desktop | Yes |
+
+### Databases
+
+| Database | Versions | Notes |
+|----------|----------|-------|
+| **H2** (embedded) | 2.4.x | Default for dev/quickstart — zero config |
+| **PostgreSQL** | 17, 18 | Recommended for production. Set `BOOKTOWER_DB_*` env vars |
+
+### Java Versions (Fat JAR only)
+
+| Version | Supported |
+|---------|-----------|
+| Java 21 (LTS) | Yes — minimum required |
+| Java 22-24 | Yes |
+| Java 25 | Yes — tested in CI |
+
 ## Configuration
 
 All settings can be overridden with environment variables. See [docs/CONFIGURATION.md](docs/CONFIGURATION.md) for the full reference.
