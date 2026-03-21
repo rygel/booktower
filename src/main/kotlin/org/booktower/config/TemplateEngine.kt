@@ -31,8 +31,10 @@ class TemplateRenderer {
                 ?.location
                 ?.path
                 ?.endsWith(".jar") == true
+        // GraalVM native image: System.getProperty("org.graalvm.nativeimage.imagecode") is set
+        val isNativeImage = System.getProperty("org.graalvm.nativeimage.imagecode") != null
 
-        if (isDev && sourceDir.toFile().isDirectory && !isJar) {
+        if (isDev && sourceDir.toFile().isDirectory && !isJar && !isNativeImage) {
             val dynamicOutputDir = Path.of("target/jte-dynamic")
             // Auto-clean stale compiled templates on startup
             if (dynamicOutputDir.toFile().exists()) {
