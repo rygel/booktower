@@ -370,6 +370,7 @@ val appModule =
                 exportHandler = get<ExportHandler>(),
                 goodreadsImportHandler = get<GoodreadsImportHandler>(),
                 collectionService = get<org.booktower.services.CollectionService>(),
+                auditService = get<org.booktower.services.AuditService>(),
             )
         }
         single {

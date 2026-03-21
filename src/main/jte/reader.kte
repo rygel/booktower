@@ -36,7 +36,9 @@
         #epub-viewer { flex: 1; background: var(--bt-bg); overflow: hidden; }
         /* Comic mode */
         #comic-wrap { flex: 1; overflow: auto; display: flex; justify-content: center; align-items: flex-start; padding: 1.5rem; background: var(--bt-reader-backdrop, #1a1a1a); position: relative; }
-        #comic-img { max-width: 100%; max-height: calc(100vh - 3rem - 3rem); object-fit: contain; box-shadow: 0 4px 32px rgba(0,0,0,0.6); display: block; user-select: none; }
+        #comic-img, #comic-img-2 { max-width: 100%; max-height: calc(100vh - 3rem - 3rem); object-fit: contain; box-shadow: 0 4px 32px rgba(0,0,0,0.6); display: block; user-select: none; }
+        .comic-animate #comic-img, .comic-animate #comic-img-2 { transition: opacity 0.2s ease-in-out; }
+        .comic-fade { opacity: 0 !important; }
         .comic-click-zone { position: absolute; top: 0; bottom: 0; z-index: 10; cursor: pointer; }
         .comic-zone-left { left: 0; width: 25%; }
         .comic-zone-center { left: 25%; width: 50%; }
@@ -537,6 +539,14 @@
                 <div class="pref-btn-row">
                     <button class="pref-btn active" data-pref="direction" data-val="ltr">${i18n.translate("page.reader.prefs.direction.ltr")}</button>
                     <button class="pref-btn" data-pref="direction" data-val="rtl">${i18n.translate("page.reader.prefs.direction.rtl")}</button>
+                    <button class="pref-btn" data-pref="direction" data-val="vertical">${i18n.translate("page.reader.prefs.direction.vertical")}</button>
+                </div>
+            </div>
+            <div class="pref-section">
+                <p class="pref-section-label">${i18n.translate("page.reader.prefs.animations")}</p>
+                <div class="pref-btn-row">
+                    <button class="pref-btn active" data-pref="animate" data-val="on">${i18n.translate("label.on")}</button>
+                    <button class="pref-btn" data-pref="animate" data-val="off">${i18n.translate("label.off")}</button>
                 </div>
             </div>
             @endif
@@ -1773,7 +1783,9 @@ var BT_DEVICE = (function() {
     const COMIC_PREFS_URL = '/api/reader-preferences/comic?device=' + BT_DEVICE;
     let comicPrefSaveTimer = null;
     let comicFit = 'contain';
-    let comicLayout = 'single'; // 'single', 'double', 'double-no-cover'
+    let comicLayout = 'single'; // 'single', 'double', 'double-no-cover', 'continuous'
+    let comicAnimate = true;
+    let comicDirection = 'ltr'; // 'ltr', 'rtl', 'vertical'
 
     function applyComicFit() {
         var vh = 'calc(100vh - 3rem - 3rem)';
@@ -1810,8 +1822,32 @@ var BT_DEVICE = (function() {
         });
     }
     function applyComicDirection() {
+        comicRtl = comicDirection === 'rtl';
         document.querySelectorAll('[data-pref="direction"]').forEach(function(b) {
-            b.classList.toggle('active', b.dataset.val === (comicRtl ? 'rtl' : 'ltr'));
+            b.classList.toggle('active', b.dataset.val === comicDirection);
+        });
+        // Vertical: swap click zones to top/bottom
+        var wrap = document.getElementById('comic-wrap');
+        var zones = wrap.querySelectorAll('.comic-click-zone');
+        if (comicDirection === 'vertical') {
+            zones.forEach(function(z) {
+                z.style.left = '0'; z.style.right = '0'; z.style.width = '100%';
+            });
+            zones[0].style.top = '0'; zones[0].style.bottom = ''; zones[0].style.height = '25%';
+            zones[1].style.top = '25%'; zones[1].style.bottom = ''; zones[1].style.height = '50%';
+            zones[2].style.top = ''; zones[2].style.bottom = '0'; zones[2].style.height = '25%';
+        } else {
+            zones.forEach(function(z) { z.style.top = '0'; z.style.bottom = '0'; z.style.height = ''; });
+            zones[0].style.left = '0'; zones[0].style.width = '25%'; zones[0].style.right = '';
+            zones[1].style.left = '25%'; zones[1].style.width = '50%'; zones[1].style.right = '';
+            zones[2].style.right = '0'; zones[2].style.width = '25%'; zones[2].style.left = '';
+        }
+    }
+    function applyComicAnimate() {
+        var wrap = document.getElementById('comic-wrap');
+        wrap.classList.toggle('comic-animate', comicAnimate);
+        document.querySelectorAll('[data-pref="animate"]').forEach(function(b) {
+            b.classList.toggle('active', (b.dataset.val === 'on') === comicAnimate);
         });
     }
     var continuousContainer = document.getElementById('comic-continuous');
@@ -1872,7 +1908,7 @@ var BT_DEVICE = (function() {
             fetch(COMIC_PREFS_URL, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ fitMode: comicFit, direction: comicRtl ? 'rtl' : 'ltr', layout: comicLayout })
+                body: JSON.stringify({ fitMode: comicFit, direction: comicDirection, layout: comicLayout, animate: comicAnimate })
             }).catch(function() {});
         }, 600);
     }
@@ -1893,18 +1929,28 @@ var BT_DEVICE = (function() {
     });
     document.querySelectorAll('[data-pref="direction"]').forEach(function(btn) {
         btn.addEventListener('click', function() {
-            comicRtl = btn.dataset.val === 'rtl';
+            comicDirection = btn.dataset.val;
+            comicRtl = comicDirection === 'rtl';
             applyComicDirection();
+            saveComicPrefs();
+        });
+    });
+    document.querySelectorAll('[data-pref="animate"]').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            comicAnimate = btn.dataset.val === 'on';
+            applyComicAnimate();
             saveComicPrefs();
         });
     });
     fetch(COMIC_PREFS_URL).then(function(r) { return r.json(); }).then(function(p) {
         if (p.fitMode)   comicFit = p.fitMode;
-        if (p.direction) comicRtl = p.direction === 'rtl';
+        if (p.direction) { comicDirection = p.direction; comicRtl = comicDirection === 'rtl'; }
         if (p.layout)    comicLayout = p.layout;
+        if (p.animate !== undefined) comicAnimate = p.animate;
         applyComicFit();
         applyComicDirection();
         applyComicLayout();
+        applyComicAnimate();
     }).catch(function() {});
 
     async function init() {
@@ -1925,7 +1971,18 @@ var BT_DEVICE = (function() {
     function goToPage(n) {
         currentPage = Math.min(Math.max(1, n), totalPages);
         var base = '/api/books/' + BOOK_ID + '/comic/';
-        comicImg.src = base + (currentPage - 1);
+        // Fade transition
+        if (comicAnimate) {
+            comicImg.classList.add('comic-fade');
+            if (comicImg2) comicImg2.classList.add('comic-fade');
+            setTimeout(function() {
+                comicImg.src = base + (currentPage - 1);
+                comicImg.classList.remove('comic-fade');
+                if (comicImg2) comicImg2.classList.remove('comic-fade');
+            }, 200);
+        } else {
+            comicImg.src = base + (currentPage - 1);
+        }
         comicImg.alt = '${i18n.translate("label.page")} ' + currentPage;
 
         // Double page spread: show second page alongside
@@ -1964,8 +2021,13 @@ var BT_DEVICE = (function() {
     document.addEventListener('keydown', function(e) {
         if (e.target.tagName === 'INPUT') return;
         var step = pageStep();
-        if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   goToPage(comicRtl ? currentPage + step : currentPage - step);
-        if (e.key === 'ArrowRight' || e.key === 'ArrowDown')  goToPage(comicRtl ? currentPage - step : currentPage + step);
+        if (comicDirection === 'vertical') {
+            if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') goToPage(currentPage - step);
+            if (e.key === 'ArrowDown' || e.key === 'ArrowRight') goToPage(currentPage + step);
+        } else {
+            if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   goToPage(comicRtl ? currentPage + step : currentPage - step);
+            if (e.key === 'ArrowRight' || e.key === 'ArrowDown')  goToPage(comicRtl ? currentPage - step : currentPage + step);
+        }
         if (e.key === 'Escape') window.location.href = '/books/' + BOOK_ID;
     });
 
