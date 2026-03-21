@@ -1,90 +1,22 @@
 package org.booktower.integration
 
-import org.booktower.TestFixture
 import org.booktower.config.Json
-import org.booktower.models.LoginResponse
-import org.booktower.services.AdminService
-import org.booktower.services.AnalyticsService
-import org.booktower.services.AnnotationService
-import org.booktower.services.ApiTokenService
-import org.booktower.services.AuthService
-import org.booktower.services.BookService
-import org.booktower.services.BookmarkService
-import org.booktower.services.ComicService
-import org.booktower.services.EpubMetadataService
-import org.booktower.services.ExportService
-import org.booktower.services.GoodreadsImportService
-import org.booktower.services.JwtService
-import org.booktower.services.KOReaderSyncService
-import org.booktower.services.LibraryService
-import org.booktower.services.MagicShelfService
-import org.booktower.services.PasswordResetService
-import org.booktower.services.PdfMetadataService
-import org.booktower.services.ReadingSessionService
-import org.booktower.services.SeedService
-import org.booktower.services.UserSettingsService
-import org.http4k.core.HttpHandler
 import org.http4k.core.Method
 import org.http4k.core.Request
 import org.http4k.core.Status
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
-import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import kotlin.test.assertTrue
 
-class KOReaderSyncIntegrationTest {
-    private val config = TestFixture.config
-    private val jdbi = TestFixture.database.getJdbi()
-
-    private lateinit var app: HttpHandler
-
-    @BeforeEach
-    fun setup() {
-        val jwtService = JwtService(config.security)
-        val authService = AuthService(jdbi, jwtService)
-        val pdfMetadataService = PdfMetadataService(jdbi, config.storage.coversPath)
-        val libraryService = LibraryService(jdbi, pdfMetadataService)
-        val bookmarkService = BookmarkService(jdbi)
-        val userSettingsService = UserSettingsService(jdbi)
-        val analyticsService = AnalyticsService(jdbi, userSettingsService)
-        val readingSessionService = ReadingSessionService(jdbi)
-        val bookService = BookService(jdbi, analyticsService, readingSessionService)
-        val adminService = AdminService(jdbi)
-        val annotationService = AnnotationService(jdbi)
-        val magicShelfService = MagicShelfService(jdbi, bookService)
-        val passwordResetService = PasswordResetService(jdbi)
-        val apiTokenService = ApiTokenService(jdbi)
-        val exportService = ExportService(jdbi)
-        val epubMetadataService = EpubMetadataService(jdbi, config.storage.coversPath)
-        val comicService = ComicService()
-        val goodreadsImportService = GoodreadsImportService(bookService)
-        val seedService = SeedService(bookService, libraryService, config.storage.coversPath, config.storage.booksPath)
-        val koReaderSyncService = KOReaderSyncService(jdbi, bookService)
-        app =
-            buildTestApp(
-                authService = authService,
-                libraryService = libraryService,
-                bookService = bookService,
-                jwtService = jwtService,
-                koReaderSyncService = koReaderSyncService,
-            )
-    }
-
-    private fun registerAndToken(): String {
-        val u = "kr_${System.nanoTime()}"
-        val r =
-            app(
-                Request(Method.POST, "/auth/register")
-                    .header("Content-Type", "application/json")
-                    .body("""{"username":"$u","email":"$u@test.com","password":"pass1234"}"""),
-            )
-        return Json.mapper.readValue(r.bodyString(), LoginResponse::class.java).token
-    }
-
+/**
+ * Integration tests for the KOReader kosync protocol.
+ * Tests device registration, progress push/pull, and error handling.
+ */
+class KOReaderSyncIntegrationTest : IntegrationTestBase() {
     @Test
-    fun `POST api koreader devices registers device`() {
-        val token = registerAndToken()
+    fun `register KOReader device returns token`() {
+        val token = registerAndGetToken()
         val resp =
             app(
                 Request(Method.POST, "/api/koreader/devices")
@@ -93,35 +25,130 @@ class KOReaderSyncIntegrationTest {
                     .body("""{"deviceName":"My KOReader"}"""),
             )
         assertEquals(Status.CREATED, resp.status)
-        val tree = Json.mapper.readTree(resp.bodyString())
-        assertNotNull(tree.get("token")?.asText())
-        assertEquals("My KOReader", tree.get("deviceName")?.asText())
+        val body = Json.mapper.readTree(resp.bodyString())
+        assertNotNull(body.get("token").asText())
+        assertEquals("My KOReader", body.get("deviceName").asText())
     }
 
     @Test
-    fun `GET api koreader devices lists devices`() {
-        val token = registerAndToken()
+    fun `list KOReader devices returns registered devices`() {
+        val token = registerAndGetToken()
         app(
             Request(Method.POST, "/api/koreader/devices")
                 .header("Cookie", "token=$token")
                 .header("Content-Type", "application/json")
-                .body("""{"deviceName":"Dev A"}"""),
+                .body("""{"deviceName":"Device 1"}"""),
         )
-        val resp = app(Request(Method.GET, "/api/koreader/devices").header("Cookie", "token=$token"))
+        app(
+            Request(Method.POST, "/api/koreader/devices")
+                .header("Cookie", "token=$token")
+                .header("Content-Type", "application/json")
+                .body("""{"deviceName":"Device 2"}"""),
+        )
+        val resp =
+            app(
+                Request(Method.GET, "/api/koreader/devices")
+                    .header("Cookie", "token=$token"),
+            )
         assertEquals(Status.OK, resp.status)
-        val arr = Json.mapper.readTree(resp.bodyString())
-        assertTrue(arr.isArray && arr.size() >= 1)
+        val devices = Json.mapper.readTree(resp.bodyString())
+        assertTrue(devices.isArray)
+        assertTrue(devices.size() >= 2, "Should have at least 2 devices")
     }
 
     @Test
-    fun `PUT koreader token syncs progress push returns 200`() {
-        val token = registerAndToken()
+    fun `delete KOReader device removes it`() {
+        val token = registerAndGetToken()
         val regResp =
             app(
                 Request(Method.POST, "/api/koreader/devices")
                     .header("Cookie", "token=$token")
                     .header("Content-Type", "application/json")
-                    .body("""{"deviceName":"KOReader"}"""),
+                    .body("""{"deviceName":"Temporary"}"""),
+            )
+        val deviceToken =
+            Json.mapper
+                .readTree(regResp.bodyString())
+                .get("token")
+                .asText()
+
+        val delResp =
+            app(
+                Request(Method.DELETE, "/api/koreader/devices/$deviceToken")
+                    .header("Cookie", "token=$token"),
+            )
+        assertEquals(Status.NO_CONTENT, delResp.status)
+
+        val listResp =
+            app(
+                Request(Method.GET, "/api/koreader/devices")
+                    .header("Cookie", "token=$token"),
+            )
+        val devices = Json.mapper.readTree(listResp.bodyString())
+        val found = (0 until devices.size()).any { devices[it].get("token").asText() == deviceToken }
+        assertTrue(!found, "Deleted device should not appear in list")
+    }
+
+    @Test
+    fun `push and pull reading progress round-trip`() {
+        val token = registerAndGetToken()
+        // Create a real book so KOReader can resolve it by ID
+        val libId = createLibrary(token, "kr-lib")
+        val bookResp =
+            app(
+                Request(Method.POST, "/api/books")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"title":"KOReader Book","libraryId":"$libId"}"""),
+            )
+        val bookId =
+            Json.mapper
+                .readTree(bookResp.bodyString())
+                .get("id")
+                .asText()
+
+        val regResp =
+            app(
+                Request(Method.POST, "/api/koreader/devices")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"deviceName":"Test Reader"}"""),
+            )
+        val deviceToken =
+            Json.mapper
+                .readTree(regResp.bodyString())
+                .get("token")
+                .asText()
+
+        val pushResp =
+            app(
+                Request(Method.PUT, "/koreader/$deviceToken/syncs/progress")
+                    .header("Content-Type", "application/json")
+                    .body("""{"document":"$bookId","progress":"42/100","percentage":0.42,"device":"KOReader","device_id":"abc123"}"""),
+            )
+        assertEquals(Status.OK, pushResp.status)
+        val pushBody = Json.mapper.readTree(pushResp.bodyString())
+        assertEquals(bookId, pushBody.get("document").asText())
+        assertNotNull(pushBody.get("timestamp"))
+
+        val pullResp =
+            app(
+                Request(Method.GET, "/koreader/$deviceToken/syncs/progress/$bookId"),
+            )
+        assertEquals(Status.OK, pullResp.status)
+        val pullBody = Json.mapper.readTree(pullResp.bodyString())
+        assertEquals(bookId, pullBody.get("document").asText())
+    }
+
+    @Test
+    fun `pull progress for unknown document returns 404`() {
+        val token = registerAndGetToken()
+        val regResp =
+            app(
+                Request(Method.POST, "/api/koreader/devices")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"deviceName":"Test"}"""),
             )
         val deviceToken =
             Json.mapper
@@ -131,50 +158,79 @@ class KOReaderSyncIntegrationTest {
 
         val resp =
             app(
-                Request(Method.PUT, "/koreader/$deviceToken/syncs/progress")
-                    .header("Content-Type", "application/json")
-                    .body("""{"document":"nonexistent-hash","progress":"0","percentage":0.0,"device":"KOReader","device_id":"kr1"}"""),
+                Request(Method.GET, "/koreader/$deviceToken/syncs/progress/nonexistent.epub"),
             )
-        // Even if book not found, service returns false but handler returns 200 (best-effort)
-        assertEquals(Status.OK, resp.status)
-    }
-
-    @Test
-    fun `GET koreader progress returns 404 for unknown document`() {
-        val token = registerAndToken()
-        val regResp =
-            app(
-                Request(Method.POST, "/api/koreader/devices")
-                    .header("Cookie", "token=$token")
-                    .header("Content-Type", "application/json")
-                    .body("""{"deviceName":"KOReader"}"""),
-            )
-        val deviceToken =
-            Json.mapper
-                .readTree(regResp.bodyString())
-                .get("token")
-                .asText()
-
-        val resp = app(Request(Method.GET, "/koreader/$deviceToken/syncs/progress/unknown-document-hash"))
         assertEquals(Status.NOT_FOUND, resp.status)
     }
 
     @Test
-    fun `koreader endpoints return 503 when service not configured`() {
-        // IntegrationTestBase app doesn't have KOReaderSyncService wired
-        val base = KoboSyncIntegrationTest::class.java // just to confirm service is absent
-        // We already have the service wired in this test class, so test with invalid token
-        val resp = app(Request(Method.GET, "/koreader/bad-token/syncs/progress/doc"))
+    fun `invalid device token returns 401`() {
+        val resp =
+            app(
+                Request(Method.PUT, "/koreader/invalid-token/syncs/progress")
+                    .header("Content-Type", "application/json")
+                    .body("""{"document":"test.epub","progress":"1/10","percentage":0.1}"""),
+            )
         assertEquals(Status.UNAUTHORIZED, resp.status)
     }
 
     @Test
-    fun `POST api koreader devices requires authentication`() {
+    fun `push progress updates existing entry`() {
+        val token = registerAndGetToken()
+        val libId = createLibrary(token, "kr-update-lib")
+        val bookResp =
+            app(
+                Request(Method.POST, "/api/books")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"title":"Updatable Book","libraryId":"$libId"}"""),
+            )
+        val bookId =
+            Json.mapper
+                .readTree(bookResp.bodyString())
+                .get("id")
+                .asText()
+
+        val regResp =
+            app(
+                Request(Method.POST, "/api/koreader/devices")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"deviceName":"Updater"}"""),
+            )
+        val deviceToken =
+            Json.mapper
+                .readTree(regResp.bodyString())
+                .get("token")
+                .asText()
+
+        app(
+            Request(Method.PUT, "/koreader/$deviceToken/syncs/progress")
+                .header("Content-Type", "application/json")
+                .body("""{"document":"$bookId","progress":"10/200","percentage":0.05}"""),
+        )
+        app(
+            Request(Method.PUT, "/koreader/$deviceToken/syncs/progress")
+                .header("Content-Type", "application/json")
+                .body("""{"document":"$bookId","progress":"150/200","percentage":0.75}"""),
+        )
+
+        val pullResp =
+            app(
+                Request(Method.GET, "/koreader/$deviceToken/syncs/progress/$bookId"),
+            )
+        assertEquals(Status.OK, pullResp.status)
+        val body = Json.mapper.readTree(pullResp.bodyString())
+        assertEquals(bookId, body.get("document").asText())
+    }
+
+    @Test
+    fun `device registration requires authentication`() {
         val resp =
             app(
                 Request(Method.POST, "/api/koreader/devices")
                     .header("Content-Type", "application/json")
-                    .body("""{"deviceName":"x"}"""),
+                    .body("""{"deviceName":"Unauthorized"}"""),
             )
         assertEquals(Status.UNAUTHORIZED, resp.status)
     }

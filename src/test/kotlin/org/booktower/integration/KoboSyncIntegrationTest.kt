@@ -1,91 +1,22 @@
 package org.booktower.integration
 
-import org.booktower.TestFixture
 import org.booktower.config.Json
-import org.booktower.models.LoginResponse
-import org.booktower.services.AdminService
-import org.booktower.services.AnalyticsService
-import org.booktower.services.AnnotationService
-import org.booktower.services.ApiTokenService
-import org.booktower.services.AuthService
-import org.booktower.services.BookService
-import org.booktower.services.BookmarkService
-import org.booktower.services.ComicService
-import org.booktower.services.EpubMetadataService
-import org.booktower.services.ExportService
-import org.booktower.services.GoodreadsImportService
-import org.booktower.services.JwtService
-import org.booktower.services.KoboSyncService
-import org.booktower.services.LibraryService
-import org.booktower.services.MagicShelfService
-import org.booktower.services.PasswordResetService
-import org.booktower.services.PdfMetadataService
-import org.booktower.services.ReadingSessionService
-import org.booktower.services.SeedService
-import org.booktower.services.UserSettingsService
-import org.http4k.core.HttpHandler
 import org.http4k.core.Method
 import org.http4k.core.Request
 import org.http4k.core.Status
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
-import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import kotlin.test.assertTrue
 
-class KoboSyncIntegrationTest {
-    private val config = TestFixture.config
-    private val jdbi = TestFixture.database.getJdbi()
-
-    private lateinit var app: HttpHandler
-    private lateinit var koboSyncService: KoboSyncService
-
-    @BeforeEach
-    fun setup() {
-        val jwtService = JwtService(config.security)
-        val authService = AuthService(jdbi, jwtService)
-        val pdfMetadataService = PdfMetadataService(jdbi, config.storage.coversPath)
-        val libraryService = LibraryService(jdbi, pdfMetadataService)
-        val bookmarkService = BookmarkService(jdbi)
-        val userSettingsService = UserSettingsService(jdbi)
-        val analyticsService = AnalyticsService(jdbi, userSettingsService)
-        val readingSessionService = ReadingSessionService(jdbi)
-        val bookService = BookService(jdbi, analyticsService, readingSessionService)
-        val adminService = AdminService(jdbi)
-        val annotationService = AnnotationService(jdbi)
-        val magicShelfService = MagicShelfService(jdbi, bookService)
-        val passwordResetService = PasswordResetService(jdbi)
-        val apiTokenService = ApiTokenService(jdbi)
-        val exportService = ExportService(jdbi)
-        val epubMetadataService = EpubMetadataService(jdbi, config.storage.coversPath)
-        val comicService = ComicService()
-        val goodreadsImportService = GoodreadsImportService(bookService)
-        val seedService = SeedService(bookService, libraryService, config.storage.coversPath, config.storage.booksPath)
-        koboSyncService = KoboSyncService(jdbi, bookService, "http://localhost:9999")
-        app =
-            buildTestApp(
-                authService = authService,
-                libraryService = libraryService,
-                bookService = bookService,
-                jwtService = jwtService,
-                koboSyncService = koboSyncService,
-            )
-    }
-
-    private fun registerAndToken(): String {
-        val u = "kobo_${System.nanoTime()}"
-        val r =
-            app(
-                Request(Method.POST, "/auth/register")
-                    .header("Content-Type", "application/json")
-                    .body("""{"username":"$u","email":"$u@test.com","password":"pass1234"}"""),
-            )
-        return Json.mapper.readValue(r.bodyString(), LoginResponse::class.java).token
-    }
-
+/**
+ * Integration tests for the Kobo sync protocol.
+ * Tests device registration, library sync, reading state, and error handling.
+ */
+class KoboSyncIntegrationTest : IntegrationTestBase() {
     @Test
-    fun `POST api kobo devices registers device and returns token`() {
-        val token = registerAndToken()
+    fun `register Kobo device returns token`() {
+        val token = registerAndGetToken()
         val resp =
             app(
                 Request(Method.POST, "/api/kobo/devices")
@@ -94,14 +25,14 @@ class KoboSyncIntegrationTest {
                     .body("""{"deviceName":"My Kobo Clara"}"""),
             )
         assertEquals(Status.CREATED, resp.status)
-        val tree = Json.mapper.readTree(resp.bodyString())
-        assertNotNull(tree.get("token")?.asText())
-        assertEquals("My Kobo Clara", tree.get("deviceName")?.asText())
+        val body = Json.mapper.readTree(resp.bodyString())
+        assertNotNull(body.get("token").asText())
+        assertEquals("My Kobo Clara", body.get("deviceName").asText())
     }
 
     @Test
-    fun `GET api kobo devices lists registered devices`() {
-        val token = registerAndToken()
+    fun `list Kobo devices returns registered devices`() {
+        val token = registerAndGetToken()
         app(
             Request(Method.POST, "/api/kobo/devices")
                 .header("Cookie", "token=$token")
@@ -115,8 +46,8 @@ class KoboSyncIntegrationTest {
     }
 
     @Test
-    fun `GET kobo token initialization returns device config`() {
-        val token = registerAndToken()
+    fun `initialization endpoint returns device config`() {
+        val token = registerAndGetToken()
         val regResp =
             app(
                 Request(Method.POST, "/api/kobo/devices")
@@ -132,19 +63,14 @@ class KoboSyncIntegrationTest {
 
         val resp = app(Request(Method.GET, "/kobo/$deviceToken/v1/initialization"))
         assertEquals(Status.OK, resp.status)
-        val tree = Json.mapper.readTree(resp.bodyString())
-        assertNotNull(tree.get("Resources"))
+        val body = Json.mapper.readTree(resp.bodyString())
+        assertNotNull(body.get("Resources"))
+        assertNotNull(body.get("DeviceId"))
     }
 
     @Test
-    fun `GET kobo initialization with invalid token returns 401`() {
-        val resp = app(Request(Method.GET, "/kobo/bad-token/v1/initialization"))
-        assertEquals(Status.UNAUTHORIZED, resp.status)
-    }
-
-    @Test
-    fun `POST kobo token library sync returns book list`() {
-        val token = registerAndToken()
+    fun `library sync returns book list with sync token`() {
+        val token = registerAndGetToken()
         val regResp =
             app(
                 Request(Method.POST, "/api/kobo/devices")
@@ -160,15 +86,16 @@ class KoboSyncIntegrationTest {
 
         val resp = app(Request(Method.POST, "/kobo/$deviceToken/v1/library/sync"))
         assertEquals(Status.OK, resp.status)
-        val tree = Json.mapper.readTree(resp.bodyString())
-        assertTrue(tree.has("BookEntitlements"))
-        assertTrue(tree.has("SyncToken"))
-        assertEquals(false, tree.get("Continues")?.asBoolean())
+        val body = Json.mapper.readTree(resp.bodyString())
+        assertTrue(body.has("BookEntitlements"))
+        assertTrue(body.has("SyncToken"))
+        assertEquals(false, body.get("Continues").asBoolean())
+        assertNotNull(resp.header("X-Kobo-Sync-Token"))
     }
 
     @Test
-    fun `DELETE api kobo devices removes device`() {
-        val token = registerAndToken()
+    fun `library snapshot returns full library`() {
+        val token = registerAndGetToken()
         val regResp =
             app(
                 Request(Method.POST, "/api/kobo/devices")
@@ -182,30 +109,14 @@ class KoboSyncIntegrationTest {
                 .get("token")
                 .asText()
 
-        val del = app(Request(Method.DELETE, "/api/kobo/devices/$deviceToken").header("Cookie", "token=$token"))
-        assertEquals(Status.NO_CONTENT, del.status)
-
-        // Device should no longer work for sync
-        val initResp = app(Request(Method.GET, "/kobo/$deviceToken/v1/initialization"))
-        assertEquals(Status.UNAUTHORIZED, initResp.status)
+        val resp = app(Request(Method.GET, "/kobo/$deviceToken/v1/library/snapshot"))
+        assertEquals(Status.OK, resp.status)
     }
 
     @Test
-    fun `PUT kobo reading-state updates book progress`() {
-        val token = registerAndToken()
-        // Create a library and book so progress can be updated
-        val libResp =
-            app(
-                Request(Method.POST, "/api/libraries")
-                    .header("Cookie", "token=$token")
-                    .header("Content-Type", "application/json")
-                    .body("""{"name":"KoboLib","path":"./data/kobo-test"}"""),
-            )
-        val libId =
-            Json.mapper
-                .readTree(libResp.bodyString())
-                .get("id")
-                .asText()
+    fun `reading state update accepted for real book`() {
+        val token = registerAndGetToken()
+        val libId = createLibrary(token, "KoboLib")
         val bookResp =
             app(
                 Request(Method.POST, "/api/books")
@@ -236,26 +147,48 @@ class KoboSyncIntegrationTest {
             app(
                 Request(Method.PUT, "/kobo/$deviceToken/v1/library/$bookId/reading-state")
                     .header("Content-Type", "application/json")
-                    .body("""{"CurrentBookmark":{"ContentSourceProgressPercent":0.42,"Location":"5","LocationType":"CFI"}}"""),
+                    .body("""{"CurrentBookmark":{"ContentSourceProgressPercent":0.42,"Location":"epubcfi(/6/10)","LocationType":"CFI"}}"""),
             )
         assertEquals(Status.OK, resp.status)
-        val tree = Json.mapper.readTree(resp.bodyString())
-        assertEquals("RequestAccepted", tree.get("RequestResult")?.asText())
+        assertEquals(
+            "RequestAccepted",
+            Json.mapper
+                .readTree(resp.bodyString())
+                .get("RequestResult")
+                .asText(),
+        )
     }
 
     @Test
-    fun `PUT kobo reading-state with invalid device token returns 401`() {
-        val resp =
+    fun `delete device revokes sync access`() {
+        val token = registerAndGetToken()
+        val regResp =
             app(
-                Request(Method.PUT, "/kobo/bad-token/v1/library/00000000-0000-0000-0000-000000000000/reading-state")
+                Request(Method.POST, "/api/kobo/devices")
+                    .header("Cookie", "token=$token")
                     .header("Content-Type", "application/json")
-                    .body("""{"CurrentBookmark":{"ContentSourceProgressPercent":0.5}}"""),
+                    .body("""{"deviceName":"Kobo"}"""),
             )
+        val deviceToken =
+            Json.mapper
+                .readTree(regResp.bodyString())
+                .get("token")
+                .asText()
+
+        app(Request(Method.DELETE, "/api/kobo/devices/$deviceToken").header("Cookie", "token=$token"))
+
+        val initResp = app(Request(Method.GET, "/kobo/$deviceToken/v1/initialization"))
+        assertEquals(Status.UNAUTHORIZED, initResp.status)
+    }
+
+    @Test
+    fun `invalid device token returns 401`() {
+        val resp = app(Request(Method.GET, "/kobo/bad-token/v1/initialization"))
         assertEquals(Status.UNAUTHORIZED, resp.status)
     }
 
     @Test
-    fun `POST api kobo devices requires authentication`() {
+    fun `device registration requires authentication`() {
         val resp =
             app(
                 Request(Method.POST, "/api/kobo/devices")
