@@ -878,7 +878,6 @@ class SeedService(
         return basicResult
     }
 
-    /** Human-readable error message for HTTP status codes. */
     /**
      * Downloads a file with HTTP Range resume support.
      * - If [destFile] exists and matches [expectedSize], returns "skip" (already complete).
@@ -1040,11 +1039,13 @@ class SeedService(
                     backgroundTaskService.complete(taskId, "Already downloaded")
                     return
                 }
+
                 "ok" -> {
                     bookService.updateFileInfo(userId, bookId, destFile.absolutePath, destFile.length())
                     logger.info("Downloaded comic '${comic.title}' (${destFile.length() / 1024}KB)")
                     backgroundTaskService.complete(taskId, "Downloaded ${destFile.length() / 1024}KB")
                 }
+
                 else -> {
                     logger.warn("Comic download failed for '${comic.title}': $result")
                     backgroundTaskService.fail(taskId, result)
@@ -1161,12 +1162,17 @@ class SeedService(
         return try {
             val result = downloadWithResume(listenUrl, destFile, "BookTower/1.0 librivox-seed", readTimeout = 180_000)
             when (result) {
-                "skip" -> false // already complete, no new download
+                "skip" -> {
+                    false
+                }
+
+                // already complete, no new download
                 "ok" -> {
                     bookService.addBookFile(userId, bookId, idx, chapterTitle, destFile.absolutePath, destFile.length(), durationSec)
                     logger.debug("Downloaded ch $idx of '$title' (${destFile.length()} bytes)")
                     true
                 }
+
                 else -> {
                     logger.warn("Chapter $idx download failed for '$title': $result")
                     false
@@ -1214,11 +1220,13 @@ class SeedService(
                     backgroundTaskService.complete(taskId, "Already downloaded")
                     return
                 }
+
                 "ok" -> {
                     bookService.updateFileInfo(userId, bookId, destFile.absolutePath, destFile.length())
                     logger.info("Downloaded EPUB for '$title' (${destFile.length()} bytes)")
                     backgroundTaskService.complete(taskId, "Downloaded ${destFile.length() / 1024}KB")
                 }
+
                 else -> {
                     logger.warn("Gutenberg download failed for '$title' (id=$gutenbergId): $result")
                     backgroundTaskService.fail(taskId, result)
