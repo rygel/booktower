@@ -17,6 +17,7 @@
       { "pattern": "org/flywaydb/core/internal/database/.*" },
       { "pattern": "org/flywaydb/database/.*" },
       { "pattern": "static/.*" },
+      { "pattern": "META-INF/org/http4k/core/mime\\.types" },
       { "pattern": "META-INF/services/.*" },
       { "pattern": "META-INF/native-image/.*" },
       { "pattern": "org/apache/pdfbox/.*" },
