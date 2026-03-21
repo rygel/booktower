@@ -41,13 +41,13 @@
 ## Medium Priority
 
 ### Performance
-- [ ] Cover image LRU memory cache — disk I/O on every cover request. Caffeine (already a dependency), ~20 lines of code.
-- [ ] MagicShelfService.getBooksForShelf() — returns unbounded results, needs LIMIT. One line fix, prevents OOM on large libraries.
-- [ ] Connection pool tuning — HikariCP defaults may not be optimal
+- [x] Cover image LRU memory cache — Caffeine cache in FileHandler (200 entries, 10-min TTL)
+- [x] MagicShelfService.getBooksForShelf() — uses LIMIT parameter (default 200)
+- [x] Connection pool tuning — maxLifetime, leakDetection, validationTimeout, JDBC4 isValid()
 - [ ] Profile actual page load times end-to-end
 
 ### Downloads / UI
-- [ ] seedFullDemo should auto-call seedFiles + seedLibrivox + seedComics — currently requires clicking 4 buttons instead of 1
+- [x] seedFullDemo auto-calls seedFiles + seedLibrivox + seedComics
 - [ ] Make downloads resumable — if a download fails halfway, retry re-downloads everything from scratch. Should check if file already exists with correct size.
 - [ ] Activity log page — persistent event history per user
 
