@@ -2,6 +2,7 @@ package org.booktower.services
 
 import org.booktower.TestFixture
 import org.booktower.models.CreateLibraryRequest
+import org.booktower.models.CreateUserRequest
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -16,34 +17,20 @@ class LibraryWatchServiceTest {
     private val jdbi = TestFixture.database.getJdbi()
     private val config = TestFixture.config
     private val pdfMetadataService = PdfMetadataService(jdbi, config.storage.coversPath)
-    private val libraryService = LibraryService(jdbi, pdfMetadataService)
+    private val libraryAccessService = LibraryAccessService(jdbi)
+    private val libraryService = LibraryService(jdbi, pdfMetadataService, libraryAccessService)
     private val watchService = LibraryWatchService(jdbi, libraryService)
-    private val userId = UUID.randomUUID()
+    private lateinit var userId: UUID
     private val tempDirs = mutableListOf<File>()
 
     @BeforeEach
     fun setup() {
-        // Create a test user
-        jdbi.useHandle<Exception> { handle ->
-            handle
-                .createUpdate(
-                    "INSERT INTO users (id, username, email, password_hash, created_at, updated_at, is_admin) VALUES (?,?,?,?,?,?,false)",
-                ).bind(0, userId.toString())
-                .bind(1, "watchtest_${System.nanoTime()}")
-                .bind(2, "wt_${System.nanoTime()}@test.com")
-                .bind(3, "hash")
-                .bind(
-                    4,
-                    java.time.Instant
-                        .now()
-                        .toString(),
-                ).bind(
-                    5,
-                    java.time.Instant
-                        .now()
-                        .toString(),
-                ).execute()
-        }
+        // Create a test user via AuthService.register()
+        val jwtService = JwtService(config.security)
+        val authService = AuthService(jdbi, jwtService)
+        val username = "watchtest_${System.nanoTime()}"
+        val result = authService.register(CreateUserRequest(username, "$username@test.com", "password123"))
+        userId = UUID.fromString(result.getOrThrow().user.id)
         watchService.start()
     }
 

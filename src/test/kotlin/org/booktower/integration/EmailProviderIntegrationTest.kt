@@ -1,6 +1,5 @@
 package org.booktower.integration
 
-import org.booktower.TestFixture
 import org.booktower.config.Json
 import org.booktower.models.LoginResponse
 import org.http4k.core.Method
@@ -26,9 +25,7 @@ class EmailProviderIntegrationTest : IntegrationTestBase() {
             Json.mapper
                 .readValue(resp.bodyString(), LoginResponse::class.java)
                 .user.id
-        TestFixture.database.getJdbi().useHandle<Exception> { h ->
-            h.createUpdate("UPDATE users SET is_admin = true WHERE id = ?").bind(0, userId).execute()
-        }
+        promoteToAdmin(userId)
         val loginResp =
             app(
                 Request(Method.POST, "/auth/login")

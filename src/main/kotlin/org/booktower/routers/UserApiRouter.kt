@@ -46,6 +46,7 @@ class UserApiRouter(
     private val exportHandler: ExportHandler,
     private val goodreadsImportHandler: GoodreadsImportHandler,
     private val collectionService: CollectionService? = null,
+    private val auditService: org.booktower.services.AuditService? = null,
 ) {
     @Suppress("LongMethod")
     fun routes(): List<RoutingHttpHandler> =
@@ -105,6 +106,8 @@ class UserApiRouter(
                 filters.auth.then(optionalHandler(backgroundTaskHandler?.let { it::dismiss })),
             "/api/tasks/{id}/retry" bind Method.POST to
                 filters.auth.then(optionalHandler(backgroundTaskHandler?.let { it::retry })),
+            // Activity / audit log (user's own events)
+            "/api/activity" bind Method.GET to filters.auth.then(::listActivity),
             // Collections
             "/api/collections" bind Method.GET to filters.auth.then(::listCollections),
             "/api/collections" bind Method.POST to filters.auth.then(::createCollection),
@@ -697,5 +700,19 @@ class UserApiRouter(
                 .lastOrNull()
                 ?: return Response(Status.BAD_REQUEST)
         return if (svc.delete(userId, notificationId)) Response(Status.NO_CONTENT) else Response(Status.NOT_FOUND)
+    }
+
+    /** GET /api/activity — returns the authenticated user's audit log entries */
+    private fun listActivity(req: Request): Response {
+        val svc = auditService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val userId = AuthenticatedUser.from(req)
+        val limit = req.query("limit")?.toIntOrNull()?.coerceIn(1, 200) ?: 50
+        val entries = svc.listForUser(userId, limit)
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(entries),
+            )
     }
 }

@@ -37,7 +37,9 @@ class SidecarMetadataIntegrationTest : IntegrationTestBase() {
 </package>""",
         )
 
-        // Point the book's file_path at the epub in our temp dir
+        // Point the book's file_path at the epub in our temp dir.
+        // Raw SQL is acceptable here: file_path is internal state set during library scanning,
+        // and there is no BookService method to update just file_path on an existing book.
         jdbi.useHandle<Exception> { h ->
             h
                 .createUpdate("UPDATE books SET file_path = ? WHERE id = ?")
@@ -70,6 +72,7 @@ class SidecarMetadataIntegrationTest : IntegrationTestBase() {
         val bookId = createBook(token, libId, "NoSidecar")
 
         val bookFile = tmp.resolve("NoSidecar.epub").toFile().also { it.writeText("fake") }
+        // Raw SQL is acceptable here: file_path is internal state with no service method to update it.
         jdbi.useHandle<Exception> { h ->
             h
                 .createUpdate("UPDATE books SET file_path = ? WHERE id = ?")
