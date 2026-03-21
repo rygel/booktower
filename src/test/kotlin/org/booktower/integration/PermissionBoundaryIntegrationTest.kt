@@ -1,7 +1,6 @@
 package org.booktower.integration
 
 import org.booktower.config.Json
-import org.booktower.models.BookDto
 import org.booktower.models.BookListDto
 import org.booktower.models.LibraryDto
 import org.http4k.core.Body
@@ -285,9 +284,13 @@ class PermissionBoundaryIntegrationTest : IntegrationTestBase() {
         val token2 = registerAndGetToken("perm_notif2")
 
         // Publish a notification for user1 directly
-        val jdbi = org.booktower.TestFixture.database.getJdbi()
+        val jdbi =
+            org.booktower.TestFixture.database
+                .getJdbi()
         val svc = org.booktower.services.NotificationService(jdbi)
-        val jwt = com.auth0.jwt.JWT.decode(token1)
+        val jwt =
+            com.auth0.jwt.JWT
+                .decode(token1)
         val userId1 = java.util.UUID.fromString(jwt.subject)
         svc.publish(userId1, "secret", "User1's secret notification")
 

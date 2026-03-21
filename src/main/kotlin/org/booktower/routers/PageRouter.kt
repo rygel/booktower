@@ -221,9 +221,10 @@ class PageRouter(
         val lightTheme = req.form("lightTheme")?.trim()?.takeIf { ThemeCatalog.isValid(it) }
         if (darkTheme != null) userSettingsService?.set(userId, "pref.theme.dark", darkTheme)
         if (lightTheme != null) userSettingsService?.set(userId, "pref.theme.light", lightTheme)
-        var resp = Response(Status.OK)
-            .header("HX-Trigger", """{"showToast":{"message":"Theme pair saved","type":"success"}}""")
-            .body("")
+        var resp =
+            Response(Status.OK)
+                .header("HX-Trigger", """{"showToast":{"message":"Theme pair saved","type":"success"}}""")
+                .body("")
         if (darkTheme != null) resp = resp.cookie(Cookie(name = "pref_dark_theme", value = darkTheme, path = "/", maxAge = 365L * 24 * 3600))
         if (lightTheme != null) resp = resp.cookie(Cookie(name = "pref_light_theme", value = lightTheme, path = "/", maxAge = 365L * 24 * 3600))
         return resp

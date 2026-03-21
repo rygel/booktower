@@ -450,6 +450,7 @@ class SeedService(
                 }
                 true
             }
+
             "download-epub" -> {
                 val gutenbergId = meta["gutenbergId"]?.toIntOrNull() ?: return false
                 val title = meta["title"] ?: "Book"
@@ -458,6 +459,7 @@ class SeedService(
                 }
                 true
             }
+
             "download-audiobook" -> {
                 val librivoxId = meta["librivoxId"]?.toIntOrNull() ?: return false
                 val title = meta["title"] ?: "Audiobook"
@@ -466,7 +468,10 @@ class SeedService(
                 }
                 true
             }
-            else -> false
+
+            else -> {
+                false
+            }
         }
     }
 
@@ -897,12 +902,18 @@ class SeedService(
         bookId: UUID,
         comic: SeedComic,
     ) {
-        val taskId = backgroundTaskService.start(
-            userId, "download-comic", "Downloading comic: ${comic.title}",
-            retryMeta = mapOf("bookId" to bookId.toString(), "archiveId" to comic.archiveId, "fileName" to comic.fileName, "title" to comic.title),
-        )
+        val taskId =
+            backgroundTaskService.start(
+                userId,
+                "download-comic",
+                "Downloading comic: ${comic.title}",
+                retryMeta = mapOf("bookId" to bookId.toString(), "archiveId" to comic.archiveId, "fileName" to comic.fileName, "title" to comic.title),
+            )
         try {
-            val encodedName = java.net.URLEncoder.encode(comic.fileName, "UTF-8").replace("+", "%20")
+            val encodedName =
+                java.net.URLEncoder
+                    .encode(comic.fileName, "UTF-8")
+                    .replace("+", "%20")
             val url = "https://archive.org/download/${comic.archiveId}/$encodedName"
             val libDir = File("./data/libraries/comics")
             if (!libDir.exists() && !libDir.mkdirs()) logger.warn("Could not create directory: ${libDir.absolutePath}")
@@ -917,7 +928,9 @@ class SeedService(
             // Verify item is freely accessible via metadata API
             try {
                 val metaConn =
-                    java.net.URI("https://archive.org/metadata/${comic.archiveId}").toURL()
+                    java.net
+                        .URI("https://archive.org/metadata/${comic.archiveId}")
+                        .toURL()
                         .openConnection() as java.net.HttpURLConnection
                 metaConn.connectTimeout = 10_000
                 metaConn.readTimeout = 10_000
@@ -925,11 +938,12 @@ class SeedService(
                 if (metaConn.responseCode == 200) {
                     val meta = metaConn.inputStream.use { Json.mapper.readTree(it) }
                     val collections = meta.get("metadata")?.get("collection")
-                    val isRestricted = when {
-                        collections == null -> false
-                        collections.isArray -> collections.any { it.asText() == "loggedin" || it.asText() == "patron-library-collection" }
-                        else -> collections.asText() in listOf("loggedin", "patron-library-collection")
-                    }
+                    val isRestricted =
+                        when {
+                            collections == null -> false
+                            collections.isArray -> collections.any { it.asText() == "loggedin" || it.asText() == "patron-library-collection" }
+                            else -> collections.asText() in listOf("loggedin", "patron-library-collection")
+                        }
                     if (isRestricted) {
                         val reason = "Item '${comic.archiveId}' is access-restricted on archive.org (requires login)"
                         logger.warn("Comic download skipped for '${comic.title}': $reason")
@@ -973,10 +987,13 @@ class SeedService(
         librivoxId: Int,
         title: String,
     ) {
-        val taskId = backgroundTaskService.start(
-            userId, "download-audiobook", "Downloading audiobook: $title",
-            retryMeta = mapOf("bookId" to bookId.toString(), "librivoxId" to librivoxId.toString(), "title" to title),
-        )
+        val taskId =
+            backgroundTaskService.start(
+                userId,
+                "download-audiobook",
+                "Downloading audiobook: $title",
+                retryMeta = mapOf("bookId" to bookId.toString(), "librivoxId" to librivoxId.toString(), "title" to title),
+            )
         try {
             // Check if at least one chapter file already exists (resumable)
             val booksDir = File(booksPath)
@@ -1102,10 +1119,13 @@ class SeedService(
         gutenbergId: Int,
         title: String,
     ) {
-        val taskId = backgroundTaskService.start(
-            userId, "download-epub", "Downloading EPUB: $title",
-            retryMeta = mapOf("bookId" to bookId.toString(), "gutenbergId" to gutenbergId.toString(), "title" to title),
-        )
+        val taskId =
+            backgroundTaskService.start(
+                userId,
+                "download-epub",
+                "Downloading EPUB: $title",
+                retryMeta = mapOf("bookId" to bookId.toString(), "gutenbergId" to gutenbergId.toString(), "title" to title),
+            )
         try {
             val url = "https://www.gutenberg.org/cache/epub/$gutenbergId/pg$gutenbergId.epub"
             val booksDir = File(booksPath)

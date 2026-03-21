@@ -125,15 +125,22 @@ class UpstreamDownloadE2ETest : IntegrationTestBase() {
         )
 
         // Verify a downloaded book is servable
-        val books = Json.mapper.readValue(
-            app(Request(Method.GET, "/api/books?pageSize=100").header("Cookie", "token=$token")).bodyString(),
-            BookListDto::class.java,
-        ).getBooks()
+        val books =
+            Json.mapper
+                .readValue(
+                    app(Request(Method.GET, "/api/books?pageSize=100").header("Cookie", "token=$token")).bodyString(),
+                    BookListDto::class.java,
+                ).getBooks()
         val bookWithFile = books.firstOrNull { it.fileSize > 0 }
         if (bookWithFile != null) {
             val dl = app(Request(Method.GET, "/api/books/${bookWithFile.id}/file").header("Cookie", "token=$token"))
             assertEquals(Status.OK, dl.status, "Downloaded EPUB should be servable")
-            assertTrue(dl.body.stream.readBytes().size > 1000, "EPUB should have substantial content")
+            assertTrue(
+                dl.body.stream
+                    .readBytes()
+                    .size > 1000,
+                "EPUB should have substantial content",
+            )
         }
     }
 
@@ -150,10 +157,11 @@ class UpstreamDownloadE2ETest : IntegrationTestBase() {
         )
 
         // Verify library created
-        val libraries = Json.mapper.readValue(
-            app(Request(Method.GET, "/api/libraries").header("Cookie", "token=$token")).bodyString(),
-            Array<LibraryDto>::class.java,
-        )
+        val libraries =
+            Json.mapper.readValue(
+                app(Request(Method.GET, "/api/libraries").header("Cookie", "token=$token")).bodyString(),
+                Array<LibraryDto>::class.java,
+            )
         assertTrue(libraries.any { it.name.contains("LibriVox", ignoreCase = true) })
 
         // Wait for downloads
@@ -182,10 +190,11 @@ class UpstreamDownloadE2ETest : IntegrationTestBase() {
         )
 
         // Verify library created
-        val libraries = Json.mapper.readValue(
-            app(Request(Method.GET, "/api/libraries").header("Cookie", "token=$token")).bodyString(),
-            Array<LibraryDto>::class.java,
-        )
+        val libraries =
+            Json.mapper.readValue(
+                app(Request(Method.GET, "/api/libraries").header("Cookie", "token=$token")).bodyString(),
+                Array<LibraryDto>::class.java,
+            )
         assertTrue(libraries.any { it.name.contains("Comics", ignoreCase = true) })
 
         // Wait for downloads
@@ -201,21 +210,25 @@ class UpstreamDownloadE2ETest : IntegrationTestBase() {
         )
 
         // Verify a downloaded comic's pages are servable
-        val books = Json.mapper.readValue(
-            app(Request(Method.GET, "/api/books?pageSize=50").header("Cookie", "token=$token")).bodyString(),
-            BookListDto::class.java,
-        ).getBooks()
+        val books =
+            Json.mapper
+                .readValue(
+                    app(Request(Method.GET, "/api/books?pageSize=50").header("Cookie", "token=$token")).bodyString(),
+                    BookListDto::class.java,
+                ).getBooks()
         val comicWithFile = books.firstOrNull { it.fileSize > 0 }
         if (comicWithFile != null) {
-            val pagesResp = app(
-                Request(Method.GET, "/api/books/${comicWithFile.id}/comic/pages").header("Cookie", "token=$token"),
-            )
+            val pagesResp =
+                app(
+                    Request(Method.GET, "/api/books/${comicWithFile.id}/comic/pages").header("Cookie", "token=$token"),
+                )
             assertEquals(Status.OK, pagesResp.status)
             assertTrue(pagesResp.bodyString().contains("pageCount"), "Should report page count")
 
-            val pageResp = app(
-                Request(Method.GET, "/api/books/${comicWithFile.id}/comic/0").header("Cookie", "token=$token"),
-            )
+            val pageResp =
+                app(
+                    Request(Method.GET, "/api/books/${comicWithFile.id}/comic/0").header("Cookie", "token=$token"),
+                )
             assertEquals(Status.OK, pageResp.status, "Should be able to serve first comic page")
             assertTrue(
                 pageResp.header("Content-Type")?.contains("image") == true,
