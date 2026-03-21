@@ -144,7 +144,8 @@ class FtsService(
             jdbi.withHandle<List<FtsMatch>, Exception> { h ->
                 val bookIdFilter =
                     if (!allowedBookIds.isNullOrEmpty()) {
-                        "AND b.id IN (${allowedBookIds.joinToString(",") { "?" }})"
+                        val placeholders = allowedBookIds.indices.joinToString(",") { ":bid$it" }
+                        "AND b.id IN ($placeholders)"
                     } else {
                         ""
                     }
@@ -167,8 +168,7 @@ class FtsService(
                         LIMIT 50
                         """,
                         ).bind("q", query)
-                var idx = 0
-                allowedBookIds?.forEach { q.bind(idx++, it) }
+                allowedBookIds?.forEachIndexed { idx, id -> q.bind("bid$idx", id) }
                 q
                     .map { row ->
                         FtsMatch(
@@ -230,7 +230,7 @@ class FtsService(
             jdbi.withHandle<List<FtsMatch>, Exception> { h ->
                 val bookIdFilter =
                     if (!allowedBookIds.isNullOrEmpty()) {
-                        "AND bc.book_id IN (${allowedBookIds.joinToString(",") { "?" }})"
+                        "AND bc.book_id IN (${allowedBookIds.indices.joinToString(",") { ":bid$it" }})"
                     } else {
                         ""
                     }
@@ -252,8 +252,7 @@ class FtsService(
                         LIMIT 50
                         """,
                         ).bind("q", query)
-                var idx = 0
-                allowedBookIds?.forEach { q.bind(idx++, it) }
+                allowedBookIds?.forEachIndexed { idx, id -> q.bind("bid$idx", id) }
                 q
                     .map { row ->
                         FtsMatch(
@@ -277,7 +276,7 @@ class FtsService(
             jdbi.withHandle<List<FtsMatch>, Exception> { h ->
                 val bookIdFilter =
                     if (!allowedBookIds.isNullOrEmpty()) {
-                        "AND bc.book_id IN (${allowedBookIds.joinToString(",") { "?" }})"
+                        "AND bc.book_id IN (${allowedBookIds.indices.joinToString(",") { ":bid$it" }})"
                     } else {
                         ""
                     }
@@ -295,8 +294,7 @@ class FtsService(
                         LIMIT 50
                         """,
                         ).bind("q", query)
-                var idx = 0
-                allowedBookIds?.forEach { q.bind(idx++, it) }
+                allowedBookIds?.forEachIndexed { idx, id -> q.bind("bid$idx", id) }
                 q
                     .map { row ->
                         FtsMatch(
@@ -344,7 +342,7 @@ class FtsService(
                 .createQuery("SELECT status, COUNT(*) AS n FROM book_content GROUP BY status")
                 .map { row ->
                     (row.getColumn("status", String::class.java) ?: "unknown") to
-                        ((row.getColumn("n", Long::class.java)) ?: 0L)
+                        ((row.getColumn("n", java.lang.Long::class.java))?.toLong() ?: 0L)
                 }.associate { it }
         }
 
