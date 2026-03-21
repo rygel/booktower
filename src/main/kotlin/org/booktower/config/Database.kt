@@ -18,6 +18,7 @@ private val MIGRATION_FILES =
         "V3__performance_indexes.sql",
         "V4__book_sharing.sql",
         "V5__collections.sql",
+        "V6__fts_metadata_search.sql",
     )
 
 class Database private constructor(

@@ -93,6 +93,17 @@ class FileHandler(
         val destDir = File(storageConfig.booksPath)
         if (!destDir.exists() && !destDir.mkdirs()) logger.warn("Could not create directory: ${destDir.absolutePath}")
 
+        val freeSpace = destDir.usableSpace
+        if (freeSpace > 0 && freeSpace < bytes.size * 2L) {
+            return Response(Status(507, "Insufficient Storage"))
+                .header("Content-Type", "application/json")
+                .body(
+                    Json.mapper.writeValueAsString(
+                        ErrorResponse("INSUFFICIENT_STORAGE", "Not enough disk space (${freeSpace / 1024 / 1024}MB free, need ${bytes.size / 1024 / 1024}MB)"),
+                    ),
+                )
+        }
+
         val destFile = File(destDir, "$bookId.$ext")
         destFile.writeBytes(bytes)
 

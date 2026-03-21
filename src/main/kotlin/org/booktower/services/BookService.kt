@@ -195,10 +195,10 @@ class BookService(
         // Params: 3 bindings per variant (title, author, description)
         val searchParams = likePatterns.flatMap { listOf(it, it, it) }
 
-        // FTS: get matching book IDs to OR into the metadata search
+        // FTS: get matching book IDs (metadata + content) to OR into the LIKE search
         val ftsIds: Set<String> =
             if (ftsService?.isActive() == true && query.isNotBlank()) {
-                ftsService.search(query).map { it.bookId }.toSet()
+                ftsService.searchAll(query).map { it.bookId }.toSet()
             } else {
                 emptySet()
             }
@@ -485,46 +485,77 @@ class BookService(
         logger.info("BookDrop import: $title ($bookId)")
     }
 
+    /**
+     * Updates book metadata. Uses optimistic locking via updated_at — if another
+     * request modified the book since it was last read, returns null to signal
+     * a conflict.
+     *
+     * @param expectedUpdatedAt if provided, the update only applies when the
+     *        book's current updated_at matches this value (optimistic lock).
+     *        If null, the update always applies (backward compatible).
+     */
     fun updateBook(
         userId: UUID,
         bookId: UUID,
         request: UpdateBookRequest,
+        expectedUpdatedAt: String? = null,
     ): BookDto? {
         val book = getBook(userId, bookId) ?: return null
 
-        jdbi.useHandle<Exception> { handle ->
-            handle
-                .createUpdate(
-                    """UPDATE books SET title = ?, author = ?, description = ?,
-                   series = ?, series_index = ?,
-                   isbn = ?, publisher = ?, published_date = ?, page_count = ?,
-                   subtitle = ?, language = ?, content_rating = ?, age_rating = ?,
-                   goodreads_id = ?, hardcover_id = ?, comicvine_id = ?,
-                   openlibrary_id = ?, google_books_id = ?, amazon_id = ?, audible_id = ?,
-                   updated_at = ? WHERE id = ?""",
-                ).bind(0, request.title)
-                .bind(1, request.author)
-                .bind(2, request.description)
-                .bind(3, request.series)
-                .bind(4, request.seriesIndex)
-                .bind(5, request.isbn)
-                .bind(6, request.publisher)
-                .bind(7, request.publishedDate)
-                .bind(8, request.pageCount)
-                .bind(9, request.subtitle)
-                .bind(10, request.language)
-                .bind(11, request.contentRating)
-                .bind(12, request.ageRating)
-                .bind(13, request.goodreadsId)
-                .bind(14, request.hardcoverId)
-                .bind(15, request.comicvineId)
-                .bind(16, request.openlibraryId)
-                .bind(17, request.googleBooksId)
-                .bind(18, request.amazonId)
-                .bind(19, request.audibleId)
-                .bind(20, Instant.now().toString())
-                .bind(21, bookId.toString())
-                .execute()
+        val now = Instant.now().toString()
+        val updated =
+            jdbi.withHandle<Int, Exception> { handle ->
+                val sql =
+                    if (expectedUpdatedAt != null) {
+                        """UPDATE books SET title = ?, author = ?, description = ?,
+                       series = ?, series_index = ?,
+                       isbn = ?, publisher = ?, published_date = ?, page_count = ?,
+                       subtitle = ?, language = ?, content_rating = ?, age_rating = ?,
+                       goodreads_id = ?, hardcover_id = ?, comicvine_id = ?,
+                       openlibrary_id = ?, google_books_id = ?, amazon_id = ?, audible_id = ?,
+                       updated_at = ? WHERE id = ? AND updated_at = ?"""
+                    } else {
+                        """UPDATE books SET title = ?, author = ?, description = ?,
+                       series = ?, series_index = ?,
+                       isbn = ?, publisher = ?, published_date = ?, page_count = ?,
+                       subtitle = ?, language = ?, content_rating = ?, age_rating = ?,
+                       goodreads_id = ?, hardcover_id = ?, comicvine_id = ?,
+                       openlibrary_id = ?, google_books_id = ?, amazon_id = ?, audible_id = ?,
+                       updated_at = ? WHERE id = ?"""
+                    }
+                val q =
+                    handle
+                        .createUpdate(sql)
+                        .bind(0, request.title)
+                        .bind(1, request.author)
+                        .bind(2, request.description)
+                        .bind(3, request.series)
+                        .bind(4, request.seriesIndex)
+                        .bind(5, request.isbn)
+                        .bind(6, request.publisher)
+                        .bind(7, request.publishedDate)
+                        .bind(8, request.pageCount)
+                        .bind(9, request.subtitle)
+                        .bind(10, request.language)
+                        .bind(11, request.contentRating)
+                        .bind(12, request.ageRating)
+                        .bind(13, request.goodreadsId)
+                        .bind(14, request.hardcoverId)
+                        .bind(15, request.comicvineId)
+                        .bind(16, request.openlibraryId)
+                        .bind(17, request.googleBooksId)
+                        .bind(18, request.amazonId)
+                        .bind(19, request.audibleId)
+                        .bind(20, now)
+                        .bind(21, bookId.toString())
+                if (expectedUpdatedAt != null) q.bind(22, expectedUpdatedAt)
+                q.execute()
+            }
+
+        if (updated == 0 && expectedUpdatedAt != null) {
+            // Optimistic lock failed — book was modified by another request
+            logger.warn("Optimistic lock conflict updating book $bookId (expected updatedAt=$expectedUpdatedAt)")
+            return null
         }
 
         logger.info("Book updated: ${request.title}")

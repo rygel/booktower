@@ -263,6 +263,46 @@ export BOOKTOWER_DB_PASSWORD=secret
 export BOOKTOWER_DB_DRIVER=org.postgresql.Driver
 ```
 
+## Full-Text Search
+
+BookTower supports full-text search on PostgreSQL with two backends. H2 (dev mode) uses basic LIKE search.
+
+### Enabling FTS
+
+```bash
+export BOOKTOWER_FTS_ENABLED=true
+```
+
+Requires PostgreSQL. On startup, BookTower creates the necessary tsvector columns, GIN indexes, and triggers automatically.
+
+### Built-in PostgreSQL FTS (default)
+
+When FTS is enabled, BookTower uses PostgreSQL's native full-text search with:
+
+- **`websearch_to_tsquery`** — natural query syntax:
+  - `war worlds` — find books matching both words
+  - `"war of the worlds"` — exact phrase match
+  - `wells -invisible` — exclude results containing "invisible"
+  - `mars OR venus` — match either word
+- **Weighted metadata search** — title matches (A) rank higher than author (B), series (B), and description (C)
+- **Content search** — extracted text from EPUBs and PDFs is indexed and searchable
+- **Combined ranking** — metadata matches are boosted above content-only matches
+
+### pg_textsearch BM25 (optional)
+
+If you install the [pg_textsearch](https://github.com/timescale/pg_textsearch) extension (PostgreSQL 17+), BookTower automatically detects it and uses BM25 ranking for content search. BM25 provides statistically better relevance scoring than the built-in `ts_rank`.
+
+```sql
+-- Install pg_textsearch (requires shared_preload_libraries config)
+CREATE EXTENSION pg_textsearch;
+```
+
+BookTower logs which backend is active at startup:
+```
+FTS: metadata=true, bm25=false   -- built-in only
+FTS: metadata=true, bm25=true    -- pg_textsearch detected
+```
+
 ## Tech Stack
 
 | Layer | Technology |

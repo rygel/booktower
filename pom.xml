@@ -6,7 +6,7 @@
 
     <groupId>org.booktower</groupId>
     <artifactId>booktower</artifactId>
-    <version>0.6.5</version>
+    <version>0.6.6</version>
     <packaging>jar</packaging>
 
     <properties>
@@ -21,22 +21,22 @@
 
         <!-- Maven Plugin Versions -->
         <kotlin-maven-plugin.version>${kotlin.version}</kotlin-maven-plugin.version>
-        <maven-compiler-plugin.version>3.14.0</maven-compiler-plugin.version>
-        <maven-clean-plugin.version>3.2.0</maven-clean-plugin.version>
-        <maven-install-plugin.version>3.1.2</maven-install-plugin.version>
+        <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
+        <maven-clean-plugin.version>3.5.0</maven-clean-plugin.version>
+        <maven-install-plugin.version>3.1.4</maven-install-plugin.version>
         <maven-site-plugin.version>3.21.0</maven-site-plugin.version>
-        <maven-deploy-plugin.version>3.1.2</maven-deploy-plugin.version>
-        <maven-jar-plugin.version>3.4.2</maven-jar-plugin.version>
-        <maven-surefire-plugin.version>3.5.3</maven-surefire-plugin.version>
-        <maven-enforcer-plugin.version>3.5.0</maven-enforcer-plugin.version>
-        <maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
+        <maven-deploy-plugin.version>3.1.4</maven-deploy-plugin.version>
+        <maven-jar-plugin.version>3.5.0</maven-jar-plugin.version>
+        <maven-surefire-plugin.version>3.5.5</maven-surefire-plugin.version>
+        <maven-enforcer-plugin.version>3.6.2</maven-enforcer-plugin.version>
+        <maven-resources-plugin.version>3.5.0</maven-resources-plugin.version>
         <flyway-maven-plugin.version>12.1.1</flyway-maven-plugin.version>
         <exec-maven-plugin.version>3.6.3</exec-maven-plugin.version>
         <jte-maven-plugin.version>3.2.3</jte-maven-plugin.version>
         <detekt-maven-plugin.version>1.23.8</detekt-maven-plugin.version>
         <jacoco-maven-plugin.version>0.8.14</jacoco-maven-plugin.version>
         <native-maven-plugin.version>0.11.5</native-maven-plugin.version>
-        <maven-shade-plugin.version>3.6.0</maven-shade-plugin.version>
+        <maven-shade-plugin.version>3.6.2</maven-shade-plugin.version>
         <fizzed-watcher-maven-plugin.version>1.10.6</fizzed-watcher-maven-plugin.version>
 
         <!-- Dependency Versions -->
@@ -44,7 +44,7 @@
         <postgresql.version>42.7.10</postgresql.version>
         <jte.version>3.2.3</jte.version>
         <flatlaf.version>3.5.4</flatlaf.version>
-        <junit.version>5.13.0</junit.version>
+        <junit.version>6.0.3</junit.version>
         <mockk.version>1.14.9</mockk.version>
 
         <!-- Code Quality Plugin Versions -->
@@ -55,7 +55,7 @@
         <checkstyle.version>3.6.0</checkstyle.version>
         <pmd.version>3.28.0</pmd.version>
         <errorprone.version>2.48.0</errorprone.version>
-        <spotless.version>3.3.0</spotless.version>
+        <spotless.version>3.4.0</spotless.version>
         <ktlint.version>3.5.0</ktlint.version>
         <sonar-scanner.version>5.5.0.6356</sonar-scanner.version>
         <duplicate-finder.version>2.0.1</duplicate-finder.version>
@@ -71,15 +71,15 @@
         <logback.version>1.5.32</logback.version>
 
         <!-- Other Versions -->
-        <jackson.version>2.21.1</jackson.version>
-        <jackson-kotlin.version>2.21.1</jackson-kotlin.version>
+        <jackson.version>2.21.2</jackson.version>
+        <jackson-kotlin.version>2.21.2</jackson-kotlin.version>
         <jwt.version>4.5.1</jwt.version>
         <bcrypt.version>0.4</bcrypt.version>
         <pdfbox.version>3.0.7</pdfbox.version>
         <jdbi3.version>3.51.0</jdbi3.version>
         <hikari.version>7.0.2</hikari.version>
         <http4k.version>6.36.0.0</http4k.version>
-        <kotlin-logging.version>7.0.7</kotlin-logging.version>
+        <kotlin-logging.version>8.0.01</kotlin-logging.version>
         <!-- kotlin-logging 8.x is available but is a pre-release rewrite; 7.0.7 is latest stable -->
         <testcontainers.version>1.21.4</testcontainers.version>
         <commons-compress.version>1.28.0</commons-compress.version>
