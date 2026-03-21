@@ -68,6 +68,36 @@ class FtsHttpE2ETest {
         private lateinit var token: String
         private lateinit var epubBookId: String
         private lateinit var noFileBookId: String
+        private lateinit var pdfBookId: String
+
+        /** Creates a valid PDF with searchable text using Apache PDFBox. */
+        private fun pdfWithContent(text: String): ByteArray {
+            val baos = ByteArrayOutputStream()
+            org.apache.pdfbox.pdmodel.PDDocument().use { doc ->
+                val page =
+                    org.apache.pdfbox.pdmodel
+                        .PDPage()
+                doc.addPage(page)
+                org.apache.pdfbox.pdmodel.PDPageContentStream(doc, page).use { cs ->
+                    cs.beginText()
+                    cs.setFont(
+                        org.apache.pdfbox.pdmodel.font.PDType1Font(
+                            org.apache.pdfbox.pdmodel.font.Standard14Fonts.FontName.HELVETICA,
+                        ),
+                        12f,
+                    )
+                    cs.newLineAtOffset(50f, 700f)
+                    // Split long text into lines
+                    text.chunked(80).forEach { line ->
+                        cs.showText(line)
+                        cs.newLineAtOffset(0f, -15f)
+                    }
+                    cs.endText()
+                }
+                doc.save(baos)
+            }
+            return baos.toByteArray()
+        }
 
         /** Builds a valid EPUB with known searchable content. */
         private fun epubWithContent(
@@ -467,6 +497,30 @@ class FtsHttpE2ETest {
                     .body(Body(ByteArrayInputStream(epubBytes), epubBytes.size.toLong())),
             )
 
+            // Create and upload a PDF with unique searchable content
+            val pdfCreateResp =
+                app(
+                    Request(Method.POST, "/api/books")
+                        .header("Cookie", "token=$token")
+                        .header("Content-Type", "application/json")
+                        .body("""{"title":"PDF Placeholder","author":"PDF Author","description":"A PDF test","libraryId":"$libId"}"""),
+                )
+            pdfBookId = Json.mapper.readValue(pdfCreateResp.bodyString(), BookDto::class.java).id
+
+            val pdfBytes =
+                pdfWithContent(
+                    "The Obsidian Archipelago was home to the Velanthor civilization. " +
+                        "Their chromatic lightships traversed the nebulae using prismatic sails " +
+                        "powered by harvested starlight from the Korynthian binary system.",
+                )
+            app(
+                Request(Method.POST, "/api/books/$pdfBookId/upload")
+                    .header("Cookie", "token=$token")
+                    .header("X-Filename", "obsidian-archipelago.pdf")
+                    .header("Content-Type", "application/octet-stream")
+                    .body(Body(ByteArrayInputStream(pdfBytes), pdfBytes.size.toLong())),
+            )
+
             // Create another book WITHOUT a file (for comparison)
             val noFileResp =
                 app(
@@ -477,11 +531,11 @@ class FtsHttpE2ETest {
                 )
             noFileBookId = Json.mapper.readValue(noFileResp.bodyString(), BookDto::class.java).id
 
-            // Wait for FTS indexer to process the uploaded EPUB
+            // Wait for FTS indexer to process both EPUB and PDF
             val deadline = System.currentTimeMillis() + 15_000
             while (System.currentTimeMillis() < deadline) {
                 val counts = ftsService.countByStatus()
-                if ((counts["indexed"] ?: 0L) > 0) break
+                if ((counts["indexed"] ?: 0L) >= 2) break
                 Thread.sleep(500)
             }
         }
@@ -509,9 +563,9 @@ class FtsHttpE2ETest {
 
     @Test
     @Order(1)
-    fun `FTS indexed the uploaded EPUB`() {
+    fun `FTS indexed both EPUB and PDF`() {
         val counts = ftsService.countByStatus()
-        assertTrue((counts["indexed"] ?: 0L) >= 1, "At least one book should be indexed: $counts")
+        assertTrue((counts["indexed"] ?: 0L) >= 2, "Both EPUB and PDF should be indexed: $counts")
     }
 
     @Test
@@ -589,5 +643,50 @@ class FtsHttpE2ETest {
         val results = search("quantum")
         val ids = results.getBooks().map { it.id }
         assertEquals(ids.distinct().size, ids.size, "No duplicate book IDs")
+    }
+
+    // ── Real PDF content extraction + search ─────────────────────────────
+
+    @Test
+    @Order(11)
+    fun `search finds PDF book by extracted content`() {
+        // "Velanthor" only exists inside the PDF text
+        val results = search("Velanthor")
+        assertTrue(results.total > 0, "Should find PDF book by extracted content")
+        assertTrue(
+            results.getBooks().any { it.id == pdfBookId },
+            "The uploaded PDF book should be in results",
+        )
+    }
+
+    @Test
+    @Order(12)
+    fun `search finds PDF by another content-only term`() {
+        // "Korynthian" only exists inside the PDF
+        val results = search("Korynthian")
+        assertTrue(results.total > 0, "Should find by 'Korynthian' from PDF content")
+        assertTrue(results.getBooks().any { it.id == pdfBookId })
+    }
+
+    @Test
+    @Order(13)
+    fun `PDF content term does not match EPUB book`() {
+        // "Velanthor" is only in the PDF, not the EPUB
+        val results = search("Velanthor")
+        assertTrue(
+            results.getBooks().none { it.id == epubBookId },
+            "EPUB book should not match PDF-only content",
+        )
+    }
+
+    @Test
+    @Order(14)
+    fun `EPUB content term does not match PDF book`() {
+        // "Moonwhisper" is only in the EPUB, not the PDF
+        val results = search("Moonwhisper")
+        assertTrue(
+            results.getBooks().none { it.id == pdfBookId },
+            "PDF book should not match EPUB-only content",
+        )
     }
 }
