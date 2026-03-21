@@ -16,7 +16,7 @@
         <maven.compiler.release>17</maven.compiler.release>
 
         <!-- Version Properties -->
-        <kotlin.version>2.2.21</kotlin.version>
+        <kotlin.version>2.3.20</kotlin.version>
         <java.version>21.0.9</java.version>
 
         <!-- Maven Plugin Versions -->
