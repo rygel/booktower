@@ -10,6 +10,10 @@ updates:
     open-pull-requests-limit: 10
     labels:
       - "dependencies"
+    ignore:
+      # Kotlin 2.3.x breaks CodeQL — stay on 2.2.x until CodeQL catches up
+      - dependency-name: "org.jetbrains.kotlin:*"
+        versions: [">=2.3.0"]
     groups:
       kotlin:
         patterns:
