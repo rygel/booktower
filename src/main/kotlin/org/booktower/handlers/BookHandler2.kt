@@ -296,6 +296,15 @@ class BookHandler2(
         if (request.title.isBlank()) return "Book title is required"
         if (request.title.length > 255) return "Book title must be 255 characters or fewer"
         if ((request.author?.length ?: 0) > 255) return "Author must be 255 characters or fewer"
+        if ((request.description?.length ?: 0) > 10_000) return "Description must be 10,000 characters or fewer"
+        if ((request.series?.length ?: 0) > 255) return "Series name must be 255 characters or fewer"
+        if ((request.isbn?.length ?: 0) > 20) return "ISBN must be 20 characters or fewer"
+        if ((request.publisher?.length ?: 0) > 255) return "Publisher must be 255 characters or fewer"
+        if ((request.subtitle?.length ?: 0) > 500) return "Subtitle must be 500 characters or fewer"
+        if ((request.language?.length ?: 0) > 10) return "Language code must be 10 characters or fewer"
+        val pc = request.pageCount
+        if (pc != null && pc < 0) return "Page count cannot be negative"
+        if (pc != null && pc > 100_000) return "Page count exceeds maximum (100,000)"
         return null
     }
 }
