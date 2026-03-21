@@ -71,8 +71,8 @@
         <logback.version>1.5.32</logback.version>
 
         <!-- Other Versions -->
-        <jackson.version>2.21.1</jackson.version>
-        <jackson-kotlin.version>2.21.1</jackson-kotlin.version>
+        <jackson.version>2.21.2</jackson.version>
+        <jackson-kotlin.version>2.21.2</jackson-kotlin.version>
         <jwt.version>4.5.1</jwt.version>
         <bcrypt.version>0.4</bcrypt.version>
         <pdfbox.version>3.0.7</pdfbox.version>
