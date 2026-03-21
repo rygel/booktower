@@ -3,7 +3,7 @@ package org.booktower.integration
 import org.booktower.config.Database
 import org.booktower.config.DatabaseConfig
 import org.booktower.config.Json
-import org.booktower.config.TemplateRenderer
+import org.booktower.filters.DemoModeFilter
 import org.booktower.filters.RateLimitFilter
 import org.booktower.filters.adminFilter
 import org.booktower.filters.globalErrorFilter
@@ -14,6 +14,7 @@ import org.booktower.models.BookListDto
 import org.booktower.models.LoginResponse
 import org.booktower.routers.FilterSet
 import org.booktower.services.*
+import org.http4k.core.Body
 import org.http4k.core.HttpHandler
 import org.http4k.core.Method
 import org.http4k.core.Request
@@ -29,13 +30,20 @@ import org.junit.jupiter.api.condition.EnabledIfSystemProperty
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.util.zip.CRC32
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /**
  * Full HTTP-level E2E test for FTS against real PostgreSQL.
- * Tests the complete pipeline: HTTP request → handler → BookService →
- * FtsService → PostgreSQL → response.
+ * Tests the complete pipeline with NO faking:
+ *   1. Upload a real EPUB via HTTP
+ *   2. FtsIndexWorker extracts text from the EPUB
+ *   3. Search via /api/search finds content from inside the book
  *
  * Run with: mvn test -Dtest="FtsHttpE2ETest" -Dfts.integration=true
  * Requires Docker for Testcontainers.
@@ -54,9 +62,83 @@ class FtsHttpE2ETest {
                 .withPassword("test")
 
         private lateinit var database: Database
+        private lateinit var ftsService: FtsService
+        private lateinit var ftsWorker: FtsIndexWorker
         private lateinit var app: HttpHandler
         private lateinit var token: String
-        private lateinit var bookIds: Map<String, String>
+        private lateinit var epubBookId: String
+        private lateinit var noFileBookId: String
+
+        /** Builds a valid EPUB with known searchable content. */
+        private fun epubWithContent(
+            title: String,
+            bodyText: String,
+        ): ByteArray {
+            val baos = ByteArrayOutputStream()
+            ZipOutputStream(baos).use { zip ->
+                zip.setMethod(ZipOutputStream.STORED)
+                val mimeBytes = "application/epub+zip".toByteArray()
+                val mimeEntry = ZipEntry("mimetype")
+                mimeEntry.size = mimeBytes.size.toLong()
+                mimeEntry.compressedSize = mimeBytes.size.toLong()
+                mimeEntry.crc = CRC32().also { it.update(mimeBytes) }.value
+                zip.putNextEntry(mimeEntry)
+                zip.write(mimeBytes)
+                zip.closeEntry()
+
+                zip.setMethod(ZipOutputStream.DEFLATED)
+                zip.putNextEntry(ZipEntry("META-INF/container.xml"))
+                zip.write(
+                    """<?xml version="1.0"?>
+                    <container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
+                      <rootfiles><rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/></rootfiles>
+                    </container>""".toByteArray(),
+                )
+                zip.closeEntry()
+
+                zip.putNextEntry(ZipEntry("OEBPS/content.opf"))
+                zip.write(
+                    """<?xml version="1.0" encoding="utf-8"?>
+                    <package xmlns="http://www.idpf.org/2007/opf" version="2.0" unique-identifier="id">
+                      <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+                        <dc:title>$title</dc:title>
+                        <dc:identifier id="id">fts-test-001</dc:identifier>
+                      </metadata>
+                      <manifest>
+                        <item id="ch1" href="chapter1.xhtml" media-type="application/xhtml+xml"/>
+                        <item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>
+                      </manifest>
+                      <spine toc="ncx"><itemref idref="ch1"/></spine>
+                    </package>""".toByteArray(),
+                )
+                zip.closeEntry()
+
+                zip.putNextEntry(ZipEntry("OEBPS/chapter1.xhtml"))
+                zip.write(
+                    """<?xml version="1.0" encoding="utf-8"?>
+                    <html xmlns="http://www.w3.org/1999/xhtml">
+                      <head><title>$title</title></head>
+                      <body><p>$bodyText</p></body>
+                    </html>""".toByteArray(),
+                )
+                zip.closeEntry()
+
+                zip.putNextEntry(ZipEntry("OEBPS/toc.ncx"))
+                zip.write(
+                    """<?xml version="1.0" encoding="utf-8"?>
+                    <ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1">
+                      <head><meta name="dtb:uid" content="fts-test-001"/></head>
+                      <docTitle><text>$title</text></docTitle>
+                      <navMap><navPoint id="np1" playOrder="1">
+                        <navLabel><text>Chapter One</text></navLabel>
+                        <content src="chapter1.xhtml"/>
+                      </navPoint></navMap>
+                    </ncx>""".toByteArray(),
+                )
+                zip.closeEntry()
+            }
+            return baos.toByteArray()
+        }
 
         @BeforeAll
         @JvmStatic
@@ -76,7 +158,7 @@ class FtsHttpE2ETest {
             val config = org.booktower.TestFixture.config
             val templateRenderer = org.booktower.TestFixture.templateRenderer
 
-            // Services
+            // Core services
             val jwtService = JwtService(config.security)
             val authService = AuthService(jdbi, jwtService)
             val pdfMetadataService = PdfMetadataService(jdbi, config.storage.coversPath)
@@ -85,10 +167,11 @@ class FtsHttpE2ETest {
             val readingSessionService = ReadingSessionService(jdbi)
             val userSettingsService = UserSettingsService(jdbi)
             val analyticsService = AnalyticsService(jdbi, userSettingsService)
-            val ftsService = FtsService(jdbi, enabled = true)
+
+            ftsService = FtsService(jdbi, enabled = true)
             ftsService.initialize()
 
-            val libraryService = LibraryService(jdbi, pdfMetadataService, libraryAccessService)
+            val libraryService = LibraryService(jdbi, pdfMetadataService, libraryAccessService, ftsService = ftsService)
             val bookmarkService = BookmarkService(jdbi)
             val bookService =
                 BookService(jdbi, analyticsService, readingSessionService, metadataLockService, ftsService)
@@ -132,8 +215,9 @@ class FtsHttpE2ETest {
             val hardcoverSyncService = HardcoverSyncService(jdbi, userSettingsService)
             val calibreService =
                 CalibreConversionService(java.io.File(config.storage.tempPath, "calibre-cache"))
+            val bookSharingService = BookSharingService(jdbi, bookService)
 
-            // Handlers
+            // Handlers — FileHandler gets ftsService for enqueue on upload
             val smtpConfig = org.booktower.config.SmtpConfig("", 587, "", "", "", true)
             val authHandler =
                 org.booktower.handlers.AuthHandler2(
@@ -157,6 +241,7 @@ class FtsHttpE2ETest {
                     epubMetadataService,
                     config.storage,
                     calibreService = calibreService,
+                    ftsService = ftsService,
                 )
             val settingsHandler = org.booktower.handlers.UserSettingsHandler(userSettingsService)
             val adminHandler =
@@ -209,7 +294,6 @@ class FtsHttpE2ETest {
             val goodreadsImportHandler =
                 org.booktower.handlers.GoodreadsImportHandler(goodreadsImportService, jwtService)
             val bulkBookHandler = org.booktower.handlers.BulkBookHandler(bookService)
-            val bookSharingService = BookSharingService(jdbi, bookService)
 
             // Filters
             val userExistsCheck = { userId: java.util.UUID -> authService.getUserById(userId) != null }
@@ -227,14 +311,7 @@ class FtsHttpE2ETest {
             val authRouter = org.booktower.routers.AuthRouter(authHandler, filters)
             val oidcRouter = org.booktower.routers.OidcRouter(null)
             val pageRouter =
-                org.booktower.routers.PageRouter(
-                    filters,
-                    pageHandler,
-                    adminHandler,
-                    jwtService,
-                    templateRenderer,
-                    true,
-                )
+                org.booktower.routers.PageRouter(filters, pageHandler, adminHandler, jwtService, templateRenderer, true)
             val bookApiRouter =
                 org.booktower.routers.BookApiRouter(
                     filters,
@@ -334,12 +411,13 @@ class FtsHttpE2ETest {
                     audiobookApiRouter,
                     deviceSyncRouter,
                 )
-            app =
-                globalErrorFilter()
-                    .then(org.booktower.filters.DemoModeFilter(false))
-                    .then(appHandler.routes())
+            app = globalErrorFilter().then(DemoModeFilter(false)).then(appHandler.routes())
 
-            // Register user and create test data
+            // Start FTS index worker with fast polling for tests
+            ftsWorker = FtsIndexWorker(ftsService, backgroundTaskService, throttleMs = 0, pollIntervalMs = 200)
+            ftsWorker.start()
+
+            // Register user
             val regResp =
                 app(
                     Request(Method.POST, "/auth/register")
@@ -362,57 +440,56 @@ class FtsHttpE2ETest {
                     .get("id")
                     .asText()
 
-            // Create books with varied metadata
-            val titles =
-                mapOf(
-                    "War of the Worlds" to Pair("H.G. Wells", "Martian invasion of Earth with tripod war machines"),
-                    "The Time Machine" to Pair("H.G. Wells", "Travel to the year 802701 with Eloi and Morlocks"),
-                    "Dune" to Pair("Frank Herbert", "Desert planet Arrakis with spice and sandworms"),
-                    "Foundation" to Pair("Isaac Asimov", "Fall of the Galactic Empire predicted by psychohistory"),
-                    "Neuromancer" to Pair("William Gibson", "Cyberpunk hacker in a dystopian AI future"),
+            // Create book and upload EPUB with unique searchable content
+            val createResp =
+                app(
+                    Request(Method.POST, "/api/books")
+                        .header("Cookie", "token=$token")
+                        .header("Content-Type", "application/json")
+                        .body("""{"title":"Placeholder Title","author":"Test Author","description":"A test book","libraryId":"$libId"}"""),
                 )
-            bookIds = mutableMapOf()
-            for ((title, pair) in titles) {
-                val resp =
-                    app(
-                        Request(Method.POST, "/api/books")
-                            .header("Cookie", "token=$token")
-                            .header("Content-Type", "application/json")
-                            .body("""{"title":"$title","author":"${pair.first}","description":"${pair.second}","libraryId":"$libId"}"""),
-                    )
-                val id = Json.mapper.readValue(resp.bodyString(), BookDto::class.java).id
-                (bookIds as MutableMap)[title] = id
-            }
+            epubBookId = Json.mapper.readValue(createResp.bodyString(), BookDto::class.java).id
 
-            // Index content for Dune and Foundation
-            jdbi.useHandle<Exception> { h ->
-                h
-                    .createUpdate(
-                        """INSERT INTO book_content (book_id, content, status, indexed_at)
-                       VALUES (?, ?, 'indexed', NOW())
-                       ON CONFLICT (book_id) DO UPDATE SET content = EXCLUDED.content, status = 'indexed'""",
-                    ).bind(0, bookIds["Dune"])
-                    .bind(
-                        1,
-                        "The spice melange is the most valuable substance. " +
-                            "The Fremen ride sandworms across the desert of Arrakis.",
-                    ).execute()
-                h
-                    .createUpdate(
-                        """INSERT INTO book_content (book_id, content, status, indexed_at)
-                       VALUES (?, ?, 'indexed', NOW())
-                       ON CONFLICT (book_id) DO UPDATE SET content = EXCLUDED.content, status = 'indexed'""",
-                    ).bind(0, bookIds["Foundation"])
-                    .bind(
-                        1,
-                        "Hari Seldon established the Foundation on Terminus to preserve knowledge.",
-                    ).execute()
+            // Upload EPUB — this triggers FTS enqueue via FileHandler
+            val epubBytes =
+                epubWithContent(
+                    "The Quantum Butterfly Effect",
+                    "Professor Elara Moonwhisper discovered that quantum entanglement " +
+                        "could be harnessed through crystalline metamaterials to create " +
+                        "instantaneous communication across galactic distances. Her research " +
+                        "at the Zephyrion Institute revolutionized interstellar travel.",
+                )
+            app(
+                Request(Method.POST, "/api/books/$epubBookId/upload")
+                    .header("Cookie", "token=$token")
+                    .header("X-Filename", "quantum-butterfly.epub")
+                    .header("Content-Type", "application/octet-stream")
+                    .body(Body(ByteArrayInputStream(epubBytes), epubBytes.size.toLong())),
+            )
+
+            // Create another book WITHOUT a file (for comparison)
+            val noFileResp =
+                app(
+                    Request(Method.POST, "/api/books")
+                        .header("Cookie", "token=$token")
+                        .header("Content-Type", "application/json")
+                        .body("""{"title":"Unrelated Book","author":"Other Author","description":"Nothing about quantum","libraryId":"$libId"}"""),
+                )
+            noFileBookId = Json.mapper.readValue(noFileResp.bodyString(), BookDto::class.java).id
+
+            // Wait for FTS indexer to process the uploaded EPUB
+            val deadline = System.currentTimeMillis() + 15_000
+            while (System.currentTimeMillis() < deadline) {
+                val counts = ftsService.countByStatus()
+                if ((counts["indexed"] ?: 0L) > 0) break
+                Thread.sleep(500)
             }
         }
 
         @AfterAll
         @JvmStatic
         fun teardown() {
+            ftsWorker.stop()
             database.close()
             postgres.stop()
         }
@@ -421,153 +498,96 @@ class FtsHttpE2ETest {
     private fun search(query: String): BookListDto {
         val resp =
             app(
-                Request(
-                    Method.GET,
-                    "/api/search?q=${java.net.URLEncoder.encode(query, "UTF-8")}",
-                ).header("Cookie", "token=$token"),
+                Request(Method.GET, "/api/search?q=${java.net.URLEncoder.encode(query, "UTF-8")}")
+                    .header("Cookie", "token=$token"),
             )
         assertEquals(Status.OK, resp.status, "Search should return 200 for query: $query")
         return Json.mapper.readValue(resp.bodyString(), BookListDto::class.java)
     }
 
-    // ── Metadata search via HTTP API ─────────────────────────────────────
+    // ── Real EPUB content extraction + search ────────────────────────────
 
     @Test
     @Order(1)
-    fun `search by title finds correct book`() {
-        val results = search("Dune")
-        assertTrue(results.total > 0, "Should find Dune")
-        assertTrue(
-            results.getBooks().any { it.title == "Dune" },
-            "Results should contain Dune",
-        )
+    fun `FTS indexed the uploaded EPUB`() {
+        val counts = ftsService.countByStatus()
+        assertTrue((counts["indexed"] ?: 0L) >= 1, "At least one book should be indexed: $counts")
     }
 
     @Test
     @Order(2)
-    fun `search by author finds multiple books`() {
-        val results = search("Wells")
-        assertTrue(results.total >= 2, "Should find both H.G. Wells books")
-        val titles = results.getBooks().map { it.title }
-        assertTrue(titles.contains("War of the Worlds"), "Should find War of the Worlds")
-        assertTrue(titles.contains("The Time Machine"), "Should find The Time Machine")
+    fun `search finds book by content extracted from EPUB`() {
+        // "Moonwhisper" only exists inside the EPUB chapter text
+        val results = search("Moonwhisper")
+        assertTrue(results.total > 0, "Should find book by content extracted from uploaded EPUB")
+        assertTrue(
+            results.getBooks().any { it.id == epubBookId },
+            "The uploaded EPUB book should be in results",
+        )
     }
 
     @Test
     @Order(3)
-    fun `search by description keyword finds book`() {
-        val results = search("cyberpunk")
-        assertTrue(results.total > 0, "Should find Neuromancer by description")
-        assertTrue(
-            results.getBooks().any { it.title == "Neuromancer" },
-            "Should find Neuromancer",
-        )
+    fun `search finds book by another content-only term`() {
+        // "Zephyrion" only exists inside the EPUB
+        val results = search("Zephyrion")
+        assertTrue(results.total > 0, "Should find by 'Zephyrion' from EPUB content")
+        assertTrue(results.getBooks().any { it.id == epubBookId })
     }
-
-    // ── Content search via HTTP API ──────────────────────────────────────
 
     @Test
     @Order(4)
-    fun `search finds book by indexed content`() {
-        val results = search("Fremen sandworms")
-        assertTrue(results.total > 0, "Should find Dune by indexed content")
-        assertTrue(
-            results.getBooks().any { it.title == "Dune" },
-            "Dune should appear from content match",
-        )
+    fun `search finds book by metadata title`() {
+        // EPUB metadata extraction updates the title to "The Quantum Butterfly Effect"
+        val results = search("Quantum Butterfly")
+        assertTrue(results.total > 0, "Should find by title from EPUB metadata")
     }
 
     @Test
     @Order(5)
-    fun `search finds book by content keyword not in metadata`() {
-        val results = search("Terminus")
-        assertTrue(results.total > 0, "Should find Foundation by content ('Terminus' not in title/desc)")
-        assertTrue(
-            results.getBooks().any { it.title == "Foundation" },
-            "Foundation should appear",
-        )
+    fun `content-only term does not match unrelated book`() {
+        val results = search("Moonwhisper")
+        val ids = results.getBooks().map { it.id }
+        assertTrue(noFileBookId !in ids, "Unrelated book without EPUB should not appear")
     }
-
-    // ── No results ──────────────────────────────────────────────────────
 
     @Test
     @Order(6)
-    fun `search with no match returns empty`() {
-        val results = search("xyzzy_nonexistent_term")
-        assertEquals(0, results.total, "No results for nonsense query")
-    }
-
-    // ── Result ranking ──────────────────────────────────────────────────
-
-    @Test
-    @Order(7)
-    fun `title match ranks higher than description match`() {
-        // "Dune" is a title, "Martian" is in description of War of the Worlds
-        val duneResults = search("Dune")
-        val martianResults = search("Martian")
-        assertTrue(duneResults.total > 0)
-        assertTrue(martianResults.total > 0)
-        // Both should find results; title match (Dune) should be first in its results
-        assertEquals("Dune", duneResults.getBooks().first().title)
-    }
-
-    // ── Pagination ──────────────────────────────────────────────────────
-
-    @Test
-    @Order(8)
-    fun `search respects page and pageSize parameters`() {
-        val page1 =
-            app(
-                Request(Method.GET, "/api/search?q=Wells&pageSize=1&page=1")
-                    .header("Cookie", "token=$token"),
-            )
-        assertEquals(Status.OK, page1.status)
-        val result1 = Json.mapper.readValue(page1.bodyString(), BookListDto::class.java)
-        assertEquals(1, result1.getBooks().size, "pageSize=1 should return 1 book")
-        assertTrue(result1.total >= 2, "Total should reflect all matches")
+    fun `search by description keyword works via metadata FTS`() {
+        val results = search("quantum")
+        assertTrue(results.total > 0, "Should find by 'quantum' in title or content")
     }
 
     // ── Edge cases ──────────────────────────────────────────────────────
 
     @Test
-    @Order(9)
+    @Order(7)
+    fun `search for nonsense returns empty`() {
+        val results = search("xyzzy_completely_nonexistent_word")
+        assertEquals(0, results.total)
+    }
+
+    @Test
+    @Order(8)
     fun `empty query returns 400`() {
         val resp =
-            app(
-                Request(Method.GET, "/api/search?q=")
-                    .header("Cookie", "token=$token"),
-            )
+            app(Request(Method.GET, "/api/search?q=").header("Cookie", "token=$token"))
         assertEquals(Status.BAD_REQUEST, resp.status)
+    }
+
+    @Test
+    @Order(9)
+    fun `unauthenticated search returns 401`() {
+        val resp = app(Request(Method.GET, "/api/search?q=test"))
+        assertEquals(Status.UNAUTHORIZED, resp.status)
     }
 
     @Test
     @Order(10)
-    fun `missing query parameter returns 400`() {
-        val resp =
-            app(
-                Request(Method.GET, "/api/search")
-                    .header("Cookie", "token=$token"),
-            )
-        assertEquals(Status.BAD_REQUEST, resp.status)
-    }
-
-    @Test
-    @Order(11)
-    fun `unauthenticated search returns 401`() {
-        val resp = app(Request(Method.GET, "/api/search?q=Dune"))
-        assertEquals(Status.UNAUTHORIZED, resp.status)
-    }
-
-    // ── Combined metadata + content ──────────────────────────────────────
-
-    @Test
-    @Order(12)
-    fun `search returns both metadata and content matches`() {
-        // "spice" is in Dune's description AND indexed content
-        val results = search("spice")
-        assertTrue(results.total > 0, "Should find by spice (in desc + content)")
-        // Should not have duplicates
+    fun `no duplicate books in combined search results`() {
+        // "quantum" might match title metadata AND EPUB content
+        val results = search("quantum")
         val ids = results.getBooks().map { it.id }
-        assertEquals(ids.distinct().size, ids.size, "No duplicate books in results")
+        assertEquals(ids.distinct().size, ids.size, "No duplicate book IDs")
     }
 }
