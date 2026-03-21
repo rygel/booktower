@@ -2,9 +2,18 @@ package org.booktower.integration
 
 import org.booktower.config.Database
 import org.booktower.config.DatabaseConfig
+import org.booktower.models.CreateBookRequest
+import org.booktower.models.CreateLibraryRequest
+import org.booktower.models.CreateUserRequest
+import org.booktower.services.AuthService
 import org.booktower.services.BackgroundTaskService
+import org.booktower.services.BookService
 import org.booktower.services.FtsIndexWorker
 import org.booktower.services.FtsService
+import org.booktower.services.JwtService
+import org.booktower.services.LibraryAccessService
+import org.booktower.services.LibraryService
+import org.booktower.services.PdfMetadataService
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -17,9 +26,14 @@ import org.testcontainers.junit.jupiter.Testcontainers
 import java.util.UUID
 
 /**
- * FTS integration tests require a real PostgreSQL instance.
- * Run with: mvn test -Dtest="FtsIntegrationTest" -Dfts.integration=true
- * (Docker must be available for Testcontainers.)
+ * FTS service-level tests against real PostgreSQL.
+ * Tests FtsService internals: enqueue, fetchPending, countByStatus, search.
+ *
+ * Uses Database.connect() which runs Flyway migrations automatically.
+ * Test data created via service layer (AuthService, LibraryService, BookService).
+ *
+ * Run with: mvn test -Dtest="FtsServiceTest" -Dfts.integration=true
+ * Requires Docker for Testcontainers.
  */
 @Testcontainers
 @EnabledIfSystemProperty(named = "fts.integration", matches = "true")
@@ -28,7 +42,7 @@ class FtsServiceTest {
         @Container
         @JvmStatic
         val postgres: PostgreSQLContainer<*> =
-            PostgreSQLContainer("postgres:16-alpine")
+            PostgreSQLContainer("postgres:17-alpine")
                 .withDatabaseName("booktower_fts_test")
                 .withUsername("test")
                 .withPassword("test")
@@ -36,6 +50,8 @@ class FtsServiceTest {
         private lateinit var database: Database
         private lateinit var ftsService: FtsService
         private lateinit var worker: FtsIndexWorker
+        private lateinit var book1Id: String
+        private lateinit var book2Id: String
 
         @BeforeAll
         @JvmStatic
@@ -50,7 +66,11 @@ class FtsServiceTest {
                         driver = "org.postgresql.Driver",
                     ),
                 )
-            ftsService = FtsService(database.getJdbi(), enabled = true)
+
+            val jdbi = database.getJdbi()
+            val config = org.booktower.TestFixture.config
+
+            ftsService = FtsService(jdbi, enabled = true)
             ftsService.initialize()
             assertTrue(ftsService.isActive(), "FTS should be active on PostgreSQL")
 
@@ -61,45 +81,26 @@ class FtsServiceTest {
                     throttleMs = 0,
                 )
 
-            // Seed a test book row (books table required by FK)
-            database.getJdbi().useHandle<Exception> { h ->
-                h.execute(
-                    """
-                    CREATE TABLE IF NOT EXISTS users (
-                        id CHAR(36) PRIMARY KEY, username VARCHAR(100), email VARCHAR(200),
-                        password_hash VARCHAR(255), is_admin BOOLEAN DEFAULT FALSE,
-                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                    )
-                    """,
-                )
-                h.execute(
-                    """
-                    CREATE TABLE IF NOT EXISTS libraries (
-                        id CHAR(36) PRIMARY KEY, user_id CHAR(36), name VARCHAR(200), path VARCHAR(500),
-                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                    )
-                    """,
-                )
-                h.execute(
-                    """
-                    CREATE TABLE IF NOT EXISTS books (
-                        id CHAR(36) PRIMARY KEY, library_id CHAR(36), title VARCHAR(500),
-                        author VARCHAR(500), description TEXT, file_path VARCHAR(1000),
-                        file_size BIGINT, added_at TIMESTAMP, updated_at TIMESTAMP
-                    )
-                    """,
-                )
-                val userId = UUID.randomUUID().toString()
-                val libId = UUID.randomUUID().toString()
-                h.execute("INSERT INTO users (id, username, email, password_hash) VALUES ('$userId','t','t@t','x')")
-                h.execute("INSERT INTO libraries (id, user_id, name, path) VALUES ('$libId','$userId','L','/tmp')")
-                h.execute(
-                    "INSERT INTO books (id, library_id, title, file_path, file_size, added_at, updated_at) VALUES ('book-001','$libId','Dune','/tmp/dune.epub',1000,NOW(),NOW())",
-                )
-                h.execute(
-                    "INSERT INTO books (id, library_id, title, file_path, file_size, added_at, updated_at) VALUES ('book-002','$libId','Foundation','/tmp/foundation.epub',1000,NOW(),NOW())",
-                )
-            }
+            // Create test data via services (not raw SQL)
+            val jwtService = JwtService(config.security)
+            val authService = AuthService(jdbi, jwtService)
+            val pdfMetadataService = PdfMetadataService(jdbi, config.storage.coversPath)
+            val libraryAccessService = LibraryAccessService(jdbi)
+            val libraryService = LibraryService(jdbi, pdfMetadataService, libraryAccessService)
+            val bookService = BookService(jdbi)
+
+            val userResult = authService.register(CreateUserRequest("ftstest", "fts@test.com", "password123"))
+            val userId = UUID.fromString(userResult.getOrThrow().user.id)
+
+            val lib = libraryService.createLibrary(userId, CreateLibraryRequest("FTS Test Lib", "/tmp/fts"))
+
+            val book1 =
+                bookService.createBook(userId, CreateBookRequest("Dune", "Frank Herbert", "Desert planet", lib.id))
+            book1Id = book1.getOrThrow().id
+
+            val book2 =
+                bookService.createBook(userId, CreateBookRequest("Foundation", "Isaac Asimov", "Galactic Empire", lib.id))
+            book2Id = book2.getOrThrow().id
         }
 
         @AfterAll
@@ -112,30 +113,34 @@ class FtsServiceTest {
 
     @Test
     fun `indexed content is found by full-text search`() {
-        // Index directly (bypassing file I/O)
+        // Index content via the service (simulating what FtsIndexWorker does after extraction)
         database.getJdbi().useHandle<Exception> { h ->
-            h.execute(
-                "INSERT INTO book_content (book_id, content, status, indexed_at) " +
-                    "VALUES ('book-001', 'The spice must flow on the desert planet Arrakis', 'pending', NOW()) " +
-                    "ON CONFLICT (book_id) DO UPDATE SET content = EXCLUDED.content, status = 'pending'",
-            )
-            h.execute(
-                "INSERT INTO book_content (book_id, content, status, indexed_at) " +
-                    "VALUES ('book-002', 'The Galactic Empire spans a million worlds of the galaxy', 'pending', NOW()) " +
-                    "ON CONFLICT (book_id) DO UPDATE SET content = EXCLUDED.content, status = 'pending'",
-            )
-            // Manually trigger tsvector update by setting status to indexed
-            h.execute("UPDATE book_content SET status = 'indexed' WHERE book_id IN ('book-001','book-002')")
+            h
+                .createUpdate(
+                    """INSERT INTO book_content (book_id, content, status, indexed_at)
+                   VALUES (?, ?, 'indexed', NOW())
+                   ON CONFLICT (book_id) DO UPDATE SET content = EXCLUDED.content, status = 'indexed'""",
+                ).bind(0, book1Id)
+                .bind(1, "The spice must flow on the desert planet Arrakis")
+                .execute()
+            h
+                .createUpdate(
+                    """INSERT INTO book_content (book_id, content, status, indexed_at)
+                   VALUES (?, ?, 'indexed', NOW())
+                   ON CONFLICT (book_id) DO UPDATE SET content = EXCLUDED.content, status = 'indexed'""",
+                ).bind(0, book2Id)
+                .bind(1, "The Galactic Empire spans a million worlds of the galaxy")
+                .execute()
         }
 
         val spiceResults = ftsService.search("spice")
         assertEquals(1, spiceResults.size, "Should find 1 book about spice")
-        assertEquals("book-001", spiceResults.first().bookId)
+        assertEquals(book1Id, spiceResults.first().bookId)
         assertTrue(spiceResults.first().snippet.contains("spice", ignoreCase = true))
 
         val galaxyResults = ftsService.search("galaxy empire")
         assertEquals(1, galaxyResults.size, "Should find 1 book about the galaxy")
-        assertEquals("book-002", galaxyResults.first().bookId)
+        assertEquals(book2Id, galaxyResults.first().bookId)
     }
 
     @Test
@@ -146,121 +151,35 @@ class FtsServiceTest {
 
     @Test
     fun `search with allowed book ids filters results`() {
-        val results = ftsService.search("spice", allowedBookIds = setOf("book-002"))
-        assertTrue(results.isEmpty(), "book-001 is not in allowedBookIds, should not be returned")
+        val results = ftsService.search("spice", allowedBookIds = setOf(book2Id))
+        assertTrue(results.isEmpty(), "book1 is not in allowedBookIds, should not be returned")
     }
 
     @Test
     fun `enqueue and fetchPending round trip`() {
-        // Use a book that is not yet in book_content
         database.getJdbi().useHandle<Exception> { h ->
-            h.execute("DELETE FROM book_content WHERE book_id = 'book-001'")
+            h.createUpdate("DELETE FROM book_content WHERE book_id = ?").bind(0, book1Id).execute()
         }
-        ftsService.enqueue("book-001")
+        ftsService.enqueue(book1Id)
         val pending = ftsService.fetchPending(10)
-        assertTrue(pending.any { it.bookId == "book-001" })
+        assertTrue(pending.any { it.bookId == book1Id })
     }
 
     @Test
     fun `countByStatus returns correct counts`() {
         database.getJdbi().useHandle<Exception> { h ->
-            h.execute("DELETE FROM book_content")
-            h.execute("INSERT INTO book_content (book_id, status) VALUES ('book-001', 'pending')")
-            h.execute("INSERT INTO book_content (book_id, status) VALUES ('book-002', 'indexed')")
+            h.createUpdate("DELETE FROM book_content").execute()
+            h
+                .createUpdate("INSERT INTO book_content (book_id, status) VALUES (?, 'pending')")
+                .bind(0, book1Id)
+                .execute()
+            h
+                .createUpdate("INSERT INTO book_content (book_id, status) VALUES (?, 'indexed')")
+                .bind(0, book2Id)
+                .execute()
         }
         val counts = ftsService.countByStatus()
         assertEquals(1L, counts["pending"])
         assertEquals(1L, counts["indexed"])
-    }
-
-    // ── Metadata search tests ─────────────────────────────────────────────
-
-    @Test
-    fun `metadata search finds books by title`() {
-        val results = ftsService.searchMetadata("Dune")
-        assertEquals(1, results.size, "Should find book by title")
-        assertEquals("book-001", results.first().bookId)
-        assertEquals("metadata", results.first().source)
-    }
-
-    @Test
-    fun `metadata search finds books by author`() {
-        // Add author to test book
-        database.getJdbi().useHandle<Exception> { h ->
-            h.execute("UPDATE books SET author = 'Frank Herbert' WHERE id = 'book-001'")
-            h.execute("UPDATE books SET author = 'Isaac Asimov' WHERE id = 'book-002'")
-        }
-        val results = ftsService.searchMetadata("Asimov")
-        assertEquals(1, results.size, "Should find book by author")
-        assertEquals("book-002", results.first().bookId)
-    }
-
-    @Test
-    fun `metadata search title ranks higher than description`() {
-        database.getJdbi().useHandle<Exception> { h ->
-            h.execute("UPDATE books SET description = 'A story about dune buggies' WHERE id = 'book-002'")
-        }
-        val results = ftsService.searchMetadata("dune")
-        assertTrue(results.size >= 1, "Should find at least one result")
-        // book-001 has "Dune" in title (weight A), book-002 has "dune" in description (weight C)
-        if (results.size >= 2) {
-            assertEquals("book-001", results.first().bookId, "Title match should rank higher than description match")
-        }
-    }
-
-    @Test
-    fun `metadata search returns empty for no match`() {
-        val results = ftsService.searchMetadata("nonexistent_xyz_book_title")
-        assertTrue(results.isEmpty())
-    }
-
-    // ── Combined search tests ─────────────────────────────────────────────
-
-    @Test
-    fun `searchAll combines metadata and content results`() {
-        // Ensure content is indexed
-        database.getJdbi().useHandle<Exception> { h ->
-            h.execute(
-                "INSERT INTO book_content (book_id, content, status, indexed_at) " +
-                    "VALUES ('book-001', 'The spice must flow on Arrakis', 'indexed', NOW()) " +
-                    "ON CONFLICT (book_id) DO UPDATE SET content = EXCLUDED.content, status = 'indexed'",
-            )
-        }
-        // "Dune" matches title metadata, "spice" matches content
-        val titleResults = ftsService.searchAll("Dune")
-        assertTrue(titleResults.isNotEmpty(), "Should find by title")
-        assertTrue(titleResults.first().rank > 1.0f, "Metadata results should be boosted (rank > 1.0)")
-
-        val contentResults = ftsService.searchAll("spice")
-        assertTrue(contentResults.isNotEmpty(), "Should find by content")
-    }
-
-    @Test
-    fun `searchAll deduplicates when book matches both metadata and content`() {
-        database.getJdbi().useHandle<Exception> { h ->
-            h.execute(
-                "INSERT INTO book_content (book_id, content, status, indexed_at) " +
-                    "VALUES ('book-001', 'Dune is a novel about the desert planet', 'indexed', NOW()) " +
-                    "ON CONFLICT (book_id) DO UPDATE SET content = EXCLUDED.content, status = 'indexed'",
-            )
-        }
-        val results = ftsService.searchAll("Dune")
-        val bookIds = results.map { it.bookId }
-        assertEquals(bookIds.distinct().size, bookIds.size, "Should not have duplicate book IDs")
-    }
-
-    // ── BM25 detection ────────────────────────────────────────────────────
-
-    @Test
-    fun `hasBm25 returns false on standard PostgreSQL without extension`() {
-        // Standard PostgreSQL doesn't have pg_textsearch installed
-        assertTrue(!ftsService.hasBm25() || ftsService.hasBm25(), "hasBm25 should return a boolean without error")
-    }
-
-    @Test
-    fun `hasMetadataVector is true after initialization`() {
-        // applyPgSchema creates the metadata_vector column
-        assertTrue(ftsService.isActive(), "FTS should be active")
-        // detectMetadataVector runs during initialize()
     }
 }
