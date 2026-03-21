@@ -27,6 +27,8 @@
 
 ## Completed
 
+- [x] Replace raw SQL in tests with service method calls (PR #102)
+- [x] Koin DI resolution test — 41 bindings verified (PR #101)
 - [x] Comic reader: double page spread, continuous scroll, 5 fit modes, click zones, swipe, preloading
 - [x] Connection pool tuning (maxLifetime, leak detection, JDBC4 validation)
 - [x] Activity log page (background tasks + audit log)

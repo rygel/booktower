@@ -128,24 +128,12 @@ class AuditIntegrationTest {
 
     @Test
     fun `AuditService listRecent returns entries in descending order`() {
-        val now =
-            java.time.Instant
-                .now()
-                .toString()
-        val userId = java.util.UUID.randomUUID()
-        // Insert user first
-        jdbi.useHandle<Exception> { h ->
-            h
-                .createUpdate(
-                    "INSERT INTO users (id, username, email, password_hash, created_at, updated_at, is_admin) VALUES (?,?,?,?,?,?,false)",
-                ).bind(0, userId.toString())
-                .bind(1, "auditorder_${System.nanoTime()}")
-                .bind(2, "ao_${System.nanoTime()}@test.com")
-                .bind(3, "hash")
-                .bind(4, now)
-                .bind(5, now)
-                .execute()
-        }
+        val jwtService = JwtService(config.security)
+        val authService = AuthService(jdbi, jwtService)
+        val username = "auditorder_${System.nanoTime()}"
+        val result = authService.register(org.booktower.models.CreateUserRequest(username, "$username@test.com", "password123"))
+        val userIdStr = result.getOrThrow().user.id
+        val userId = java.util.UUID.fromString(userIdStr)
         auditService.record(userId, "testuser", "test.action.1")
         Thread.sleep(10)
         auditService.record(userId, "testuser", "test.action.2")

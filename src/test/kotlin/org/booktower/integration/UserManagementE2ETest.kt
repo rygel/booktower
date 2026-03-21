@@ -1,6 +1,5 @@
 package org.booktower.integration
 
-import org.booktower.TestFixture
 import org.booktower.config.Json
 import org.booktower.models.BookDto
 import org.booktower.models.LibraryDto
@@ -67,12 +66,7 @@ class UserManagementE2ETest : IntegrationTestBase() {
         val registerResponse = register(username)
         val userId = registerResponse.user.id
 
-        TestFixture.database.getJdbi().useHandle<Exception> { handle ->
-            handle
-                .createUpdate("UPDATE users SET is_admin = true WHERE id = ?")
-                .bind(0, userId)
-                .execute()
-        }
+        promoteToAdmin(userId)
 
         // Re-login to get a token that carries admin=true claim
         return login(username).token

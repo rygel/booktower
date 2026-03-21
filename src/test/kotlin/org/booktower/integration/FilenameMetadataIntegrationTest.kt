@@ -19,8 +19,9 @@ class FilenameMetadataIntegrationTest : IntegrationTestBase() {
         val token = registerAndGetToken()
         val libId = createLibrary(token)
 
-        // Create a book; its filePath will be blank/default, so metadata comes from title parse
-        // We manipulate the DB directly to set a recognizable file_path
+        // Create a book; its filePath will be blank/default, so metadata comes from title parse.
+        // Raw SQL is acceptable here: file_path is internal state set during library scanning,
+        // and there is no BookService method to update just file_path on an existing book.
         val bookId = createBook(token, libId, "Placeholder")
         val jdbi =
             org.booktower.TestFixture.database
@@ -61,6 +62,7 @@ class FilenameMetadataIntegrationTest : IntegrationTestBase() {
         val token = registerAndGetToken()
         val libId = createLibrary(token)
         val bookId = createBook(token, libId, "Placeholder2")
+        // Raw SQL is acceptable here: file_path is internal state with no service method to update it.
         val jdbi =
             org.booktower.TestFixture.database
                 .getJdbi()

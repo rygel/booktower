@@ -113,25 +113,8 @@ class FtsServiceTest {
 
     @Test
     fun `indexed content is found by full-text search`() {
-        // Index content via the service (simulating what FtsIndexWorker does after extraction)
-        database.getJdbi().useHandle<Exception> { h ->
-            h
-                .createUpdate(
-                    """INSERT INTO book_content (book_id, content, status, indexed_at)
-                   VALUES (?, ?, 'indexed', NOW())
-                   ON CONFLICT (book_id) DO UPDATE SET content = EXCLUDED.content, status = 'indexed'""",
-                ).bind(0, book1Id)
-                .bind(1, "The spice must flow on the desert planet Arrakis")
-                .execute()
-            h
-                .createUpdate(
-                    """INSERT INTO book_content (book_id, content, status, indexed_at)
-                   VALUES (?, ?, 'indexed', NOW())
-                   ON CONFLICT (book_id) DO UPDATE SET content = EXCLUDED.content, status = 'indexed'""",
-                ).bind(0, book2Id)
-                .bind(1, "The Galactic Empire spans a million worlds of the galaxy")
-                .execute()
-        }
+        ftsService.indexContent(book1Id, "The spice must flow on the desert planet Arrakis")
+        ftsService.indexContent(book2Id, "The Galactic Empire spans a million worlds of the galaxy")
 
         val spiceResults = ftsService.search("spice")
         assertEquals(1, spiceResults.size, "Should find 1 book about spice")
@@ -167,17 +150,13 @@ class FtsServiceTest {
 
     @Test
     fun `countByStatus returns correct counts`() {
+        // Clear and set up known state via service methods
         database.getJdbi().useHandle<Exception> { h ->
             h.createUpdate("DELETE FROM book_content").execute()
-            h
-                .createUpdate("INSERT INTO book_content (book_id, status) VALUES (?, 'pending')")
-                .bind(0, book1Id)
-                .execute()
-            h
-                .createUpdate("INSERT INTO book_content (book_id, status) VALUES (?, 'indexed')")
-                .bind(0, book2Id)
-                .execute()
         }
+        ftsService.enqueue(book1Id) // creates 'pending' entry
+        ftsService.indexContent(book2Id, "indexed content") // creates 'indexed' entry
+
         val counts = ftsService.countByStatus()
         assertEquals(1L, counts["pending"])
         assertEquals(1L, counts["indexed"])

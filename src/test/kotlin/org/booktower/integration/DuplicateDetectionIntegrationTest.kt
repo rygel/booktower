@@ -7,6 +7,7 @@ import org.http4k.core.Request
 import org.http4k.core.Status
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import java.nio.file.Files
 import java.util.UUID
 import kotlin.test.assertTrue
 
@@ -14,6 +15,9 @@ class DuplicateDetectionIntegrationTest : IntegrationTestBase() {
     private val jdbi = TestFixture.database.getJdbi()
     private val duplicateService = DuplicateDetectionService(jdbi)
 
+    // Raw SQL is acceptable here: the duplicate detection tests need books with specific isbn
+    // and file_hash values. The BookService.createBook API does not support setting these fields
+    // directly — they are normally populated by metadata extraction and file scanning pipelines.
     private fun insertBook(
         libraryId: String,
         title: String,
@@ -48,44 +52,17 @@ class DuplicateDetectionIntegrationTest : IntegrationTestBase() {
         userId: UUID,
         name: String = "Lib",
     ): String {
-        val id = UUID.randomUUID().toString()
-        val now =
-            java.time.Instant
-                .now()
-                .toString()
-        jdbi.useHandle<Exception> { h ->
-            h
-                .createUpdate(
-                    "INSERT INTO libraries (id, name, path, user_id, created_at) VALUES (?, ?, ?, ?, ?)",
-                ).bind(0, id)
-                .bind(1, name)
-                .bind(2, "/tmp/$id")
-                .bind(3, userId.toString())
-                .bind(4, now)
-                .execute()
-        }
-        return id
+        val libDir = Files.createTempDirectory("bt-dup-test-").toFile()
+        val pdfMetadataService = org.booktower.services.PdfMetadataService(jdbi, TestFixture.config.storage.coversPath)
+        val libraryAccessService = org.booktower.services.LibraryAccessService(jdbi)
+        val libraryService = org.booktower.services.LibraryService(jdbi, pdfMetadataService, libraryAccessService)
+        val lib = libraryService.createLibrary(userId, org.booktower.models.CreateLibraryRequest(name, libDir.absolutePath))
+        return lib.id
     }
 
     private fun createUser(): UUID {
-        val id = UUID.randomUUID()
-        val now =
-            java.time.Instant
-                .now()
-                .toString()
-        jdbi.useHandle<Exception> { h ->
-            h
-                .createUpdate(
-                    "INSERT INTO users (id, username, email, password_hash, created_at, updated_at, is_admin) VALUES (?,?,?,?,?,?,false)",
-                ).bind(0, id.toString())
-                .bind(1, "duptest_${System.nanoTime()}")
-                .bind(2, "dup_${System.nanoTime()}@test.com")
-                .bind(3, "hash")
-                .bind(4, now)
-                .bind(5, now)
-                .execute()
-        }
-        return id
+        val userId = createTestUser("duptest_${System.nanoTime()}")
+        return UUID.fromString(userId)
     }
 
     @Test

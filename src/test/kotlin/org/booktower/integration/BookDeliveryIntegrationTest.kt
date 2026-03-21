@@ -137,7 +137,9 @@ class BookDeliveryIntegrationTest {
                 .readTree(bookResp.bodyString())
                 .get("id")
                 .asText()
-        // Optionally point the book at a real file
+        // Optionally point the book at a real file.
+        // Raw SQL is acceptable here: file_path is internal state set during library scanning,
+        // and there is no BookService method to update just file_path on an existing book.
         if (bookFile != null) {
             jdbi.useHandle<Exception> { h ->
                 h
