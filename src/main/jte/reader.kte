@@ -549,6 +549,16 @@
                     <button class="pref-btn" data-pref="animate" data-val="off">${i18n.translate("label.off")}</button>
                 </div>
             </div>
+            <div class="pref-section">
+                <p class="pref-section-label">${i18n.translate("page.reader.prefs.pageGap")}</p>
+                <div class="pref-btn-row">
+                    <button class="pref-btn" data-pref="gap" data-val="0">${i18n.translate("label.none")}</button>
+                    <button class="pref-btn active" data-pref="gap" data-val="4">4px</button>
+                    <button class="pref-btn" data-pref="gap" data-val="8">8px</button>
+                    <button class="pref-btn" data-pref="gap" data-val="16">16px</button>
+                    <button class="pref-btn" data-pref="gap" data-val="32">32px</button>
+                </div>
+            </div>
             @endif
         </div>
     </div>
@@ -1786,6 +1796,7 @@ var BT_DEVICE = (function() {
     let comicLayout = 'single'; // 'single', 'double', 'double-no-cover', 'continuous'
     let comicAnimate = true;
     let comicDirection = 'ltr'; // 'ltr', 'rtl', 'vertical'
+    let comicGap = 4; // px gap between pages in continuous/double mode
 
     function applyComicFit() {
         var vh = 'calc(100vh - 3rem - 3rem)';
@@ -1850,6 +1861,14 @@ var BT_DEVICE = (function() {
             b.classList.toggle('active', (b.dataset.val === 'on') === comicAnimate);
         });
     }
+    function applyComicGap() {
+        var pxVal = comicGap + 'px';
+        document.getElementById('comic-pages').style.gap = pxVal;
+        document.getElementById('comic-continuous').style.gap = pxVal;
+        document.querySelectorAll('[data-pref="gap"]').forEach(function(b) {
+            b.classList.toggle('active', parseInt(b.dataset.val) === comicGap);
+        });
+    }
     var continuousContainer = document.getElementById('comic-continuous');
     var pagesContainer = document.getElementById('comic-pages');
     var continuousLoaded = new Set();
@@ -1908,7 +1927,7 @@ var BT_DEVICE = (function() {
             fetch(COMIC_PREFS_URL, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ fitMode: comicFit, direction: comicDirection, layout: comicLayout, animate: comicAnimate })
+                body: JSON.stringify({ fitMode: comicFit, direction: comicDirection, layout: comicLayout, animate: comicAnimate, gap: comicGap })
             }).catch(function() {});
         }, 600);
     }
@@ -1942,15 +1961,24 @@ var BT_DEVICE = (function() {
             saveComicPrefs();
         });
     });
+    document.querySelectorAll('[data-pref="gap"]').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            comicGap = parseInt(btn.dataset.val);
+            applyComicGap();
+            saveComicPrefs();
+        });
+    });
     fetch(COMIC_PREFS_URL).then(function(r) { return r.json(); }).then(function(p) {
         if (p.fitMode)   comicFit = p.fitMode;
         if (p.direction) { comicDirection = p.direction; comicRtl = comicDirection === 'rtl'; }
         if (p.layout)    comicLayout = p.layout;
         if (p.animate !== undefined) comicAnimate = p.animate;
+        if (p.gap !== undefined) comicGap = p.gap;
         applyComicFit();
         applyComicDirection();
         applyComicLayout();
         applyComicAnimate();
+        applyComicGap();
     }).catch(function() {});
 
     async function init() {
