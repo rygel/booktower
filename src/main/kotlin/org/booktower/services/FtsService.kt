@@ -43,6 +43,8 @@ class FtsService(
 
     @Volatile private var hasMetadataVector = false
 
+    @Volatile private var hasTrgm = false
+
     fun initialize() {
         if (!enabled) {
             ftsLog.info("Full-text search disabled (set BOOKTOWER_FTS_ENABLED=true to enable)")
@@ -61,9 +63,10 @@ class FtsService(
         applyPgSchema()
         detectMetadataVector()
         detectBm25()
+        detectTrgm()
         active = true
         ftsLog.info(
-            "Full-text search enabled (PostgreSQL) — metadata=$hasMetadataVector, bm25=$hasBm25",
+            "Full-text search enabled (PostgreSQL) — metadata=$hasMetadataVector, bm25=$hasBm25, trgm=$hasTrgm",
         )
     }
 
@@ -209,6 +212,11 @@ class FtsService(
         query: String,
         allowedBookIds: Collection<String>? = null,
     ): List<FtsMatch> {
+        // For CJK queries, use trigram search (tsvector can't tokenize CJK characters)
+        if (containsCjk(query) && hasTrgm) {
+            return searchTrigram(query, allowedBookIds)
+        }
+
         val metadataResults = searchMetadata(query, allowedBookIds)
         val contentResults = search(query, allowedBookIds)
 
@@ -445,17 +453,124 @@ class FtsService(
     private fun detectBm25() {
         hasBm25 =
             try {
-                jdbi.withHandle<Boolean, Exception> { h ->
-                    h
-                        .createQuery("SELECT COUNT(*) FROM pg_available_extensions WHERE name = 'pg_textsearch'")
-                        .mapTo(Int::class.java)
-                        .one() > 0
+                val available =
+                    jdbi.withHandle<Boolean, Exception> { h ->
+                        h
+                            .createQuery("SELECT COUNT(*) FROM pg_available_extensions WHERE name = 'pg_textsearch'")
+                            .mapTo(Int::class.java)
+                            .one() > 0
+                    }
+                if (!available) return
+
+                // Ensure extension is created and BM25 index exists
+                jdbi.useHandle<Exception> { h ->
+                    h.execute("CREATE EXTENSION IF NOT EXISTS pg_textsearch")
+                    h.execute(
+                        """
+                        CREATE INDEX IF NOT EXISTS idx_book_content_bm25
+                        ON book_content USING bm25(content)
+                        WITH (text_config='english')
+                        """,
+                    )
                 }
+                ftsLog.info("pg_textsearch extension enabled — BM25 index created on book_content")
+                true
             } catch (e: Exception) {
+                ftsLog.debug("pg_textsearch not available: ${e.message}")
                 false
             }
         if (hasBm25) {
-            ftsLog.info("pg_textsearch extension available — BM25 ranking enabled")
+            ftsLog.info("pg_textsearch BM25 ranking enabled")
+        }
+    }
+
+    private fun detectTrgm() {
+        hasTrgm =
+            try {
+                jdbi.useHandle<Exception> { h ->
+                    h.execute("CREATE EXTENSION IF NOT EXISTS pg_trgm")
+                    // Create trigram indexes for CJK search
+                    h.execute("CREATE INDEX IF NOT EXISTS idx_books_title_trgm ON books USING GIN(title gin_trgm_ops)")
+                    h.execute("CREATE INDEX IF NOT EXISTS idx_books_author_trgm ON books USING GIN(author gin_trgm_ops)")
+                }
+                ftsLog.info("pg_trgm enabled — CJK/trigram search available")
+                true
+            } catch (e: Exception) {
+                ftsLog.debug("pg_trgm not available: ${e.message}")
+                false
+            }
+    }
+
+    /** Returns true if the query contains CJK (Chinese/Japanese/Korean) characters. */
+    private fun containsCjk(query: String): Boolean =
+        query.any { c ->
+            Character.UnicodeBlock.of(c) in
+                setOf(
+                    Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS,
+                    Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS_EXTENSION_A,
+                    Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS_EXTENSION_B,
+                    Character.UnicodeBlock.CJK_COMPATIBILITY_IDEOGRAPHS,
+                    Character.UnicodeBlock.HIRAGANA,
+                    Character.UnicodeBlock.KATAKANA,
+                    Character.UnicodeBlock.HANGUL_SYLLABLES,
+                    Character.UnicodeBlock.HANGUL_JAMO,
+                )
+        }
+
+    /**
+     * Trigram search for CJK queries. Uses pg_trgm similarity matching
+     * which works with any script (doesn't need word boundaries).
+     */
+    fun searchTrigram(
+        query: String,
+        allowedBookIds: Collection<String>? = null,
+    ): List<FtsMatch> {
+        if (!active || !hasTrgm || query.isBlank()) return emptyList()
+        return try {
+            jdbi.withHandle<List<FtsMatch>, Exception> { h ->
+                val bookIdFilter =
+                    if (!allowedBookIds.isNullOrEmpty()) {
+                        val placeholders = allowedBookIds.indices.joinToString(",") { ":bid$it" }
+                        "AND b.id IN ($placeholders)"
+                    } else {
+                        ""
+                    }
+                val q =
+                    h
+                        .createQuery(
+                            """
+                        SELECT b.id AS book_id,
+                               b.title AS snippet,
+                               GREATEST(
+                                   similarity(b.title, :q),
+                                   similarity(COALESCE(b.author, ''), :q),
+                                   similarity(COALESCE(b.description, ''), :q)
+                               ) AS rank
+                        FROM books b
+                        WHERE (
+                            b.title % :q
+                            OR b.author % :q
+                            OR b.description % :q
+                        )
+                        $bookIdFilter
+                        ORDER BY rank DESC
+                        LIMIT 50
+                        """,
+                        ).bind("q", query)
+                allowedBookIds?.forEachIndexed { idx, id -> q.bind("bid$idx", id) }
+                q
+                    .map { row ->
+                        FtsMatch(
+                            bookId = row.getColumn("book_id", String::class.java),
+                            snippet = row.getColumn("snippet", String::class.java) ?: "",
+                            rank = (row.getColumn("rank", java.lang.Float::class.java) ?: 0f).toFloat(),
+                            source = "trigram",
+                        )
+                    }.list()
+            }
+        } catch (e: Exception) {
+            ftsLog.warn("Trigram search error: ${e.message}")
+            emptyList()
         }
     }
 }
