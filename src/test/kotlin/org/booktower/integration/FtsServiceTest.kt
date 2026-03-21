@@ -42,7 +42,7 @@ class FtsServiceTest {
         @Container
         @JvmStatic
         val postgres: PostgreSQLContainer<*> =
-            PostgreSQLContainer("postgres:17-alpine")
+            PostgreSQLContainer("postgres:17.4-alpine")
                 .withDatabaseName("booktower_fts_test")
                 .withUsername("test")
                 .withPassword("test")

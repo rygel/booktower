@@ -241,7 +241,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        pg: [ 17, 18 ]
+        pg: [ "17.4", "18.2" ]
 
     services:
       postgres:

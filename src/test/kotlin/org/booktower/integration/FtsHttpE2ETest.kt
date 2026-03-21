@@ -56,7 +56,7 @@ class FtsHttpE2ETest {
         @Container
         @JvmStatic
         val postgres: PostgreSQLContainer<*> =
-            PostgreSQLContainer("postgres:17-alpine")
+            PostgreSQLContainer("postgres:17.4-alpine")
                 .withDatabaseName("booktower_fts_http")
                 .withUsername("test")
                 .withPassword("test")

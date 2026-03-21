@@ -167,7 +167,7 @@ jobs:
         run: |
           cp docker-build/booktower-*.jar docker-build/app.jar
           cat > docker-build/Dockerfile <<'DOCKERFILE'
-          FROM eclipse-temurin:21-jre-jammy
+          FROM eclipse-temurin:21.0.9_10-jre-jammy
           WORKDIR /app
           RUN groupadd -r booktower && useradd -r -g booktower booktower
           COPY app.jar app.jar
