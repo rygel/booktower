@@ -11,13 +11,14 @@ import java.io.File
 private val logger = LoggerFactory.getLogger("booktower.Database")
 
 /** Known migration files — keep in sync with src/main/resources/db/migration/ */
-private val MIGRATION_FILES = listOf(
-    "V1__initial_schema.sql",
-    "V2__linked_books.sql",
-    "V3__performance_indexes.sql",
-    "V4__book_sharing.sql",
-    "V5__collections.sql",
-)
+private val MIGRATION_FILES =
+    listOf(
+        "V1__initial_schema.sql",
+        "V2__linked_books.sql",
+        "V3__performance_indexes.sql",
+        "V4__book_sharing.sql",
+        "V5__collections.sql",
+    )
 
 class Database private constructor(
     private val dataSource: HikariDataSource,

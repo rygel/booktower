@@ -15,7 +15,6 @@ import kotlin.test.assertTrue
  * that matches what was created through the API.
  */
 class ExportRoundTripIntegrationTest : IntegrationTestBase() {
-
     @Test
     fun `export contains all created libraries and books with correct data`() {
         val token = registerAndGetToken("export_rt")
@@ -126,14 +125,16 @@ class ExportRoundTripIntegrationTest : IntegrationTestBase() {
         createLibrary(token1, "User1 Secret Library")
         createLibrary(token2, "User2 Public Library")
 
-        val export1 = Json.mapper.readValue(
-            app(Request(Method.GET, "/api/export").header("Cookie", "token=$token1")).bodyString(),
-            UserExportDto::class.java,
-        )
-        val export2 = Json.mapper.readValue(
-            app(Request(Method.GET, "/api/export").header("Cookie", "token=$token2")).bodyString(),
-            UserExportDto::class.java,
-        )
+        val export1 =
+            Json.mapper.readValue(
+                app(Request(Method.GET, "/api/export").header("Cookie", "token=$token1")).bodyString(),
+                UserExportDto::class.java,
+            )
+        val export2 =
+            Json.mapper.readValue(
+                app(Request(Method.GET, "/api/export").header("Cookie", "token=$token2")).bodyString(),
+                UserExportDto::class.java,
+            )
 
         assertEquals(1, export1.libraries.size)
         assertEquals("User1 Secret Library", export1.libraries.first().name)

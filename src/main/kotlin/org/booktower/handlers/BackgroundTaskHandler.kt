@@ -53,10 +53,11 @@ class BackgroundTaskHandler(
                 ?: return Response(Status.BAD_REQUEST)
                     .header("Content-Type", "application/json")
                     .body(Json.mapper.writeValueAsString(ErrorResponse("BAD_REQUEST", "Missing task ID")))
-        val task = taskService.get(taskId)
-            ?: return Response(Status.NOT_FOUND)
-                .header("Content-Type", "application/json")
-                .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "Task not found")))
+        val task =
+            taskService.get(taskId)
+                ?: return Response(Status.NOT_FOUND)
+                    .header("Content-Type", "application/json")
+                    .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "Task not found")))
         if (task.userId != userId.toString()) {
             return Response(Status.NOT_FOUND)
                 .header("Content-Type", "application/json")
@@ -67,10 +68,11 @@ class BackgroundTaskHandler(
                 .header("Content-Type", "application/json")
                 .body(Json.mapper.writeValueAsString(ErrorResponse("BAD_REQUEST", "Only failed tasks can be retried")))
         }
-        val svc = seedService
-            ?: return Response(Status.SERVICE_UNAVAILABLE)
-                .header("Content-Type", "application/json")
-                .body(Json.mapper.writeValueAsString(ErrorResponse("SERVICE_UNAVAILABLE", "Retry not available")))
+        val svc =
+            seedService
+                ?: return Response(Status.SERVICE_UNAVAILABLE)
+                    .header("Content-Type", "application/json")
+                    .body(Json.mapper.writeValueAsString(ErrorResponse("SERVICE_UNAVAILABLE", "Retry not available")))
 
         // Dismiss the old failed task
         taskService.dismiss(taskId, userId)

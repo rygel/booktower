@@ -105,7 +105,13 @@ class UserWorkflowE2ETest : IntegrationTestBase() {
         val downloadResp =
             app(Request(Method.GET, "/api/books/$bookId/file").header("Cookie", "token=$token"))
         assertEquals(Status.OK, downloadResp.status, "Download should work after upload")
-        assertEquals(epubBytes.size, downloadResp.body.stream.readBytes().size, "Downloaded file should match")
+        assertEquals(
+            epubBytes.size,
+            downloadResp.body.stream
+                .readBytes()
+                .size,
+            "Downloaded file should match",
+        )
 
         // 6. Set reading status
         val statusResp =
@@ -203,15 +209,17 @@ class UserWorkflowE2ETest : IntegrationTestBase() {
 
         // Each user sees only their own books
         val books1 =
-            Json.mapper.readValue(
-                app(Request(Method.GET, "/api/books?pageSize=100").header("Cookie", "token=$token1")).bodyString(),
-                BookListDto::class.java,
-            ).getBooks()
+            Json.mapper
+                .readValue(
+                    app(Request(Method.GET, "/api/books?pageSize=100").header("Cookie", "token=$token1")).bodyString(),
+                    BookListDto::class.java,
+                ).getBooks()
         val books2 =
-            Json.mapper.readValue(
-                app(Request(Method.GET, "/api/books?pageSize=100").header("Cookie", "token=$token2")).bodyString(),
-                BookListDto::class.java,
-            ).getBooks()
+            Json.mapper
+                .readValue(
+                    app(Request(Method.GET, "/api/books?pageSize=100").header("Cookie", "token=$token2")).bodyString(),
+                    BookListDto::class.java,
+                ).getBooks()
 
         assertEquals(1, books1.size, "User1 should see exactly 1 book")
         assertEquals("User1's Private Book", books1.first().title)
@@ -219,14 +227,16 @@ class UserWorkflowE2ETest : IntegrationTestBase() {
         assertEquals("User2's Private Book", books2.first().title)
 
         // Each user sees only their own libraries
-        val libs1 = Json.mapper.readValue(
-            app(Request(Method.GET, "/api/libraries").header("Cookie", "token=$token1")).bodyString(),
-            Array<LibraryDto>::class.java,
-        )
-        val libs2 = Json.mapper.readValue(
-            app(Request(Method.GET, "/api/libraries").header("Cookie", "token=$token2")).bodyString(),
-            Array<LibraryDto>::class.java,
-        )
+        val libs1 =
+            Json.mapper.readValue(
+                app(Request(Method.GET, "/api/libraries").header("Cookie", "token=$token1")).bodyString(),
+                Array<LibraryDto>::class.java,
+            )
+        val libs2 =
+            Json.mapper.readValue(
+                app(Request(Method.GET, "/api/libraries").header("Cookie", "token=$token2")).bodyString(),
+                Array<LibraryDto>::class.java,
+            )
         assertEquals(1, libs1.size)
         assertEquals(1, libs2.size)
         assertEquals("User1 Library", libs1.first().name)
