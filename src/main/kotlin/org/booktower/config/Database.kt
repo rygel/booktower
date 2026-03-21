@@ -95,7 +95,9 @@ class Database private constructor(
             // GraalVM native image: extract to temp directory
             logger.info("Extracting migrations for native image (filesystem mode)")
             val tempDir = File(System.getProperty("java.io.tmpdir"), "booktower-migrations")
-            tempDir.mkdirs()
+            if (!tempDir.mkdirs() && !tempDir.isDirectory) {
+                logger.warn("Could not create migration temp directory: ${tempDir.absolutePath}")
+            }
 
             for (name in MIGRATION_FILES) {
                 val target = File(tempDir, name)
