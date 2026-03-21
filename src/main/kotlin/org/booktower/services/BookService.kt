@@ -195,10 +195,10 @@ class BookService(
         // Params: 3 bindings per variant (title, author, description)
         val searchParams = likePatterns.flatMap { listOf(it, it, it) }
 
-        // FTS: get matching book IDs to OR into the metadata search
+        // FTS: get matching book IDs (metadata + content) to OR into the LIKE search
         val ftsIds: Set<String> =
             if (ftsService?.isActive() == true && query.isNotBlank()) {
-                ftsService.search(query).map { it.bookId }.toSet()
+                ftsService.searchAll(query).map { it.bookId }.toSet()
             } else {
                 emptySet()
             }
