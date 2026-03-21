@@ -10,35 +10,97 @@
         <h1 class="page-title mb-0">${pc.i18n.translate("page.activity.title")}</h1>
     </div>
 
-    <div id="activity-list" style="display:flex; flex-direction:column; gap:0.5rem;">
-        <p style="color:var(--bt-muted); font-size:0.85rem;">Loading...</p>
+    <!-- Background tasks (downloads, seeds, etc.) -->
+    <h2 style="font-size:0.9rem; font-weight:600; color:var(--bt-text-dim); margin-bottom:0.5rem;">
+        <i class="ri-download-line" style="margin-right:0.25rem;"></i>${pc.i18n.translate("page.activity.tasks")}
+    </h2>
+    <div id="task-list" style="display:flex; flex-direction:column; gap:0.375rem; margin-bottom:1.5rem;">
+        <p style="color:var(--bt-muted); font-size:0.8rem;">${pc.i18n.translate("label.loading")}</p>
+    </div>
+
+    <!-- Audit log (logins, admin actions, etc.) -->
+    <h2 style="font-size:0.9rem; font-weight:600; color:var(--bt-text-dim); margin-bottom:0.5rem;">
+        <i class="ri-shield-line" style="margin-right:0.25rem;"></i>${pc.i18n.translate("page.activity.audit")}
+    </h2>
+    <div id="audit-list" style="display:flex; flex-direction:column; gap:0.375rem;">
+        <p style="color:var(--bt-muted); font-size:0.8rem;">${pc.i18n.translate("label.loading")}</p>
     </div>
 </div>
 
 <script>
-fetch('/api/tasks')
-    .then(function(r) { return r.ok ? r.json() : []; })
-    .then(function(tasks) {
-        var list = document.getElementById('activity-list');
-        if (tasks.length === 0) {
-            list.innerHTML = '<p style="color:var(--bt-muted); text-align:center; padding:2rem;">No recent activity</p>';
-            return;
-        }
-        list.innerHTML = tasks.map(function(t) {
-            var icon = t.status === 'RUNNING' ? 'ri-loader-4-line' :
-                       t.status === 'DONE' ? 'ri-check-line' :
-                       t.status === 'FAILED' ? 'ri-error-warning-line' : 'ri-close-line';
-            var color = t.status === 'RUNNING' ? 'var(--bt-accent)' :
-                        t.status === 'DONE' ? 'var(--bt-text)' : 'var(--bt-danger)';
-            var time = t.completedAt ? new Date(t.completedAt).toLocaleString() : 'running...';
-            return '<div class="card" style="padding:0.75rem 1rem; display:flex; align-items:center; gap:0.75rem;">' +
-                '<i class="' + icon + '" style="font-size:1rem; color:' + color + '; flex-shrink:0;' +
-                (t.status === 'RUNNING' ? 'animation:bt-spin 1s linear infinite;' : '') + '"></i>' +
-                '<div style="flex:1; min-width:0;">' +
-                '<p style="font-size:0.85rem; color:var(--bt-text); margin:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + t.label + '</p>' +
-                '<p style="font-size:0.7rem; color:var(--bt-muted); margin:0.125rem 0 0;">' + t.type + ' \u00b7 ' + time +
-                (t.detail ? ' \u00b7 ' + t.detail : '') + '</p></div></div>';
-        }).join('');
-    });
+(function() {
+    function renderCard(icon, color, title, subtitle) {
+        var card = document.createElement('div');
+        card.className = 'card';
+        card.style.cssText = 'padding:0.625rem 0.875rem; display:flex; align-items:center; gap:0.625rem;';
+        var i = document.createElement('i');
+        i.className = icon;
+        i.style.cssText = 'font-size:1rem; color:' + color + '; flex-shrink:0;';
+        var content = document.createElement('div');
+        content.style.cssText = 'flex:1; min-width:0;';
+        var p1 = document.createElement('p');
+        p1.style.cssText = 'font-size:0.82rem; color:var(--bt-text); margin:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;';
+        p1.textContent = title;
+        var p2 = document.createElement('p');
+        p2.style.cssText = 'font-size:0.7rem; color:var(--bt-muted); margin:0.125rem 0 0;';
+        p2.textContent = subtitle;
+        content.appendChild(p1);
+        content.appendChild(p2);
+        card.appendChild(i);
+        card.appendChild(content);
+        return card;
+    }
+
+    function emptyMsg(text) {
+        var p = document.createElement('p');
+        p.style.cssText = 'color:var(--bt-muted); text-align:center; padding:1rem; font-size:0.82rem;';
+        p.textContent = text;
+        return p;
+    }
+
+    // Fetch background tasks
+    fetch('/api/tasks')
+        .then(function(r) { return r.ok ? r.json() : []; })
+        .then(function(tasks) {
+            var list = document.getElementById('task-list');
+            list.textContent = '';
+            if (tasks.length === 0) {
+                list.appendChild(emptyMsg('${pc.i18n.translate("page.activity.no.tasks")}'));
+                return;
+            }
+            tasks.forEach(function(t) {
+                var icon = t.status === 'RUNNING' ? 'ri-loader-4-line' :
+                           t.status === 'DONE' ? 'ri-check-line' : 'ri-error-warning-line';
+                var color = t.status === 'RUNNING' ? 'var(--bt-accent)' :
+                            t.status === 'DONE' ? 'var(--bt-text)' : 'var(--bt-danger)';
+                var time = t.completedAt ? new Date(t.completedAt).toLocaleString() : 'running...';
+                var subtitle = t.type + ' \u00b7 ' + time + (t.detail ? ' \u00b7 ' + t.detail : '');
+                list.appendChild(renderCard(icon, color, t.label, subtitle));
+            });
+        });
+
+    // Fetch audit log
+    fetch('/api/activity?limit=50')
+        .then(function(r) { return r.ok ? r.json() : []; })
+        .then(function(entries) {
+            var list = document.getElementById('audit-list');
+            list.textContent = '';
+            if (entries.length === 0) {
+                list.appendChild(emptyMsg('${pc.i18n.translate("page.activity.no.audit")}'));
+                return;
+            }
+            entries.forEach(function(e) {
+                var icon = e.action.includes('login') ? 'ri-login-box-line' :
+                           e.action.includes('register') ? 'ri-user-add-line' :
+                           e.action.includes('delete') ? 'ri-delete-bin-line' :
+                           e.action.includes('admin') ? 'ri-shield-user-line' :
+                           'ri-history-line';
+                var time = new Date(e.occurredAt).toLocaleString();
+                var subtitle = e.action + (e.targetType ? ' \u00b7 ' + e.targetType : '') +
+                    (e.detail ? ' \u00b7 ' + e.detail : '') + ' \u00b7 ' + time;
+                list.appendChild(renderCard(icon, 'var(--bt-muted)', e.action, subtitle));
+            });
+        });
+}());
 </script>
 `)
