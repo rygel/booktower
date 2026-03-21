@@ -224,7 +224,7 @@ val appModule =
         single { BookmarkHandler(get()) }
         single {
             val calibreService = CalibreConversionService(java.io.File(get<AppConfig>().storage.tempPath, "calibre-cache"))
-            FileHandler(get(), get(), get(), get<AppConfig>().storage, calibreService = calibreService)
+            FileHandler(get(), get(), get(), get<AppConfig>().storage, calibreService = calibreService, ftsService = get())
         }
         single { UserSettingsHandler(get()) }
         single {

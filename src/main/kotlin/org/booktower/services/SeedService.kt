@@ -919,12 +919,6 @@ class SeedService(
             if (!libDir.exists() && !libDir.mkdirs()) logger.warn("Could not create directory: ${libDir.absolutePath}")
             val destFile = File(libDir, safeFilename(comic.title, "cbz"))
 
-            if (destFile.exists() && destFile.length() > 0) {
-                logger.info("Skipping download for '${comic.title}' — file already exists (${destFile.length()} bytes)")
-                backgroundTaskService.complete(taskId, "Already downloaded")
-                return
-            }
-
             // Verify item is freely accessible via metadata API
             try {
                 val metaConn =
@@ -970,7 +964,21 @@ class SeedService(
                 backgroundTaskService.fail(taskId, reason)
                 return
             }
+            val expectedSize = conn.contentLengthLong
+            // Skip if file already exists with correct size
+            if (destFile.exists() && expectedSize > 0 && destFile.length() == expectedSize) {
+                logger.info("Skipping download for '${comic.title}' — file already complete (${destFile.length()} bytes)")
+                backgroundTaskService.complete(taskId, "Already downloaded")
+                return
+            }
             conn.inputStream.use { input -> destFile.outputStream().use { input.copyTo(it) } }
+            // Verify download completed
+            if (expectedSize > 0 && destFile.length() != expectedSize) {
+                logger.warn("Comic download incomplete for '${comic.title}': got ${destFile.length()} of $expectedSize bytes")
+                if (!destFile.delete()) logger.warn("Could not delete incomplete file: ${destFile.absolutePath}")
+                backgroundTaskService.fail(taskId, "Download incomplete (${destFile.length()}/$expectedSize bytes)")
+                return
+            }
 
             bookService.updateFileInfo(userId, bookId, destFile.absolutePath, destFile.length())
             logger.info("Downloaded comic '${comic.title}' (${destFile.length() / 1024}KB)")
@@ -1136,12 +1144,6 @@ class SeedService(
             if (!booksDir.exists() && !booksDir.mkdirs()) logger.warn("Could not create directory: ${booksDir.absolutePath}")
             val destFile = File(booksDir, safeFilename(title, "epub"))
 
-            if (destFile.exists() && destFile.length() > 0) {
-                logger.info("Skipping download for '$title' — file already exists (${destFile.length()} bytes)")
-                backgroundTaskService.complete(taskId, "Already downloaded")
-                return
-            }
-
             val conn =
                 java.net
                     .URI(url)
@@ -1157,7 +1159,19 @@ class SeedService(
                 backgroundTaskService.fail(taskId, reason)
                 return
             }
+            val expectedSize = conn.contentLengthLong
+            if (destFile.exists() && expectedSize > 0 && destFile.length() == expectedSize) {
+                logger.info("Skipping download for '$title' — file already complete (${destFile.length()} bytes)")
+                backgroundTaskService.complete(taskId, "Already downloaded")
+                return
+            }
             conn.inputStream.use { input -> destFile.outputStream().use { input.copyTo(it) } }
+            if (expectedSize > 0 && destFile.length() != expectedSize) {
+                logger.warn("EPUB download incomplete for '$title': got ${destFile.length()} of $expectedSize bytes")
+                if (!destFile.delete()) logger.warn("Could not delete incomplete file: ${destFile.absolutePath}")
+                backgroundTaskService.fail(taskId, "Download incomplete (${destFile.length()}/$expectedSize bytes)")
+                return
+            }
 
             bookService.updateFileInfo(userId, bookId, destFile.absolutePath, destFile.length())
             logger.info("Downloaded EPUB for '$title' (${destFile.length()} bytes)")

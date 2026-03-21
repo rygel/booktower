@@ -283,7 +283,8 @@ class PermissionBoundaryIntegrationTest : IntegrationTestBase() {
         val token1 = registerAndGetToken("perm_notif1")
         val token2 = registerAndGetToken("perm_notif2")
 
-        // Publish a notification for user1 directly
+        // Notifications are system-generated (no user-facing publish endpoint),
+        // so we create one via the service directly for test setup.
         val jdbi =
             org.booktower.TestFixture.database
                 .getJdbi()

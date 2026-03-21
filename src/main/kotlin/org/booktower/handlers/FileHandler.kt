@@ -49,6 +49,7 @@ class FileHandler(
     private val storageConfig: StorageConfig,
     private val fb2ReaderService: Fb2ReaderService = Fb2ReaderService(),
     private val calibreService: CalibreConversionService? = null,
+    private val ftsService: org.booktower.services.FtsService? = null,
 ) {
     private val coverCache =
         com.github.benmanes.caffeine.cache.Caffeine
@@ -121,6 +122,11 @@ class FileHandler(
         when (ext) {
             "pdf" -> pdfMetadataService.submitAsync(bookId.toString(), destFile)
             "epub" -> epubMetadataService.submitAsync(bookId.toString(), destFile)
+        }
+
+        // Enqueue for full-text search indexing (EPUB and PDF only)
+        if (ext in setOf("epub", "pdf")) {
+            ftsService?.enqueue(bookId.toString())
         }
 
         return Response(Status.OK)
