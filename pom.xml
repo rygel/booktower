@@ -44,7 +44,7 @@
         <postgresql.version>42.7.10</postgresql.version>
         <jte.version>3.2.3</jte.version>
         <flatlaf.version>3.5.4</flatlaf.version>
-        <junit.version>5.13.0</junit.version>
+        <junit.version>6.0.3</junit.version>
         <mockk.version>1.14.9</mockk.version>
 
         <!-- Code Quality Plugin Versions -->
