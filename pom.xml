@@ -90,6 +90,7 @@
         <koin.version>4.2.0</koin.version>
         <simplejavamail.version>8.12.6</simplejavamail.version>
         <greenmail.version>2.1.8</greenmail.version>
+        <testcontainers-keycloak.version>3.7.0</testcontainers-keycloak.version>
         <playwright.version>1.58.0</playwright.version>
     </properties>
 
@@ -433,6 +434,8 @@
             <version>${testcontainers.version}</version>
             <scope>test</scope>
         </dependency>
+        <!-- Keycloak for OIDC E2E tests — use GenericContainer, not the admin client library
+             which pulls RESTEasy/Jakarta EE and causes classpath conflicts -->
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>junit-jupiter</artifactId>
