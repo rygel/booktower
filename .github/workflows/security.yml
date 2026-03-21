@@ -147,11 +147,19 @@ jobs:
           output_file_path: .
           soft_fail: true
 
+      - name: Find Checkov SARIF output
+        if: always()
+        id: find-sarif
+        run: |
+          if [ -f results.sarif ]; then echo "file=results.sarif" >> "$GITHUB_OUTPUT"
+          elif [ -f results/results.sarif ]; then echo "file=results/results.sarif" >> "$GITHUB_OUTPUT"
+          else echo "file=" >> "$GITHUB_OUTPUT"; echo "No SARIF file found"; fi
+
       - name: Upload Checkov SARIF to GitHub Security tab
         uses: github/codeql-action/upload-sarif@38697555549f1db7851b81482ff19f1fa5c4fedc # v4
-        if: always()
+        if: always() && steps.find-sarif.outputs.file != ''
         with:
-          sarif_file: results.sarif
+          sarif_file: ${{ steps.find-sarif.outputs.file }}
           category: checkov
 
   # ── OSSF Scorecard: assess project security posture ─────────────────────

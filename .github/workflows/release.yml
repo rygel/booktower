@@ -142,8 +142,11 @@ jobs:
           path: target/${{ matrix.asset }}
 
   # ── Docker image — multi-arch, pushed to ghcr.io ────────────────────────
+  # Uses the pre-built fat JAR from the fat-jar job to avoid rebuilding
+  # Maven inside Docker (which takes 25+ min under QEMU for ARM64).
   docker:
     name: Docker Image
+    needs: fat-jar
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -153,6 +156,29 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           persist-credentials: false
+
+      - name: Download fat JAR
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: fat-jar
+          path: docker-build/
+
+      - name: Prepare Docker context
+        run: |
+          cp docker-build/booktower-*.jar docker-build/app.jar
+          cat > docker-build/Dockerfile <<'DOCKERFILE'
+          FROM eclipse-temurin:21-jre-jammy
+          WORKDIR /app
+          RUN groupadd -r booktower && useradd -r -g booktower booktower
+          COPY app.jar app.jar
+          RUN mkdir -p /data/books /data/covers /data/db && \
+              chown -R booktower:booktower /data /app
+          USER booktower
+          EXPOSE 8080
+          ENV BOOKTOWER_ENV=production \
+              BOOKTOWER_PORT=8080
+          ENTRYPOINT ["java", "-Xms128m", "-Xmx512m", "-jar", "app.jar"]
+          DOCKERFILE
 
       - name: Set up QEMU (for ARM64 builds)
         uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # v4
@@ -181,7 +207,8 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294 # v7
         with:
-          context: .
+          context: docker-build
+          file: docker-build/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
