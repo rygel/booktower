@@ -108,7 +108,10 @@ class LibraryHealthIntegrationTest {
 
         // Raw SQL for library: LibraryService.createLibrary() auto-creates the directory,
         // but this test needs a library pointing to a non-existent path.
-        val libId = java.util.UUID.randomUUID().toString()
+        val libId =
+            java.util.UUID
+                .randomUUID()
+                .toString()
         jdbi.useHandle<Exception> { h ->
             h
                 .createUpdate("INSERT INTO libraries (id,user_id,name,path,created_at) VALUES (?,?,?,?,?)")
@@ -116,8 +119,12 @@ class LibraryHealthIntegrationTest {
                 .bind(1, userId.toString())
                 .bind(2, "BadPath")
                 .bind(3, "/this/path/absolutely/does/not/exist/${System.nanoTime()}")
-                .bind(4, java.time.Instant.now().toString())
-                .execute()
+                .bind(
+                    4,
+                    java.time.Instant
+                        .now()
+                        .toString(),
+                ).execute()
         }
 
         val report = healthService.check(userId)
@@ -210,19 +217,33 @@ class LibraryHealthIntegrationTest {
 
         val uname1 = "hlthuser1_${System.nanoTime()}"
         val uname2 = "hlthuser2_${System.nanoTime()}"
-        val userId1 = java.util.UUID.fromString(
-            authService.register(org.booktower.models.CreateUserRequest(uname1, "$uname1@t.com", "password123")).getOrThrow().user.id,
-        )
-        val userId2 = java.util.UUID.fromString(
-            authService.register(org.booktower.models.CreateUserRequest(uname2, "$uname2@t.com", "password123")).getOrThrow().user.id,
-        )
+        val userId1 =
+            java.util.UUID.fromString(
+                authService
+                    .register(org.booktower.models.CreateUserRequest(uname1, "$uname1@t.com", "password123"))
+                    .getOrThrow()
+                    .user.id,
+            )
+        val userId2 =
+            java.util.UUID.fromString(
+                authService
+                    .register(org.booktower.models.CreateUserRequest(uname2, "$uname2@t.com", "password123"))
+                    .getOrThrow()
+                    .user.id,
+            )
 
         // Raw SQL for libraries: this test only checks user isolation, not path access.
         // Using raw SQL avoids creating real directories on disk.
-        val now = java.time.Instant.now().toString()
+        val now =
+            java.time.Instant
+                .now()
+                .toString()
         jdbi.useHandle<Exception> { h ->
             for ((uid, libPath) in listOf(userId1 to "/tmp/boundary_${System.nanoTime()}_1", userId2 to "/tmp/boundary_${System.nanoTime()}_2")) {
-                val libId = java.util.UUID.randomUUID().toString()
+                val libId =
+                    java.util.UUID
+                        .randomUUID()
+                        .toString()
                 h
                     .createUpdate("INSERT INTO libraries (id,user_id,name,path,created_at) VALUES (?,?,?,?,?)")
                     .bind(0, libId)

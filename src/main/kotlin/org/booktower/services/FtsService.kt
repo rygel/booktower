@@ -18,7 +18,54 @@ data class PendingBook(
     val bookId: String,
     val filePath: String,
     val format: String,
+    val language: String? = null,
 )
+
+/** Maps ISO 639-1/IETF language tags to PostgreSQL text search config names. */
+private val LANGUAGE_TO_PG_CONFIG =
+    mapOf(
+        "ar" to "arabic",
+        "hy" to "armenian",
+        "eu" to "basque",
+        "ca" to "catalan",
+        "da" to "danish",
+        "nl" to "dutch",
+        "en" to "english",
+        "fi" to "finnish",
+        "fr" to "french",
+        "de" to "german",
+        "el" to "greek",
+        "hi" to "hindi",
+        "hu" to "hungarian",
+        "id" to "indonesian",
+        "ga" to "irish",
+        "it" to "italian",
+        "lt" to "lithuanian",
+        "ne" to "nepali",
+        "nb" to "norwegian",
+        "nn" to "norwegian",
+        "no" to "norwegian",
+        "pt" to "portuguese",
+        "ro" to "romanian",
+        "ru" to "russian",
+        "sr" to "serbian",
+        "es" to "spanish",
+        "sv" to "swedish",
+        "ta" to "tamil",
+        "tr" to "turkish",
+        "yi" to "yiddish",
+    )
+
+/** Resolve a book language string to a PostgreSQL text search config name. */
+fun pgTsConfig(language: String?): String {
+    if (language.isNullOrBlank()) return "english"
+    val tag = language.lowercase().trim()
+    // Try exact match first (e.g. "en", "fr")
+    LANGUAGE_TO_PG_CONFIG[tag]?.let { return it }
+    // Try prefix (e.g. "en-US" → "en", "pt-BR" → "pt")
+    val prefix = tag.substringBefore('-').substringBefore('_')
+    return LANGUAGE_TO_PG_CONFIG[prefix] ?: "simple"
+}
 
 /**
  * Full-text search service with two backends:
@@ -89,6 +136,7 @@ class FtsService(
         bookId: String,
         filePath: String,
         format: String,
+        language: String? = null,
     ): Boolean {
         val file = File(filePath)
         if (!file.exists()) {
@@ -114,34 +162,38 @@ class FtsService(
             markFailed(bookId, "Text extraction returned null")
             return false
         }
-        indexContent(bookId, content)
+        indexContent(bookId, content, language)
         return true
     }
 
     /**
      * Index pre-extracted text content for a book.
-     * Used by [indexBook] after file extraction, and directly in tests
-     * or API-based indexing where content is already available.
+     * The [language] parameter selects the PostgreSQL text search config
+     * for language-aware stemming (e.g. "en" → "english", "fr" → "french").
      */
     fun indexContent(
         bookId: String,
         content: String,
+        language: String? = null,
     ) {
+        val config = pgTsConfig(language)
         jdbi.useHandle<Exception> { h ->
             h
                 .createUpdate(
                     """
-                INSERT INTO book_content (book_id, content, status, indexed_at)
-                VALUES (?, ?, 'indexed', ?)
+                INSERT INTO book_content (book_id, content, fts_config, status, indexed_at)
+                VALUES (?, ?, ?, 'indexed', ?)
                 ON CONFLICT (book_id) DO UPDATE
                   SET content = EXCLUDED.content,
+                      fts_config = EXCLUDED.fts_config,
                       status = 'indexed',
                       indexed_at = EXCLUDED.indexed_at,
                       error_msg = NULL
                 """,
                 ).bind(0, bookId)
                 .bind(1, content)
-                .bind(2, Instant.now().toString())
+                .bind(2, config)
+                .bind(3, Instant.now().toString())
                 .execute()
         }
     }
@@ -259,19 +311,22 @@ class FtsService(
                     } else {
                         ""
                     }
+                // Use each book's fts_config for ts_headline so highlighting
+                // uses the same tokenization as indexing. The query tsquery
+                // uses the book's config too via a subquery for proper stemming.
                 val q =
                     h
                         .createQuery(
                             """
                         SELECT bc.book_id,
-                               ts_headline('english', bc.content,
-                                   websearch_to_tsquery('english', :q),
+                               ts_headline(bc.fts_config::regconfig, bc.content,
+                                   websearch_to_tsquery(bc.fts_config::regconfig, :q),
                                    'StartSel=**, StopSel=**, MaxWords=20, MinWords=10, ShortWord=3'
                                ) AS snippet,
-                               ts_rank(bc.search_vector, websearch_to_tsquery('english', :q)) AS rank
+                               ts_rank(bc.search_vector, websearch_to_tsquery(bc.fts_config::regconfig, :q)) AS rank
                         FROM book_content bc
                         WHERE bc.status = 'indexed'
-                          AND bc.search_vector @@ websearch_to_tsquery('english', :q)
+                          AND bc.search_vector @@ websearch_to_tsquery(bc.fts_config::regconfig, :q)
                           $bookIdFilter
                         ORDER BY rank DESC
                         LIMIT 50
@@ -340,7 +395,7 @@ class FtsService(
             h
                 .createQuery(
                     """
-                SELECT bc.book_id, b.file_path,
+                SELECT bc.book_id, b.file_path, b.language,
                        CASE
                            WHEN LOWER(b.file_path) LIKE '%.epub' THEN 'epub'
                            WHEN LOWER(b.file_path) LIKE '%.pdf'  THEN 'pdf'
@@ -357,6 +412,7 @@ class FtsService(
                         bookId = row.getColumn("book_id", String::class.java),
                         filePath = row.getColumn("file_path", String::class.java) ?: "",
                         format = row.getColumn("format", String::class.java) ?: "unknown",
+                        language = row.getColumn("language", String::class.java),
                     )
                 }.list()
         }
@@ -388,14 +444,16 @@ class FtsService(
     private fun applyPgSchema() {
         jdbi.useHandle<Exception> { h ->
             h.execute("ALTER TABLE book_content ADD COLUMN IF NOT EXISTS search_vector tsvector")
+            h.execute("ALTER TABLE book_content ADD COLUMN IF NOT EXISTS fts_config VARCHAR(30) DEFAULT 'english'")
             h.execute(
                 "CREATE INDEX IF NOT EXISTS idx_book_content_fts ON book_content USING GIN(search_vector)",
             )
+            // Trigger uses per-book fts_config column for language-aware tokenization
             h.execute(
                 """
                 CREATE OR REPLACE FUNCTION book_content_fts_update() RETURNS trigger LANGUAGE plpgsql AS ${'$'}${'$'}
                 BEGIN
-                    NEW.search_vector := to_tsvector('english', COALESCE(NEW.content, ''));
+                    NEW.search_vector := to_tsvector(NEW.fts_config::regconfig, COALESCE(NEW.content, ''));
                     RETURN NEW;
                 END;
                 ${'$'}${'$'}
@@ -405,7 +463,7 @@ class FtsService(
             h.execute(
                 """
                 CREATE TRIGGER book_content_fts_trigger
-                BEFORE INSERT OR UPDATE OF content ON book_content
+                BEFORE INSERT OR UPDATE OF content, fts_config ON book_content
                 FOR EACH ROW EXECUTE FUNCTION book_content_fts_update()
                 """,
             )
@@ -517,30 +575,6 @@ class FtsService(
                 false
             }
     }
-
-    /**
-     * Maps a book language code to a PostgreSQL text search configuration name.
-     * Falls back to 'simple' for unsupported languages.
-     */
-    private fun pgTsConfig(langCode: String?): String =
-        when (langCode?.lowercase()?.take(2)) {
-            "en" -> "english"
-            "fr" -> "french"
-            "de" -> "german"
-            "es" -> "spanish"
-            "it" -> "italian"
-            "pt" -> "portuguese"
-            "nl" -> "dutch"
-            "da" -> "danish"
-            "fi" -> "finnish"
-            "hu" -> "hungarian"
-            "no" -> "norwegian"
-            "ro" -> "romanian"
-            "ru" -> "russian"
-            "sv" -> "swedish"
-            "tr" -> "turkish"
-            else -> "simple"
-        }
 
     /** Returns true if the query contains CJK (Chinese/Japanese/Korean) characters. */
     private fun containsCjk(query: String): Boolean =
