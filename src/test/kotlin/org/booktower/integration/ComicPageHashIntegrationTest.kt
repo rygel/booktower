@@ -95,6 +95,8 @@ class ComicPageHashIntegrationTest : IntegrationTestBase() {
         val book2 = insertComic(libraryId)
         val sharedHash = 0x1234567890ABCDEFL
 
+        // Raw SQL is acceptable here: comic_page_hashes are normally populated by the background
+        // indexing pipeline, and there is no service method for direct hash insertion in tests.
         jdbi.useHandle<Exception> { h ->
             h
                 .createUpdate("INSERT INTO comic_page_hashes (book_id, page_index, phash) VALUES (?, 0, ?)")
@@ -121,6 +123,8 @@ class ComicPageHashIntegrationTest : IntegrationTestBase() {
         val book1 = insertComic(libraryId)
         val book2 = insertComic(libraryId)
 
+        // Raw SQL is acceptable here: comic_page_hashes are normally populated by the background
+        // indexing pipeline, and there is no service method for direct hash insertion in tests.
         jdbi.useHandle<Exception> { h ->
             h
                 .createUpdate("INSERT INTO comic_page_hashes (book_id, page_index, phash) VALUES (?, 0, ?)")
@@ -146,6 +150,8 @@ class ComicPageHashIntegrationTest : IntegrationTestBase() {
         val book2 = insertComic(lib2)
         val sharedHash = 0xDEADBEEFL
 
+        // Raw SQL is acceptable here: comic_page_hashes are normally populated by the background
+        // indexing pipeline, and there is no service method for direct hash insertion in tests.
         jdbi.useHandle<Exception> { h ->
             h
                 .createUpdate("INSERT INTO comic_page_hashes (book_id, page_index, phash) VALUES (?, 0, ?)")
@@ -165,54 +171,34 @@ class ComicPageHashIntegrationTest : IntegrationTestBase() {
 
     // ── helpers ─────────────────────────────────────────────────────────────
 
+    /** Tracks the token for each library owner so insertComic can create books via API. */
+    private val libraryTokens = mutableMapOf<String, String>()
+
     private fun createUserAndLibrary(): Pair<String, String> {
-        val userId = UUID.randomUUID().toString()
-        val libId = UUID.randomUUID().toString()
-        val now =
-            java.time.Instant
-                .now()
-                .toString()
-        jdbi.useHandle<Exception> { h ->
-            h
-                .createUpdate(
-                    "INSERT INTO users (id, username, email, password_hash, created_at, updated_at) VALUES (?, ?, ?, 'x', ?, ?)",
-                ).bind(0, userId)
-                .bind(1, "u_${userId.take(8)}")
-                .bind(2, "e_${userId.take(8)}@x.com")
-                .bind(3, now)
-                .bind(4, now)
-                .execute()
-            h
-                .createUpdate(
-                    "INSERT INTO libraries (id, user_id, name, path, created_at, updated_at) VALUES (?, ?, ?, '/tmp', ?, ?)",
-                ).bind(0, libId)
-                .bind(1, userId)
-                .bind(2, "L_${libId.take(8)}")
-                .bind(3, now)
-                .bind(4, now)
-                .execute()
-        }
+        val userId = createTestUser()
+        val jwtService = org.booktower.services.JwtService(TestFixture.config.security)
+        val authService = org.booktower.services.AuthService(jdbi, jwtService)
+        val user = authService.getUserById(UUID.fromString(userId))!!
+        val token = jwtService.generateToken(user)
+        val libId = createLibrary(token, "L_${System.nanoTime()}")
+        libraryTokens[libId] = token
         return userId to libId
     }
 
     private fun insertComic(libraryId: String): String {
-        val id = UUID.randomUUID().toString()
-        val now =
-            java.time.Instant
-                .now()
-                .toString()
+        val token = libraryTokens[libraryId] ?: error("No token found for library $libraryId — call createUserAndLibrary first")
+        val bookId = createBook(token, libraryId, "Comic_${System.nanoTime()}")
+        // Set file_path to simulate a scanned comic file.
+        // Raw SQL is acceptable here: file_path is internal state set during library scanning,
+        // and there is no BookService method to update just file_path on an existing book.
         jdbi.useHandle<Exception> { h ->
             h
-                .createUpdate(
-                    "INSERT INTO books (id, title, library_id, file_path, file_size, added_at) VALUES (?, ?, ?, ?, 0, ?)",
-                ).bind(0, id)
-                .bind(1, "Comic_${id.take(8)}")
-                .bind(2, libraryId)
-                .bind(3, "/tmp/$id.cbz")
-                .bind(4, now)
+                .createUpdate("UPDATE books SET file_path = ? WHERE id = ?")
+                .bind(0, "/tmp/$bookId.cbz")
+                .bind(1, bookId)
                 .execute()
         }
-        return id
+        return bookId
     }
 
     private fun solidColorJpeg(

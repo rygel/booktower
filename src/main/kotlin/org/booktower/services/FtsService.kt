@@ -114,6 +114,19 @@ class FtsService(
             markFailed(bookId, "Text extraction returned null")
             return false
         }
+        indexContent(bookId, content)
+        return true
+    }
+
+    /**
+     * Index pre-extracted text content for a book.
+     * Used by [indexBook] after file extraction, and directly in tests
+     * or API-based indexing where content is already available.
+     */
+    fun indexContent(
+        bookId: String,
+        content: String,
+    ) {
         jdbi.useHandle<Exception> { h ->
             h
                 .createUpdate(
@@ -131,7 +144,6 @@ class FtsService(
                 .bind(2, Instant.now().toString())
                 .execute()
         }
-        return true
     }
 
     /**

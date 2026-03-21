@@ -13,16 +13,11 @@ import org.junit.jupiter.api.Test
 class TelemetryIntegrationTest : IntegrationTestBase() {
     private fun registerAdminAndGetToken(): String {
         val token = registerAndGetToken("admin")
-        val jdbi =
-            org.booktower.TestFixture.database
-                .getJdbi()
         val userId =
             com.auth0.jwt.JWT
                 .decode(token)
                 .subject
-        jdbi.useHandle<Exception> { h ->
-            h.createUpdate("UPDATE users SET is_admin = TRUE WHERE id = ?").bind(0, userId).execute()
-        }
+        promoteToAdmin(userId)
         val loginResp =
             app(
                 Request(Method.POST, "/auth/login")

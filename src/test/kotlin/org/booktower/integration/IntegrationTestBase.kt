@@ -385,32 +385,30 @@ abstract class IntegrationTestBase {
         return Json.mapper.readValue(response.bodyString(), LoginResponse::class.java).token
     }
 
-    /** Create a test user directly in the database (bypasses AuthService). PostgreSQL-compatible. */
-    protected fun createTestUserDirect(
-        jdbi: org.jdbi.v3.core.Jdbi,
-        userId: String,
-        username: String,
+    /**
+     * Create a test user via AuthService.register() and return the user ID.
+     * Uses the real registration flow including password hashing.
+     */
+    protected fun createTestUser(
+        username: String = "testuser_${System.nanoTime()}",
         email: String = "$username@test.com",
-        passwordHash: String = "hash",
-        isAdmin: Boolean = false,
-    ) {
-        val now =
-            java.time.Instant
-                .now()
-                .toString()
-        jdbi.useHandle<Exception> { h ->
-            h
-                .createUpdate(
-                    "INSERT INTO users (id, username, email, password_hash, created_at, updated_at, is_admin) VALUES (?,?,?,?,?,?,?)",
-                ).bind(0, userId)
-                .bind(1, username)
-                .bind(2, email)
-                .bind(3, passwordHash)
-                .bind(4, now)
-                .bind(5, now)
-                .bind(6, isAdmin)
-                .execute()
-        }
+        password: String = "password123",
+    ): String {
+        val jdbi = TestFixture.database.getJdbi()
+        val jwtService = org.booktower.services.JwtService(TestFixture.config.security)
+        val authService = AuthService(jdbi, jwtService)
+        val result = authService.register(org.booktower.models.CreateUserRequest(username, email, password))
+        return result.getOrThrow().user.id
+    }
+
+    /**
+     * Promote a user to admin via AdminService.setAdmin().
+     * Uses the real service method instead of raw SQL.
+     */
+    protected fun promoteToAdmin(userId: String) {
+        val jdbi = TestFixture.database.getJdbi()
+        val adminService = AdminService(jdbi)
+        adminService.setAdmin(java.util.UUID.fromString(userId), true)
     }
 
     protected fun createLibrary(

@@ -1,6 +1,5 @@
 package org.booktower.integration
 
-import org.booktower.TestFixture
 import org.booktower.config.Json
 import org.booktower.models.LoginResponse
 import org.booktower.models.UserAdminDto
@@ -31,12 +30,7 @@ class AdminIntegrationTest : IntegrationTestBase() {
                 .user.id
 
         // Promote to admin directly in the database
-        TestFixture.database.getJdbi().useHandle<Exception> { handle ->
-            handle
-                .createUpdate("UPDATE users SET is_admin = true WHERE id = ?")
-                .bind(0, userId)
-                .execute()
-        }
+        promoteToAdmin(userId)
 
         // Re-login to get a token that carries admin=true claim
         val loginResponse =
