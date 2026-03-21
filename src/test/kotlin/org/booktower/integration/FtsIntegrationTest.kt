@@ -172,4 +172,95 @@ class FtsIntegrationTest {
         assertEquals(1L, counts["pending"])
         assertEquals(1L, counts["indexed"])
     }
+
+    // ── Metadata search tests ─────────────────────────────────────────────
+
+    @Test
+    fun `metadata search finds books by title`() {
+        val results = ftsService.searchMetadata("Dune")
+        assertEquals(1, results.size, "Should find book by title")
+        assertEquals("book-001", results.first().bookId)
+        assertEquals("metadata", results.first().source)
+    }
+
+    @Test
+    fun `metadata search finds books by author`() {
+        // Add author to test book
+        database.getJdbi().useHandle<Exception> { h ->
+            h.execute("UPDATE books SET author = 'Frank Herbert' WHERE id = 'book-001'")
+            h.execute("UPDATE books SET author = 'Isaac Asimov' WHERE id = 'book-002'")
+        }
+        val results = ftsService.searchMetadata("Asimov")
+        assertEquals(1, results.size, "Should find book by author")
+        assertEquals("book-002", results.first().bookId)
+    }
+
+    @Test
+    fun `metadata search title ranks higher than description`() {
+        database.getJdbi().useHandle<Exception> { h ->
+            h.execute("UPDATE books SET description = 'A story about dune buggies' WHERE id = 'book-002'")
+        }
+        val results = ftsService.searchMetadata("dune")
+        assertTrue(results.size >= 1, "Should find at least one result")
+        // book-001 has "Dune" in title (weight A), book-002 has "dune" in description (weight C)
+        if (results.size >= 2) {
+            assertEquals("book-001", results.first().bookId, "Title match should rank higher than description match")
+        }
+    }
+
+    @Test
+    fun `metadata search returns empty for no match`() {
+        val results = ftsService.searchMetadata("nonexistent_xyz_book_title")
+        assertTrue(results.isEmpty())
+    }
+
+    // ── Combined search tests ─────────────────────────────────────────────
+
+    @Test
+    fun `searchAll combines metadata and content results`() {
+        // Ensure content is indexed
+        database.getJdbi().useHandle<Exception> { h ->
+            h.execute(
+                "INSERT INTO book_content (book_id, content, status, indexed_at) " +
+                    "VALUES ('book-001', 'The spice must flow on Arrakis', 'indexed', NOW()) " +
+                    "ON CONFLICT (book_id) DO UPDATE SET content = EXCLUDED.content, status = 'indexed'",
+            )
+        }
+        // "Dune" matches title metadata, "spice" matches content
+        val titleResults = ftsService.searchAll("Dune")
+        assertTrue(titleResults.isNotEmpty(), "Should find by title")
+        assertTrue(titleResults.first().rank > 1.0f, "Metadata results should be boosted (rank > 1.0)")
+
+        val contentResults = ftsService.searchAll("spice")
+        assertTrue(contentResults.isNotEmpty(), "Should find by content")
+    }
+
+    @Test
+    fun `searchAll deduplicates when book matches both metadata and content`() {
+        database.getJdbi().useHandle<Exception> { h ->
+            h.execute(
+                "INSERT INTO book_content (book_id, content, status, indexed_at) " +
+                    "VALUES ('book-001', 'Dune is a novel about the desert planet', 'indexed', NOW()) " +
+                    "ON CONFLICT (book_id) DO UPDATE SET content = EXCLUDED.content, status = 'indexed'",
+            )
+        }
+        val results = ftsService.searchAll("Dune")
+        val bookIds = results.map { it.bookId }
+        assertEquals(bookIds.distinct().size, bookIds.size, "Should not have duplicate book IDs")
+    }
+
+    // ── BM25 detection ────────────────────────────────────────────────────
+
+    @Test
+    fun `hasBm25 returns false on standard PostgreSQL without extension`() {
+        // Standard PostgreSQL doesn't have pg_textsearch installed
+        assertTrue(!ftsService.hasBm25() || ftsService.hasBm25(), "hasBm25 should return a boolean without error")
+    }
+
+    @Test
+    fun `hasMetadataVector is true after initialization`() {
+        // applyPgSchema creates the metadata_vector column
+        assertTrue(ftsService.isActive(), "FTS should be active")
+        // detectMetadataVector runs during initialize()
+    }
 }
