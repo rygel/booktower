@@ -1,0 +1,54 @@
+{
+  "realm": "booktower",
+  "enabled": true,
+  "clients": [
+    {
+      "clientId": "booktower",
+      "enabled": true,
+      "publicClient": false,
+      "secret": "booktower-test-secret",
+      "redirectUris": ["*"],
+      "webOrigins": ["*"],
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "protocol": "openid-connect",
+      "defaultClientScopes": ["openid", "email", "profile"]
+    }
+  ],
+  "users": [
+    {
+      "username": "testuser",
+      "email": "testuser@booktower.test",
+      "firstName": "Test",
+      "lastName": "User",
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "testpassword",
+          "temporary": false
+        }
+      ],
+      "groups": ["booktower-users"]
+    },
+    {
+      "username": "adminuser",
+      "email": "admin@booktower.test",
+      "firstName": "Admin",
+      "lastName": "User",
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "adminpassword",
+          "temporary": false
+        }
+      ],
+      "groups": ["booktower-admins"]
+    }
+  ],
+  "groups": [
+    { "name": "booktower-users" },
+    { "name": "booktower-admins" }
+  ]
+}
