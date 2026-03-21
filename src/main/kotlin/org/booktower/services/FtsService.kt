@@ -11,6 +11,7 @@ data class FtsMatch(
     val bookId: String,
     val snippet: String,
     val rank: Float,
+    val source: String = "content",
 )
 
 data class PendingBook(
@@ -19,11 +20,28 @@ data class PendingBook(
     val format: String,
 )
 
+/**
+ * Full-text search service with two backends:
+ *
+ * 1. **Built-in PostgreSQL FTS** (default): uses tsvector/tsquery with
+ *    `websearch_to_tsquery` for natural query syntax, weighted metadata
+ *    search (title > author > description > content), and multi-language.
+ *
+ * 2. **pg_textsearch BM25** (optional): if the pg_textsearch extension is
+ *    installed on PostgreSQL 17+, uses BM25 ranking for content search
+ *    with statistically better relevance scoring.
+ *
+ * H2 (dev/test): FTS is disabled — search falls back to LIKE queries.
+ */
 class FtsService(
     private val jdbi: Jdbi,
     private val enabled: Boolean,
 ) {
     @Volatile private var active = false
+
+    @Volatile private var hasBm25 = false
+
+    @Volatile private var hasMetadataVector = false
 
     fun initialize() {
         if (!enabled) {
@@ -41,11 +59,17 @@ class FtsService(
             return
         }
         applyPgSchema()
+        detectMetadataVector()
+        detectBm25()
         active = true
-        ftsLog.info("Full-text search enabled (PostgreSQL)")
+        ftsLog.info(
+            "Full-text search enabled (PostgreSQL) — metadata=$hasMetadataVector, bm25=$hasBm25",
+        )
     }
 
     fun isActive(): Boolean = active
+
+    fun hasBm25(): Boolean = hasBm25
 
     fun enqueue(bookId: String) {
         jdbi.useHandle<Exception> { h ->
@@ -107,12 +131,102 @@ class FtsService(
         return true
     }
 
+    /**
+     * Search book metadata using weighted tsvector (title > author > description).
+     * Uses websearch_to_tsquery for natural query syntax: "exact phrase", -exclude, OR.
+     */
+    fun searchMetadata(
+        query: String,
+        allowedBookIds: Collection<String>? = null,
+    ): List<FtsMatch> {
+        if (!active || !hasMetadataVector || query.isBlank()) return emptyList()
+        return try {
+            jdbi.withHandle<List<FtsMatch>, Exception> { h ->
+                val bookIdFilter =
+                    if (!allowedBookIds.isNullOrEmpty()) {
+                        "AND b.id IN (${allowedBookIds.joinToString(",") { "?" }})"
+                    } else {
+                        ""
+                    }
+                val q =
+                    h
+                        .createQuery(
+                            """
+                        SELECT b.id AS book_id,
+                               ts_headline('simple', COALESCE(b.title, '') || ' ' || COALESCE(b.author, ''),
+                                   websearch_to_tsquery('simple', :q),
+                                   'StartSel=**, StopSel=**, MaxWords=20, MinWords=5'
+                               ) AS snippet,
+                               ts_rank_cd(b.metadata_vector, websearch_to_tsquery('simple', :q),
+                                   32 /* rank normalization: divide by rank + 1 */
+                               ) AS rank
+                        FROM books b
+                        WHERE b.metadata_vector @@ websearch_to_tsquery('simple', :q)
+                          $bookIdFilter
+                        ORDER BY rank DESC
+                        LIMIT 50
+                        """,
+                        ).bind("q", query)
+                var idx = 0
+                allowedBookIds?.forEach { q.bind(idx++, it) }
+                q
+                    .map { row ->
+                        FtsMatch(
+                            bookId = row.getColumn("book_id", String::class.java),
+                            snippet = row.getColumn("snippet", String::class.java) ?: "",
+                            rank = (row.getColumn("rank", java.lang.Float::class.java) ?: 0f).toFloat(),
+                            source = "metadata",
+                        )
+                    }.list()
+            }
+        } catch (e: Exception) {
+            ftsLog.warn("Metadata FTS search error: ${e.message}")
+            emptyList()
+        }
+    }
+
+    /**
+     * Search book content. Uses pg_textsearch BM25 if available,
+     * otherwise falls back to built-in tsvector search.
+     */
     fun search(
         query: String,
         allowedBookIds: Collection<String>? = null,
     ): List<FtsMatch> {
         if (!active || query.isBlank()) return emptyList()
-        return try {
+        return if (hasBm25) {
+            searchBm25(query, allowedBookIds)
+        } else {
+            searchTsvector(query, allowedBookIds)
+        }
+    }
+
+    /**
+     * Combined search: metadata + content, deduplicated and re-ranked.
+     * Metadata matches rank higher than content matches.
+     */
+    fun searchAll(
+        query: String,
+        allowedBookIds: Collection<String>? = null,
+    ): List<FtsMatch> {
+        val metadataResults = searchMetadata(query, allowedBookIds)
+        val contentResults = search(query, allowedBookIds)
+
+        // Merge: metadata results first (boosted rank), then content results not in metadata
+        val metadataIds = metadataResults.map { it.bookId }.toSet()
+        val boostedMetadata = metadataResults.map { it.copy(rank = it.rank + 1.0f) }
+        val uniqueContent = contentResults.filter { it.bookId !in metadataIds }
+
+        return (boostedMetadata + uniqueContent)
+            .sortedByDescending { it.rank }
+            .take(50)
+    }
+
+    private fun searchTsvector(
+        query: String,
+        allowedBookIds: Collection<String>?,
+    ): List<FtsMatch> =
+        try {
             jdbi.withHandle<List<FtsMatch>, Exception> { h ->
                 val bookIdFilter =
                     if (!allowedBookIds.isNullOrEmpty()) {
@@ -124,19 +238,19 @@ class FtsService(
                     h
                         .createQuery(
                             """
-                    SELECT bc.book_id,
-                           ts_headline('english', bc.content,
-                               plainto_tsquery('english', :q),
-                               'StartSel=**, StopSel=**, MaxWords=20, MinWords=10, ShortWord=3'
-                           ) AS snippet,
-                           ts_rank(bc.search_vector, plainto_tsquery('english', :q)) AS rank
-                    FROM book_content bc
-                    WHERE bc.status = 'indexed'
-                      AND bc.search_vector @@ plainto_tsquery('english', :q)
-                      $bookIdFilter
-                    ORDER BY rank DESC
-                    LIMIT 50
-                    """,
+                        SELECT bc.book_id,
+                               ts_headline('english', bc.content,
+                                   websearch_to_tsquery('english', :q),
+                                   'StartSel=**, StopSel=**, MaxWords=20, MinWords=10, ShortWord=3'
+                               ) AS snippet,
+                               ts_rank(bc.search_vector, websearch_to_tsquery('english', :q)) AS rank
+                        FROM book_content bc
+                        WHERE bc.status = 'indexed'
+                          AND bc.search_vector @@ websearch_to_tsquery('english', :q)
+                          $bookIdFilter
+                        ORDER BY rank DESC
+                        LIMIT 50
+                        """,
                         ).bind("q", query)
                 var idx = 0
                 allowedBookIds?.forEach { q.bind(idx++, it) }
@@ -146,14 +260,57 @@ class FtsService(
                             bookId = row.getColumn("book_id", String::class.java),
                             snippet = row.getColumn("snippet", String::class.java) ?: "",
                             rank = (row.getColumn("rank", java.lang.Float::class.java) ?: 0f).toFloat(),
+                            source = "content",
                         )
                     }.list()
             }
         } catch (e: Exception) {
-            ftsLog.warn("FTS search error: ${e.message}")
+            ftsLog.warn("Content FTS search error: ${e.message}")
             emptyList()
         }
-    }
+
+    private fun searchBm25(
+        query: String,
+        allowedBookIds: Collection<String>?,
+    ): List<FtsMatch> =
+        try {
+            jdbi.withHandle<List<FtsMatch>, Exception> { h ->
+                val bookIdFilter =
+                    if (!allowedBookIds.isNullOrEmpty()) {
+                        "AND bc.book_id IN (${allowedBookIds.joinToString(",") { "?" }})"
+                    } else {
+                        ""
+                    }
+                val q =
+                    h
+                        .createQuery(
+                            """
+                        SELECT bc.book_id,
+                               LEFT(bc.content, 200) AS snippet,
+                               -(bc.content <@> :q) AS rank
+                        FROM book_content bc
+                        WHERE bc.status = 'indexed'
+                          $bookIdFilter
+                        ORDER BY bc.content <@> :q
+                        LIMIT 50
+                        """,
+                        ).bind("q", query)
+                var idx = 0
+                allowedBookIds?.forEach { q.bind(idx++, it) }
+                q
+                    .map { row ->
+                        FtsMatch(
+                            bookId = row.getColumn("book_id", String::class.java),
+                            snippet = row.getColumn("snippet", String::class.java) ?: "",
+                            rank = (row.getColumn("rank", java.lang.Float::class.java) ?: 0f).toFloat(),
+                            source = "bm25",
+                        )
+                    }.list()
+            }
+        } catch (e: Exception) {
+            ftsLog.warn("BM25 search error (falling back to tsvector): ${e.message}")
+            searchTsvector(query, allowedBookIds)
+        }
 
     fun fetchPending(limit: Int = 5): List<PendingBook> =
         jdbi.withHandle<List<PendingBook>, Exception> { h ->
@@ -229,7 +386,78 @@ class FtsService(
                 FOR EACH ROW EXECUTE FUNCTION book_content_fts_update()
                 """,
             )
+            // Metadata tsvector on books table (weighted: title A, author B, series B, description C)
+            h.execute("ALTER TABLE books ADD COLUMN IF NOT EXISTS metadata_vector tsvector")
+            h.execute("CREATE INDEX IF NOT EXISTS idx_books_metadata_fts ON books USING GIN(metadata_vector)")
+            h.execute(
+                """
+                CREATE OR REPLACE FUNCTION books_metadata_fts_update() RETURNS trigger LANGUAGE plpgsql AS ${'$'}${'$'}
+                BEGIN
+                    NEW.metadata_vector :=
+                        setweight(to_tsvector('simple', COALESCE(NEW.title, '')), 'A') ||
+                        setweight(to_tsvector('simple', COALESCE(NEW.author, '')), 'B') ||
+                        setweight(to_tsvector('simple', COALESCE(NEW.series, '')), 'B') ||
+                        setweight(to_tsvector('simple', COALESCE(NEW.description, '')), 'C');
+                    RETURN NEW;
+                END;
+                ${'$'}${'$'}
+                """,
+            )
+            h.execute("DROP TRIGGER IF EXISTS books_metadata_fts_trigger ON books")
+            h.execute(
+                """
+                CREATE TRIGGER books_metadata_fts_trigger
+                BEFORE INSERT OR UPDATE OF title, author, series, description ON books
+                FOR EACH ROW EXECUTE FUNCTION books_metadata_fts_update()
+                """,
+            )
+            // Backfill existing rows
+            h.execute(
+                """
+                UPDATE books SET metadata_vector =
+                    setweight(to_tsvector('simple', COALESCE(title, '')), 'A') ||
+                    setweight(to_tsvector('simple', COALESCE(author, '')), 'B') ||
+                    setweight(to_tsvector('simple', COALESCE(series, '')), 'B') ||
+                    setweight(to_tsvector('simple', COALESCE(description, '')), 'C')
+                WHERE metadata_vector IS NULL
+                """,
+            )
         }
-        ftsLog.info("PostgreSQL FTS schema applied (tsvector + GIN index + trigger)")
+        ftsLog.info("PostgreSQL FTS schema applied (content + metadata tsvector + GIN indexes)")
+    }
+
+    private fun detectMetadataVector() {
+        hasMetadataVector =
+            try {
+                jdbi.withHandle<Boolean, Exception> { h ->
+                    h
+                        .createQuery(
+                            "SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'books' AND column_name = 'metadata_vector'",
+                        ).mapTo(Int::class.java)
+                        .one() > 0
+                }
+            } catch (e: Exception) {
+                false
+            }
+        if (hasMetadataVector) {
+            ftsLog.info("Metadata tsvector column detected — weighted metadata search enabled")
+        }
+    }
+
+    private fun detectBm25() {
+        hasBm25 =
+            try {
+                jdbi.withHandle<Boolean, Exception> { h ->
+                    h
+                        .createQuery("SELECT COUNT(*) FROM pg_available_extensions WHERE name = 'pg_textsearch'")
+                        .mapTo(Int::class.java)
+                        .one() > 0
+                }
+            } catch (e: Exception) {
+                false
+            }
+        if (hasBm25) {
+            ftsLog.info("pg_textsearch extension available — BM25 ranking enabled")
+        }
     }
 }

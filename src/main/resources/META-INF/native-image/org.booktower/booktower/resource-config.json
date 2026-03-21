@@ -13,6 +13,7 @@
       { "pattern": "\\Qdb/migration/V3__performance_indexes.sql\\E" },
       { "pattern": "\\Qdb/migration/V4__book_sharing.sql\\E" },
       { "pattern": "\\Qdb/migration/V5__collections.sql\\E" },
+      { "pattern": "\\Qdb/migration/V6__fts_metadata_search.sql\\E" },
       { "pattern": "org/flywaydb/.*" },
       { "pattern": "org/flywaydb/core/internal/database/.*" },
       { "pattern": "org/flywaydb/database/.*" },
