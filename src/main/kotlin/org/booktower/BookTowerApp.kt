@@ -3,6 +3,7 @@ package org.booktower
 import org.booktower.config.AppConfig
 import org.booktower.config.Database
 import org.booktower.config.appModule
+import org.booktower.filters.bodyLimitFilter
 import org.booktower.filters.compressionFilter
 import org.booktower.filters.csrfFilter
 import org.booktower.filters.globalErrorFilter
@@ -140,6 +141,7 @@ fun main() {
 
     val filteredApp =
         globalErrorFilter()
+            .then(bodyLimitFilter())
             .then(compressionFilter())
             .then(requestLoggingFilter())
             .then(csrfFilter(config.csrf.allowedHosts))
