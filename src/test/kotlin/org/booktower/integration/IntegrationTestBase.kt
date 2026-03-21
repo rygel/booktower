@@ -167,6 +167,7 @@ abstract class IntegrationTestBase {
         val seedService = SeedService(bookService, libraryService, config.storage.coversPath, config.storage.booksPath, backgroundTaskService)
         val userPermissionsService = UserPermissionsService(jdbi)
         val koboSyncService = KoboSyncService(jdbi, bookService, "http://localhost:9999", userSettingsService)
+        val koreaderSyncService = org.booktower.services.KOReaderSyncService(jdbi, bookService)
         val opdsCredentialsService = OpdsCredentialsService(jdbi)
         val bookFilesService = BookFilesService(jdbi)
         val emailProviderService = EmailProviderService(jdbi)
@@ -247,6 +248,7 @@ abstract class IntegrationTestBase {
         val journalHandler = JournalHandler(journalService)
         val oidcHandler = oidcService?.let { org.booktower.handlers.OidcHandler(it, authService) }
         val koboSyncHandler = org.booktower.handlers.KoboSyncHandler(koboSyncService)
+        val koreaderSyncHandler = org.booktower.handlers.KOReaderSyncHandler(koreaderSyncService)
         val opdsHandler = OpdsHandler(authService, libraryService, bookService, config.storage, apiTokenService, opdsCredentialsService)
         val apiTokenHandler = ApiTokenHandler(apiTokenService, jwtService)
         val exportHandler = ExportHandler(exportService, jwtService)
@@ -346,7 +348,7 @@ abstract class IntegrationTestBase {
             DeviceSyncRouter(
                 filters,
                 koboSyncHandler,
-                null,
+                koreaderSyncHandler,
                 opdsHandler,
             )
 
