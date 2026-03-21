@@ -35,8 +35,12 @@
         /* EPUB mode */
         #epub-viewer { flex: 1; background: var(--bt-bg); overflow: hidden; }
         /* Comic mode */
-        #comic-wrap { flex: 1; overflow: auto; display: flex; justify-content: center; align-items: flex-start; padding: 1.5rem; background: var(--bt-reader-backdrop, #1a1a1a); }
-        #comic-img { max-width: 100%; max-height: calc(100vh - 3rem - 3rem); object-fit: contain; box-shadow: 0 4px 32px rgba(0,0,0,0.6); display: block; }
+        #comic-wrap { flex: 1; overflow: auto; display: flex; justify-content: center; align-items: flex-start; padding: 1.5rem; background: var(--bt-reader-backdrop, #1a1a1a); position: relative; }
+        #comic-img { max-width: 100%; max-height: calc(100vh - 3rem - 3rem); object-fit: contain; box-shadow: 0 4px 32px rgba(0,0,0,0.6); display: block; user-select: none; }
+        .comic-click-zone { position: absolute; top: 0; bottom: 0; z-index: 10; cursor: pointer; }
+        .comic-zone-left { left: 0; width: 25%; }
+        .comic-zone-center { left: 25%; width: 50%; }
+        .comic-zone-right { right: 0; width: 25%; }
         /* Audio mode */
         #audio-wrap { flex: 1; display: flex; align-items: center; justify-content: center; padding: 2rem; background: var(--bt-bg); overflow: auto; }
         #audio-card { background: var(--bt-surface); border: 1px solid var(--bt-border); border-radius: 1rem; padding: 2rem; max-width: 28rem; width: 100%; text-align: center; box-shadow: 0 4px 24px rgba(0,0,0,0.18); }
@@ -279,7 +283,12 @@
         </div>
     @elseif(readerType == "comic")
         <div id="comic-wrap">
+            <div id="comic-zone-prev" class="comic-click-zone comic-zone-left"></div>
+            <div id="comic-zone-menu" class="comic-click-zone comic-zone-center"></div>
+            <div id="comic-zone-next" class="comic-click-zone comic-zone-right"></div>
             <img id="comic-img" src="" alt="${i18n.translate("page.reader.comic.loading")}">
+            <img id="comic-preload-1" style="display:none;" aria-hidden="true">
+            <img id="comic-preload-2" style="display:none;" aria-hidden="true">
         </div>
     @elseif(readerType == "fb2")
         <!-- FB2 reader: server converts FB2 → HTML, displayed in a sandboxed iframe -->
@@ -506,6 +515,8 @@
                     <button class="pref-btn active" data-pref="fit" data-val="contain">${i18n.translate("page.reader.prefs.fit.page")}</button>
                     <button class="pref-btn" data-pref="fit" data-val="width">${i18n.translate("page.reader.prefs.fit.width")}</button>
                     <button class="pref-btn" data-pref="fit" data-val="height">${i18n.translate("page.reader.prefs.fit.height")}</button>
+                    <button class="pref-btn" data-pref="fit" data-val="screen">${i18n.translate("page.reader.prefs.fit.screen")}</button>
+                    <button class="pref-btn" data-pref="fit" data-val="original">${i18n.translate("page.reader.prefs.fit.original")}</button>
                 </div>
             </div>
             <div class="pref-section">
@@ -1750,6 +1761,7 @@ var BT_DEVICE = (function() {
     let comicFit = 'contain';
 
     function applyComicFit() {
+        var vh = 'calc(100vh - 3rem - 3rem)';
         if (comicFit === 'width') {
             comicImg.style.maxWidth  = '100%';
             comicImg.style.maxHeight = 'none';
@@ -1757,15 +1769,27 @@ var BT_DEVICE = (function() {
             comicImg.style.height    = 'auto';
         } else if (comicFit === 'height') {
             comicImg.style.maxWidth  = 'none';
-            comicImg.style.maxHeight = 'calc(100vh - 3rem - 3rem)';
+            comicImg.style.maxHeight = vh;
             comicImg.style.width     = 'auto';
-            comicImg.style.height    = 'calc(100vh - 3rem - 3rem)';
+            comicImg.style.height    = vh;
+        } else if (comicFit === 'screen') {
+            comicImg.style.maxWidth  = '100%';
+            comicImg.style.maxHeight = vh;
+            comicImg.style.width     = '100%';
+            comicImg.style.height    = vh;
+            comicImg.style.objectFit = 'contain';
+        } else if (comicFit === 'original') {
+            comicImg.style.maxWidth  = 'none';
+            comicImg.style.maxHeight = 'none';
+            comicImg.style.width     = 'auto';
+            comicImg.style.height    = 'auto';
         } else {
             comicImg.style.maxWidth  = '100%';
-            comicImg.style.maxHeight = 'calc(100vh - 3rem - 3rem)';
+            comicImg.style.maxHeight = vh;
             comicImg.style.width     = '';
             comicImg.style.height    = '';
         }
+        if (comicFit !== 'screen') comicImg.style.objectFit = '';
         document.querySelectorAll('[data-pref="fit"]').forEach(function(b) {
             b.classList.toggle('active', b.dataset.val === comicFit);
         });
@@ -1826,6 +1850,7 @@ var BT_DEVICE = (function() {
         pageInfo.textContent = currentPage + ' / ' + totalPages;
         btnPrev.disabled = currentPage <= 1;
         btnNext.disabled = currentPage >= totalPages;
+        preloadAdjacent();
         scheduleSave(currentPage);
     }
 
@@ -1839,12 +1864,41 @@ var BT_DEVICE = (function() {
         if (e.key === 'Escape') window.location.href = '/books/' + BOOK_ID;
     });
 
-    // Click left/right half of image to page (RTL-aware)
-    comicImg.addEventListener('click', function(e) {
-        var rect = comicImg.getBoundingClientRect();
-        var leftHalf = e.clientX < rect.left + rect.width / 2;
-        goToPage(leftHalf === !comicRtl ? currentPage - 1 : currentPage + 1);
+    // Click zones: left 25% = prev, right 25% = next, center 50% = toggle toolbar
+    var zonePrev = document.getElementById('comic-zone-prev');
+    var zoneNext = document.getElementById('comic-zone-next');
+    var zoneMenu = document.getElementById('comic-zone-menu');
+    zonePrev.addEventListener('click', function() { goToPage(comicRtl ? currentPage + 1 : currentPage - 1); });
+    zoneNext.addEventListener('click', function() { goToPage(comicRtl ? currentPage - 1 : currentPage + 1); });
+    zoneMenu.addEventListener('click', function() {
+        var toolbar = document.querySelector('.reader-toolbar');
+        if (toolbar) toolbar.style.display = toolbar.style.display === 'none' ? '' : 'none';
     });
+
+    // Image preloading: load ±2 pages ahead
+    var preload1 = document.getElementById('comic-preload-1');
+    var preload2 = document.getElementById('comic-preload-2');
+    function preloadAdjacent() {
+        var base = '/api/books/' + BOOK_ID + '/comic/';
+        if (currentPage < totalPages) preload1.src = base + currentPage;
+        if (currentPage + 1 < totalPages) preload2.src = base + (currentPage + 1);
+    }
+
+    // Swipe gesture support (touch devices)
+    var touchStartX = 0;
+    var touchStartY = 0;
+    document.getElementById('comic-wrap').addEventListener('touchstart', function(e) {
+        touchStartX = e.changedTouches[0].screenX;
+        touchStartY = e.changedTouches[0].screenY;
+    }, { passive: true });
+    document.getElementById('comic-wrap').addEventListener('touchend', function(e) {
+        var dx = e.changedTouches[0].screenX - touchStartX;
+        var dy = e.changedTouches[0].screenY - touchStartY;
+        if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
+            if (dx > 0) goToPage(comicRtl ? currentPage + 1 : currentPage - 1);
+            else goToPage(comicRtl ? currentPage - 1 : currentPage + 1);
+        }
+    }, { passive: true });
 
     window.jumpToPage = function(n) { goToPage(n); };
     window.getBookmarkPage = function() { return currentPage; };
