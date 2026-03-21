@@ -7,8 +7,8 @@
 ## Bugs / Gaps (fix before next release)
 
 - [ ] Retag v0.6.6 after merging PR #96 — native builds fail because tag was created before latest fixes
-- [ ] Fix FtsServiceTest — creates tables manually with raw SQL instead of using Flyway. Must use `Database.connect()` which runs Flyway automatically.
-- [ ] Audit ALL tests for manual table creation (`CREATE TABLE` in test code) — replace with Flyway
+- [x] Fix FtsServiceTest — now uses `FtsService.indexContent()` instead of raw SQL (PR #102)
+- [x] Audit ALL tests for manual table creation — no `CREATE TABLE` in tests; raw SQL for admin/user/FTS replaced with service calls (PR #102)
 
 ## High Priority
 
