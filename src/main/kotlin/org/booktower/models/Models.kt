@@ -265,6 +265,8 @@ data class UpdateBookRequest(
     val googleBooksId: String? = null,
     val amazonId: String? = null,
     val audibleId: String? = null,
+    /** For optimistic locking — if provided, update only applies when book's updatedAt matches */
+    val expectedUpdatedAt: String? = null,
 )
 
 data class MergeBookRequest(

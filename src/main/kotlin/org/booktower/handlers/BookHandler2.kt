@@ -192,7 +192,20 @@ class BookHandler2(
                 .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", validationError)))
         }
 
-        val book = bookService.updateBook(userId, bookId, updateRequest)
+        val book = bookService.updateBook(userId, bookId, updateRequest, updateRequest.expectedUpdatedAt)
+        if (book == null && updateRequest.expectedUpdatedAt != null) {
+            // Distinguish 404 (not found) from 409 (conflict)
+            val exists = bookService.getBook(userId, bookId) != null
+            if (exists) {
+                return Response(Status.CONFLICT)
+                    .header("Content-Type", "application/json")
+                    .body(
+                        Json.mapper.writeValueAsString(
+                            ErrorResponse("CONFLICT", "Book was modified by another request. Reload and try again."),
+                        ),
+                    )
+            }
+        }
         return if (book != null) {
             Response(Status.OK)
                 .header("Content-Type", "application/json")
