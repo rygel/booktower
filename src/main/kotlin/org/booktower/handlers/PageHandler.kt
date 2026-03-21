@@ -2,7 +2,6 @@ package org.booktower.handlers
 
 import org.booktower.config.Json
 import org.booktower.config.TemplateRenderer
-import org.booktower.model.ThemeCatalog
 import org.booktower.models.BookSortOrder
 import org.booktower.models.CreateBookRequest
 import org.booktower.models.CreateBookmarkRequest

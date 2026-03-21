@@ -14,7 +14,6 @@ import kotlin.test.assertTrue
  * Ensures the API doesn't leak stack traces but does provide actionable error information.
  */
 class ErrorResponseIntegrationTest : IntegrationTestBase() {
-
     private fun assertJsonError(
         body: String,
         expectedCode: String? = null,

@@ -1098,6 +1098,7 @@
                         <configuration>
                             <imageName>booktower</imageName>
                             <mainClass>org.booktower.BookTowerAppKt</mainClass>
+                            <buildCache>true</buildCache>
                             <!--
                                 Pull pre-written reflect/resource/proxy configs for known
                                 libraries (PDFBox, H2, Jackson, Logback, Flyway, HikariCP …)
