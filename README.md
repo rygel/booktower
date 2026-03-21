@@ -2,7 +2,7 @@
 
 A self-hosted personal book, audiobook, and comic manager with a built-in reader and rich metadata support.
 
-[![Version](https://img.shields.io/badge/version-0.6.0-blue)](https://github.com/rygel/booktower/releases)
+[![Version](https://img.shields.io/badge/version-0.6.5-blue)](https://github.com/rygel/booktower/releases)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-green)](LICENSE)
 [![Docker](https://img.shields.io/badge/docker-ghcr.io%2Frygel%2Fbooktower-blue)](https://ghcr.io/rygel/booktower)
 
@@ -31,7 +31,7 @@ A self-hosted personal book, audiobook, and comic manager with a built-in reader
 | Demo data seeding | **Broken** | EPUB seeds work; comic and audiobook downloads fail silently |
 | Download progress UI | **Minimal** | Shows count only; no error messages, no retry, no per-file status |
 | Whispersync (ebook↔audiobook) | **Untested** | Integration tests only; never tested with real books |
-| Native binaries (GraalVM) | **Untested** | CI builds but no E2E tests run against binaries yet |
+| Native binaries (GraalVM 25) | **Tested** | CI builds + smoke tests on all 5 platforms |
 | Kobo / KOReader sync | **Untested** | Implements protocols; never tested with real hardware |
 | OPDS catalog | **Untested** | Basic tests; not verified with real client apps |
 | OIDC / SSO | **Untested** | Implements OIDC spec; tested only with mock providers |
@@ -183,12 +183,12 @@ Open `http://localhost:9999` and register your first account.
 Download the latest release JAR from [Releases](https://github.com/rygel/booktower/releases), then:
 
 ```bash
-java -jar booktower-0.6.0.jar
+java -jar booktower-v0.6.5.jar
 ```
 
 ### Native Binary
 
-Download the native binary for your platform from [Releases](https://github.com/rygel/booktower/releases):
+Native binaries are built with GraalVM 25 Community Edition — no JVM installation required. Download from [Releases](https://github.com/rygel/booktower/releases):
 
 | Platform       | Binary                          |
 |----------------|---------------------------------|
