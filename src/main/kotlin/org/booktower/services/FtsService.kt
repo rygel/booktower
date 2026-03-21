@@ -141,8 +141,10 @@ class FtsService(
     fun searchMetadata(
         query: String,
         allowedBookIds: Collection<String>? = null,
+        language: String? = null,
     ): List<FtsMatch> {
         if (!active || !hasMetadataVector || query.isBlank()) return emptyList()
+        val tsConfig = pgTsConfig(language)
         return try {
             jdbi.withHandle<List<FtsMatch>, Exception> { h ->
                 val bookIdFilter =
@@ -195,12 +197,13 @@ class FtsService(
     fun search(
         query: String,
         allowedBookIds: Collection<String>? = null,
+        language: String? = null,
     ): List<FtsMatch> {
         if (!active || query.isBlank()) return emptyList()
         return if (hasBm25) {
             searchBm25(query, allowedBookIds)
         } else {
-            searchTsvector(query, allowedBookIds)
+            searchTsvector(query, allowedBookIds, language)
         }
     }
 
@@ -211,14 +214,15 @@ class FtsService(
     fun searchAll(
         query: String,
         allowedBookIds: Collection<String>? = null,
+        language: String? = null,
     ): List<FtsMatch> {
         // For CJK queries, use trigram search (tsvector can't tokenize CJK characters)
         if (containsCjk(query) && hasTrgm) {
             return searchTrigram(query, allowedBookIds)
         }
 
-        val metadataResults = searchMetadata(query, allowedBookIds)
-        val contentResults = search(query, allowedBookIds)
+        val metadataResults = searchMetadata(query, allowedBookIds, language)
+        val contentResults = search(query, allowedBookIds, language)
 
         // Merge: metadata results first (boosted rank), then content results not in metadata
         val metadataIds = metadataResults.map { it.bookId }.toSet()
@@ -233,6 +237,7 @@ class FtsService(
     private fun searchTsvector(
         query: String,
         allowedBookIds: Collection<String>?,
+        language: String? = null,
     ): List<FtsMatch> =
         try {
             jdbi.withHandle<List<FtsMatch>, Exception> { h ->
@@ -500,6 +505,30 @@ class FtsService(
                 false
             }
     }
+
+    /**
+     * Maps a book language code to a PostgreSQL text search configuration name.
+     * Falls back to 'simple' for unsupported languages.
+     */
+    private fun pgTsConfig(langCode: String?): String =
+        when (langCode?.lowercase()?.take(2)) {
+            "en" -> "english"
+            "fr" -> "french"
+            "de" -> "german"
+            "es" -> "spanish"
+            "it" -> "italian"
+            "pt" -> "portuguese"
+            "nl" -> "dutch"
+            "da" -> "danish"
+            "fi" -> "finnish"
+            "hu" -> "hungarian"
+            "no" -> "norwegian"
+            "ro" -> "romanian"
+            "ru" -> "russian"
+            "sv" -> "swedish"
+            "tr" -> "turkish"
+            else -> "simple"
+        }
 
     /** Returns true if the query contains CJK (Chinese/Japanese/Korean) characters. */
     private fun containsCjk(query: String): Boolean =
