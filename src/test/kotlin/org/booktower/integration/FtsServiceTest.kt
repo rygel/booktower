@@ -23,7 +23,7 @@ import java.util.UUID
  */
 @Testcontainers
 @EnabledIfSystemProperty(named = "fts.integration", matches = "true")
-class FtsIntegrationTest {
+class FtsServiceTest {
     companion object {
         @Container
         @JvmStatic
