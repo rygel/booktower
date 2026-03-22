@@ -222,6 +222,8 @@ val appModule =
         single { org.booktower.services.BackupService(get<Database>().getJdbi()) }
         single { org.booktower.services.PositionSyncService(get<Database>().getJdbi()) }
 
+        single { org.booktower.services.WishlistService(get<Database>().getJdbi()) }
+
         // ── Handler objects ──────────────────────────────────────────────────
         single {
             AuthHandler2(
@@ -400,6 +402,7 @@ val appModule =
                 bookConditionService = get<org.booktower.services.BookConditionService>(),
                 readingListService = get<org.booktower.services.ReadingListService>(),
                 annotationService = get<org.booktower.services.AnnotationService>(),
+                wishlistService = get<org.booktower.services.WishlistService>(),
             )
         }
         single {
