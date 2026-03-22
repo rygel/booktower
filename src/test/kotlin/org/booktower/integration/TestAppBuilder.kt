@@ -237,7 +237,11 @@ fun buildTestApp(
             magicShelfService,
             TestFixture.templateRenderer,
             readingSessionService,
-            null,
+            null, // libraryWatchService
+            null, // bookLinkService
+            null, // bookSharingService
+            bgTaskService,
+            org.booktower.services.LibraryStatsService(jdbi),
         )
     val bgTaskHandler = BackgroundTaskHandler(bgTaskService)
     val journalHandler = JournalHandler(journal)
