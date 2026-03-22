@@ -109,10 +109,11 @@ function initializeNotifications() {
     const error = urlParams.get('error');
 
     if (success) {
-        showNotification(decodeURIComponent(success), 'success');
+        // Sanitize URL param to prevent DOM XSS — strip HTML tags
+        showNotification(decodeURIComponent(success).replace(/<[^>]*>/g, ''), 'success');
         cleanUrl();
     } else if (error) {
-        showNotification(decodeURIComponent(error), 'error');
+        showNotification(decodeURIComponent(error).replace(/<[^>]*>/g, ''), 'error');
         cleanUrl();
     }
 }
