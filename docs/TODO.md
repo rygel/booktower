@@ -6,27 +6,59 @@
 
 ## Remaining
 
-### Features
-- [ ] Reading lists — curated ordered lists of books with completion tracking (like playlists)
-- [ ] Shared annotations — share highlights/notes with other users on the same server
-- [ ] Want-to-read from external sources — browse and add books to a wishlist without owning the file
-- [ ] Duplicate page detection UI — surface ComicPageHashService results for user cleanup
-- [ ] CBL reading list import — import ComicRack reading lists (.cbl files)
-- [ ] Server-wide announcements — admin can post messages visible to all users
+### UI needed (API exists, no user interface)
+- [ ] Search bar in top navigation + advanced search page
+- [ ] Library statistics dashboard
+- [ ] Webhooks management UI
+- [ ] Reading timeline page
+- [ ] Reading goals progress card on dashboard
+- [ ] Annotation export buttons
+- [ ] Smart discovery / recommendations page
+- [ ] Database backup/restore UI in admin panel
+- [ ] Custom metadata fields UI on book detail
+- [ ] Public profile settings + profile page
+- [ ] Reading speed analytics card
+- [ ] Reading streaks widget on dashboard
+- [ ] Book condition tracker UI on book detail
+- [ ] Reading lists page
+- [ ] Shared annotations in reader
+- [ ] Wishlist page
+- [ ] Duplicate detection + merge UI in admin
+- [ ] Bulk metadata refresh button in admin
+- [ ] Batch import UI in admin
+- [ ] Collections management page
+- [ ] Filter presets UI
+- [ ] Book drop UI
+- [ ] Metadata proposals review UI
+- [ ] Alternative covers picker
+- [ ] Library health check dashboard
+- [ ] Email provider config UI
+- [ ] Scheduled tasks management UI
+- [ ] OPDS credentials settings
+- [ ] Content restrictions settings
+- [ ] Device management UI (Kobo/KOReader)
+- [ ] Hardcover.app sync settings
+- [ ] Book delivery config + send button
+- [ ] Position sync indicator in reader
+
+### Features (new)
+- [ ] Duplicate page detection UI
+- [ ] CBL reading list import
+- [ ] Server-wide announcements
 
 ### Performance
-- [ ] Profile actual page load times end-to-end and identify remaining bottlenecks
+- [ ] Profile actual page load times
 
 ### Testing
-- [ ] Book delivery to Kindle — needs real email + Kindle device
-- [ ] Integration tests for untested services (9 services)
+- [ ] Book delivery to Kindle — needs real device
+- [ ] Integration tests for untested services
 
 ### Future
-- [ ] Standalone KOReader/Kobo device simulator (sub-Maven module for user self-testing)
-- [ ] ISBN barcode scanner (browser camera API)
-- [ ] Text-to-speech in reader (browser Web Speech API)
-- [ ] Import from Calibre (metadata.db)
-- [ ] Email digest (weekly reading stats summary)
+- [ ] Standalone KOReader/Kobo device simulator
+- [ ] ISBN barcode scanner
+- [ ] Text-to-speech in reader
+- [ ] Import from Calibre
+- [ ] Email digest
 
 ## Completed
 
