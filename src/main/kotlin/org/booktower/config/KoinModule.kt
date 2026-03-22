@@ -206,6 +206,14 @@ val appModule =
         single { WeblateHandler(get<AppConfig>().weblate) }
         single { org.booktower.services.CollectionService(get<Database>().getJdbi()) }
         single { org.booktower.services.BulkMetadataRefreshService(get<Database>().getJdbi(), get(), get(), get()) }
+        single { org.booktower.services.LibraryStatsService(get<Database>().getJdbi()) }
+        single { org.booktower.services.WebhookService(get<Database>().getJdbi()) }
+        single { org.booktower.services.ReadingTimelineService(get<Database>().getJdbi()) }
+        single { org.booktower.services.ReadingGoalService(get<Database>().getJdbi(), get()) }
+        single { org.booktower.services.AnnotationExportService(get<Database>().getJdbi()) }
+        single { org.booktower.services.DiscoveryService(get<Database>().getJdbi()) }
+        single { org.booktower.services.BackupService(get<Database>().getJdbi()) }
+        single { org.booktower.services.PositionSyncService(get<Database>().getJdbi()) }
 
         // ── Handler objects ──────────────────────────────────────────────────
         single {
@@ -372,6 +380,13 @@ val appModule =
                 goodreadsImportHandler = get<GoodreadsImportHandler>(),
                 collectionService = get<org.booktower.services.CollectionService>(),
                 auditService = get<org.booktower.services.AuditService>(),
+                libraryStatsService = get<org.booktower.services.LibraryStatsService>(),
+                webhookService = get<org.booktower.services.WebhookService>(),
+                readingTimelineService = get<org.booktower.services.ReadingTimelineService>(),
+                readingGoalService = get<org.booktower.services.ReadingGoalService>(),
+                annotationExportService = get<org.booktower.services.AnnotationExportService>(),
+                discoveryService = get<org.booktower.services.DiscoveryService>(),
+                positionSyncService = get<org.booktower.services.PositionSyncService>(),
             )
         }
         single {
@@ -385,6 +400,7 @@ val appModule =
                 get<BulkCoverService>(),
                 get<TelemetryService>(),
                 get<org.booktower.services.BulkMetadataRefreshService>(),
+                get<org.booktower.services.BackupService>(),
             )
         }
         single {
