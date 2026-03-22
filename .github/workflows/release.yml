@@ -44,6 +44,7 @@ jobs:
   # ── Native binaries — one job per platform ────────────────────────────────
   native:
     name: Native (${{ matrix.label }})
+    continue-on-error: true  # experimental — don't block the release
     runs-on: ${{ matrix.os }}
     permissions:
       contents: read
@@ -221,7 +222,7 @@ jobs:
   # ── GitHub Release — collects all artifacts and publishes ────────────────
   publish:
     name: Publish Release
-    needs: [ fat-jar, native, docker ]
+    needs: [ fat-jar, docker ]
     runs-on: ubuntu-latest
     permissions:
       contents: write
