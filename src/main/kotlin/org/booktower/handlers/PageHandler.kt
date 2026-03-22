@@ -52,6 +52,8 @@ class PageHandler(
     private val bookSharingService: org.booktower.services.BookSharingService? = null,
     private val backgroundTaskService: org.booktower.services.BackgroundTaskService? = null,
     private val libraryStatsService: org.booktower.services.LibraryStatsService? = null,
+    private val webhookService: org.booktower.services.WebhookService? = null,
+    private val readingTimelineService: org.booktower.services.ReadingTimelineService? = null,
 ) {
     /** Build a PageContext for any authenticated request. */
     private fun pageContext(req: Request): org.booktower.web.PageContext =
@@ -532,6 +534,19 @@ class PageHandler(
             templateRenderer.render(
                 "librarystats.kte",
                 pc.toMap("stats" to stats),
+            ),
+        )
+    }
+
+    fun timeline(req: Request): Response {
+        val userId = auth(req) ?: return redirectToLogin()
+        val pc = pageContext(req)
+        val days = 90
+        val entries = readingTimelineService?.getTimeline(userId, days, 50) ?: emptyList()
+        return htmlOk(
+            templateRenderer.render(
+                "timeline.kte",
+                pc.toMap("entries" to entries, "days" to days),
             ),
         )
     }

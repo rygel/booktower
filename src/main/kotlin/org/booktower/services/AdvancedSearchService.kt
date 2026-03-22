@@ -182,7 +182,7 @@ class AdvancedSearchService(
             val q =
                 h.createQuery(
                     """
-                SELECT DISTINCT b.id, b.title, b.author, b.cover_url, b.isbn, b.series, b.language, b.book_format
+                SELECT DISTINCT b.id, b.title, b.author, b.cover_path, b.isbn, b.series, b.language, b.book_format
                 FROM books b
                 INNER JOIN libraries l ON b.library_id = l.id
                 $tagJoin $statusJoin $customJoin
@@ -218,7 +218,7 @@ class AdvancedSearchService(
                             bookId = row.getColumn("id", String::class.java) ?: "",
                             title = row.getColumn("title", String::class.java) ?: "",
                             author = row.getColumn("author", String::class.java),
-                            coverUrl = row.getColumn("cover_url", String::class.java),
+                            coverUrl = row.getColumn("cover_path", String::class.java),
                             isbn = row.getColumn("isbn", String::class.java),
                             series = row.getColumn("series", String::class.java),
                             language = row.getColumn("language", String::class.java),

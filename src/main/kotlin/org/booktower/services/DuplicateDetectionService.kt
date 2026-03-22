@@ -113,7 +113,7 @@ class DuplicateDetectionService(
         kept: Map<String, Any?>,
         donor: Map<String, Any?>,
     ) {
-        val fields = listOf("isbn", "description", "publisher", "published_date", "page_count", "series", "series_index", "language", "cover_url")
+        val fields = listOf("isbn", "description", "publisher", "published_date", "page_count", "series", "series_index", "language", "cover_path")
         val updates = mutableListOf<Pair<String, Any>>()
         for (field in fields) {
             val keptVal = kept[field]

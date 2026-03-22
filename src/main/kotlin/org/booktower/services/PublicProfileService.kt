@@ -71,7 +71,7 @@ class PublicProfileService(
                 h
                     .createQuery(
                         """
-                    SELECT b.title, b.author, b.cover_url
+                    SELECT b.title, b.author, b.cover_path
                     FROM book_status bs
                     INNER JOIN books b ON bs.book_id = b.id
                     INNER JOIN libraries l ON b.library_id = l.id
@@ -84,7 +84,7 @@ class PublicProfileService(
                         PublicBookEntry(
                             title = row.getColumn("title", String::class.java) ?: "",
                             author = row.getColumn("author", String::class.java),
-                            coverUrl = row.getColumn("cover_url", String::class.java),
+                            coverUrl = row.getColumn("cover_path", String::class.java),
                             finishedAt = null,
                         )
                     }.list()
@@ -93,7 +93,7 @@ class PublicProfileService(
                 h
                     .createQuery(
                         """
-                    SELECT b.title, b.author, b.cover_url, bs.updated_at AS finished_at
+                    SELECT b.title, b.author, b.cover_path, bs.updated_at AS finished_at
                     FROM book_status bs
                     INNER JOIN books b ON bs.book_id = b.id
                     INNER JOIN libraries l ON b.library_id = l.id
@@ -106,7 +106,7 @@ class PublicProfileService(
                         PublicBookEntry(
                             title = row.getColumn("title", String::class.java) ?: "",
                             author = row.getColumn("author", String::class.java),
-                            coverUrl = row.getColumn("cover_url", String::class.java),
+                            coverUrl = row.getColumn("cover_path", String::class.java),
                             finishedAt = row.getColumn("finished_at", String::class.java),
                         )
                     }.list()
