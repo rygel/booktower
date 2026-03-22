@@ -38,7 +38,7 @@ class ReadingTimelineService(
                     """
                 SELECT * FROM (
                     -- Books finished
-                    SELECT bs.updated_at AS event_date,
+                    SELECT CAST(bs.updated_at AS VARCHAR(30)) AS event_date,
                            b.id AS book_id, b.title AS book_title, b.author AS book_author,
                            b.cover_path,
                            'finished' AS event_type,
@@ -67,7 +67,7 @@ class ReadingTimelineService(
                     UNION ALL
 
                     -- Books added
-                    SELECT b.added_at AS event_date,
+                    SELECT CAST(b.added_at AS VARCHAR(30)) AS event_date,
                            b.id AS book_id, b.title AS book_title, b.author AS book_author,
                            b.cover_path,
                            'added' AS event_type,
