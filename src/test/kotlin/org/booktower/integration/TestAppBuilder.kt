@@ -324,6 +324,7 @@ fun buildTestApp(
             telemetryService,
             null,
             null,
+            null,
         )
     val metadataApiRouter =
         MetadataApiRouter(

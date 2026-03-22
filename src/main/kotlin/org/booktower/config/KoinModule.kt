@@ -206,6 +206,7 @@ val appModule =
         single { WeblateHandler(get<AppConfig>().weblate) }
         single { org.booktower.services.CollectionService(get<Database>().getJdbi()) }
         single { org.booktower.services.BulkMetadataRefreshService(get<Database>().getJdbi(), get(), get(), get()) }
+        single { org.booktower.services.BatchImportService(get<Database>().getJdbi(), get(), get(), get(), get(), get()) }
         single { org.booktower.services.LibraryStatsService(get<Database>().getJdbi()) }
         single { org.booktower.services.WebhookService(get<Database>().getJdbi()) }
         single { org.booktower.services.ReadingTimelineService(get<Database>().getJdbi()) }
@@ -401,6 +402,7 @@ val appModule =
                 get<TelemetryService>(),
                 get<org.booktower.services.BulkMetadataRefreshService>(),
                 get<org.booktower.services.BackupService>(),
+                get<org.booktower.services.BatchImportService>(),
             )
         }
         single {
