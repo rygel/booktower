@@ -6,30 +6,26 @@
 
 ## Remaining
 
-### Comic Reader
-- [ ] Smooth page transitions with animation toggle
-- [ ] Vertical reading direction (top-to-bottom)
-- [ ] Configurable page gaps for continuous mode
-
-### Full-Text Search
-- [ ] Multi-language FTS config per book (use book's `language` field to select PG text search config)
-
 ### Performance
 - [ ] Profile actual page load times end-to-end and identify remaining bottlenecks
 
-### UI
-- [ ] Improved mobile responsive layout
-- [ ] Dark mode preview in theme selector
-
 ### Testing
-- [ ] Kobo/KOReader sync — tested with mocks only, never with real hardware
 - [ ] Book delivery to Kindle — needs real email + Kindle device
+
+### Future
+- [ ] Standalone KOReader/Kobo device simulator (sub-Maven module for user self-testing)
 
 ## Completed
 
+- [x] KOReader + Kobo sync integration tests (17 tests, PR #107)
+- [x] Configurable page gaps for comic reader (PR #106)
+- [x] Per-book language FTS config — 30 languages (PR #105)
+- [x] HTTP Range-based resumable downloads (PR #104)
 - [x] Replace raw SQL in tests with service method calls (PR #102)
 - [x] Koin DI resolution test — 41 bindings verified (PR #101)
-- [x] Comic reader: double page spread, continuous scroll, 5 fit modes, click zones, swipe, preloading
+- [x] Comic reader: double page, continuous scroll, fit modes, transitions, vertical, page gaps
+- [x] Mobile responsive layout — handled by outerstellar-platform (hamburger menu, breakpoints, touch targets)
+- [x] Dark mode preview in theme selector — handled by outerstellar-platform (luminance detection, color swatches)
 - [x] Connection pool tuning (maxLifetime, leak detection, JDBC4 validation)
 - [x] Activity log page (background tasks + audit log)
 - [x] BM25 index auto-creation when pg_textsearch available
