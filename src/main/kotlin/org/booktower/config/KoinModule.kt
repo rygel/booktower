@@ -206,6 +206,9 @@ val appModule =
         single { WeblateHandler(get<AppConfig>().weblate) }
         single { org.booktower.services.CollectionService(get<Database>().getJdbi()) }
         single { org.booktower.services.BulkMetadataRefreshService(get<Database>().getJdbi(), get(), get(), get()) }
+        single { org.booktower.services.LibraryStatsService(get<Database>().getJdbi()) }
+        single { org.booktower.services.WebhookService(get<Database>().getJdbi()) }
+        single { org.booktower.services.ReadingTimelineService(get<Database>().getJdbi()) }
 
         // ── Handler objects ──────────────────────────────────────────────────
         single {
@@ -372,6 +375,9 @@ val appModule =
                 goodreadsImportHandler = get<GoodreadsImportHandler>(),
                 collectionService = get<org.booktower.services.CollectionService>(),
                 auditService = get<org.booktower.services.AuditService>(),
+                libraryStatsService = get<org.booktower.services.LibraryStatsService>(),
+                webhookService = get<org.booktower.services.WebhookService>(),
+                readingTimelineService = get<org.booktower.services.ReadingTimelineService>(),
             )
         }
         single {

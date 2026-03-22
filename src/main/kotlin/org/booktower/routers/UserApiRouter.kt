@@ -47,6 +47,9 @@ class UserApiRouter(
     private val goodreadsImportHandler: GoodreadsImportHandler,
     private val collectionService: CollectionService? = null,
     private val auditService: org.booktower.services.AuditService? = null,
+    private val libraryStatsService: org.booktower.services.LibraryStatsService? = null,
+    private val webhookService: org.booktower.services.WebhookService? = null,
+    private val readingTimelineService: org.booktower.services.ReadingTimelineService? = null,
 ) {
     @Suppress("LongMethod")
     fun routes(): List<RoutingHttpHandler> =
@@ -114,6 +117,15 @@ class UserApiRouter(
             "/api/collections/{id}" bind Method.DELETE to filters.auth.then(::deleteCollection),
             "/api/collections/{id}/books/{bookId}" bind Method.POST to filters.auth.then(::addBookToCollection),
             "/api/collections/{id}/books/{bookId}" bind Method.DELETE to filters.auth.then(::removeBookFromCollection),
+            // Library statistics
+            "/api/stats/library" bind Method.GET to filters.auth.then(::getLibraryStats),
+            // Reading timeline
+            "/api/timeline" bind Method.GET to filters.auth.then(::getReadingTimeline),
+            // Webhooks
+            "/api/webhooks" bind Method.GET to filters.auth.then(::listWebhooks),
+            "/api/webhooks" bind Method.POST to filters.auth.then(::createWebhook),
+            "/api/webhooks/{id}" bind Method.DELETE to filters.auth.then(::deleteWebhook),
+            "/api/webhooks/{id}/toggle" bind Method.POST to filters.auth.then(::toggleWebhook),
         )
 
     // ─── Collections ────────────────────────────────────────────────────────
@@ -714,5 +726,96 @@ class UserApiRouter(
                 org.booktower.config.Json.mapper
                     .writeValueAsString(entries),
             )
+    }
+
+    // ─── Library statistics ───────────────────────────────────────────────
+
+    private fun getLibraryStats(req: Request): Response {
+        val svc = libraryStatsService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val userId = AuthenticatedUser.from(req)
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(svc.getStats(userId)),
+            )
+    }
+
+    // ─── Reading timeline ─────────────────────────────────────────────────
+
+    private fun getReadingTimeline(req: Request): Response {
+        val svc = readingTimelineService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val userId = AuthenticatedUser.from(req)
+        val days = req.query("days")?.toIntOrNull()?.coerceIn(7, 365) ?: 90
+        val limit = req.query("limit")?.toIntOrNull()?.coerceIn(1, 200) ?: 50
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(svc.getTimeline(userId, days, limit)),
+            )
+    }
+
+    // ─── Webhooks ─────────────────────────────────────────────────────────
+
+    private fun listWebhooks(req: Request): Response {
+        val svc = webhookService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val userId = AuthenticatedUser.from(req)
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(svc.list(userId)),
+            )
+    }
+
+    private fun createWebhook(req: Request): Response {
+        val svc = webhookService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val userId = AuthenticatedUser.from(req)
+        val body =
+            runCatching {
+                org.booktower.config.Json.mapper.readValue(
+                    req.bodyString(),
+                    org.booktower.services.CreateWebhookRequest::class.java,
+                )
+            }.getOrNull() ?: return Response(Status.BAD_REQUEST)
+                .header("Content-Type", "application/json")
+                .body("""{"error":"Invalid request body"}""")
+        if (body.url.isBlank() || body.name.isBlank() || body.events.isEmpty()) {
+            return Response(Status.BAD_REQUEST)
+                .header("Content-Type", "application/json")
+                .body("""{"error":"name, url, and events are required"}""")
+        }
+        val webhook = svc.create(userId, body)
+        return Response(Status.CREATED)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(webhook),
+            )
+    }
+
+    private fun deleteWebhook(req: Request): Response {
+        val svc = webhookService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val userId = AuthenticatedUser.from(req)
+        val id =
+            req.uri.path
+                .split("/")
+                .lastOrNull() ?: return Response(Status.BAD_REQUEST)
+        return if (svc.delete(userId, id)) Response(Status.NO_CONTENT) else Response(Status.NOT_FOUND)
+    }
+
+    private fun toggleWebhook(req: Request): Response {
+        val svc = webhookService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val userId = AuthenticatedUser.from(req)
+        val parts = req.uri.path.split("/")
+        val id = parts.dropLast(1).lastOrNull() ?: return Response(Status.BAD_REQUEST)
+        val body =
+            runCatching {
+                org.booktower.config.Json.mapper
+                    .readTree(req.bodyString())
+            }.getOrNull()
+        val enabled = body?.get("enabled")?.asBoolean() ?: return Response(Status.BAD_REQUEST)
+        return if (svc.toggle(userId, id, enabled)) Response(Status.NO_CONTENT) else Response(Status.NOT_FOUND)
     }
 }
