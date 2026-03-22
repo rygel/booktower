@@ -1033,6 +1033,12 @@ var BT_DEVICE = (function() {
         fetch(PROG_URL, { method: 'POST', body: body }).then(function (r) {
             if (r.ok) { saveInd.style.visibility = 'visible'; setTimeout(function () { saveInd.style.visibility = 'hidden'; }, 2000); }
         }).catch(function () {});
+        // Cross-device position sync
+        fetch('/api/books/' + BOOK_ID + '/position', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ currentPage: page, positionData: JSON.stringify({ page: page }), deviceId: BT_DEVICE })
+        }).catch(function () {});
     }
 
     // ── Annotation colors ──────────────────────────────────────────────────────
@@ -1611,6 +1617,13 @@ var BT_DEVICE = (function() {
                     saveInd.style.visibility = 'visible';
                     setTimeout(function () { saveInd.style.visibility = 'hidden'; }, 2000);
                 }
+            }).catch(function () {});
+            // Cross-device position sync
+            var posData = lastLocation ? JSON.stringify({ cfi: lastLocation.start.cfi }) : null;
+            fetch('/api/books/' + BOOK_ID + '/position', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ currentPage: pct, positionData: posData, deviceId: BT_DEVICE })
             }).catch(function () {});
         }, 1500);
     }
