@@ -38,6 +38,145 @@
         </button>
     </form>
 
+    <!-- Advanced Search -->
+    <details id="advanced-search" style="margin-bottom:1.5rem;">
+        <summary style="cursor:pointer; font-size:0.85rem; color:var(--bt-accent-dim); font-weight:600;">
+            <i class="ri-filter-3-line"></i> ${pc.i18n.translate("page.search.advanced")}
+        </summary>
+        <div id="adv-search-form" style="margin-top:0.75rem; display:grid; grid-template-columns:repeat(auto-fill, minmax(14rem, 1fr)); gap:0.5rem; padding:1rem; background:var(--bt-surface-raised); border-radius:0.5rem; border:1px solid var(--bt-border);">
+            <div>
+                <label style="font-size:0.75rem; color:var(--bt-muted); display:block; margin-bottom:0.2rem;">${pc.i18n.translate("label.title")}</label>
+                <input type="text" id="adv-title" placeholder="${pc.i18n.translate("label.title")}" style="width:100%; padding:0.5rem;">
+            </div>
+            <div>
+                <label style="font-size:0.75rem; color:var(--bt-muted); display:block; margin-bottom:0.2rem;">${pc.i18n.translate("label.author")}</label>
+                <input type="text" id="adv-author" placeholder="${pc.i18n.translate("label.author")}" style="width:100%; padding:0.5rem;">
+            </div>
+            <div>
+                <label style="font-size:0.75rem; color:var(--bt-muted); display:block; margin-bottom:0.2rem;">${pc.i18n.translate("label.subtitle")}</label>
+                <input type="text" id="adv-subtitle" placeholder="${pc.i18n.translate("label.subtitle")}" style="width:100%; padding:0.5rem;">
+            </div>
+            <div>
+                <label style="font-size:0.75rem; color:var(--bt-muted); display:block; margin-bottom:0.2rem;">ISBN</label>
+                <input type="text" id="adv-isbn" placeholder="ISBN" style="width:100%; padding:0.5rem;">
+            </div>
+            <div>
+                <label style="font-size:0.75rem; color:var(--bt-muted); display:block; margin-bottom:0.2rem;">${pc.i18n.translate("label.publisher")}</label>
+                <input type="text" id="adv-publisher" placeholder="${pc.i18n.translate("label.publisher")}" style="width:100%; padding:0.5rem;">
+            </div>
+            <div>
+                <label style="font-size:0.75rem; color:var(--bt-muted); display:block; margin-bottom:0.2rem;">${pc.i18n.translate("label.series")}</label>
+                <input type="text" id="adv-series" placeholder="${pc.i18n.translate("label.series")}" style="width:100%; padding:0.5rem;">
+            </div>
+            <div>
+                <label style="font-size:0.75rem; color:var(--bt-muted); display:block; margin-bottom:0.2rem;">${pc.i18n.translate("label.language")}</label>
+                <input type="text" id="adv-language" placeholder="en, fr, de..." style="width:100%; padding:0.5rem;">
+            </div>
+            <div>
+                <label style="font-size:0.75rem; color:var(--bt-muted); display:block; margin-bottom:0.2rem;">${pc.i18n.translate("label.format")}</label>
+                <select id="adv-format" style="width:100%; padding:0.5rem;">
+                    <option value="">${pc.i18n.translate("filter.all")}</option>
+                    <option value="EBOOK">EBOOK</option>
+                    <option value="COMIC">COMIC</option>
+                    <option value="AUDIOBOOK">AUDIOBOOK</option>
+                </select>
+            </div>
+            <div>
+                <label style="font-size:0.75rem; color:var(--bt-muted); display:block; margin-bottom:0.2rem;">${pc.i18n.translate("label.tag")}</label>
+                <input type="text" id="adv-tag" placeholder="${pc.i18n.translate("label.tag")}" style="width:100%; padding:0.5rem;">
+            </div>
+            <div>
+                <label style="font-size:0.75rem; color:var(--bt-muted); display:block; margin-bottom:0.2rem;">${pc.i18n.translate("page.search.content")}</label>
+                <input type="text" id="adv-content" placeholder="${pc.i18n.translate("page.search.content.placeholder")}" style="width:100%; padding:0.5rem;">
+            </div>
+            <div>
+                <label style="font-size:0.75rem; color:var(--bt-muted); display:block; margin-bottom:0.2rem;">${pc.i18n.translate("page.search.custom.field")}</label>
+                <input type="text" id="adv-custom-field" placeholder="${pc.i18n.translate("page.search.custom.field")}" style="width:100%; padding:0.5rem;">
+            </div>
+            <div>
+                <label style="font-size:0.75rem; color:var(--bt-muted); display:block; margin-bottom:0.2rem;">${pc.i18n.translate("page.search.custom.value")}</label>
+                <input type="text" id="adv-custom-value" placeholder="${pc.i18n.translate("page.search.custom.value")}" style="width:100%; padding:0.5rem;">
+            </div>
+            <div style="grid-column: 1 / -1; display:flex; gap:0.5rem; margin-top:0.5rem;">
+                <button type="button" id="adv-search-btn" class="btn-primary flex-center gap-sm" style="padding:0.6rem 1.25rem;">
+                    <i class="ri-search-line"></i> ${pc.i18n.translate("page.search.advanced.run")}
+                </button>
+                <button type="button" id="adv-clear-btn" class="btn-secondary flex-center gap-sm" style="padding:0.6rem 1.25rem;">
+                    <i class="ri-delete-bin-line"></i> ${pc.i18n.translate("page.search.advanced.clear")}
+                </button>
+            </div>
+        </div>
+        <div id="adv-results" style="margin-top:1rem;"></div>
+    </details>
+
+    <script>
+    (function() {
+        var searchBtn = document.getElementById('adv-search-btn');
+        var clearBtn = document.getElementById('adv-clear-btn');
+        var resultsDiv = document.getElementById('adv-results');
+        if (!searchBtn) return;
+
+        searchBtn.addEventListener('click', function() {
+            var body = {};
+            var fields = {
+                title: 'adv-title', author: 'adv-author', subtitle: 'adv-subtitle',
+                isbn: 'adv-isbn', publisher: 'adv-publisher', series: 'adv-series',
+                language: 'adv-language', format: 'adv-format', tag: 'adv-tag',
+                contentQuery: 'adv-content', customField: 'adv-custom-field', customValue: 'adv-custom-value'
+            };
+            for (var key in fields) {
+                var val = document.getElementById(fields[key])?.value?.trim();
+                if (val) body[key] = val;
+            }
+            if (Object.keys(body).length === 0) return;
+
+            resultsDiv.textContent = 'Searching...';
+            fetch('/api/search/advanced', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            }).then(function(r) { return r.json(); }).then(function(data) {
+                resultsDiv.textContent = '';
+                if (!data.results || data.results.length === 0) {
+                    resultsDiv.innerHTML = '<p style="color:var(--bt-muted); font-size:0.85rem;">No results found.</p>';
+                    return;
+                }
+                var info = document.createElement('p');
+                info.style.cssText = 'font-size:0.85rem; color:var(--bt-muted); margin-bottom:0.75rem;';
+                info.textContent = data.totalCount + ' result(s) found';
+                resultsDiv.appendChild(info);
+                var grid = document.createElement('div');
+                grid.className = 'book-grid';
+                grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(150px, 1fr))';
+                data.results.forEach(function(book) {
+                    var card = document.createElement('a');
+                    card.href = '/books/' + book.bookId;
+                    card.className = 'book-card';
+                    card.style.cssText = 'text-decoration:none; display:flex; flex-direction:column; gap:0.25rem; padding:0.5rem; border-radius:0.5rem; border:1px solid var(--bt-border); background:var(--bt-surface);';
+                    var img = '';
+                    if (book.coverUrl) {
+                        img = '<img src="' + book.coverUrl + '" alt="" style="width:100%; aspect-ratio:2/3; object-fit:cover; border-radius:0.375rem;">';
+                    } else {
+                        img = '<div style="width:100%; aspect-ratio:2/3; background:var(--bt-surface-raised); border-radius:0.375rem; display:flex; align-items:center; justify-content:center; color:var(--bt-muted);"><i class="ri-book-line" style="font-size:2rem;"></i></div>';
+                    }
+                    card.innerHTML = img +
+                        '<div style="font-size:0.8rem; font-weight:600; color:var(--bt-text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + (book.title || '') + '</div>' +
+                        '<div style="font-size:0.7rem; color:var(--bt-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + (book.author || '') + '</div>';
+                    grid.appendChild(card);
+                });
+                resultsDiv.appendChild(grid);
+            }).catch(function(err) {
+                resultsDiv.textContent = 'Search failed: ' + err.message;
+            });
+        });
+
+        clearBtn.addEventListener('click', function() {
+            document.querySelectorAll('#adv-search-form input, #adv-search-form select').forEach(function(el) { el.value = ''; });
+            resultsDiv.textContent = '';
+        });
+    })();
+    </script>
+
     @if(query.isNotBlank())
         <p class="text-sm text-subtle mb-2">
             @if(total == 0)
