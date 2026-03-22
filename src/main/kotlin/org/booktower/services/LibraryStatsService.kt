@@ -147,7 +147,7 @@ class LibraryStatsService(
                 h
                     .createQuery(
                         """
-                    SELECT SUBSTRING(b.added_at, 1, 7) AS added_month, COUNT(*) AS cnt
+                    SELECT SUBSTRING(CAST(b.added_at AS VARCHAR(30)), 1, 7) AS added_month, COUNT(*) AS cnt
                     FROM books b INNER JOIN libraries l ON b.library_id = l.id
                     WHERE l.user_id = ?
                     GROUP BY added_month ORDER BY added_month DESC LIMIT 12
