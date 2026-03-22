@@ -167,6 +167,7 @@ val appModule =
         single { LibraryHealthService(get<Database>().getJdbi()) }
         single { AuthorMetadataService() }
         single { RecommendationService(get<Database>().getJdbi()) }
+        single { org.booktower.services.DiscoveryService(get<Database>().getJdbi()) }
         single { AlternativeCoverService() }
         single { BookDeliveryService(get<Database>().getJdbi(), get(), get(), get<AppConfig>().storage.booksPath) }
         single { BookDropService(get(), "${get<AppConfig>().storage.booksPath}/bookdrop") }
@@ -382,6 +383,7 @@ val appModule =
                 readingTimelineService = get<org.booktower.services.ReadingTimelineService>(),
                 readingGoalService = get<org.booktower.services.ReadingGoalService>(),
                 annotationExportService = get<org.booktower.services.AnnotationExportService>(),
+                discoveryService = get<org.booktower.services.DiscoveryService>(),
             )
         }
         single {

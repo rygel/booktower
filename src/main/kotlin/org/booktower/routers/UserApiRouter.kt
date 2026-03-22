@@ -52,6 +52,7 @@ class UserApiRouter(
     private val readingTimelineService: org.booktower.services.ReadingTimelineService? = null,
     private val readingGoalService: org.booktower.services.ReadingGoalService? = null,
     private val annotationExportService: org.booktower.services.AnnotationExportService? = null,
+    private val discoveryService: org.booktower.services.DiscoveryService? = null,
 ) {
     @Suppress("LongMethod")
     fun routes(): List<RoutingHttpHandler> =
@@ -135,6 +136,8 @@ class UserApiRouter(
             "/api/export/annotations" bind Method.GET to filters.auth.then(::exportAnnotations),
             "/api/export/annotations/markdown" bind Method.GET to filters.auth.then(::exportAnnotationsMarkdown),
             "/api/export/annotations/readwise" bind Method.GET to filters.auth.then(::exportAnnotationsReadwise),
+            // Discovery / recommendations
+            "/api/discover" bind Method.GET to filters.auth.then(::discover),
         )
 
     // ─── Collections ────────────────────────────────────────────────────────
@@ -778,6 +781,10 @@ class UserApiRouter(
 
     private fun listWebhooks(req: Request): Response {
         val svc = webhookService ?: return Response(Status.SERVICE_UNAVAILABLE)
+    // ─── Discovery / recommendations ──────────────────────────────────────
+
+    private fun discover(req: Request): Response {
+        val svc = discoveryService ?: return Response(Status.SERVICE_UNAVAILABLE)
         val userId = AuthenticatedUser.from(req)
         return Response(Status.OK)
             .header("Content-Type", "application/json")
@@ -891,5 +898,8 @@ class UserApiRouter(
             .header("Content-Type", "text/csv; charset=utf-8")
             .header("Content-Disposition", "attachment; filename=\"booktower-readwise.csv\"")
             .body(svc.toReadwiseCsv(userId))
+    }
+                    .writeValueAsString(svc.discover(userId)),
+            )
     }
 }
