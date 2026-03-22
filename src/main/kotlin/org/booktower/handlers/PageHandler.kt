@@ -51,6 +51,7 @@ class PageHandler(
     private val bookLinkService: org.booktower.services.BookLinkService? = null,
     private val bookSharingService: org.booktower.services.BookSharingService? = null,
     private val backgroundTaskService: org.booktower.services.BackgroundTaskService? = null,
+    private val libraryStatsService: org.booktower.services.LibraryStatsService? = null,
 ) {
     /** Build a PageContext for any authenticated request. */
     private fun pageContext(req: Request): org.booktower.web.PageContext =
@@ -519,6 +520,18 @@ class PageHandler(
                     "summary" to summary,
                     "recentSessions" to recentSessions,
                 ),
+            ),
+        )
+    }
+
+    fun libraryStats(req: Request): Response {
+        val userId = auth(req) ?: return redirectToLogin()
+        val pc = pageContext(req)
+        val stats = libraryStatsService?.getStats(userId)
+        return htmlOk(
+            templateRenderer.render(
+                "librarystats.kte",
+                pc.toMap("stats" to stats),
             ),
         )
     }

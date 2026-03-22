@@ -281,6 +281,7 @@ val appModule =
                 getOrNull(),
                 getOrNull(),
                 get<BackgroundTaskService>(),
+                getOrNull<org.booktower.services.LibraryStatsService>(),
             )
         }
         single { BackgroundTaskHandler(get(), get()) }
