@@ -328,6 +328,7 @@ abstract class IntegrationTestBase {
                 telemetryService,
                 null,
                 null,
+                null,
             )
         val metadataApiRouter =
             MetadataApiRouter(
