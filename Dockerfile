@@ -1,5 +1,5 @@
 # ── Build stage ───────────────────────────────────────────────────────────────
-FROM maven:3.9-eclipse-temurin-21 AS build
+FROM maven:3.9.12-eclipse-temurin-21 AS build
 
 WORKDIR /build
 
@@ -14,7 +14,7 @@ COPY src ./src
 RUN mvn package -DskipTests -q
 
 # ── Runtime stage ─────────────────────────────────────────────────────────────
-FROM eclipse-temurin:21-jre-jammy
+FROM eclipse-temurin:21.0.9_10-jre-jammy
 
 WORKDIR /app
 

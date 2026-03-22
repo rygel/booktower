@@ -76,7 +76,7 @@ class FtsIndexWorker(
                 if (!running.get()) break
                 val ok =
                     runCatching {
-                        ftsService.indexBook(book.bookId, book.filePath, book.format)
+                        ftsService.indexBook(book.bookId, book.filePath, book.format, book.language)
                     }.getOrElse { e ->
                         workerLog.warn("FTS indexing failed for ${book.bookId}: ${e.message}")
                         false

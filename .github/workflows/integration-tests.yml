@@ -1,0 +1,46 @@
+name: Integration Tests
+
+on:
+  schedule:
+    - cron: '0 4 * * 1'   # Weekly, Monday 04:00 UTC
+  workflow_dispatch:       # Manual trigger
+
+permissions:
+  contents: read
+
+jobs:
+  fts-postgres:
+    name: FTS on PostgreSQL
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Run FTS E2E tests (PostgreSQL 17 via Testcontainers)
+        run: mvn test -Dtest="FtsHttpE2ETest,FtsServiceTest" -Dfts.integration=true -Dflyway.skip=false
+
+  oidc-keycloak:
+    name: OIDC on Keycloak
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Run OIDC E2E tests (Keycloak 26.2 via Testcontainers)
+        run: mvn test -Dtest="OidcKeycloakE2ETest" -Doidc.integration=true

@@ -18,7 +18,54 @@ data class PendingBook(
     val bookId: String,
     val filePath: String,
     val format: String,
+    val language: String? = null,
 )
+
+/** Maps ISO 639-1/IETF language tags to PostgreSQL text search config names. */
+private val LANGUAGE_TO_PG_CONFIG =
+    mapOf(
+        "ar" to "arabic",
+        "hy" to "armenian",
+        "eu" to "basque",
+        "ca" to "catalan",
+        "da" to "danish",
+        "nl" to "dutch",
+        "en" to "english",
+        "fi" to "finnish",
+        "fr" to "french",
+        "de" to "german",
+        "el" to "greek",
+        "hi" to "hindi",
+        "hu" to "hungarian",
+        "id" to "indonesian",
+        "ga" to "irish",
+        "it" to "italian",
+        "lt" to "lithuanian",
+        "ne" to "nepali",
+        "nb" to "norwegian",
+        "nn" to "norwegian",
+        "no" to "norwegian",
+        "pt" to "portuguese",
+        "ro" to "romanian",
+        "ru" to "russian",
+        "sr" to "serbian",
+        "es" to "spanish",
+        "sv" to "swedish",
+        "ta" to "tamil",
+        "tr" to "turkish",
+        "yi" to "yiddish",
+    )
+
+/** Resolve a book language string to a PostgreSQL text search config name. */
+fun pgTsConfig(language: String?): String {
+    if (language.isNullOrBlank()) return "english"
+    val tag = language.lowercase().trim()
+    // Try exact match first (e.g. "en", "fr")
+    LANGUAGE_TO_PG_CONFIG[tag]?.let { return it }
+    // Try prefix (e.g. "en-US" → "en", "pt-BR" → "pt")
+    val prefix = tag.substringBefore('-').substringBefore('_')
+    return LANGUAGE_TO_PG_CONFIG[prefix] ?: "simple"
+}
 
 /**
  * Full-text search service with two backends:
@@ -43,6 +90,8 @@ class FtsService(
 
     @Volatile private var hasMetadataVector = false
 
+    @Volatile private var hasTrgm = false
+
     fun initialize() {
         if (!enabled) {
             ftsLog.info("Full-text search disabled (set BOOKTOWER_FTS_ENABLED=true to enable)")
@@ -61,9 +110,10 @@ class FtsService(
         applyPgSchema()
         detectMetadataVector()
         detectBm25()
+        detectTrgm()
         active = true
         ftsLog.info(
-            "Full-text search enabled (PostgreSQL) — metadata=$hasMetadataVector, bm25=$hasBm25",
+            "Full-text search enabled (PostgreSQL) — metadata=$hasMetadataVector, bm25=$hasBm25, trgm=$hasTrgm",
         )
     }
 
@@ -86,6 +136,7 @@ class FtsService(
         bookId: String,
         filePath: String,
         format: String,
+        language: String? = null,
     ): Boolean {
         val file = File(filePath)
         if (!file.exists()) {
@@ -111,24 +162,40 @@ class FtsService(
             markFailed(bookId, "Text extraction returned null")
             return false
         }
+        indexContent(bookId, content, language)
+        return true
+    }
+
+    /**
+     * Index pre-extracted text content for a book.
+     * The [language] parameter selects the PostgreSQL text search config
+     * for language-aware stemming (e.g. "en" → "english", "fr" → "french").
+     */
+    fun indexContent(
+        bookId: String,
+        content: String,
+        language: String? = null,
+    ) {
+        val config = pgTsConfig(language)
         jdbi.useHandle<Exception> { h ->
             h
                 .createUpdate(
                     """
-                INSERT INTO book_content (book_id, content, status, indexed_at)
-                VALUES (?, ?, 'indexed', ?)
+                INSERT INTO book_content (book_id, content, fts_config, status, indexed_at)
+                VALUES (?, ?, ?, 'indexed', ?)
                 ON CONFLICT (book_id) DO UPDATE
                   SET content = EXCLUDED.content,
+                      fts_config = EXCLUDED.fts_config,
                       status = 'indexed',
                       indexed_at = EXCLUDED.indexed_at,
                       error_msg = NULL
                 """,
                 ).bind(0, bookId)
                 .bind(1, content)
-                .bind(2, Instant.now().toString())
+                .bind(2, config)
+                .bind(3, Instant.now().toString())
                 .execute()
         }
-        return true
     }
 
     /**
@@ -138,13 +205,16 @@ class FtsService(
     fun searchMetadata(
         query: String,
         allowedBookIds: Collection<String>? = null,
+        language: String? = null,
     ): List<FtsMatch> {
         if (!active || !hasMetadataVector || query.isBlank()) return emptyList()
+        val tsConfig = pgTsConfig(language)
         return try {
             jdbi.withHandle<List<FtsMatch>, Exception> { h ->
                 val bookIdFilter =
                     if (!allowedBookIds.isNullOrEmpty()) {
-                        "AND b.id IN (${allowedBookIds.joinToString(",") { "?" }})"
+                        val placeholders = allowedBookIds.indices.joinToString(",") { ":bid$it" }
+                        "AND b.id IN ($placeholders)"
                     } else {
                         ""
                     }
@@ -167,8 +237,7 @@ class FtsService(
                         LIMIT 50
                         """,
                         ).bind("q", query)
-                var idx = 0
-                allowedBookIds?.forEach { q.bind(idx++, it) }
+                allowedBookIds?.forEachIndexed { idx, id -> q.bind("bid$idx", id) }
                 q
                     .map { row ->
                         FtsMatch(
@@ -192,12 +261,13 @@ class FtsService(
     fun search(
         query: String,
         allowedBookIds: Collection<String>? = null,
+        language: String? = null,
     ): List<FtsMatch> {
         if (!active || query.isBlank()) return emptyList()
         return if (hasBm25) {
             searchBm25(query, allowedBookIds)
         } else {
-            searchTsvector(query, allowedBookIds)
+            searchTsvector(query, allowedBookIds, language)
         }
     }
 
@@ -208,9 +278,15 @@ class FtsService(
     fun searchAll(
         query: String,
         allowedBookIds: Collection<String>? = null,
+        language: String? = null,
     ): List<FtsMatch> {
-        val metadataResults = searchMetadata(query, allowedBookIds)
-        val contentResults = search(query, allowedBookIds)
+        // For CJK queries, use trigram search (tsvector can't tokenize CJK characters)
+        if (containsCjk(query) && hasTrgm) {
+            return searchTrigram(query, allowedBookIds)
+        }
+
+        val metadataResults = searchMetadata(query, allowedBookIds, language)
+        val contentResults = search(query, allowedBookIds, language)
 
         // Merge: metadata results first (boosted rank), then content results not in metadata
         val metadataIds = metadataResults.map { it.bookId }.toSet()
@@ -225,35 +301,38 @@ class FtsService(
     private fun searchTsvector(
         query: String,
         allowedBookIds: Collection<String>?,
+        language: String? = null,
     ): List<FtsMatch> =
         try {
             jdbi.withHandle<List<FtsMatch>, Exception> { h ->
                 val bookIdFilter =
                     if (!allowedBookIds.isNullOrEmpty()) {
-                        "AND bc.book_id IN (${allowedBookIds.joinToString(",") { "?" }})"
+                        "AND bc.book_id IN (${allowedBookIds.indices.joinToString(",") { ":bid$it" }})"
                     } else {
                         ""
                     }
+                // Use each book's fts_config for ts_headline so highlighting
+                // uses the same tokenization as indexing. The query tsquery
+                // uses the book's config too via a subquery for proper stemming.
                 val q =
                     h
                         .createQuery(
                             """
                         SELECT bc.book_id,
-                               ts_headline('english', bc.content,
-                                   websearch_to_tsquery('english', :q),
+                               ts_headline(bc.fts_config::regconfig, bc.content,
+                                   websearch_to_tsquery(bc.fts_config::regconfig, :q),
                                    'StartSel=**, StopSel=**, MaxWords=20, MinWords=10, ShortWord=3'
                                ) AS snippet,
-                               ts_rank(bc.search_vector, websearch_to_tsquery('english', :q)) AS rank
+                               ts_rank(bc.search_vector, websearch_to_tsquery(bc.fts_config::regconfig, :q)) AS rank
                         FROM book_content bc
                         WHERE bc.status = 'indexed'
-                          AND bc.search_vector @@ websearch_to_tsquery('english', :q)
+                          AND bc.search_vector @@ websearch_to_tsquery(bc.fts_config::regconfig, :q)
                           $bookIdFilter
                         ORDER BY rank DESC
                         LIMIT 50
                         """,
                         ).bind("q", query)
-                var idx = 0
-                allowedBookIds?.forEach { q.bind(idx++, it) }
+                allowedBookIds?.forEachIndexed { idx, id -> q.bind("bid$idx", id) }
                 q
                     .map { row ->
                         FtsMatch(
@@ -277,7 +356,7 @@ class FtsService(
             jdbi.withHandle<List<FtsMatch>, Exception> { h ->
                 val bookIdFilter =
                     if (!allowedBookIds.isNullOrEmpty()) {
-                        "AND bc.book_id IN (${allowedBookIds.joinToString(",") { "?" }})"
+                        "AND bc.book_id IN (${allowedBookIds.indices.joinToString(",") { ":bid$it" }})"
                     } else {
                         ""
                     }
@@ -295,8 +374,7 @@ class FtsService(
                         LIMIT 50
                         """,
                         ).bind("q", query)
-                var idx = 0
-                allowedBookIds?.forEach { q.bind(idx++, it) }
+                allowedBookIds?.forEachIndexed { idx, id -> q.bind("bid$idx", id) }
                 q
                     .map { row ->
                         FtsMatch(
@@ -317,7 +395,7 @@ class FtsService(
             h
                 .createQuery(
                     """
-                SELECT bc.book_id, b.file_path,
+                SELECT bc.book_id, b.file_path, b.language,
                        CASE
                            WHEN LOWER(b.file_path) LIKE '%.epub' THEN 'epub'
                            WHEN LOWER(b.file_path) LIKE '%.pdf'  THEN 'pdf'
@@ -334,6 +412,7 @@ class FtsService(
                         bookId = row.getColumn("book_id", String::class.java),
                         filePath = row.getColumn("file_path", String::class.java) ?: "",
                         format = row.getColumn("format", String::class.java) ?: "unknown",
+                        language = row.getColumn("language", String::class.java),
                     )
                 }.list()
         }
@@ -344,7 +423,7 @@ class FtsService(
                 .createQuery("SELECT status, COUNT(*) AS n FROM book_content GROUP BY status")
                 .map { row ->
                     (row.getColumn("status", String::class.java) ?: "unknown") to
-                        ((row.getColumn("n", Long::class.java)) ?: 0L)
+                        ((row.getColumn("n", java.lang.Long::class.java))?.toLong() ?: 0L)
                 }.associate { it }
         }
 
@@ -365,14 +444,16 @@ class FtsService(
     private fun applyPgSchema() {
         jdbi.useHandle<Exception> { h ->
             h.execute("ALTER TABLE book_content ADD COLUMN IF NOT EXISTS search_vector tsvector")
+            h.execute("ALTER TABLE book_content ADD COLUMN IF NOT EXISTS fts_config VARCHAR(30) DEFAULT 'english'")
             h.execute(
                 "CREATE INDEX IF NOT EXISTS idx_book_content_fts ON book_content USING GIN(search_vector)",
             )
+            // Trigger uses per-book fts_config column for language-aware tokenization
             h.execute(
                 """
                 CREATE OR REPLACE FUNCTION book_content_fts_update() RETURNS trigger LANGUAGE plpgsql AS ${'$'}${'$'}
                 BEGIN
-                    NEW.search_vector := to_tsvector('english', COALESCE(NEW.content, ''));
+                    NEW.search_vector := to_tsvector(NEW.fts_config::regconfig, COALESCE(NEW.content, ''));
                     RETURN NEW;
                 END;
                 ${'$'}${'$'}
@@ -382,7 +463,7 @@ class FtsService(
             h.execute(
                 """
                 CREATE TRIGGER book_content_fts_trigger
-                BEFORE INSERT OR UPDATE OF content ON book_content
+                BEFORE INSERT OR UPDATE OF content, fts_config ON book_content
                 FOR EACH ROW EXECUTE FUNCTION book_content_fts_update()
                 """,
             )
@@ -447,17 +528,124 @@ class FtsService(
     private fun detectBm25() {
         hasBm25 =
             try {
-                jdbi.withHandle<Boolean, Exception> { h ->
-                    h
-                        .createQuery("SELECT COUNT(*) FROM pg_available_extensions WHERE name = 'pg_textsearch'")
-                        .mapTo(Int::class.java)
-                        .one() > 0
+                val available =
+                    jdbi.withHandle<Boolean, Exception> { h ->
+                        h
+                            .createQuery("SELECT COUNT(*) FROM pg_available_extensions WHERE name = 'pg_textsearch'")
+                            .mapTo(Int::class.java)
+                            .one() > 0
+                    }
+                if (!available) return
+
+                // Ensure extension is created and BM25 index exists
+                jdbi.useHandle<Exception> { h ->
+                    h.execute("CREATE EXTENSION IF NOT EXISTS pg_textsearch")
+                    h.execute(
+                        """
+                        CREATE INDEX IF NOT EXISTS idx_book_content_bm25
+                        ON book_content USING bm25(content)
+                        WITH (text_config='english')
+                        """,
+                    )
                 }
+                ftsLog.info("pg_textsearch extension enabled — BM25 index created on book_content")
+                true
             } catch (e: Exception) {
+                ftsLog.debug("pg_textsearch not available: ${e.message}")
                 false
             }
         if (hasBm25) {
-            ftsLog.info("pg_textsearch extension available — BM25 ranking enabled")
+            ftsLog.info("pg_textsearch BM25 ranking enabled")
+        }
+    }
+
+    private fun detectTrgm() {
+        hasTrgm =
+            try {
+                jdbi.useHandle<Exception> { h ->
+                    h.execute("CREATE EXTENSION IF NOT EXISTS pg_trgm")
+                    // Create trigram indexes for CJK search
+                    h.execute("CREATE INDEX IF NOT EXISTS idx_books_title_trgm ON books USING GIN(title gin_trgm_ops)")
+                    h.execute("CREATE INDEX IF NOT EXISTS idx_books_author_trgm ON books USING GIN(author gin_trgm_ops)")
+                }
+                ftsLog.info("pg_trgm enabled — CJK/trigram search available")
+                true
+            } catch (e: Exception) {
+                ftsLog.debug("pg_trgm not available: ${e.message}")
+                false
+            }
+    }
+
+    /** Returns true if the query contains CJK (Chinese/Japanese/Korean) characters. */
+    private fun containsCjk(query: String): Boolean =
+        query.any { c ->
+            Character.UnicodeBlock.of(c) in
+                setOf(
+                    Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS,
+                    Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS_EXTENSION_A,
+                    Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS_EXTENSION_B,
+                    Character.UnicodeBlock.CJK_COMPATIBILITY_IDEOGRAPHS,
+                    Character.UnicodeBlock.HIRAGANA,
+                    Character.UnicodeBlock.KATAKANA,
+                    Character.UnicodeBlock.HANGUL_SYLLABLES,
+                    Character.UnicodeBlock.HANGUL_JAMO,
+                )
+        }
+
+    /**
+     * Trigram search for CJK queries. Uses pg_trgm similarity matching
+     * which works with any script (doesn't need word boundaries).
+     */
+    fun searchTrigram(
+        query: String,
+        allowedBookIds: Collection<String>? = null,
+    ): List<FtsMatch> {
+        if (!active || !hasTrgm || query.isBlank()) return emptyList()
+        return try {
+            jdbi.withHandle<List<FtsMatch>, Exception> { h ->
+                val bookIdFilter =
+                    if (!allowedBookIds.isNullOrEmpty()) {
+                        val placeholders = allowedBookIds.indices.joinToString(",") { ":bid$it" }
+                        "AND b.id IN ($placeholders)"
+                    } else {
+                        ""
+                    }
+                val q =
+                    h
+                        .createQuery(
+                            """
+                        SELECT b.id AS book_id,
+                               b.title AS snippet,
+                               GREATEST(
+                                   similarity(b.title, :q),
+                                   similarity(COALESCE(b.author, ''), :q),
+                                   similarity(COALESCE(b.description, ''), :q)
+                               ) AS rank
+                        FROM books b
+                        WHERE (
+                            b.title % :q
+                            OR b.author % :q
+                            OR b.description % :q
+                        )
+                        $bookIdFilter
+                        ORDER BY rank DESC
+                        LIMIT 50
+                        """,
+                        ).bind("q", query)
+                allowedBookIds?.forEachIndexed { idx, id -> q.bind("bid$idx", id) }
+                q
+                    .map { row ->
+                        FtsMatch(
+                            bookId = row.getColumn("book_id", String::class.java),
+                            snippet = row.getColumn("snippet", String::class.java) ?: "",
+                            rank = (row.getColumn("rank", java.lang.Float::class.java) ?: 0f).toFloat(),
+                            source = "trigram",
+                        )
+                    }.list()
+            }
+        } catch (e: Exception) {
+            ftsLog.warn("Trigram search error: ${e.message}")
+            emptyList()
         }
     }
 }

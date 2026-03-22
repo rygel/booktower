@@ -1,7 +1,6 @@
 package org.booktower.integration
 
 import com.fasterxml.jackson.module.kotlin.readValue
-import org.booktower.TestFixture
 import org.booktower.config.Json
 import org.booktower.models.BookListDto
 import org.booktower.models.LibraryDto
@@ -42,12 +41,7 @@ class UpstreamDownloadE2ETest : IntegrationTestBase() {
                 .readValue(registerResponse.bodyString(), LoginResponse::class.java)
                 .user.id
 
-        TestFixture.database.getJdbi().useHandle<Exception> { handle ->
-            handle
-                .createUpdate("UPDATE users SET is_admin = true WHERE id = ?")
-                .bind(0, userId)
-                .execute()
-        }
+        promoteToAdmin(userId)
 
         val loginResponse =
             app(

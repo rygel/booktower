@@ -206,6 +206,39 @@ class AdminHandler(
             .body(Json.mapper.writeValueAsString(groups))
     }
 
+    /** POST /api/admin/duplicates/merge — merge duplicate books, keeping the best metadata. */
+    fun mergeDuplicates(req: Request): Response {
+        val svc =
+            duplicateDetectionService
+                ?: return Response(Status.SERVICE_UNAVAILABLE)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"Duplicate detection not available"}""")
+        val userId = AuthenticatedUser.from(req)
+        val body =
+            runCatching { Json.mapper.readTree(req.bodyString()) }.getOrNull()
+                ?: return Response(Status.BAD_REQUEST)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"Invalid request body"}""")
+        val keepId =
+            body.get("keepBookId")?.asText()?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() }
+                ?: return Response(Status.BAD_REQUEST)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"keepBookId is required"}""")
+        val deleteIds =
+            body.get("deleteBookIds")?.map { it.asText() }?.mapNotNull { runCatching { java.util.UUID.fromString(it) }.getOrNull() }
+                ?: return Response(Status.BAD_REQUEST)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"deleteBookIds is required"}""")
+        val result =
+            svc.merge(userId, keepId, deleteIds)
+                ?: return Response(Status.NOT_FOUND)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"One or more books not found or not owned by user"}""")
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(Json.mapper.writeValueAsString(result))
+    }
+
     /** GET /api/admin/comic-page-duplicates — returns pages that appear in more than one comic book */
     fun findComicPageDuplicates(req: Request): Response {
         val svc =

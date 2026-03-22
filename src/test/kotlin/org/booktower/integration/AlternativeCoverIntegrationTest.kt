@@ -226,6 +226,8 @@ class AlternativeCoverIntegrationTest {
                 null,
                 null,
                 null,
+                null,
+                null,
             )
         val metadataApiRouter = MetadataApiRouter(filters, MetadataFetchService(), bookService, null, null, null)
         val audiobookApiRouter = AudiobookApiRouter(filters, null, null, null, storage)

@@ -35,8 +35,14 @@
         /* EPUB mode */
         #epub-viewer { flex: 1; background: var(--bt-bg); overflow: hidden; }
         /* Comic mode */
-        #comic-wrap { flex: 1; overflow: auto; display: flex; justify-content: center; align-items: flex-start; padding: 1.5rem; background: var(--bt-reader-backdrop, #1a1a1a); }
-        #comic-img { max-width: 100%; max-height: calc(100vh - 3rem - 3rem); object-fit: contain; box-shadow: 0 4px 32px rgba(0,0,0,0.6); display: block; }
+        #comic-wrap { flex: 1; overflow: auto; display: flex; justify-content: center; align-items: flex-start; padding: 1.5rem; background: var(--bt-reader-backdrop, #1a1a1a); position: relative; }
+        #comic-img, #comic-img-2 { max-width: 100%; max-height: calc(100vh - 3rem - 3rem); object-fit: contain; box-shadow: 0 4px 32px rgba(0,0,0,0.6); display: block; user-select: none; }
+        .comic-animate #comic-img, .comic-animate #comic-img-2 { transition: opacity 0.2s ease-in-out; }
+        .comic-fade { opacity: 0 !important; }
+        .comic-click-zone { position: absolute; top: 0; bottom: 0; z-index: 10; cursor: pointer; }
+        .comic-zone-left { left: 0; width: 25%; }
+        .comic-zone-center { left: 25%; width: 50%; }
+        .comic-zone-right { right: 0; width: 25%; }
         /* Audio mode */
         #audio-wrap { flex: 1; display: flex; align-items: center; justify-content: center; padding: 2rem; background: var(--bt-bg); overflow: auto; }
         #audio-card { background: var(--bt-surface); border: 1px solid var(--bt-border); border-radius: 1rem; padding: 2rem; max-width: 28rem; width: 100%; text-align: center; box-shadow: 0 4px 24px rgba(0,0,0,0.18); }
@@ -279,7 +285,16 @@
         </div>
     @elseif(readerType == "comic")
         <div id="comic-wrap">
-            <img id="comic-img" src="" alt="${i18n.translate("page.reader.comic.loading")}">
+            <div id="comic-zone-prev" class="comic-click-zone comic-zone-left"></div>
+            <div id="comic-zone-menu" class="comic-click-zone comic-zone-center"></div>
+            <div id="comic-zone-next" class="comic-click-zone comic-zone-right"></div>
+            <div id="comic-pages" style="display:flex; align-items:flex-start; justify-content:center; gap:4px;">
+                <img id="comic-img" src="" alt="${i18n.translate("page.reader.comic.loading")}">
+                <img id="comic-img-2" src="" alt="" style="display:none;">
+            </div>
+            <div id="comic-continuous" style="display:none; flex-direction:column; align-items:center; gap:4px; width:100%;"></div>
+            <img id="comic-preload-1" style="display:none;" aria-hidden="true">
+            <img id="comic-preload-2" style="display:none;" aria-hidden="true">
         </div>
     @elseif(readerType == "fb2")
         <!-- FB2 reader: server converts FB2 → HTML, displayed in a sandboxed iframe -->
@@ -501,11 +516,22 @@
 
             @if(readerType == "comic")
             <div class="pref-section">
+                <p class="pref-section-label">${i18n.translate("page.reader.prefs.layout")}</p>
+                <div class="pref-btn-row">
+                    <button class="pref-btn active" data-pref="layout" data-val="single">${i18n.translate("page.reader.prefs.layout.single")}</button>
+                    <button class="pref-btn" data-pref="layout" data-val="double">${i18n.translate("page.reader.prefs.layout.double")}</button>
+                    <button class="pref-btn" data-pref="layout" data-val="double-no-cover">${i18n.translate("page.reader.prefs.layout.double.nocover")}</button>
+                    <button class="pref-btn" data-pref="layout" data-val="continuous">${i18n.translate("page.reader.prefs.layout.continuous")}</button>
+                </div>
+            </div>
+            <div class="pref-section">
                 <p class="pref-section-label">${i18n.translate("page.reader.prefs.fit")}</p>
                 <div class="pref-btn-row">
                     <button class="pref-btn active" data-pref="fit" data-val="contain">${i18n.translate("page.reader.prefs.fit.page")}</button>
                     <button class="pref-btn" data-pref="fit" data-val="width">${i18n.translate("page.reader.prefs.fit.width")}</button>
                     <button class="pref-btn" data-pref="fit" data-val="height">${i18n.translate("page.reader.prefs.fit.height")}</button>
+                    <button class="pref-btn" data-pref="fit" data-val="screen">${i18n.translate("page.reader.prefs.fit.screen")}</button>
+                    <button class="pref-btn" data-pref="fit" data-val="original">${i18n.translate("page.reader.prefs.fit.original")}</button>
                 </div>
             </div>
             <div class="pref-section">
@@ -513,6 +539,24 @@
                 <div class="pref-btn-row">
                     <button class="pref-btn active" data-pref="direction" data-val="ltr">${i18n.translate("page.reader.prefs.direction.ltr")}</button>
                     <button class="pref-btn" data-pref="direction" data-val="rtl">${i18n.translate("page.reader.prefs.direction.rtl")}</button>
+                    <button class="pref-btn" data-pref="direction" data-val="vertical">${i18n.translate("page.reader.prefs.direction.vertical")}</button>
+                </div>
+            </div>
+            <div class="pref-section">
+                <p class="pref-section-label">${i18n.translate("page.reader.prefs.animations")}</p>
+                <div class="pref-btn-row">
+                    <button class="pref-btn active" data-pref="animate" data-val="on">${i18n.translate("label.on")}</button>
+                    <button class="pref-btn" data-pref="animate" data-val="off">${i18n.translate("label.off")}</button>
+                </div>
+            </div>
+            <div class="pref-section">
+                <p class="pref-section-label">${i18n.translate("page.reader.prefs.pageGap")}</p>
+                <div class="pref-btn-row">
+                    <button class="pref-btn" data-pref="gap" data-val="0">${i18n.translate("label.none")}</button>
+                    <button class="pref-btn active" data-pref="gap" data-val="4">4px</button>
+                    <button class="pref-btn" data-pref="gap" data-val="8">8px</button>
+                    <button class="pref-btn" data-pref="gap" data-val="16">16px</button>
+                    <button class="pref-btn" data-pref="gap" data-val="32">32px</button>
                 </div>
             </div>
             @endif
@@ -1743,13 +1787,19 @@ var BT_DEVICE = (function() {
     let totalPages  = 0;
     let saveTimer   = null;
     let comicRtl    = false;
+    const comicImg2 = document.getElementById('comic-img-2');
 
     // ── Reader preferences ─────────────────────────────────────────────────────
     const COMIC_PREFS_URL = '/api/reader-preferences/comic?device=' + BT_DEVICE;
     let comicPrefSaveTimer = null;
     let comicFit = 'contain';
+    let comicLayout = 'single'; // 'single', 'double', 'double-no-cover', 'continuous'
+    let comicAnimate = true;
+    let comicDirection = 'ltr'; // 'ltr', 'rtl', 'vertical'
+    let comicGap = 4; // px gap between pages in continuous/double mode
 
     function applyComicFit() {
+        var vh = 'calc(100vh - 3rem - 3rem)';
         if (comicFit === 'width') {
             comicImg.style.maxWidth  = '100%';
             comicImg.style.maxHeight = 'none';
@@ -1757,22 +1807,118 @@ var BT_DEVICE = (function() {
             comicImg.style.height    = 'auto';
         } else if (comicFit === 'height') {
             comicImg.style.maxWidth  = 'none';
-            comicImg.style.maxHeight = 'calc(100vh - 3rem - 3rem)';
+            comicImg.style.maxHeight = vh;
             comicImg.style.width     = 'auto';
-            comicImg.style.height    = 'calc(100vh - 3rem - 3rem)';
+            comicImg.style.height    = vh;
+        } else if (comicFit === 'screen') {
+            comicImg.style.maxWidth  = '100%';
+            comicImg.style.maxHeight = vh;
+            comicImg.style.width     = '100%';
+            comicImg.style.height    = vh;
+            comicImg.style.objectFit = 'contain';
+        } else if (comicFit === 'original') {
+            comicImg.style.maxWidth  = 'none';
+            comicImg.style.maxHeight = 'none';
+            comicImg.style.width     = 'auto';
+            comicImg.style.height    = 'auto';
         } else {
             comicImg.style.maxWidth  = '100%';
-            comicImg.style.maxHeight = 'calc(100vh - 3rem - 3rem)';
+            comicImg.style.maxHeight = vh;
             comicImg.style.width     = '';
             comicImg.style.height    = '';
         }
+        if (comicFit !== 'screen') comicImg.style.objectFit = '';
         document.querySelectorAll('[data-pref="fit"]').forEach(function(b) {
             b.classList.toggle('active', b.dataset.val === comicFit);
         });
     }
     function applyComicDirection() {
+        comicRtl = comicDirection === 'rtl';
         document.querySelectorAll('[data-pref="direction"]').forEach(function(b) {
-            b.classList.toggle('active', b.dataset.val === (comicRtl ? 'rtl' : 'ltr'));
+            b.classList.toggle('active', b.dataset.val === comicDirection);
+        });
+        // Vertical: swap click zones to top/bottom
+        var wrap = document.getElementById('comic-wrap');
+        var zones = wrap.querySelectorAll('.comic-click-zone');
+        if (comicDirection === 'vertical') {
+            zones.forEach(function(z) {
+                z.style.left = '0'; z.style.right = '0'; z.style.width = '100%';
+            });
+            zones[0].style.top = '0'; zones[0].style.bottom = ''; zones[0].style.height = '25%';
+            zones[1].style.top = '25%'; zones[1].style.bottom = ''; zones[1].style.height = '50%';
+            zones[2].style.top = ''; zones[2].style.bottom = '0'; zones[2].style.height = '25%';
+        } else {
+            zones.forEach(function(z) { z.style.top = '0'; z.style.bottom = '0'; z.style.height = ''; });
+            zones[0].style.left = '0'; zones[0].style.width = '25%'; zones[0].style.right = '';
+            zones[1].style.left = '25%'; zones[1].style.width = '50%'; zones[1].style.right = '';
+            zones[2].style.right = '0'; zones[2].style.width = '25%'; zones[2].style.left = '';
+        }
+    }
+    function applyComicAnimate() {
+        var wrap = document.getElementById('comic-wrap');
+        wrap.classList.toggle('comic-animate', comicAnimate);
+        document.querySelectorAll('[data-pref="animate"]').forEach(function(b) {
+            b.classList.toggle('active', (b.dataset.val === 'on') === comicAnimate);
+        });
+    }
+    function applyComicGap() {
+        var pxVal = comicGap + 'px';
+        document.getElementById('comic-pages').style.gap = pxVal;
+        document.getElementById('comic-continuous').style.gap = pxVal;
+        document.querySelectorAll('[data-pref="gap"]').forEach(function(b) {
+            b.classList.toggle('active', parseInt(b.dataset.val) === comicGap);
+        });
+    }
+    var continuousContainer = document.getElementById('comic-continuous');
+    var pagesContainer = document.getElementById('comic-pages');
+    var continuousLoaded = new Set();
+
+    function applyComicLayout() {
+        document.querySelectorAll('[data-pref="layout"]').forEach(function(b) {
+            b.classList.toggle('active', b.dataset.val === comicLayout);
+        });
+        if (comicLayout === 'continuous') {
+            pagesContainer.style.display = 'none';
+            continuousContainer.style.display = 'flex';
+            buildContinuousView();
+        } else {
+            pagesContainer.style.display = 'flex';
+            continuousContainer.style.display = 'none';
+            comicImg2.style.display = (comicLayout === 'single') ? 'none' : '';
+            if (comicLayout === 'single') comicImg2.src = '';
+        }
+    }
+
+    function buildContinuousView() {
+        if (totalPages === 0) return;
+        continuousContainer.textContent = '';
+        continuousLoaded.clear();
+        for (var i = 0; i < totalPages; i++) {
+            var img = document.createElement('img');
+            img.dataset.page = i;
+            img.alt = '${i18n.translate("label.page")} ' + (i + 1);
+            img.style.cssText = 'max-width:100%; display:block; margin:0 auto;';
+            img.loading = 'lazy';
+            img.src = '/api/books/' + BOOK_ID + '/comic/' + i;
+            continuousContainer.appendChild(img);
+        }
+        // Track scroll position for page indicator
+        var wrap = document.getElementById('comic-wrap');
+        wrap.addEventListener('scroll', function() {
+            if (comicLayout !== 'continuous') return;
+            var images = continuousContainer.querySelectorAll('img');
+            var wrapTop = wrap.scrollTop + wrap.offsetTop;
+            for (var j = images.length - 1; j >= 0; j--) {
+                if (images[j].offsetTop <= wrapTop + 100) {
+                    var pg = parseInt(images[j].dataset.page) + 1;
+                    if (pg !== currentPage) {
+                        currentPage = pg;
+                        pageInfo.textContent = currentPage + ' / ' + totalPages;
+                        scheduleSave(currentPage);
+                    }
+                    break;
+                }
+            }
         });
     }
     function saveComicPrefs() {
@@ -1781,10 +1927,18 @@ var BT_DEVICE = (function() {
             fetch(COMIC_PREFS_URL, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ fitMode: comicFit, direction: comicRtl ? 'rtl' : 'ltr' })
+                body: JSON.stringify({ fitMode: comicFit, direction: comicDirection, layout: comicLayout, animate: comicAnimate, gap: comicGap })
             }).catch(function() {});
         }, 600);
     }
+    document.querySelectorAll('[data-pref="layout"]').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            comicLayout = btn.dataset.val;
+            applyComicLayout();
+            goToPage(currentPage);
+            saveComicPrefs();
+        });
+    });
     document.querySelectorAll('[data-pref="fit"]').forEach(function(btn) {
         btn.addEventListener('click', function() {
             comicFit = btn.dataset.val;
@@ -1794,16 +1948,37 @@ var BT_DEVICE = (function() {
     });
     document.querySelectorAll('[data-pref="direction"]').forEach(function(btn) {
         btn.addEventListener('click', function() {
-            comicRtl = btn.dataset.val === 'rtl';
+            comicDirection = btn.dataset.val;
+            comicRtl = comicDirection === 'rtl';
             applyComicDirection();
+            saveComicPrefs();
+        });
+    });
+    document.querySelectorAll('[data-pref="animate"]').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            comicAnimate = btn.dataset.val === 'on';
+            applyComicAnimate();
+            saveComicPrefs();
+        });
+    });
+    document.querySelectorAll('[data-pref="gap"]').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            comicGap = parseInt(btn.dataset.val);
+            applyComicGap();
             saveComicPrefs();
         });
     });
     fetch(COMIC_PREFS_URL).then(function(r) { return r.json(); }).then(function(p) {
         if (p.fitMode)   comicFit = p.fitMode;
-        if (p.direction) comicRtl = p.direction === 'rtl';
+        if (p.direction) { comicDirection = p.direction; comicRtl = comicDirection === 'rtl'; }
+        if (p.layout)    comicLayout = p.layout;
+        if (p.animate !== undefined) comicAnimate = p.animate;
+        if (p.gap !== undefined) comicGap = p.gap;
         applyComicFit();
         applyComicDirection();
+        applyComicLayout();
+        applyComicAnimate();
+        applyComicGap();
     }).catch(function() {});
 
     async function init() {
@@ -1819,32 +1994,106 @@ var BT_DEVICE = (function() {
         }
     }
 
+    function isDoublePage() { return comicLayout === 'double' || comicLayout === 'double-no-cover'; }
+
     function goToPage(n) {
         currentPage = Math.min(Math.max(1, n), totalPages);
-        comicImg.src = '/api/books/' + BOOK_ID + '/comic/' + (currentPage - 1);
+        var base = '/api/books/' + BOOK_ID + '/comic/';
+        // Fade transition
+        if (comicAnimate) {
+            comicImg.classList.add('comic-fade');
+            if (comicImg2) comicImg2.classList.add('comic-fade');
+            setTimeout(function() {
+                comicImg.src = base + (currentPage - 1);
+                comicImg.classList.remove('comic-fade');
+                if (comicImg2) comicImg2.classList.remove('comic-fade');
+            }, 200);
+        } else {
+            comicImg.src = base + (currentPage - 1);
+        }
         comicImg.alt = '${i18n.translate("label.page")} ' + currentPage;
-        pageInfo.textContent = currentPage + ' / ' + totalPages;
+
+        // Double page spread: show second page alongside
+        if (isDoublePage() && currentPage < totalPages) {
+            // In "double-no-cover" mode, page 1 is displayed alone (it's the cover)
+            var showSecond = comicLayout === 'double' || currentPage > 1;
+            if (showSecond) {
+                comicImg2.src = base + currentPage;
+                comicImg2.alt = '${i18n.translate("label.page")} ' + (currentPage + 1);
+                comicImg2.style.display = '';
+                // Apply same fit styles as primary image
+                comicImg2.style.maxWidth  = comicImg.style.maxWidth;
+                comicImg2.style.maxHeight = comicImg.style.maxHeight;
+                comicImg2.style.width     = comicImg.style.width;
+                comicImg2.style.height    = comicImg.style.height;
+                pageInfo.textContent = currentPage + '-' + (currentPage + 1) + ' / ' + totalPages;
+            } else {
+                comicImg2.style.display = 'none';
+                pageInfo.textContent = currentPage + ' / ' + totalPages;
+            }
+        } else {
+            comicImg2.style.display = 'none';
+            pageInfo.textContent = currentPage + ' / ' + totalPages;
+        }
+
         btnPrev.disabled = currentPage <= 1;
         btnNext.disabled = currentPage >= totalPages;
+        preloadAdjacent();
         scheduleSave(currentPage);
     }
 
-    btnPrev.addEventListener('click', function() { goToPage(comicRtl ? currentPage + 1 : currentPage - 1); });
-    btnNext.addEventListener('click', function() { goToPage(comicRtl ? currentPage - 1 : currentPage + 1); });
+    function pageStep() { return isDoublePage() ? 2 : 1; }
+    btnPrev.addEventListener('click', function() { goToPage(comicRtl ? currentPage + pageStep() : currentPage - pageStep()); });
+    btnNext.addEventListener('click', function() { goToPage(comicRtl ? currentPage - pageStep() : currentPage + pageStep()); });
 
     document.addEventListener('keydown', function(e) {
         if (e.target.tagName === 'INPUT') return;
-        if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   goToPage(comicRtl ? currentPage + 1 : currentPage - 1);
-        if (e.key === 'ArrowRight' || e.key === 'ArrowDown')  goToPage(comicRtl ? currentPage - 1 : currentPage + 1);
+        var step = pageStep();
+        if (comicDirection === 'vertical') {
+            if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') goToPage(currentPage - step);
+            if (e.key === 'ArrowDown' || e.key === 'ArrowRight') goToPage(currentPage + step);
+        } else {
+            if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   goToPage(comicRtl ? currentPage + step : currentPage - step);
+            if (e.key === 'ArrowRight' || e.key === 'ArrowDown')  goToPage(comicRtl ? currentPage - step : currentPage + step);
+        }
         if (e.key === 'Escape') window.location.href = '/books/' + BOOK_ID;
     });
 
-    // Click left/right half of image to page (RTL-aware)
-    comicImg.addEventListener('click', function(e) {
-        var rect = comicImg.getBoundingClientRect();
-        var leftHalf = e.clientX < rect.left + rect.width / 2;
-        goToPage(leftHalf === !comicRtl ? currentPage - 1 : currentPage + 1);
+    // Click zones: left 25% = prev, right 25% = next, center 50% = toggle toolbar
+    var zonePrev = document.getElementById('comic-zone-prev');
+    var zoneNext = document.getElementById('comic-zone-next');
+    var zoneMenu = document.getElementById('comic-zone-menu');
+    zonePrev.addEventListener('click', function() { goToPage(comicRtl ? currentPage + 1 : currentPage - 1); });
+    zoneNext.addEventListener('click', function() { goToPage(comicRtl ? currentPage - 1 : currentPage + 1); });
+    zoneMenu.addEventListener('click', function() {
+        var toolbar = document.querySelector('.reader-toolbar');
+        if (toolbar) toolbar.style.display = toolbar.style.display === 'none' ? '' : 'none';
     });
+
+    // Image preloading: load ±2 pages ahead
+    var preload1 = document.getElementById('comic-preload-1');
+    var preload2 = document.getElementById('comic-preload-2');
+    function preloadAdjacent() {
+        var base = '/api/books/' + BOOK_ID + '/comic/';
+        if (currentPage < totalPages) preload1.src = base + currentPage;
+        if (currentPage + 1 < totalPages) preload2.src = base + (currentPage + 1);
+    }
+
+    // Swipe gesture support (touch devices)
+    var touchStartX = 0;
+    var touchStartY = 0;
+    document.getElementById('comic-wrap').addEventListener('touchstart', function(e) {
+        touchStartX = e.changedTouches[0].screenX;
+        touchStartY = e.changedTouches[0].screenY;
+    }, { passive: true });
+    document.getElementById('comic-wrap').addEventListener('touchend', function(e) {
+        var dx = e.changedTouches[0].screenX - touchStartX;
+        var dy = e.changedTouches[0].screenY - touchStartY;
+        if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
+            if (dx > 0) goToPage(comicRtl ? currentPage + 1 : currentPage - 1);
+            else goToPage(comicRtl ? currentPage - 1 : currentPage + 1);
+        }
+    }, { passive: true });
 
     window.jumpToPage = function(n) { goToPage(n); };
     window.getBookmarkPage = function() { return currentPage; };

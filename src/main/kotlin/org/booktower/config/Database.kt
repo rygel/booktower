@@ -19,6 +19,8 @@ private val MIGRATION_FILES =
         "V4__book_sharing.sql",
         "V5__collections.sql",
         "V6__fts_metadata_search.sql",
+        "V7__webhooks.sql",
+        "V8__position_sync.sql",
     )
 
 class Database private constructor(
@@ -30,6 +32,9 @@ class Database private constructor(
         private const val DEFAULT_MIN_IDLE = 2
         private const val IDLE_TIMEOUT_MS = 600_000L
         private const val CONNECTION_TIMEOUT_MS = 30_000L
+        private const val MAX_LIFETIME_MS = 1_800_000L
+        private const val LEAK_DETECTION_MS = 60_000L
+        private const val VALIDATION_TIMEOUT_MS = 5_000L
 
         fun connect(config: DatabaseConfig): Database {
             logger.info("Connecting to database: ${config.url}")
@@ -58,7 +63,15 @@ class Database private constructor(
                     minimumIdle = minIdle
                     idleTimeout = IDLE_TIMEOUT_MS
                     connectionTimeout = CONNECTION_TIMEOUT_MS
-                    connectionTestQuery = "SELECT 1"
+                    maxLifetime = MAX_LIFETIME_MS
+                    validationTimeout = VALIDATION_TIMEOUT_MS
+                    // Leak detection: log warning if connection held > 60s (disabled in test)
+                    leakDetectionThreshold =
+                        if (System.getProperty("app.name")?.contains("test") == true) 0 else LEAK_DETECTION_MS
+                    // Use PostgreSQL's built-in validation instead of test query when available
+                    connectionTestQuery =
+                        if (config.driver.contains("postgresql", ignoreCase = true)) null else "SELECT 1"
+                    poolName = "booktower-pool"
                 }
 
             val dataSource = HikariDataSource(hikariConfig)

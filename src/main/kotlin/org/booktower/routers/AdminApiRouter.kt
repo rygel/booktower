@@ -4,6 +4,7 @@ import org.booktower.filters.AuthenticatedUser
 import org.booktower.handlers.AdminHandler
 import org.booktower.handlers.BackgroundTaskHandler
 import org.booktower.services.BulkCoverService
+import org.booktower.services.BulkMetadataRefreshService
 import org.booktower.services.CreateEmailProviderRequest
 import org.booktower.services.CreateScheduledTaskRequest
 import org.booktower.services.EmailProviderService
@@ -29,6 +30,8 @@ class AdminApiRouter(
     private val scheduledTaskService: ScheduledTaskService?,
     private val bulkCoverService: BulkCoverService?,
     private val telemetryService: TelemetryService?,
+    private val bulkMetadataRefreshService: BulkMetadataRefreshService?,
+    private val backupService: org.booktower.services.BackupService?,
 ) {
     @Suppress("LongMethod")
     fun routes(): List<RoutingHttpHandler> =
@@ -65,11 +68,16 @@ class AdminApiRouter(
             "/api/admin/scheduled-tasks/{id}/history" bind Method.GET to filters.admin.then(::scheduledTaskHistory),
             "/api/covers/regenerate" bind Method.POST to filters.auth.then(::bulkRegenerateCovers),
             "/api/admin/duplicates" bind Method.GET to filters.admin.then(adminHandler::findDuplicates),
+            "/api/admin/duplicates/merge" bind Method.POST to filters.admin.then(adminHandler::mergeDuplicates),
+            "/api/admin/metadata/refresh" bind Method.POST to filters.admin.then(::bulkMetadataRefresh),
             "/api/admin/comic-page-duplicates" bind Method.GET to filters.admin.then(adminHandler::findComicPageDuplicates),
             "/api/admin/audit" bind Method.GET to filters.admin.then(adminHandler::listAuditLog),
             "/api/admin/tasks" bind Method.GET to
                 filters.admin.then(optionalHandler(backgroundTaskHandler?.let { it::listAll })),
             "/api/admin/telemetry/stats" bind Method.GET to filters.admin.then(::telemetryStats),
+            // Database backup/restore
+            "/api/admin/backup" bind Method.GET to filters.admin.then(::exportBackup),
+            "/api/admin/backup" bind Method.POST to filters.admin.then(::importBackup),
             // Weblate translation sync (admin only)
             "/api/weblate/pull" bind Method.POST to filters.admin.then(weblateHandler::pull),
             "/api/weblate/push" bind Method.POST to filters.admin.then(weblateHandler::push),
@@ -252,6 +260,19 @@ class AdminApiRouter(
             )
     }
 
+    private fun bulkMetadataRefresh(req: Request): Response {
+        val svc = bulkMetadataRefreshService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val userId = AuthenticatedUser.from(req)
+        val libraryId = req.query("libraryId")
+        val result = svc.refresh(userId, libraryId)
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(result),
+            )
+    }
+
     private fun telemetryStats(req: Request): Response {
         val svc = telemetryService ?: return Response(Status.SERVICE_UNAVAILABLE)
         val stats = svc.getStats()
@@ -261,5 +282,33 @@ class AdminApiRouter(
                 org.booktower.config.Json.mapper
                     .writeValueAsString(stats),
             )
+    }
+
+    // ─── Backup / restore ─────────────────────────────────────────────────
+
+    private fun exportBackup(req: Request): Response {
+        val svc = backupService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val json = svc.export()
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .header("Content-Disposition", "attachment; filename=\"booktower-backup.json\"")
+            .body(json)
+    }
+
+    private fun importBackup(req: Request): Response {
+        val svc = backupService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        return try {
+            val metadata = svc.import(req.body.stream)
+            Response(Status.OK)
+                .header("Content-Type", "application/json")
+                .body(
+                    org.booktower.config.Json.mapper
+                        .writeValueAsString(metadata),
+                )
+        } catch (e: Exception) {
+            Response(Status.BAD_REQUEST)
+                .header("Content-Type", "application/json")
+                .body("""{"error":"${e.message}"}""")
+        }
     }
 }

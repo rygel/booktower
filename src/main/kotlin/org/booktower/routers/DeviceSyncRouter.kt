@@ -23,6 +23,9 @@ class DeviceSyncRouter(
             "/opds/catalog/{libraryId}" bind Method.GET to opdsHandler::library,
             "/opds/books/{id}/file" bind Method.GET to opdsHandler::download,
             "/opds/books/{id}/chapters/{trackIndex}" bind Method.GET to opdsHandler::streamChapter,
+            // OPDS 2.0 (JSON, HTTP Basic Auth)
+            "/opds/v2/catalog" bind Method.GET to opdsHandler::catalogV2,
+            "/opds/v2/catalog/{libraryId}" bind Method.GET to opdsHandler::libraryV2,
             // Kobo device sync
             "/api/kobo/devices" bind Method.POST to
                 filters.auth.then(

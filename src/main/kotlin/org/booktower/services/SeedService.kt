@@ -878,7 +878,90 @@ class SeedService(
         return basicResult
     }
 
-    /** Human-readable error message for HTTP status codes. */
+    /**
+     * Downloads a file with HTTP Range resume support.
+     * - If [destFile] exists and matches [expectedSize], returns "skip" (already complete).
+     * - If [destFile] exists but is smaller, attempts Range resume.
+     * - If the server doesn't support Range, re-downloads from scratch.
+     * - Returns "ok" on success, or an error message on failure.
+     */
+    private fun downloadWithResume(
+        url: String,
+        destFile: File,
+        userAgent: String = "BookTower/1.0",
+        readTimeout: Int = 120_000,
+    ): String {
+        val conn =
+            java.net
+                .URI(url)
+                .toURL()
+                .openConnection() as java.net.HttpURLConnection
+        conn.connectTimeout = 30_000
+        conn.readTimeout = readTimeout
+        conn.setRequestProperty("User-Agent", userAgent)
+        conn.instanceFollowRedirects = true
+
+        // HEAD request to get Content-Length without downloading
+        conn.requestMethod = "HEAD"
+        if (conn.responseCode != 200) {
+            return httpErrorMessage(conn.responseCode, conn.url.host)
+        }
+        val totalSize = conn.contentLengthLong
+        conn.disconnect()
+
+        // If file is already complete, skip
+        if (destFile.exists() && totalSize > 0 && destFile.length() == totalSize) {
+            return "skip"
+        }
+
+        // Determine if we can resume
+        val existingBytes = if (destFile.exists()) destFile.length() else 0L
+        val resuming = existingBytes > 0 && totalSize > 0
+
+        val dlConn =
+            java.net
+                .URI(url)
+                .toURL()
+                .openConnection() as java.net.HttpURLConnection
+        dlConn.connectTimeout = 30_000
+        dlConn.readTimeout = readTimeout
+        dlConn.setRequestProperty("User-Agent", userAgent)
+        dlConn.instanceFollowRedirects = true
+        if (resuming) {
+            dlConn.setRequestProperty("Range", "bytes=$existingBytes-")
+        }
+
+        val responseCode = dlConn.responseCode
+        if (responseCode != 200 && responseCode != 206) {
+            return httpErrorMessage(responseCode, dlConn.url.host)
+        }
+
+        // Server supports Range → append; otherwise → overwrite
+        val append = responseCode == 206
+        if (resuming && !append) {
+            // Server doesn't support Range, start over
+            logger.debug("Server does not support Range for ${destFile.name}, re-downloading")
+        }
+
+        dlConn.inputStream.use { input ->
+            java.io.FileOutputStream(destFile, append).use { output ->
+                input.copyTo(output)
+            }
+        }
+
+        // Verify final size
+        if (totalSize > 0 && destFile.length() != totalSize) {
+            val msg = "Download incomplete (${destFile.length()}/$totalSize bytes)"
+            if (!destFile.delete()) logger.warn("Could not delete incomplete file: ${destFile.absolutePath}")
+            return msg
+        }
+
+        if (resuming && append) {
+            logger.info("Resumed download of ${destFile.name} from $existingBytes bytes")
+        }
+        return "ok"
+    }
+
     private fun httpErrorMessage(
         code: Int,
         host: String,
@@ -919,12 +1002,6 @@ class SeedService(
             if (!libDir.exists() && !libDir.mkdirs()) logger.warn("Could not create directory: ${libDir.absolutePath}")
             val destFile = File(libDir, safeFilename(comic.title, "cbz"))
 
-            if (destFile.exists() && destFile.length() > 0) {
-                logger.info("Skipping download for '${comic.title}' — file already exists (${destFile.length()} bytes)")
-                backgroundTaskService.complete(taskId, "Already downloaded")
-                return
-            }
-
             // Verify item is freely accessible via metadata API
             try {
                 val metaConn =
@@ -955,26 +1032,26 @@ class SeedService(
                 logger.debug("Metadata check failed for '${comic.archiveId}', proceeding with download: ${e.message}")
             }
 
-            val conn =
-                java.net
-                    .URI(url)
-                    .toURL()
-                    .openConnection() as java.net.HttpURLConnection
-            conn.connectTimeout = 30_000
-            conn.readTimeout = 300_000 // comics can be large
-            conn.setRequestProperty("User-Agent", "BookTower/1.0 comic-seed")
-            conn.instanceFollowRedirects = true
-            if (conn.responseCode != 200) {
-                val reason = httpErrorMessage(conn.responseCode, conn.url.host)
-                logger.warn("Comic download failed for '${comic.title}': $reason")
-                backgroundTaskService.fail(taskId, reason)
-                return
-            }
-            conn.inputStream.use { input -> destFile.outputStream().use { input.copyTo(it) } }
+            val result = downloadWithResume(url, destFile, "BookTower/1.0 comic-seed", readTimeout = 300_000)
+            when (result) {
+                "skip" -> {
+                    logger.info("Skipping download for '${comic.title}' — file already complete (${destFile.length()} bytes)")
+                    backgroundTaskService.complete(taskId, "Already downloaded")
+                    return
+                }
 
-            bookService.updateFileInfo(userId, bookId, destFile.absolutePath, destFile.length())
-            logger.info("Downloaded comic '${comic.title}' (${destFile.length() / 1024}KB)")
-            backgroundTaskService.complete(taskId, "Downloaded ${destFile.length() / 1024}KB")
+                "ok" -> {
+                    bookService.updateFileInfo(userId, bookId, destFile.absolutePath, destFile.length())
+                    logger.info("Downloaded comic '${comic.title}' (${destFile.length() / 1024}KB)")
+                    backgroundTaskService.complete(taskId, "Downloaded ${destFile.length() / 1024}KB")
+                }
+
+                else -> {
+                    logger.warn("Comic download failed for '${comic.title}': $result")
+                    backgroundTaskService.fail(taskId, result)
+                    return
+                }
+            }
         } catch (e: Exception) {
             logger.warn("Comic download failed for '${comic.title}': ${e.message}")
             backgroundTaskService.fail(taskId, e.message)
@@ -1082,25 +1159,25 @@ class SeedService(
             )
         val safeTitle = title.replace(Regex("[^a-zA-Z0-9._-]"), "_").take(60).trimEnd('_')
         val destFile = File(booksDir, "$safeTitle-${idx.toString().padStart(4, '0')}.mp3")
-        if (destFile.exists()) return false
         return try {
-            val mp3Conn =
-                java.net
-                    .URI(listenUrl)
-                    .toURL()
-                    .openConnection() as java.net.HttpURLConnection
-            mp3Conn.connectTimeout = 30_000
-            mp3Conn.readTimeout = 180_000
-            mp3Conn.setRequestProperty("User-Agent", "BookTower/1.0 librivox-seed")
-            mp3Conn.instanceFollowRedirects = true
-            if (mp3Conn.responseCode != 200) {
-                logger.warn("Chapter $idx download failed for '$title': HTTP ${mp3Conn.responseCode}")
-                return false
+            val result = downloadWithResume(listenUrl, destFile, "BookTower/1.0 librivox-seed", readTimeout = 180_000)
+            when (result) {
+                "skip" -> {
+                    false
+                }
+
+                // already complete, no new download
+                "ok" -> {
+                    bookService.addBookFile(userId, bookId, idx, chapterTitle, destFile.absolutePath, destFile.length(), durationSec)
+                    logger.debug("Downloaded ch $idx of '$title' (${destFile.length()} bytes)")
+                    true
+                }
+
+                else -> {
+                    logger.warn("Chapter $idx download failed for '$title': $result")
+                    false
+                }
             }
-            mp3Conn.inputStream.use { input -> destFile.outputStream().use { input.copyTo(it) } }
-            bookService.addBookFile(userId, bookId, idx, chapterTitle, destFile.absolutePath, destFile.length(), durationSec)
-            logger.debug("Downloaded ch $idx of '$title' (${destFile.length()} bytes)")
-            true
         } catch (e: Exception) {
             logger.warn("Chapter $idx download error for '$title': ${e.message}")
             false
@@ -1136,32 +1213,26 @@ class SeedService(
             if (!booksDir.exists() && !booksDir.mkdirs()) logger.warn("Could not create directory: ${booksDir.absolutePath}")
             val destFile = File(booksDir, safeFilename(title, "epub"))
 
-            if (destFile.exists() && destFile.length() > 0) {
-                logger.info("Skipping download for '$title' — file already exists (${destFile.length()} bytes)")
-                backgroundTaskService.complete(taskId, "Already downloaded")
-                return
-            }
+            val result = downloadWithResume(url, destFile, "BookTower/1.0 gutenberg-seed")
+            when (result) {
+                "skip" -> {
+                    logger.info("Skipping download for '$title' — file already complete (${destFile.length()} bytes)")
+                    backgroundTaskService.complete(taskId, "Already downloaded")
+                    return
+                }
 
-            val conn =
-                java.net
-                    .URI(url)
-                    .toURL()
-                    .openConnection() as java.net.HttpURLConnection
-            conn.connectTimeout = 30_000
-            conn.readTimeout = 120_000
-            conn.setRequestProperty("User-Agent", "BookTower/1.0 gutenberg-seed")
-            conn.instanceFollowRedirects = true
-            if (conn.responseCode != 200) {
-                val reason = httpErrorMessage(conn.responseCode, conn.url.host)
-                logger.warn("Gutenberg download failed for '$title' (id=$gutenbergId): $reason")
-                backgroundTaskService.fail(taskId, reason)
-                return
-            }
-            conn.inputStream.use { input -> destFile.outputStream().use { input.copyTo(it) } }
+                "ok" -> {
+                    bookService.updateFileInfo(userId, bookId, destFile.absolutePath, destFile.length())
+                    logger.info("Downloaded EPUB for '$title' (${destFile.length()} bytes)")
+                    backgroundTaskService.complete(taskId, "Downloaded ${destFile.length() / 1024}KB")
+                }
 
-            bookService.updateFileInfo(userId, bookId, destFile.absolutePath, destFile.length())
-            logger.info("Downloaded EPUB for '$title' (${destFile.length()} bytes)")
-            backgroundTaskService.complete(taskId, "Downloaded ${destFile.length() / 1024}KB")
+                else -> {
+                    logger.warn("Gutenberg download failed for '$title' (id=$gutenbergId): $result")
+                    backgroundTaskService.fail(taskId, result)
+                    return
+                }
+            }
         } catch (e: Exception) {
             logger.warn("Gutenberg download failed for '$title': ${e.message}")
             backgroundTaskService.fail(taskId, e.message)
