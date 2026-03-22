@@ -54,6 +54,7 @@ class UserApiRouter(
     private val annotationExportService: org.booktower.services.AnnotationExportService? = null,
     private val discoveryService: org.booktower.services.DiscoveryService? = null,
     private val positionSyncService: org.booktower.services.PositionSyncService? = null,
+    private val customFieldService: org.booktower.services.CustomFieldService? = null,
 ) {
     @Suppress("LongMethod")
     fun routes(): List<RoutingHttpHandler> =
@@ -135,6 +136,13 @@ class UserApiRouter(
             "/api/discover" bind Method.GET to filters.auth.then(::discover),
             "/api/books/{bookId}/position" bind Method.GET to filters.auth.then(::pullPosition),
             "/api/books/{bookId}/position" bind Method.PUT to filters.auth.then(::pushPosition),
+            // Custom metadata fields
+            "/api/custom-fields" bind Method.GET to filters.auth.then(::listFieldDefinitions),
+            "/api/custom-fields" bind Method.POST to filters.auth.then(::createFieldDefinition),
+            "/api/custom-fields/{id}" bind Method.DELETE to filters.auth.then(::deleteFieldDefinition),
+            "/api/books/{bookId}/custom-fields" bind Method.GET to filters.auth.then(::getBookCustomFields),
+            "/api/books/{bookId}/custom-fields" bind Method.PUT to filters.auth.then(::setBookCustomField),
+            "/api/books/{bookId}/custom-fields/{fieldName}" bind Method.DELETE to filters.auth.then(::deleteBookCustomField),
         )
 
     // ─── Collections ────────────────────────────────────────────────────────
@@ -917,5 +925,102 @@ class UserApiRouter(
             }.getOrNull() ?: return Response(Status.BAD_REQUEST)
         svc.push(userId, bookId, body)
         return Response(Status.NO_CONTENT)
+    }
+
+    // ─── Custom metadata fields ───────────────────────────────────────────
+
+    private fun listFieldDefinitions(req: Request): Response {
+        val svc = customFieldService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(svc.getDefinitions(AuthenticatedUser.from(req))),
+            )
+    }
+
+    private fun createFieldDefinition(req: Request): Response {
+        val svc = customFieldService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val body =
+            runCatching {
+                org.booktower.config.Json.mapper
+                    .readValue(req.bodyString(), org.booktower.services.CreateFieldDefinitionRequest::class.java)
+            }.getOrNull() ?: return Response(Status.BAD_REQUEST)
+        if (body.fieldName.isBlank()) return Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"fieldName is required"}""")
+        return try {
+            val def = svc.createDefinition(AuthenticatedUser.from(req), body)
+            Response(Status.CREATED)
+                .header("Content-Type", "application/json")
+                .body(
+                    org.booktower.config.Json.mapper
+                        .writeValueAsString(def),
+                )
+        } catch (e: Exception) {
+            Response(Status.CONFLICT)
+                .header("Content-Type", "application/json")
+                .body("""{"error":"Field already exists: ${body.fieldName}"}""")
+        }
+    }
+
+    private fun deleteFieldDefinition(req: Request): Response {
+        val svc = customFieldService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val id =
+            req.uri.path
+                .split("/")
+                .lastOrNull() ?: return Response(Status.BAD_REQUEST)
+        return if (svc.deleteDefinition(AuthenticatedUser.from(req), id)) Response(Status.NO_CONTENT) else Response(Status.NOT_FOUND)
+    }
+
+    private fun getBookCustomFields(req: Request): Response {
+        val svc = customFieldService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val userId = AuthenticatedUser.from(req)
+        val bookId =
+            req.uri.path
+                .split("/")
+                .let { p ->
+                    val i = p.indexOf("books")
+                    if (i >= 0 && i + 1 < p.size) p[i + 1] else null
+                }?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() } ?: return Response(Status.BAD_REQUEST)
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(svc.getValues(userId, bookId)),
+            )
+    }
+
+    private fun setBookCustomField(req: Request): Response {
+        val svc = customFieldService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val userId = AuthenticatedUser.from(req)
+        val bookId =
+            req.uri.path
+                .split("/")
+                .let { p ->
+                    val i = p.indexOf("books")
+                    if (i >= 0 && i + 1 < p.size) p[i + 1] else null
+                }?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() } ?: return Response(Status.BAD_REQUEST)
+        val body =
+            runCatching {
+                org.booktower.config.Json.mapper
+                    .readTree(req.bodyString())
+            }.getOrNull() ?: return Response(Status.BAD_REQUEST)
+        val fieldName = body.get("fieldName")?.asText()?.takeIf { it.isNotBlank() } ?: return Response(Status.BAD_REQUEST)
+        val fieldValue = body.get("fieldValue")?.asText()
+        svc.setValue(userId, bookId, fieldName, fieldValue)
+        return Response(Status.NO_CONTENT)
+    }
+
+    private fun deleteBookCustomField(req: Request): Response {
+        val svc = customFieldService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val userId = AuthenticatedUser.from(req)
+        val parts = req.uri.path.split("/")
+        val bookId =
+            parts
+                .let { p ->
+                    val i = p.indexOf("books")
+                    if (i >= 0 && i + 1 < p.size) p[i + 1] else null
+                }?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() } ?: return Response(Status.BAD_REQUEST)
+        val fieldName = java.net.URLDecoder.decode(parts.lastOrNull() ?: return Response(Status.BAD_REQUEST), "UTF-8")
+        return if (svc.deleteValue(userId, bookId, fieldName)) Response(Status.NO_CONTENT) else Response(Status.NOT_FOUND)
     }
 }
