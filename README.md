@@ -2,7 +2,7 @@
 
 A self-hosted personal book, audiobook, and comic manager with a built-in reader and rich metadata support.
 
-[![Version](https://img.shields.io/badge/version-0.6.5-blue)](https://github.com/rygel/booktower/releases)
+[![Version](https://img.shields.io/badge/version-0.6.7-blue)](https://github.com/rygel/booktower/releases)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-green)](LICENSE)
 [![Docker](https://img.shields.io/badge/docker-ghcr.io%2Frygel%2Fbooktower-blue)](https://ghcr.io/rygel/booktower)
 
@@ -16,60 +16,63 @@ A self-hosted personal book, audiobook, and comic manager with a built-in reader
 | Area | Status | How tested |
 |------|--------|------------|
 | Core (libraries, books, auth, search) | **Stable** | 1600+ integration tests, CI on Linux/macOS/Windows |
-| EPUB reader | **Stable** | Playwright browser tests + manual testing |
-| PDF reader | **Stable** | Integration tests |
-| Bookmarks, journals, notebooks, reviews | **Stable** | Integration tests (API-level, not manually verified in UI) |
-| Reading/listening stats & analytics | **Stable** | Integration tests |
+| EPUB reader (with TOC sidebar) | **Stable** | Playwright browser tests + manual testing |
+| PDF reader (with TOC sidebar) | **Stable** | Integration tests |
+| Comic reader (CBZ/CBR) | **Stable** | Double page, continuous scroll, fit modes, swipe, page gaps |
+| Audiobook player | **Stable** | Multi-chapter playback, speed control |
+| Bookmarks, journals, notebooks, reviews | **Stable** | Integration tests |
+| Reading/listening stats & analytics | **Stable** | Streaks, speed, heatmaps, goals |
 | Smart shelves & filter presets | **Stable** | Integration tests |
-| PostgreSQL 17/18 | **Stable** | Full test suite runs against real PostgreSQL in CI |
-| Docker image | **Stable** | CI builds image and runs smoke test |
-| Book sharing | **Works** | Integration tests, not manually verified |
-| Collections | **API only** | API exists, no UI yet |
-| Comic reader (CBZ/CBR) | **Broken** | Seed downloads fail (archive.org auth required); reader untested with real files |
-| Audiobook player | **Untested** | Code exists; never tested with real audio files end-to-end |
-| Metadata fetching | **Partially working** | OpenLibrary/Google Books tested; Hardcover/ComicVine/Audible untested |
-| Demo data seeding | **Broken** | EPUB seeds work; comic and audiobook downloads fail silently |
-| Download progress UI | **Minimal** | Shows count only; no error messages, no retry, no per-file status |
-| Whispersync (ebook↔audiobook) | **Untested** | Integration tests only; never tested with real books |
-| Native binaries (GraalVM 25) | **Tested** | CI builds + smoke tests on all 5 platforms |
-| Kobo / KOReader sync | **Untested** | Implements protocols; never tested with real hardware |
-| OPDS catalog | **Untested** | Basic tests; not verified with real client apps |
-| OIDC / SSO | **Untested** | Implements OIDC spec; tested only with mock providers |
-| Hardcover.app sync | **Untested** | API integration exists; not tested with real accounts |
-| Email delivery | **Untested** | SMTP works with GreenMail mock; not tested with real SMTP or Kindle |
-| Full-text search | **Untested** | PostgreSQL only; requires `BOOKTOWER_FTS_ENABLED=true` |
-| Dark mode toggle | **Works** | Not tested systematically |
-| Keyboard shortcuts | **Works** | Not tested |
-| Drag-and-drop upload | **Untested** | Code exists; never tested with real files |
-| PWA / Service worker | **Untested** | Registered but offline behavior not verified |
+| Full-text search (PostgreSQL) | **Stable** | 14 E2E tests against real PostgreSQL, 30 language configs |
+| PostgreSQL 17/18 | **Stable** | Full test suite in CI |
+| Docker image | **Stable** | CI builds + 37MB fat JAR |
+| Kobo / KOReader sync | **Tested** | 17 integration tests, not verified with real hardware |
+| OPDS 1.2 + 2.0 | **Tested** | Integration tests; OPDS 2.0 JSON feeds |
+| OIDC / SSO | **Tested** | 8 E2E tests against real Keycloak 26.2 |
+| Book sharing | **Works** | Integration tests |
+| Collections | **Works** | API + UI |
+| Metadata fetching | **Stable** | Bulk refresh, 5 providers |
+| Demo data seeding | **Stable** | Resumable downloads, retry on failure |
+| Webhook notifications | **Works** | API exists, async delivery |
+| Custom metadata fields | **Works** | User-defined fields per book |
+| Public reading profile | **Works** | Opt-in, metadata only |
+| Database backup/restore | **Works** | Full JSON export/import |
+| Native binaries (GraalVM 25) | **Experimental** | CI builds; may fail |
+| Email delivery | **Untested** | SMTP works with GreenMail mock; not tested with real Kindle |
+| Hardcover.app sync | **Untested** | API exists; not tested with real accounts |
 
 ## Features
 
 ### Library Management
 
 - Organize books into named libraries with folder-backed storage
+- **Batch import from directory** with configurable performance limits (throttle, max concurrency)
 - Bulk operations: move, delete, tag, or change status for multiple books at once
 - Smart shelves with auto-population driven by status, tag, or minimum rating rules
 - Filter presets for saved search configurations
+- **Custom metadata fields** — user-defined fields (text, number, date, select, boolean) per book
 - Book drop: drag-and-drop file upload into libraries
 - Auto-scan: background folder scanning on a configurable interval
-- Library health checks and duplicate detection
+- Library health checks and **duplicate detection with merge**
+- **Library statistics** — format/language breakdown, top authors/tags, storage usage
 - Calibre format conversion support
-- Full-text search with FTS indexing
+- Full-text search with FTS indexing (30 languages, BM25 optional)
 
 ### Reading
 
-- **EPUB** reader with customizable fonts, themes, margins, and RTL support
-- **PDF** reader with in-browser viewing and text extraction
-- **Comic** reader (CBZ/CBR) with page hash navigation
+- **EPUB** reader with customizable fonts, themes, margins, RTL support, and **table of contents sidebar**
+- **PDF** reader with in-browser viewing, text extraction, and **table of contents from bookmarks**
+- **Comic** reader (CBZ/CBR) with double page spread, continuous scroll, 5 fit modes, swipe gestures, configurable page gaps
 - **FB2** reader
 - **DJVU** support
 - **Audiobook** playback with listening sessions, bookmarks, and progress tracking
+- **Cross-device position sync** — resume reading on any device (EPUB CFI, PDF page, audio timestamp)
 - Reader preferences per user (font family, font size, theme, layout)
 
 ### Metadata
 
 - Fetch metadata from **OpenLibrary**, **Google Books**, **Hardcover**, **ComicVine**, and **Audible**
+- **Bulk metadata refresh** — auto-fetch missing covers/ISBNs for entire library
 - Automatic metadata extraction from EPUB, PDF, comic, and audiobook files
 - Metadata proposals: review and accept/reject fetched metadata before applying
 - Metadata locks: prevent automatic overwrites of manually curated fields
@@ -78,31 +81,37 @@ A self-hosted personal book, audiobook, and comic manager with a built-in reader
 - Sidecar metadata file support
 - Filename-based metadata parsing
 
-### Device Sync *(experimental)*
+### Device Sync
 
-- **Kobo** device synchronization *(not tested with real hardware)*
-- **KOReader** sync protocol support *(not tested with real devices)*
-- **OPDS** catalog feed for e-reader apps *(basic, not verified with all clients)*
+- **Kobo** device synchronization (17 integration tests)
+- **KOReader** sync protocol support (kosync)
+- **OPDS 1.2** (Atom XML) and **OPDS 2.0** (JSON) catalog feeds
 - Book delivery via email (Send-to-Kindle and similar)
 
 ### User Features
 
 - **Whispersync**: link an ebook and audiobook, seamlessly switch between reading and listening at the matching position
-- Bookmarks and annotations
-- Reading journals
-- Notebooks per book
+- Bookmarks and annotations with **export** (Markdown, JSON, Readwise CSV)
+- Reading journals and notebooks per book
 - Reviews and community ratings
-- Reading goals with progress tracking
+- **Reading goals** with progress ring, monthly pacing, projected finish
+- **Reading timeline** — chronological feed of reading activity
 - Reading sessions with daily page tracking and streaks
+- **Reading speed analytics** — pages/hour, estimated time to finish
 - Listening sessions with listening stats and heatmaps
-- Recommendations engine
+- **Smart discovery recommendations** — unfinished series, favorite authors, top tags
+- **Public reading profile** — opt-in activity feed (metadata only)
+- **Book condition tracker** — for physical collections (condition, purchase info, shelf location)
+- **Webhook notifications** — Discord/Slack/generic HTTP POST for events
 - Smart shelves (auto-populated virtual collections)
 - Content restrictions support
 - Saved filter presets
 
 ### Analytics
 
+- **Library statistics** — total books, format/language breakdown, top authors, storage usage
 - Reading statistics: pages read, books finished, daily streaks
+- **Reading streaks widget** — current/longest streak for dashboard
 - Listening statistics for audiobooks
 - Reading heatmaps
 - Per-library and per-user analytics
@@ -111,10 +120,13 @@ A self-hosted personal book, audiobook, and comic manager with a built-in reader
 
 - Multi-user support with registration and user management
 - Per-user permissions and library access control
+- **Database backup/restore** — full JSON export/import
+- **Batch import from directory** with performance throttling
 - Scheduled background tasks with monitoring
 - Audit log for administrative actions
 - Demo mode for showcasing without modifications
 - Notification system
+- **Health check endpoint** (`/health`) for Docker/Kubernetes
 
 ### Integrations
 
@@ -183,7 +195,7 @@ Open `http://localhost:9999` and register your first account.
 Download the latest release JAR from [Releases](https://github.com/rygel/booktower/releases), then:
 
 ```bash
-java -jar booktower-v0.6.5.jar
+java -jar booktower-v0.6.7.jar
 ```
 
 ### Native Binary
