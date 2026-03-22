@@ -6,14 +6,31 @@
 
 ## Remaining
 
+### Features
+- [ ] Reading lists — curated ordered lists of books with completion tracking (like playlists)
+- [ ] Shared annotations — share highlights/notes with other users on the same server
+- [ ] Want-to-read from external sources — browse and add books to a wishlist without owning the file
+- [ ] Duplicate page detection UI — surface ComicPageHashService results for user cleanup
+- [ ] CBL reading list import — import ComicRack reading lists (.cbl files)
+- [ ] Server-wide announcements — admin can post messages visible to all users
+- [ ] Reading streaks widget — daily streak counter on dashboard (data exists in ReadingStatsService)
+- [ ] Book condition tracker — for physical collections: condition, purchase price, shelf location
+- [ ] Reading speed analytics — pages/hour from session data, estimated time to finish current book
+- [ ] Health check endpoint (`/health`) — DB status, disk space, version for Docker/Kubernetes
+
 ### Performance
 - [ ] Profile actual page load times end-to-end and identify remaining bottlenecks
 
 ### Testing
 - [ ] Book delivery to Kindle — needs real email + Kindle device
+- [ ] Integration tests for untested services (9 services)
 
 ### Future
 - [ ] Standalone KOReader/Kobo device simulator (sub-Maven module for user self-testing)
+- [ ] ISBN barcode scanner (browser camera API)
+- [ ] Text-to-speech in reader (browser Web Speech API)
+- [ ] Import from Calibre (metadata.db)
+- [ ] Email digest (weekly reading stats summary)
 
 ## Completed
 
