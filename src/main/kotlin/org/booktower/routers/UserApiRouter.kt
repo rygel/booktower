@@ -56,6 +56,8 @@ class UserApiRouter(
     private val positionSyncService: org.booktower.services.PositionSyncService? = null,
     private val customFieldService: org.booktower.services.CustomFieldService? = null,
     private val publicProfileService: org.booktower.services.PublicProfileService? = null,
+    private val readingSpeedService: org.booktower.services.ReadingSpeedService? = null,
+    private val bookConditionService: org.booktower.services.BookConditionService? = null,
 ) {
     @Suppress("LongMethod")
     fun routes(): List<RoutingHttpHandler> =
@@ -148,6 +150,13 @@ class UserApiRouter(
             "/api/user/profile/public" bind Method.GET to filters.auth.then(::getProfilePublicStatus),
             "/api/user/profile/public" bind Method.PUT to filters.auth.then(::setProfilePublic),
             "/api/profile/{username}" bind Method.GET to ::getPublicProfile,
+            // Reading speed analytics
+            "/api/stats/speed" bind Method.GET to filters.auth.then(::getReadingSpeed),
+            // Reading streaks widget
+            "/api/stats/streaks" bind Method.GET to filters.auth.then(::getStreaks),
+            // Book condition tracker
+            "/api/books/{bookId}/condition" bind Method.GET to filters.auth.then(::getBookCondition),
+            "/api/books/{bookId}/condition" bind Method.PUT to filters.auth.then(::updateBookCondition),
         )
 
     // ─── Collections ────────────────────────────────────────────────────────
@@ -1069,5 +1078,70 @@ class UserApiRouter(
                 org.booktower.config.Json.mapper
                     .writeValueAsString(profile),
             )
+    }
+
+    // ─── Reading speed ────────────────────────────────────────────────────
+
+    private fun getReadingSpeed(req: Request): Response {
+        val svc = readingSpeedService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(svc.getStats(AuthenticatedUser.from(req))),
+            )
+    }
+
+    // ─── Reading streaks widget ───────────────────────────────────────────
+
+    private fun getStreaks(req: Request): Response {
+        val svc = readingStatsService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val stats = svc.getStats(AuthenticatedUser.from(req), 365)
+        val data = mapOf("currentStreak" to stats.currentStreak, "longestStreak" to stats.longestStreak, "averagePagesPerDay" to stats.averagePagesPerDay)
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(data),
+            )
+    }
+
+    // ─── Book condition tracker ───────────────────────────────────────────
+
+    private fun getBookCondition(req: Request): Response {
+        val svc = bookConditionService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val userId = AuthenticatedUser.from(req)
+        val bookId =
+            req.uri.path
+                .split("/")
+                .let { p ->
+                    val i = p.indexOf("books")
+                    if (i >= 0 && i + 1 < p.size) p[i + 1] else null
+                }?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() } ?: return Response(Status.BAD_REQUEST)
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(svc.get(userId, bookId)),
+            )
+    }
+
+    private fun updateBookCondition(req: Request): Response {
+        val svc = bookConditionService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val userId = AuthenticatedUser.from(req)
+        val bookId =
+            req.uri.path
+                .split("/")
+                .let { p ->
+                    val i = p.indexOf("books")
+                    if (i >= 0 && i + 1 < p.size) p[i + 1] else null
+                }?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() } ?: return Response(Status.BAD_REQUEST)
+        val body =
+            runCatching {
+                org.booktower.config.Json.mapper
+                    .readValue(req.bodyString(), org.booktower.services.UpdateBookConditionRequest::class.java)
+            }.getOrNull() ?: return Response(Status.BAD_REQUEST)
+        svc.update(userId, bookId, body)
+        return Response(Status.NO_CONTENT)
     }
 }

@@ -64,6 +64,7 @@ class AppHandler(
     private val metadataApiRouter: MetadataApiRouter,
     private val audiobookApiRouter: AudiobookApiRouter,
     private val deviceSyncRouter: DeviceSyncRouter,
+    private val healthService: org.booktower.services.HealthService? = null,
 ) {
     fun routes(): RoutingHttpHandler {
         val allRoutes =
@@ -72,9 +73,17 @@ class AppHandler(
                 "/covers/{filename}" bind Method.GET to fileHandler::cover,
                 "/manifest.json" bind Method.GET to ::pwaManifest,
                 "/health" bind Method.GET to {
+                    val health = healthService?.check()
                     Response(Status.OK)
                         .header("Content-Type", "application/json")
-                        .body("""{"status":"ok","version":"${org.booktower.services.VersionService.info.version}"}""")
+                        .body(
+                            if (health != null) {
+                                org.booktower.config.Json.mapper
+                                    .writeValueAsString(health)
+                            } else {
+                                """{"status":"ok","version":"${org.booktower.services.VersionService.info.version}"}"""
+                            },
+                        )
                 },
                 "/api/version" bind Method.GET to {
                     Response(Status.OK)
