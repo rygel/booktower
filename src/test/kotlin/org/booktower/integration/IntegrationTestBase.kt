@@ -243,6 +243,8 @@ abstract class IntegrationTestBase {
                 null, // libraryWatchService
                 null, // bookLinkService
                 org.booktower.services.BookSharingService(jdbi, bookService),
+                backgroundTaskService,
+                org.booktower.services.LibraryStatsService(jdbi),
             )
         val backgroundTaskHandler = BackgroundTaskHandler(backgroundTaskService)
         val journalHandler = JournalHandler(journalService)

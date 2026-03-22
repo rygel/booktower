@@ -304,8 +304,11 @@ class FtsHttpE2ETest {
                     magicShelfService,
                     templateRenderer,
                     readingSessionService,
-                    null,
-                    null,
+                    null, // libraryWatchService
+                    null, // bookLinkService
+                    null, // bookSharingService
+                    backgroundTaskService,
+                    null, // libraryStatsService
                 )
             val backgroundTaskHandler =
                 org.booktower.handlers.BackgroundTaskHandler(backgroundTaskService, seedService)

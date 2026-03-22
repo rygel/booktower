@@ -120,6 +120,10 @@
                     <i class="ri-bar-chart-line"></i>
                     ${pc.i18n.translate("nav.analytics")}
                 </a>
+                <a href="/stats" class="sidebar-link ${if (currentPage == "stats") "active" else ""}">
+                    <i class="ri-bar-chart-box-line"></i>
+                    ${pc.i18n.translate("page.stats.title")}
+                </a>
                 <a href="/activity" class="sidebar-link ${if (currentPage == "activity") "active" else ""}">
                     <i class="ri-history-line"></i>
                     ${pc.i18n.translate("nav.activity")}
