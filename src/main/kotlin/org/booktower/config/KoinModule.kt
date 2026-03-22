@@ -207,6 +207,7 @@ val appModule =
         single { org.booktower.services.CollectionService(get<Database>().getJdbi()) }
         single { org.booktower.services.BulkMetadataRefreshService(get<Database>().getJdbi(), get(), get(), get()) }
         single { org.booktower.services.BatchImportService(get<Database>().getJdbi(), get(), get(), get(), get(), get()) }
+        single { org.booktower.services.CustomFieldService(get<Database>().getJdbi()) }
         single { org.booktower.services.LibraryStatsService(get<Database>().getJdbi()) }
         single { org.booktower.services.WebhookService(get<Database>().getJdbi()) }
         single { org.booktower.services.ReadingTimelineService(get<Database>().getJdbi()) }
@@ -388,6 +389,7 @@ val appModule =
                 annotationExportService = get<org.booktower.services.AnnotationExportService>(),
                 discoveryService = get<org.booktower.services.DiscoveryService>(),
                 positionSyncService = get<org.booktower.services.PositionSyncService>(),
+                customFieldService = get<org.booktower.services.CustomFieldService>(),
             )
         }
         single {
