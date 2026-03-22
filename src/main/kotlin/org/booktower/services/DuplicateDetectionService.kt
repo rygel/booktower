@@ -23,9 +23,116 @@ data class DuplicateBookEntry(
     val addedAt: String,
 )
 
+data class MergeResult(
+    val keptBookId: String,
+    val deletedBookIds: List<String>,
+)
+
 class DuplicateDetectionService(
     private val jdbi: Jdbi,
 ) {
+    /**
+     * Merges duplicate books: keeps [keepBookId] and deletes [deleteBookIds].
+     * Before deleting, copies any non-blank metadata from deleted books into
+     * the kept book (only fills blanks — never overwrites existing data).
+     * Returns null if any book is not found or not owned by [userId].
+     */
+    fun merge(
+        userId: UUID,
+        keepBookId: UUID,
+        deleteBookIds: List<UUID>,
+    ): MergeResult? {
+        if (deleteBookIds.isEmpty()) return null
+
+        // Verify all books belong to this user
+        val allIds = (deleteBookIds + keepBookId).map { it.toString() }
+        val owned =
+            jdbi.withHandle<Set<String>, Exception> { h ->
+                val placeholders = allIds.indices.joinToString(",") { "?" }
+                val q =
+                    h.createQuery(
+                        """
+                    SELECT b.id FROM books b
+                    INNER JOIN libraries l ON b.library_id = l.id
+                    WHERE l.user_id = ? AND b.id IN ($placeholders)
+                    """,
+                    )
+                q.bind(0, userId.toString())
+                allIds.forEachIndexed { i, id -> q.bind(i + 1, id) }
+                q.mapTo(String::class.java).toSet()
+            }
+        if (owned.size != allIds.size) return null
+
+        // Fill missing metadata on kept book from deleted books
+        val keptMeta = getBookMeta(keepBookId.toString()) ?: return null
+        for (deleteId in deleteBookIds) {
+            val donorMeta = getBookMeta(deleteId.toString()) ?: continue
+            fillMissingFields(keepBookId.toString(), keptMeta, donorMeta)
+        }
+
+        // Move bookmarks, annotations, reading sessions from deleted books to kept book
+        jdbi.useHandle<Exception> { h ->
+            for (deleteId in deleteBookIds) {
+                val did = deleteId.toString()
+                val kid = keepBookId.toString()
+                h
+                    .createUpdate("UPDATE book_bookmarks SET book_id = ? WHERE book_id = ?")
+                    .bind(0, kid)
+                    .bind(1, did)
+                    .execute()
+                h
+                    .createUpdate("UPDATE book_annotations SET book_id = ? WHERE book_id = ?")
+                    .bind(0, kid)
+                    .bind(1, did)
+                    .execute()
+                h
+                    .createUpdate("UPDATE reading_sessions SET book_id = ? WHERE book_id = ?")
+                    .bind(0, kid)
+                    .bind(1, did)
+                    .execute()
+                h.createUpdate("DELETE FROM books WHERE id = ?").bind(0, did).execute()
+            }
+        }
+
+        val deletedIds = deleteBookIds.map { it.toString() }
+        logger.info("Merged duplicates: kept=$keepBookId, deleted=$deletedIds")
+        return MergeResult(keepBookId.toString(), deletedIds)
+    }
+
+    private fun getBookMeta(bookId: String): Map<String, Any?>? =
+        jdbi.withHandle<Map<String, Any?>?, Exception> { h ->
+            h
+                .createQuery("SELECT * FROM books WHERE id = ?")
+                .bind(0, bookId)
+                .mapToMap()
+                .firstOrNull()
+        }
+
+    private fun fillMissingFields(
+        keepId: String,
+        kept: Map<String, Any?>,
+        donor: Map<String, Any?>,
+    ) {
+        val fields = listOf("isbn", "description", "publisher", "published_date", "page_count", "series", "series_index", "language", "cover_url")
+        val updates = mutableListOf<Pair<String, Any>>()
+        for (field in fields) {
+            val keptVal = kept[field]
+            val donorVal = donor[field]
+            if ((keptVal == null || keptVal.toString().isBlank()) && donorVal != null && donorVal.toString().isNotBlank()) {
+                updates += field to donorVal
+            }
+        }
+        if (updates.isEmpty()) return
+
+        jdbi.useHandle<Exception> { h ->
+            val setClauses = updates.joinToString(", ") { "${it.first} = ?" }
+            val q = h.createUpdate("UPDATE books SET $setClauses WHERE id = ?")
+            updates.forEachIndexed { i, (_, v) -> q.bind(i, v) }
+            q.bind(updates.size, keepId)
+            q.execute()
+        }
+    }
+
     /**
      * Returns all duplicate groups for the given user's libraries.
      * Checks three signals in priority order:

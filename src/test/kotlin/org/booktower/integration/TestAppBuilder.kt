@@ -322,6 +322,7 @@ fun buildTestApp(
             scheduledTaskService,
             bulkCoverService,
             telemetryService,
+            null,
         )
     val metadataApiRouter =
         MetadataApiRouter(
