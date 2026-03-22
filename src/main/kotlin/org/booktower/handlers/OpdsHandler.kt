@@ -146,7 +146,7 @@ class OpdsHandler(
                 return Response(Status.NOT_FOUND)
             }
         val library = libraryService.getLibrary(userId, libId) ?: return Response(Status.NOT_FOUND)
-        val books = bookService.getBooks(userId, libId.toString(), 1, 100).getBooks()
+        val books = bookService.getBooks(userId, libId.toString(), 1, 500).getBooks()
         val updated = Instant.now().toString()
 
         val bookIds = books.map { UUID.fromString(it.id) }
@@ -394,7 +394,7 @@ class OpdsHandler(
                 return Response(Status.NOT_FOUND)
             }
         val library = libraryService.getLibrary(userId, libId) ?: return Response(Status.NOT_FOUND)
-        val books = bookService.getBooks(userId, libId.toString(), 1, 100).getBooks()
+        val books = bookService.getBooks(userId, libId.toString(), 1, 500).getBooks()
         val bookIds = books.map { UUID.fromString(it.id) }
         val allFiles = bookService.getBookFilesForBooks(userId, bookIds)
 

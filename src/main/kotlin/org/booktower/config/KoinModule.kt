@@ -126,7 +126,7 @@ val appModule =
                 get(),
             )
         }
-        single { BookService(get<Database>().getJdbi(), get(), get()) }
+        single { BookService(get<Database>().getJdbi(), get(), get(), webhookService = getOrNull()) }
         single { BookmarkService(get<Database>().getJdbi()) }
         single { UserSettingsService(get<Database>().getJdbi()) }
         single { AnalyticsService(get<Database>().getJdbi(), get()) }
@@ -223,6 +223,7 @@ val appModule =
         single { org.booktower.services.PositionSyncService(get<Database>().getJdbi()) }
 
         single { org.booktower.services.WishlistService(get<Database>().getJdbi()) }
+        single { org.booktower.services.AdvancedSearchService(get<Database>().getJdbi(), getOrNull()) }
 
         // ── Handler objects ──────────────────────────────────────────────────
         single {
@@ -403,6 +404,7 @@ val appModule =
                 readingListService = get<org.booktower.services.ReadingListService>(),
                 annotationService = get<org.booktower.services.AnnotationService>(),
                 wishlistService = get<org.booktower.services.WishlistService>(),
+                advancedSearchService = get<org.booktower.services.AdvancedSearchService>(),
             )
         }
         single {

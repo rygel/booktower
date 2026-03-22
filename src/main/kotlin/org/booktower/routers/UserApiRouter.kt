@@ -61,6 +61,7 @@ class UserApiRouter(
     private val readingListService: org.booktower.services.ReadingListService? = null,
     private val annotationService: org.booktower.services.AnnotationService? = null,
     private val wishlistService: org.booktower.services.WishlistService? = null,
+    private val advancedSearchService: org.booktower.services.AdvancedSearchService? = null,
 ) {
     @Suppress("LongMethod")
     fun routes(): List<RoutingHttpHandler> =
@@ -177,6 +178,8 @@ class UserApiRouter(
             "/api/wishlist" bind Method.POST to filters.auth.then(::addToWishlist),
             "/api/wishlist/{id}" bind Method.PUT to filters.auth.then(::updateWishlistItem),
             "/api/wishlist/{id}" bind Method.DELETE to filters.auth.then(::deleteWishlistItem),
+            // Advanced search
+            "/api/search/advanced" bind Method.POST to filters.auth.then(::advancedSearch),
         )
 
     // ─── Collections ────────────────────────────────────────────────────────
@@ -1355,5 +1358,24 @@ class UserApiRouter(
                 .split("/")
                 .lastOrNull() ?: return Response(Status.BAD_REQUEST)
         return if (svc.deleteItem(AuthenticatedUser.from(req), id)) Response(Status.NO_CONTENT) else Response(Status.NOT_FOUND)
+    }
+
+    // ─── Advanced search ──────────────────────────────────────────────────
+
+    private fun advancedSearch(req: Request): Response {
+        val svc = advancedSearchService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val userId = AuthenticatedUser.from(req)
+        val body =
+            runCatching {
+                org.booktower.config.Json.mapper
+                    .readValue(req.bodyString(), org.booktower.services.AdvancedSearchRequest::class.java)
+            }.getOrNull() ?: return Response(Status.BAD_REQUEST)
+        val result = svc.search(userId, body)
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(result),
+            )
     }
 }
