@@ -188,7 +188,7 @@ class WebhookService(
             name = row.getColumn("name", String::class.java) ?: "",
             url = row.getColumn("url", String::class.java) ?: "",
             events = (row.getColumn("events", String::class.java) ?: "").split(",").filter { it.isNotBlank() },
-            enabled = row.getColumn("enabled", Boolean::class.java) ?: true,
+            enabled = row.getColumn("enabled", Boolean::class.javaObjectType) ?: true,
             createdAt = row.getColumn("created_at", String::class.java) ?: "",
         )
 }

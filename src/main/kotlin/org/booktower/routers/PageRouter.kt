@@ -53,6 +53,7 @@ class PageRouter(
             "/shared/book/{token}" bind Method.GET to filters.optionalAuth.then(pageHandler::sharedBook),
             "/analytics" bind Method.GET to filters.optionalAuth.then(pageHandler::analytics),
             "/stats" bind Method.GET to filters.optionalAuth.then(pageHandler::libraryStats),
+            "/webhooks" bind Method.GET to filters.auth.then(pageHandler::webhooks),
             "/ui/preferences/analytics" bind Method.POST to pageHandler::setAnalytics,
             "/admin" bind Method.GET to filters.admin.then(adminHandler::adminPage),
             // HTMX UI mutations
