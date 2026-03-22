@@ -98,7 +98,7 @@ class ReadingListService(
                     .createQuery(
                         """
                     SELECT rli.id, rli.book_id, rli.sort_order, rli.completed, rli.completed_at,
-                           b.title AS book_title, b.author AS book_author, b.cover_url
+                           b.title AS book_title, b.author AS book_author, b.cover_path
                     FROM reading_list_items rli
                     INNER JOIN books b ON rli.book_id = b.id
                     WHERE rli.list_id = ?
@@ -111,7 +111,7 @@ class ReadingListService(
                             bookId = row.getColumn("book_id", String::class.java) ?: "",
                             bookTitle = row.getColumn("book_title", String::class.java) ?: "",
                             bookAuthor = row.getColumn("book_author", String::class.java),
-                            coverUrl = row.getColumn("cover_url", String::class.java),
+                            coverUrl = row.getColumn("cover_path", String::class.java),
                             sortOrder = row.getColumn("sort_order", Int::class.javaObjectType) ?: 0,
                             completed = row.getColumn("completed", Boolean::class.javaObjectType) ?: false,
                             completedAt = row.getColumn("completed_at", String::class.java),
