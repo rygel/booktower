@@ -892,6 +892,20 @@
                             <shadedArtifactAttached>true</shadedArtifactAttached>
                             <shadedClassifierName>fat</shadedClassifierName>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <!-- Exclude Kotlin compiler from fat JAR — only needed for
+                                 JTE dynamic template compilation (dev mode). Production uses
+                                 precompiled templates. Saves ~55MB. -->
+                            <artifactSet>
+                                <excludes>
+                                    <exclude>org.jetbrains.kotlin:kotlin-compiler-embeddable</exclude>
+                                    <exclude>org.jetbrains.kotlin:kotlin-scripting-compiler-embeddable</exclude>
+                                    <exclude>org.jetbrains.kotlin:kotlin-scripting-compiler-impl-embeddable</exclude>
+                                    <exclude>org.jetbrains.kotlin:kotlin-scripting-common</exclude>
+                                    <exclude>org.jetbrains.kotlin:kotlin-scripting-jvm</exclude>
+                                    <exclude>org.jetbrains.kotlin:kotlin-daemon-embeddable</exclude>
+                                    <exclude>org.jetbrains.intellij.deps:trove4j</exclude>
+                                </excludes>
+                            </artifactSet>
                             <filters>
                                 <filter>
                                     <artifact>*:*</artifact>
