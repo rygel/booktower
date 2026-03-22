@@ -6,30 +6,40 @@
 
 ## Remaining
 
-### Comic Reader
-- [ ] Smooth page transitions with animation toggle
-- [ ] Vertical reading direction (top-to-bottom)
-- [ ] Configurable page gaps for continuous mode
+### High Priority — Features
+- [ ] Reading challenges / goals dashboard — "25 books in 2026" with progress ring, monthly pacing (reading sessions data already exists)
+- [ ] Bulk metadata refresh — background scan for books missing covers/ISBNs, auto-fetch from OpenLibrary/Google Books
+- [ ] Library sharing between users — let users share individual libraries with each other (LibraryAccessService is admin-only today)
+- [ ] Smart recommendations — "readers who liked X also liked Y" based on tags/categories/ratings across users (RecommendationService exists)
 
-### Full-Text Search
-- [ ] Multi-language FTS config per book (use book's `language` field to select PG text search config)
+### Medium Priority — Features
+- [ ] Reading history timeline — visual "what I read and when" timeline from existing session data
+- [ ] Duplicate book merge — DuplicateDetectionService finds duplicates, add ability to merge entries (keep best metadata, delete the other)
+- [ ] OPDS 2.0 — current is OPDS 1.2; v2.0 is JSON-based and supports streaming audiobooks natively
+- [ ] Webhook notifications — Discord/Slack/generic webhook endpoints for events (new book added, download complete, etc.)
 
-### Performance
-- [ ] Profile actual page load times end-to-end and identify remaining bottlenecks
-
-### UI
-- [ ] Improved mobile responsive layout
-- [ ] Dark mode preview in theme selector
+### Differentiation
+- [ ] Multi-user book clubs — shared reading with discussion threads per chapter
+- [ ] Annotation export — export highlights/annotations to Markdown, Obsidian, or Readwise format
+- [ ] Library statistics page — total books, format breakdown, author distribution, genre cloud, storage usage
 
 ### Testing
-- [ ] Kobo/KOReader sync — tested with mocks only, never with real hardware
 - [ ] Book delivery to Kindle — needs real email + Kindle device
+
+### Future
+- [ ] Standalone KOReader/Kobo device simulator (sub-Maven module for user self-testing)
 
 ## Completed
 
+- [x] KOReader + Kobo sync integration tests (17 tests, PR #107)
+- [x] Configurable page gaps for comic reader (PR #106)
+- [x] Per-book language FTS config — 30 languages (PR #105)
+- [x] HTTP Range-based resumable downloads (PR #104)
 - [x] Replace raw SQL in tests with service method calls (PR #102)
 - [x] Koin DI resolution test — 41 bindings verified (PR #101)
-- [x] Comic reader: double page spread, continuous scroll, 5 fit modes, click zones, swipe, preloading
+- [x] Comic reader: double page, continuous scroll, fit modes, transitions, vertical, page gaps
+- [x] Mobile responsive layout — handled by outerstellar-platform
+- [x] Dark mode preview in theme selector — handled by outerstellar-platform
 - [x] Connection pool tuning (maxLifetime, leak detection, JDBC4 validation)
 - [x] Activity log page (background tasks + audit log)
 - [x] BM25 index auto-creation when pg_textsearch available
@@ -41,20 +51,14 @@
 - [x] FTS enqueue bug fix: FileHandler was not indexing uploaded EPUBs/PDFs
 - [x] FtsServiceTest: replaced manual SQL with Flyway migrations
 - [x] Resumable downloads with Content-Length verification
-- [x] Apache Tika evaluation: not worth adding now (PDFBox sufficient)
-- [x] Cover image LRU cache (already implemented — Caffeine 200 entries)
-- [x] MagicShelf LIMIT (already implemented — default 200)
-- [x] seedFullDemo one-click (already calls seedFiles + seedLibrivox + seedComics)
+- [x] Cover image LRU cache (Caffeine 200 entries)
+- [x] MagicShelf LIMIT (default 200)
+- [x] seedFullDemo one-click
 - [x] Email delivery tested with real SMTP (GreenMail)
-- [x] Audit all tests for manual SQL — none found
 - [x] Request body size limits (1MB JSON, 500MB uploads)
-- [x] String length validation, numeric range validation
 - [x] Optimistic locking for book updates
-- [x] Disk space check before file uploads
-- [x] Unicode/edge case tests (14 tests)
 - [x] Native binary: complete GraalVM reflection config (943 classes)
 - [x] SSE notifications streaming with heartbeats
-- [x] Download retry button
 - [x] Permission boundary tests (14 tests)
 - [x] Admin sidebar visibility fix (optionalAuthFilter)
 - [x] Ownership bypass fixes (setStatus, setRating, setTags)
