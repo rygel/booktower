@@ -19,6 +19,8 @@ private val MIGRATION_FILES =
         "V4__book_sharing.sql",
         "V5__collections.sql",
         "V6__fts_metadata_search.sql",
+        "V7__webhooks.sql",
+        "V8__position_sync.sql",
     )
 
 class Database private constructor(

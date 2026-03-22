@@ -400,6 +400,7 @@ class FtsHttpE2ETest {
                     bulkCoverService,
                     telemetryService,
                     null,
+                    null,
                 )
             val metadataApiRouter =
                 org.booktower.routers.MetadataApiRouter(
