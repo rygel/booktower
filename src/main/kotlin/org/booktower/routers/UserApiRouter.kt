@@ -55,6 +55,7 @@ class UserApiRouter(
     private val discoveryService: org.booktower.services.DiscoveryService? = null,
     private val positionSyncService: org.booktower.services.PositionSyncService? = null,
     private val customFieldService: org.booktower.services.CustomFieldService? = null,
+    private val publicProfileService: org.booktower.services.PublicProfileService? = null,
 ) {
     @Suppress("LongMethod")
     fun routes(): List<RoutingHttpHandler> =
@@ -143,6 +144,10 @@ class UserApiRouter(
             "/api/books/{bookId}/custom-fields" bind Method.GET to filters.auth.then(::getBookCustomFields),
             "/api/books/{bookId}/custom-fields" bind Method.PUT to filters.auth.then(::setBookCustomField),
             "/api/books/{bookId}/custom-fields/{fieldName}" bind Method.DELETE to filters.auth.then(::deleteBookCustomField),
+            // Public profile
+            "/api/user/profile/public" bind Method.GET to filters.auth.then(::getProfilePublicStatus),
+            "/api/user/profile/public" bind Method.PUT to filters.auth.then(::setProfilePublic),
+            "/api/profile/{username}" bind Method.GET to ::getPublicProfile,
         )
 
     // ─── Collections ────────────────────────────────────────────────────────
@@ -1022,5 +1027,47 @@ class UserApiRouter(
                 }?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() } ?: return Response(Status.BAD_REQUEST)
         val fieldName = java.net.URLDecoder.decode(parts.lastOrNull() ?: return Response(Status.BAD_REQUEST), "UTF-8")
         return if (svc.deleteValue(userId, bookId, fieldName)) Response(Status.NO_CONTENT) else Response(Status.NOT_FOUND)
+    }
+
+    // ─── Public profile ───────────────────────────────────────────────────
+
+    private fun getProfilePublicStatus(req: Request): Response {
+        val svc = publicProfileService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val userId = AuthenticatedUser.from(req)
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body("""{"public":${svc.isPublic(userId)}}""")
+    }
+
+    private fun setProfilePublic(req: Request): Response {
+        val svc = publicProfileService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val userId = AuthenticatedUser.from(req)
+        val body =
+            runCatching {
+                org.booktower.config.Json.mapper
+                    .readTree(req.bodyString())
+            }.getOrNull()
+                ?: return Response(Status.BAD_REQUEST)
+        val enabled = body.get("public")?.asBoolean() ?: return Response(Status.BAD_REQUEST)
+        svc.setPublic(userId, enabled)
+        return Response(Status.NO_CONTENT)
+    }
+
+    /** Public endpoint — no auth required. Returns 404 if user not found or profile not public. */
+    private fun getPublicProfile(req: Request): Response {
+        val svc = publicProfileService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val username =
+            req.uri.path
+                .split("/")
+                .lastOrNull()
+                ?.takeIf { it.isNotBlank() }
+                ?: return Response(Status.BAD_REQUEST)
+        val profile = svc.getProfile(username) ?: return Response(Status.NOT_FOUND)
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(profile),
+            )
     }
 }
