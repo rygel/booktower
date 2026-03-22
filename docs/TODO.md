@@ -6,17 +6,38 @@
 
 ## Remaining
 
+### Features
+- [ ] Reading lists — curated ordered lists of books with completion tracking (like playlists)
+- [ ] Shared annotations — share highlights/notes with other users on the same server
+- [ ] Want-to-read from external sources — browse and add books to a wishlist without owning the file
+- [ ] Duplicate page detection UI — surface ComicPageHashService results for user cleanup
+- [ ] CBL reading list import — import ComicRack reading lists (.cbl files)
+- [ ] Server-wide announcements — admin can post messages visible to all users
+
 ### Performance
 - [ ] Profile actual page load times end-to-end and identify remaining bottlenecks
 
 ### Testing
 - [ ] Book delivery to Kindle — needs real email + Kindle device
+- [ ] Integration tests for untested services (9 services)
 
 ### Future
 - [ ] Standalone KOReader/Kobo device simulator (sub-Maven module for user self-testing)
+- [ ] ISBN barcode scanner (browser camera API)
+- [ ] Text-to-speech in reader (browser Web Speech API)
+- [ ] Import from Calibre (metadata.db)
+- [ ] Email digest (weekly reading stats summary)
 
 ## Completed
 
+- [x] Reading streaks widget, book condition tracker, reading speed analytics, health check (PR #123)
+- [x] Public reading activity profile (PR #122)
+- [x] Custom metadata fields (PR #121)
+- [x] Table of contents sidebar for EPUB/PDF reader (PR #120)
+- [x] Batch import from directory (PR #119)
+- [x] Slim fat JAR — 90MB → 37MB (PR #117)
+- [x] Release workflow fix — publish without native builds (PR #116)
+- [x] Library stats, webhooks, timeline, goals, annotation export, discovery, backup, position sync, OPDS 2.0, duplicate merge (PR #114)
 - [x] KOReader + Kobo sync integration tests (17 tests, PR #107)
 - [x] Configurable page gaps for comic reader (PR #106)
 - [x] Per-book language FTS config — 30 languages (PR #105)
