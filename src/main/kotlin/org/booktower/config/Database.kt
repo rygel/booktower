@@ -22,6 +22,7 @@ private val MIGRATION_FILES =
         "V7__webhooks.sql",
         "V8__position_sync.sql",
         "V9__custom_metadata.sql",
+        "V10__reading_lists.sql",
     )
 
 class Database private constructor(

@@ -212,6 +212,7 @@ val appModule =
         single { org.booktower.services.ReadingSpeedService(get<Database>().getJdbi()) }
         single { org.booktower.services.BookConditionService(get()) }
         single { org.booktower.services.HealthService(get<Database>().getJdbi()) }
+        single { org.booktower.services.ReadingListService(get<Database>().getJdbi()) }
         single { org.booktower.services.LibraryStatsService(get<Database>().getJdbi()) }
         single { org.booktower.services.WebhookService(get<Database>().getJdbi()) }
         single { org.booktower.services.ReadingTimelineService(get<Database>().getJdbi()) }
@@ -397,6 +398,7 @@ val appModule =
                 publicProfileService = get<org.booktower.services.PublicProfileService>(),
                 readingSpeedService = get<org.booktower.services.ReadingSpeedService>(),
                 bookConditionService = get<org.booktower.services.BookConditionService>(),
+                readingListService = get<org.booktower.services.ReadingListService>(),
             )
         }
         single {
