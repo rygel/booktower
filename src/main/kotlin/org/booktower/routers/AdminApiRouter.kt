@@ -4,6 +4,7 @@ import org.booktower.filters.AuthenticatedUser
 import org.booktower.handlers.AdminHandler
 import org.booktower.handlers.BackgroundTaskHandler
 import org.booktower.services.BulkCoverService
+import org.booktower.services.BulkMetadataRefreshService
 import org.booktower.services.CreateEmailProviderRequest
 import org.booktower.services.CreateScheduledTaskRequest
 import org.booktower.services.EmailProviderService
@@ -29,6 +30,7 @@ class AdminApiRouter(
     private val scheduledTaskService: ScheduledTaskService?,
     private val bulkCoverService: BulkCoverService?,
     private val telemetryService: TelemetryService?,
+    private val bulkMetadataRefreshService: BulkMetadataRefreshService?,
 ) {
     @Suppress("LongMethod")
     fun routes(): List<RoutingHttpHandler> =
@@ -65,6 +67,8 @@ class AdminApiRouter(
             "/api/admin/scheduled-tasks/{id}/history" bind Method.GET to filters.admin.then(::scheduledTaskHistory),
             "/api/covers/regenerate" bind Method.POST to filters.auth.then(::bulkRegenerateCovers),
             "/api/admin/duplicates" bind Method.GET to filters.admin.then(adminHandler::findDuplicates),
+            "/api/admin/duplicates/merge" bind Method.POST to filters.admin.then(adminHandler::mergeDuplicates),
+            "/api/admin/metadata/refresh" bind Method.POST to filters.admin.then(::bulkMetadataRefresh),
             "/api/admin/comic-page-duplicates" bind Method.GET to filters.admin.then(adminHandler::findComicPageDuplicates),
             "/api/admin/audit" bind Method.GET to filters.admin.then(adminHandler::listAuditLog),
             "/api/admin/tasks" bind Method.GET to
@@ -244,6 +248,19 @@ class AdminApiRouter(
         val userId = AuthenticatedUser.from(req)
         val libraryId = req.query("libraryId")
         val result = svc.regenerateCovers(userId, libraryId)
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(result),
+            )
+    }
+
+    private fun bulkMetadataRefresh(req: Request): Response {
+        val svc = bulkMetadataRefreshService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val userId = AuthenticatedUser.from(req)
+        val libraryId = req.query("libraryId")
+        val result = svc.refresh(userId, libraryId)
         return Response(Status.OK)
             .header("Content-Type", "application/json")
             .body(

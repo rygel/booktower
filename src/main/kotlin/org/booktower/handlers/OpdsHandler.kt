@@ -344,6 +344,136 @@ class OpdsHandler(
             .header("Content-Type", "$contentType; charset=utf-8")
             .body(body)
 
+    // ── OPDS 2.0 (JSON, Readium Web Publication) ──────────────────────────
+
+    private val jsonContentType = "application/opds+json"
+
+    /** GET /opds/v2/catalog — OPDS 2.0 navigation feed (JSON). */
+    fun catalogV2(req: Request): Response {
+        val userId = authenticate(req) ?: return unauthorized()
+        val libraries = libraryCache.get(userId) { libraryService.getLibraries(it) }
+        val navigation =
+            libraries.map { lib ->
+                mapOf(
+                    "href" to "/opds/v2/catalog/${lib.id}",
+                    "title" to lib.name,
+                    "type" to jsonContentType,
+                    "properties" to mapOf("numberOfItems" to lib.bookCount),
+                )
+            }
+        val feed =
+            mapOf(
+                "metadata" to mapOf("title" to "BookTower"),
+                "links" to
+                    listOf(
+                        mapOf("rel" to "self", "href" to "/opds/v2/catalog", "type" to jsonContentType),
+                    ),
+                "navigation" to navigation,
+            )
+        return Response(Status.OK)
+            .header("Content-Type", jsonContentType)
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(feed),
+            )
+    }
+
+    /** GET /opds/v2/catalog/{libraryId} — OPDS 2.0 publication list (JSON). */
+    fun libraryV2(req: Request): Response {
+        val userId = authenticate(req) ?: return unauthorized()
+        val libIdStr =
+            req.uri.path
+                .split("/")
+                .filter { it.isNotBlank() }
+                .lastOrNull()
+                ?: return Response(Status.NOT_FOUND)
+        val libId =
+            try {
+                UUID.fromString(libIdStr)
+            } catch (_: Exception) {
+                return Response(Status.NOT_FOUND)
+            }
+        val library = libraryService.getLibrary(userId, libId) ?: return Response(Status.NOT_FOUND)
+        val books = bookService.getBooks(userId, libId.toString(), 1, 100).getBooks()
+        val bookIds = books.map { UUID.fromString(it.id) }
+        val allFiles = bookService.getBookFilesForBooks(userId, bookIds)
+
+        val publications =
+            books.map { book ->
+                publicationEntry(book, allFiles[book.id] ?: emptyList())
+            }
+
+        val feed =
+            mapOf(
+                "metadata" to mapOf("title" to library.name, "numberOfItems" to books.size),
+                "links" to
+                    listOf(
+                        mapOf("rel" to "self", "href" to "/opds/v2/catalog/${library.id}", "type" to jsonContentType),
+                        mapOf("rel" to "up", "href" to "/opds/v2/catalog", "type" to jsonContentType),
+                    ),
+                "publications" to publications,
+            )
+        return Response(Status.OK)
+            .header("Content-Type", jsonContentType)
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(feed),
+            )
+    }
+
+    private fun publicationEntry(
+        book: BookDto,
+        chapters: List<BookFileDto>,
+    ): Map<String, Any?> {
+        val metadata = mutableMapOf<String, Any?>("title" to book.title, "@type" to "http://schema.org/Book")
+        book.author?.let { metadata["author"] = mapOf("name" to it) }
+        book.description?.let { metadata["description"] = it }
+        book.isbn?.let { metadata["identifier"] = "urn:isbn:$it" }
+        book.publisher?.let { metadata["publisher"] = mapOf("name" to it) }
+        book.publishedDate?.let { metadata["published"] = it }
+        book.language?.let { metadata["language"] = it }
+        book.pageCount?.let { metadata["numberOfPages"] = it }
+
+        val links = mutableListOf<Map<String, Any?>>()
+        if (!book.filePath.isNullOrBlank()) {
+            val ext = book.filePath.substringAfterLast('.', "").lowercase()
+            links +=
+                mapOf(
+                    "rel" to "http://opds-spec.org/acquisition",
+                    "href" to "/opds/books/${book.id}/file",
+                    "type" to (OPDS_CONTENT_TYPES[ext] ?: "application/octet-stream"),
+                )
+        }
+        for (ch in chapters.sortedBy { it.trackIndex }) {
+            val ext = ch.filePath?.substringAfterLast('.', "")?.lowercase() ?: ""
+            val mimeType =
+                when (ext) {
+                    "m4a", "m4b", "aac" -> "audio/mp4"
+                    "ogg" -> "audio/ogg"
+                    "flac" -> "audio/flac"
+                    else -> "audio/mpeg"
+                }
+            links +=
+                mapOf(
+                    "rel" to "http://opds-spec.org/acquisition",
+                    "href" to "/opds/books/${book.id}/chapters/${ch.trackIndex}",
+                    "type" to mimeType,
+                    "title" to (ch.title ?: "Chapter ${ch.trackIndex + 1}"),
+                )
+        }
+
+        val images = mutableListOf<Map<String, String>>()
+        if (book.coverUrl != null) {
+            images += mapOf("href" to book.coverUrl, "type" to "image/jpeg")
+        }
+
+        return mapOf(
+            "metadata" to metadata,
+            "links" to links,
+            "images" to images,
+        )
+    }
+
     /** XML-escape a string value. */
     private fun x(s: String): String =
         s

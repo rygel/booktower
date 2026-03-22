@@ -205,6 +205,7 @@ val appModule =
         single { BookSharingService(get<Database>().getJdbi(), get<BookService>()) }
         single { WeblateHandler(get<AppConfig>().weblate) }
         single { org.booktower.services.CollectionService(get<Database>().getJdbi()) }
+        single { org.booktower.services.BulkMetadataRefreshService(get<Database>().getJdbi(), get(), get(), get()) }
 
         // ── Handler objects ──────────────────────────────────────────────────
         single {
@@ -383,6 +384,7 @@ val appModule =
                 get<ScheduledTaskService>(),
                 get<BulkCoverService>(),
                 get<TelemetryService>(),
+                get<org.booktower.services.BulkMetadataRefreshService>(),
             )
         }
         single {
