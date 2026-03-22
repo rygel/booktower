@@ -319,6 +319,7 @@ abstract class IntegrationTestBase {
                 apiTokenHandler,
                 exportHandler,
                 goodreadsImportHandler,
+                webhookService = org.booktower.services.WebhookService(jdbi),
             )
         val adminApiRouter =
             AdminApiRouter(

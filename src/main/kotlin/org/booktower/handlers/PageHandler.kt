@@ -551,6 +551,18 @@ class PageHandler(
         )
     }
 
+    fun webhooks(req: Request): Response {
+        val userId = auth(req) ?: return redirectToLogin()
+        val pc = pageContext(req)
+        val hooks = webhookService?.list(userId) ?: emptyList()
+        return htmlOk(
+            templateRenderer.render(
+                "webhooks.kte",
+                pc.toMap("webhooks" to hooks),
+            ),
+        )
+    }
+
     fun setAnalytics(req: Request): Response {
         val userId = auth(req) ?: return Response(Status.UNAUTHORIZED)
         val enabled = req.form("enabled")?.lowercase() == "true"

@@ -132,6 +132,10 @@
                     <i class="ri-history-line"></i>
                     ${pc.i18n.translate("nav.activity")}
                 </a>
+                <a href="/webhooks" class="sidebar-link ${if (currentPage == "webhooks") "active" else ""}">
+                    <i class="ri-webhook-line"></i>
+                    ${pc.i18n.translate("page.webhooks.title")}
+                </a>
                 <a href="/downloads" class="sidebar-link ${if (currentPage == "downloads") "active" else ""}">
                     <i class="ri-download-line"></i>
                     ${pc.i18n.translate("nav.downloads")}
