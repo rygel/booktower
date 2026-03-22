@@ -209,6 +209,8 @@ val appModule =
         single { org.booktower.services.LibraryStatsService(get<Database>().getJdbi()) }
         single { org.booktower.services.WebhookService(get<Database>().getJdbi()) }
         single { org.booktower.services.ReadingTimelineService(get<Database>().getJdbi()) }
+        single { org.booktower.services.ReadingGoalService(get<Database>().getJdbi(), get()) }
+        single { org.booktower.services.AnnotationExportService(get<Database>().getJdbi()) }
 
         // ── Handler objects ──────────────────────────────────────────────────
         single {
@@ -378,6 +380,8 @@ val appModule =
                 libraryStatsService = get<org.booktower.services.LibraryStatsService>(),
                 webhookService = get<org.booktower.services.WebhookService>(),
                 readingTimelineService = get<org.booktower.services.ReadingTimelineService>(),
+                readingGoalService = get<org.booktower.services.ReadingGoalService>(),
+                annotationExportService = get<org.booktower.services.AnnotationExportService>(),
             )
         }
         single {

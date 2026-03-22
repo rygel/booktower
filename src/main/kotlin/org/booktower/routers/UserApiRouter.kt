@@ -50,6 +50,8 @@ class UserApiRouter(
     private val libraryStatsService: org.booktower.services.LibraryStatsService? = null,
     private val webhookService: org.booktower.services.WebhookService? = null,
     private val readingTimelineService: org.booktower.services.ReadingTimelineService? = null,
+    private val readingGoalService: org.booktower.services.ReadingGoalService? = null,
+    private val annotationExportService: org.booktower.services.AnnotationExportService? = null,
 ) {
     @Suppress("LongMethod")
     fun routes(): List<RoutingHttpHandler> =
@@ -126,6 +128,13 @@ class UserApiRouter(
             "/api/webhooks" bind Method.POST to filters.auth.then(::createWebhook),
             "/api/webhooks/{id}" bind Method.DELETE to filters.auth.then(::deleteWebhook),
             "/api/webhooks/{id}/toggle" bind Method.POST to filters.auth.then(::toggleWebhook),
+            // Reading goals
+            "/api/goals/reading" bind Method.GET to filters.auth.then(::getReadingGoal),
+            "/api/goals/reading" bind Method.PUT to filters.auth.then(::setReadingGoal),
+            // Annotation & bookmark export
+            "/api/export/annotations" bind Method.GET to filters.auth.then(::exportAnnotations),
+            "/api/export/annotations/markdown" bind Method.GET to filters.auth.then(::exportAnnotationsMarkdown),
+            "/api/export/annotations/readwise" bind Method.GET to filters.auth.then(::exportAnnotationsReadwise),
         )
 
     // ─── Collections ────────────────────────────────────────────────────────
@@ -733,6 +742,15 @@ class UserApiRouter(
     private fun getLibraryStats(req: Request): Response {
         val svc = libraryStatsService ?: return Response(Status.SERVICE_UNAVAILABLE)
         val userId = AuthenticatedUser.from(req)
+    // ─── Reading goals ────────────────────────────────────────────────────
+
+    private fun getReadingGoal(req: Request): Response {
+        val svc = readingGoalService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val userId = AuthenticatedUser.from(req)
+        val year =
+            req.query("year")?.toIntOrNull() ?: java.time.LocalDate
+                .now()
+                .year
         return Response(Status.OK)
             .header("Content-Type", "application/json")
             .body(
@@ -810,6 +828,13 @@ class UserApiRouter(
         val userId = AuthenticatedUser.from(req)
         val parts = req.uri.path.split("/")
         val id = parts.dropLast(1).lastOrNull() ?: return Response(Status.BAD_REQUEST)
+                    .writeValueAsString(svc.getProgress(userId, year)),
+            )
+    }
+
+    private fun setReadingGoal(req: Request): Response {
+        val svc = readingGoalService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val userId = AuthenticatedUser.from(req)
         val body =
             runCatching {
                 org.booktower.config.Json.mapper
@@ -817,5 +842,54 @@ class UserApiRouter(
             }.getOrNull()
         val enabled = body?.get("enabled")?.asBoolean() ?: return Response(Status.BAD_REQUEST)
         return if (svc.toggle(userId, id, enabled)) Response(Status.NO_CONTENT) else Response(Status.NOT_FOUND)
+                ?: return Response(Status.BAD_REQUEST)
+        val year =
+            body.get("year")?.asInt() ?: java.time.LocalDate
+                .now()
+                .year
+        val goal = body.get("goal")?.asInt() ?: return Response(Status.BAD_REQUEST)
+        svc.setGoal(userId, year, goal)
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(svc.getProgress(userId, year)),
+            )
+    }
+
+    // ─── Annotation export ────────────────────────────────────────────────
+
+    private fun exportAnnotations(req: Request): Response {
+        val svc = annotationExportService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val userId = AuthenticatedUser.from(req)
+        val data =
+            mapOf(
+                "annotations" to svc.getAnnotations(userId),
+                "bookmarks" to svc.getBookmarks(userId),
+            )
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(data),
+            )
+    }
+
+    private fun exportAnnotationsMarkdown(req: Request): Response {
+        val svc = annotationExportService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val userId = AuthenticatedUser.from(req)
+        return Response(Status.OK)
+            .header("Content-Type", "text/markdown; charset=utf-8")
+            .header("Content-Disposition", "attachment; filename=\"booktower-highlights.md\"")
+            .body(svc.toMarkdown(userId))
+    }
+
+    private fun exportAnnotationsReadwise(req: Request): Response {
+        val svc = annotationExportService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val userId = AuthenticatedUser.from(req)
+        return Response(Status.OK)
+            .header("Content-Type", "text/csv; charset=utf-8")
+            .header("Content-Disposition", "attachment; filename=\"booktower-readwise.csv\"")
+            .body(svc.toReadwiseCsv(userId))
     }
 }
