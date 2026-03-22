@@ -59,6 +59,7 @@ class UserApiRouter(
     private val readingSpeedService: org.booktower.services.ReadingSpeedService? = null,
     private val bookConditionService: org.booktower.services.BookConditionService? = null,
     private val readingListService: org.booktower.services.ReadingListService? = null,
+    private val annotationService: org.booktower.services.AnnotationService? = null,
 ) {
     @Suppress("LongMethod")
     fun routes(): List<RoutingHttpHandler> =
@@ -167,6 +168,9 @@ class UserApiRouter(
             "/api/reading-lists/{id}/books/{bookId}" bind Method.DELETE to filters.auth.then(::removeBookFromReadingList),
             "/api/reading-lists/{id}/books/{bookId}/toggle" bind Method.POST to filters.auth.then(::toggleReadingListItem),
             "/api/reading-lists/{id}/reorder" bind Method.POST to filters.auth.then(::reorderReadingList),
+            // Shared annotations
+            "/api/annotations/{id}/share" bind Method.POST to filters.auth.then(::shareAnnotation),
+            "/api/books/{bookId}/shared-annotations" bind Method.GET to filters.auth.then(::getSharedAnnotations),
         )
 
     // ─── Collections ────────────────────────────────────────────────────────
@@ -1254,5 +1258,44 @@ class UserApiRouter(
             }.getOrNull() ?: return Response(Status.BAD_REQUEST)
         val bookIds = body.get("bookIds")?.map { it.asText() } ?: return Response(Status.BAD_REQUEST)
         return if (svc.reorder(AuthenticatedUser.from(req), listId, bookIds)) Response(Status.NO_CONTENT) else Response(Status.NOT_FOUND)
+    }
+
+    // ─── Shared annotations ──────────────────────────────────────────────
+
+    private fun shareAnnotation(req: Request): Response {
+        val svc = annotationService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val userId = AuthenticatedUser.from(req)
+        val annotationId =
+            req.uri.path
+                .split("/")
+                .let { p ->
+                    val i = p.indexOf("annotations")
+                    if (i >= 0 && i + 1 < p.size) p[i + 1] else null
+                }?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() } ?: return Response(Status.BAD_REQUEST)
+        val body =
+            runCatching {
+                org.booktower.config.Json.mapper
+                    .readTree(req.bodyString())
+            }.getOrNull() ?: return Response(Status.BAD_REQUEST)
+        val shared = body.get("shared")?.asBoolean() ?: return Response(Status.BAD_REQUEST)
+        val note = body.get("note")?.asText()
+        return if (svc.setShared(userId, annotationId, shared, note)) Response(Status.NO_CONTENT) else Response(Status.NOT_FOUND)
+    }
+
+    private fun getSharedAnnotations(req: Request): Response {
+        val svc = annotationService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val bookId =
+            req.uri.path
+                .split("/")
+                .let { p ->
+                    val i = p.indexOf("books")
+                    if (i >= 0 && i + 1 < p.size) p[i + 1] else null
+                }?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() } ?: return Response(Status.BAD_REQUEST)
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(svc.getSharedAnnotations(bookId)),
+            )
     }
 }

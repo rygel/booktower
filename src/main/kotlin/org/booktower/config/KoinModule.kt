@@ -399,6 +399,7 @@ val appModule =
                 readingSpeedService = get<org.booktower.services.ReadingSpeedService>(),
                 bookConditionService = get<org.booktower.services.BookConditionService>(),
                 readingListService = get<org.booktower.services.ReadingListService>(),
+                annotationService = get<org.booktower.services.AnnotationService>(),
             )
         }
         single {
