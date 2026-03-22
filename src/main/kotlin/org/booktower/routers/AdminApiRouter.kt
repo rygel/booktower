@@ -31,6 +31,7 @@ class AdminApiRouter(
     private val bulkCoverService: BulkCoverService?,
     private val telemetryService: TelemetryService?,
     private val bulkMetadataRefreshService: BulkMetadataRefreshService?,
+    private val backupService: org.booktower.services.BackupService?,
 ) {
     @Suppress("LongMethod")
     fun routes(): List<RoutingHttpHandler> =
@@ -74,6 +75,9 @@ class AdminApiRouter(
             "/api/admin/tasks" bind Method.GET to
                 filters.admin.then(optionalHandler(backgroundTaskHandler?.let { it::listAll })),
             "/api/admin/telemetry/stats" bind Method.GET to filters.admin.then(::telemetryStats),
+            // Database backup/restore
+            "/api/admin/backup" bind Method.GET to filters.admin.then(::exportBackup),
+            "/api/admin/backup" bind Method.POST to filters.admin.then(::importBackup),
             // Weblate translation sync (admin only)
             "/api/weblate/pull" bind Method.POST to filters.admin.then(weblateHandler::pull),
             "/api/weblate/push" bind Method.POST to filters.admin.then(weblateHandler::push),
@@ -278,5 +282,33 @@ class AdminApiRouter(
                 org.booktower.config.Json.mapper
                     .writeValueAsString(stats),
             )
+    }
+
+    // ─── Backup / restore ─────────────────────────────────────────────────
+
+    private fun exportBackup(req: Request): Response {
+        val svc = backupService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val json = svc.export()
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .header("Content-Disposition", "attachment; filename=\"booktower-backup.json\"")
+            .body(json)
+    }
+
+    private fun importBackup(req: Request): Response {
+        val svc = backupService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        return try {
+            val metadata = svc.import(req.body.stream)
+            Response(Status.OK)
+                .header("Content-Type", "application/json")
+                .body(
+                    org.booktower.config.Json.mapper
+                        .writeValueAsString(metadata),
+                )
+        } catch (e: Exception) {
+            Response(Status.BAD_REQUEST)
+                .header("Content-Type", "application/json")
+                .body("""{"error":"${e.message}"}""")
+        }
     }
 }

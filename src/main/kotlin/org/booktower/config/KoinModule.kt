@@ -212,6 +212,8 @@ val appModule =
         single { org.booktower.services.ReadingTimelineService(get<Database>().getJdbi()) }
         single { org.booktower.services.ReadingGoalService(get<Database>().getJdbi(), get()) }
         single { org.booktower.services.AnnotationExportService(get<Database>().getJdbi()) }
+        single { org.booktower.services.BackupService(get<Database>().getJdbi()) }
+        single { org.booktower.services.PositionSyncService(get<Database>().getJdbi()) }
 
         // ── Handler objects ──────────────────────────────────────────────────
         single {
@@ -384,6 +386,7 @@ val appModule =
                 readingGoalService = get<org.booktower.services.ReadingGoalService>(),
                 annotationExportService = get<org.booktower.services.AnnotationExportService>(),
                 discoveryService = get<org.booktower.services.DiscoveryService>(),
+                positionSyncService = get<org.booktower.services.PositionSyncService>(),
             )
         }
         single {
@@ -397,6 +400,7 @@ val appModule =
                 get<BulkCoverService>(),
                 get<TelemetryService>(),
                 get<org.booktower.services.BulkMetadataRefreshService>(),
+                get<org.booktower.services.BackupService>(),
             )
         }
         single {

@@ -327,6 +327,7 @@ abstract class IntegrationTestBase {
                 bulkCoverService,
                 telemetryService,
                 null,
+                null,
             )
         val metadataApiRouter =
             MetadataApiRouter(

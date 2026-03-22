@@ -53,6 +53,7 @@ class UserApiRouter(
     private val readingGoalService: org.booktower.services.ReadingGoalService? = null,
     private val annotationExportService: org.booktower.services.AnnotationExportService? = null,
     private val discoveryService: org.booktower.services.DiscoveryService? = null,
+    private val positionSyncService: org.booktower.services.PositionSyncService? = null,
 ) {
     @Suppress("LongMethod")
     fun routes(): List<RoutingHttpHandler> =
@@ -132,12 +133,15 @@ class UserApiRouter(
             // Reading goals
             "/api/goals/reading" bind Method.GET to filters.auth.then(::getReadingGoal),
             "/api/goals/reading" bind Method.PUT to filters.auth.then(::setReadingGoal),
-            // Annotation & bookmark export
+            // Annotation export
             "/api/export/annotations" bind Method.GET to filters.auth.then(::exportAnnotations),
             "/api/export/annotations/markdown" bind Method.GET to filters.auth.then(::exportAnnotationsMarkdown),
             "/api/export/annotations/readwise" bind Method.GET to filters.auth.then(::exportAnnotationsReadwise),
-            // Discovery / recommendations
+            // Discovery
             "/api/discover" bind Method.GET to filters.auth.then(::discover),
+            // Cross-device position sync
+            "/api/books/{bookId}/position" bind Method.GET to filters.auth.then(::pullPosition),
+            "/api/books/{bookId}/position" bind Method.PUT to filters.auth.then(::pushPosition),
         )
 
     // ─── Collections ────────────────────────────────────────────────────────
@@ -745,15 +749,6 @@ class UserApiRouter(
     private fun getLibraryStats(req: Request): Response {
         val svc = libraryStatsService ?: return Response(Status.SERVICE_UNAVAILABLE)
         val userId = AuthenticatedUser.from(req)
-    // ─── Reading goals ────────────────────────────────────────────────────
-
-    private fun getReadingGoal(req: Request): Response {
-        val svc = readingGoalService ?: return Response(Status.SERVICE_UNAVAILABLE)
-        val userId = AuthenticatedUser.from(req)
-        val year =
-            req.query("year")?.toIntOrNull() ?: java.time.LocalDate
-                .now()
-                .year
         return Response(Status.OK)
             .header("Content-Type", "application/json")
             .body(
@@ -781,10 +776,6 @@ class UserApiRouter(
 
     private fun listWebhooks(req: Request): Response {
         val svc = webhookService ?: return Response(Status.SERVICE_UNAVAILABLE)
-    // ─── Discovery / recommendations ──────────────────────────────────────
-
-    private fun discover(req: Request): Response {
-        val svc = discoveryService ?: return Response(Status.SERVICE_UNAVAILABLE)
         val userId = AuthenticatedUser.from(req)
         return Response(Status.OK)
             .header("Content-Type", "application/json")
@@ -835,6 +826,28 @@ class UserApiRouter(
         val userId = AuthenticatedUser.from(req)
         val parts = req.uri.path.split("/")
         val id = parts.dropLast(1).lastOrNull() ?: return Response(Status.BAD_REQUEST)
+        val body =
+            runCatching {
+                org.booktower.config.Json.mapper
+                    .readTree(req.bodyString())
+            }.getOrNull()
+        val enabled = body?.get("enabled")?.asBoolean() ?: return Response(Status.BAD_REQUEST)
+        return if (svc.toggle(userId, id, enabled)) Response(Status.NO_CONTENT) else Response(Status.NOT_FOUND)
+    }
+
+    // ─── Reading goals ────────────────────────────────────────────────────
+
+    private fun getReadingGoal(req: Request): Response {
+        val svc = readingGoalService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val userId = AuthenticatedUser.from(req)
+        val year =
+            req.query("year")?.toIntOrNull() ?: java.time.LocalDate
+                .now()
+                .year
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
                     .writeValueAsString(svc.getProgress(userId, year)),
             )
     }
@@ -847,8 +860,6 @@ class UserApiRouter(
                 org.booktower.config.Json.mapper
                     .readTree(req.bodyString())
             }.getOrNull()
-        val enabled = body?.get("enabled")?.asBoolean() ?: return Response(Status.BAD_REQUEST)
-        return if (svc.toggle(userId, id, enabled)) Response(Status.NO_CONTENT) else Response(Status.NOT_FOUND)
                 ?: return Response(Status.BAD_REQUEST)
         val year =
             body.get("year")?.asInt() ?: java.time.LocalDate
@@ -869,11 +880,7 @@ class UserApiRouter(
     private fun exportAnnotations(req: Request): Response {
         val svc = annotationExportService ?: return Response(Status.SERVICE_UNAVAILABLE)
         val userId = AuthenticatedUser.from(req)
-        val data =
-            mapOf(
-                "annotations" to svc.getAnnotations(userId),
-                "bookmarks" to svc.getBookmarks(userId),
-            )
+        val data = mapOf("annotations" to svc.getAnnotations(userId), "bookmarks" to svc.getBookmarks(userId))
         return Response(Status.OK)
             .header("Content-Type", "application/json")
             .body(
@@ -899,7 +906,61 @@ class UserApiRouter(
             .header("Content-Disposition", "attachment; filename=\"booktower-readwise.csv\"")
             .body(svc.toReadwiseCsv(userId))
     }
+
+    // ─── Discovery ────────────────────────────────────────────────────────
+
+    private fun discover(req: Request): Response {
+        val svc = discoveryService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val userId = AuthenticatedUser.from(req)
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
                     .writeValueAsString(svc.discover(userId)),
             )
+    }
+
+    // ─── Cross-device position sync ───────────────────────────────────────
+
+    private fun pullPosition(req: Request): Response {
+        val svc = positionSyncService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val userId = AuthenticatedUser.from(req)
+        val bookId =
+            req.uri.path
+                .split("/")
+                .let { parts ->
+                    val idx = parts.indexOf("books")
+                    if (idx >= 0 && idx + 1 < parts.size) parts[idx + 1] else null
+                }?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() }
+                ?: return Response(Status.BAD_REQUEST)
+        val position = svc.pull(userId, bookId) ?: return Response(Status.NOT_FOUND)
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(position),
+            )
+    }
+
+    private fun pushPosition(req: Request): Response {
+        val svc = positionSyncService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val userId = AuthenticatedUser.from(req)
+        val bookId =
+            req.uri.path
+                .split("/")
+                .let { parts ->
+                    val idx = parts.indexOf("books")
+                    if (idx >= 0 && idx + 1 < parts.size) parts[idx + 1] else null
+                }?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() }
+                ?: return Response(Status.BAD_REQUEST)
+        val body =
+            runCatching {
+                org.booktower.config.Json.mapper.readValue(
+                    req.bodyString(),
+                    org.booktower.services.UpdatePositionRequest::class.java,
+                )
+            }.getOrNull() ?: return Response(Status.BAD_REQUEST)
+        svc.push(userId, bookId, body)
+        return Response(Status.NO_CONTENT)
     }
 }

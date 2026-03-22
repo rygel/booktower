@@ -96,7 +96,7 @@ class BackupService(
             BackupMetadata(
                 version = BACKUP_VERSION,
                 createdAt = Instant.now().toString(),
-                bookTowerVersion = org.booktower.services.VersionService.version,
+                bookTowerVersion = VersionService.info.version,
                 tableCount = tables.size,
                 totalRows = totalRows,
             )
