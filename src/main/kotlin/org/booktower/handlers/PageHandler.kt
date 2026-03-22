@@ -52,6 +52,7 @@ class PageHandler(
     private val bookSharingService: org.booktower.services.BookSharingService? = null,
     private val backgroundTaskService: org.booktower.services.BackgroundTaskService? = null,
     private val libraryStatsService: org.booktower.services.LibraryStatsService? = null,
+    private val webhookService: org.booktower.services.WebhookService? = null,
 ) {
     /** Build a PageContext for any authenticated request. */
     private fun pageContext(req: Request): org.booktower.web.PageContext =
@@ -532,6 +533,18 @@ class PageHandler(
             templateRenderer.render(
                 "librarystats.kte",
                 pc.toMap("stats" to stats),
+            ),
+        )
+    }
+
+    fun webhooks(req: Request): Response {
+        val userId = auth(req) ?: return redirectToLogin()
+        val pc = pageContext(req)
+        val hooks = webhookService?.list(userId) ?: emptyList()
+        return htmlOk(
+            templateRenderer.render(
+                "webhooks.kte",
+                pc.toMap("webhooks" to hooks),
             ),
         )
     }

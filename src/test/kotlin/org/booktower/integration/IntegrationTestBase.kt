@@ -245,6 +245,7 @@ abstract class IntegrationTestBase {
                 org.booktower.services.BookSharingService(jdbi, bookService),
                 backgroundTaskService,
                 org.booktower.services.LibraryStatsService(jdbi),
+                org.booktower.services.WebhookService(jdbi),
             )
         val backgroundTaskHandler = BackgroundTaskHandler(backgroundTaskService)
         val journalHandler = JournalHandler(journalService)
@@ -317,6 +318,7 @@ abstract class IntegrationTestBase {
                 apiTokenHandler,
                 exportHandler,
                 goodreadsImportHandler,
+                webhookService = org.booktower.services.WebhookService(jdbi),
             )
         val adminApiRouter =
             AdminApiRouter(

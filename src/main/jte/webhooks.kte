@@ -1,0 +1,129 @@
+@import org.booktower.services.WebhookDto
+@import org.booktower.web.PageContext
+@param pc: PageContext
+@param webhooks: List<WebhookDto>
+
+@template.components.layout(title="${pc.i18n.translate("page.webhooks.title")} - BookTower", pc=pc, currentPage="webhooks",
+    searchQuery="", content = @`
+<div class="page-container">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+        <h1 class="page-title"><i class="ri-webhook-line"></i> ${pc.i18n.translate("page.webhooks.title")}</h1>
+        <button id="add-webhook-btn" class="btn-primary" style="padding:0.6rem 1.25rem;">
+            <i class="ri-add-line"></i> ${pc.i18n.translate("page.webhooks.add")}
+        </button>
+    </div>
+
+    <p class="text-sm text-subtle" style="margin-bottom:1.5rem;">${pc.i18n.translate("page.webhooks.description")}</p>
+
+    <!-- Add webhook form (hidden by default) -->
+    <div id="add-webhook-form" style="display:none; margin-bottom:1.5rem; padding:1.25rem; background:var(--bt-surface-raised); border-radius:0.5rem; border:1px solid var(--bt-border);">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+            <div>
+                <label style="font-size:0.75rem; color:var(--bt-muted); display:block; margin-bottom:0.2rem;">${pc.i18n.translate("page.webhooks.name")}</label>
+                <input type="text" id="wh-name" placeholder="${pc.i18n.translate("page.webhooks.name.placeholder")}" style="width:100%; padding:0.5rem;">
+            </div>
+            <div>
+                <label style="font-size:0.75rem; color:var(--bt-muted); display:block; margin-bottom:0.2rem;">URL</label>
+                <input type="url" id="wh-url" placeholder="https://example.com/webhook" style="width:100%; padding:0.5rem;">
+            </div>
+        </div>
+        <div style="margin-top:0.75rem;">
+            <label style="font-size:0.75rem; color:var(--bt-muted); display:block; margin-bottom:0.2rem;">${pc.i18n.translate("page.webhooks.events")}</label>
+            <div style="display:flex; flex-wrap:wrap; gap:0.5rem;">
+                <label class="text-sm"><input type="checkbox" class="wh-event" value="book.added"> book.added</label>
+                <label class="text-sm"><input type="checkbox" class="wh-event" value="book.deleted"> book.deleted</label>
+                <label class="text-sm"><input type="checkbox" class="wh-event" value="book.finished"> book.finished</label>
+                <label class="text-sm"><input type="checkbox" class="wh-event" value="download.complete"> download.complete</label>
+                <label class="text-sm"><input type="checkbox" class="wh-event" value="library.scanned"> library.scanned</label>
+            </div>
+        </div>
+        <div style="display:flex; gap:0.5rem; margin-top:0.75rem;">
+            <button id="wh-save-btn" class="btn-primary" style="padding:0.5rem 1rem;">
+                <i class="ri-save-line"></i> ${pc.i18n.translate("label.save")}
+            </button>
+            <button id="wh-cancel-btn" class="btn-secondary" style="padding:0.5rem 1rem;">
+                ${pc.i18n.translate("label.cancel")}
+            </button>
+        </div>
+    </div>
+
+    <!-- Webhook list -->
+    <div id="webhook-list">
+        @if(webhooks.isEmpty())
+            @template.components.emptyState(icon = "ri-webhook-line", message = pc.i18n.translate("page.webhooks.empty"), action = @``)
+        @else
+            @for(hook in webhooks)
+                <div class="panel" style="margin-bottom:0.75rem; display:flex; justify-content:space-between; align-items:center;" data-webhook-id="${hook.id}">
+                    <div style="flex:1;">
+                        <div style="font-weight:600; font-size:0.9rem; color:var(--bt-text);">${hook.name}</div>
+                        <div class="text-sm text-subtle" style="margin-top:0.15rem; word-break:break-all;">${hook.url}</div>
+                        <div style="margin-top:0.35rem; display:flex; gap:0.35rem; flex-wrap:wrap;">
+                            @for(event in hook.events)
+                                <span style="font-size:0.65rem; padding:0.1rem 0.4rem; border-radius:0.25rem; background:var(--bt-icon-bg); color:var(--bt-icon-text);">${event}</span>
+                            @endfor
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:0.5rem; align-items:center; flex-shrink:0; margin-left:1rem;">
+                        <button class="btn-icon wh-toggle" data-id="${hook.id}" data-enabled="${hook.enabled}" title="${if (hook.enabled) pc.i18n.translate("page.webhooks.disable") else pc.i18n.translate("page.webhooks.enable")}">
+                            <i class="${if (hook.enabled) "ri-toggle-fill" else "ri-toggle-line"}" style="font-size:1.25rem; color:${if (hook.enabled) "var(--bt-accent-dim)" else "var(--bt-muted)"};"></i>
+                        </button>
+                        <button class="btn-icon wh-delete" data-id="${hook.id}" title="${pc.i18n.translate("label.delete")}">
+                            <i class="ri-delete-bin-line" style="color:var(--bt-danger);"></i>
+                        </button>
+                    </div>
+                </div>
+            @endfor
+        @endif
+    </div>
+</div>
+
+<script>
+(function() {
+    var addBtn = document.getElementById('add-webhook-btn');
+    var form = document.getElementById('add-webhook-form');
+    var cancelBtn = document.getElementById('wh-cancel-btn');
+    var saveBtn = document.getElementById('wh-save-btn');
+
+    addBtn.addEventListener('click', function() { form.style.display = 'block'; addBtn.style.display = 'none'; });
+    cancelBtn.addEventListener('click', function() { form.style.display = 'none'; addBtn.style.display = ''; });
+
+    saveBtn.addEventListener('click', function() {
+        var name = document.getElementById('wh-name').value.trim();
+        var url = document.getElementById('wh-url').value.trim();
+        var events = [];
+        document.querySelectorAll('.wh-event:checked').forEach(function(cb) { events.push(cb.value); });
+        if (!name || !url || events.length === 0) return;
+
+        fetch('/api/webhooks', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: name, url: url, events: events })
+        }).then(function(r) {
+            if (r.ok) window.location.reload();
+        });
+    });
+
+    document.querySelectorAll('.wh-delete').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            if (!confirm('Delete this webhook?')) return;
+            fetch('/api/webhooks/' + btn.dataset.id, { method: 'DELETE' }).then(function(r) {
+                if (r.ok) btn.closest('.panel').remove();
+            });
+        });
+    });
+
+    document.querySelectorAll('.wh-toggle').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var enabled = btn.dataset.enabled !== 'true';
+            fetch('/api/webhooks/' + btn.dataset.id + '/toggle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ enabled: enabled })
+            }).then(function(r) {
+                if (r.ok) window.location.reload();
+            });
+        });
+    });
+})();
+</script>
+`)
