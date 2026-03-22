@@ -1,0 +1,50 @@
+@import org.booktower.services.DiscoveryRecommendation
+@import org.booktower.web.PageContext
+@param pc: PageContext
+@param recommendations: List<DiscoveryRecommendation>
+
+@template.components.layout(title="${pc.i18n.translate("page.discover.title")} - BookTower", pc=pc, currentPage="discover",
+    searchQuery="", content = @`
+<div class="page-container">
+    <h1 class="page-title"><i class="ri-compass-3-line"></i> ${pc.i18n.translate("page.discover.title")}</h1>
+    <p class="text-sm text-subtle" style="margin-bottom:1.5rem;">${pc.i18n.translate("page.discover.subtitle")}</p>
+
+    @if(recommendations.isEmpty())
+        @template.components.emptyState(icon = "ri-compass-3-line", message = pc.i18n.translate("page.discover.empty"), action = @`
+            <p class="text-sm text-subtle" style="margin-top:0.375rem;">${pc.i18n.translate("page.discover.empty.hint")}</p>
+        `)
+    @else
+        <div class="book-grid" style="grid-template-columns:repeat(auto-fill, minmax(180px, 1fr));">
+            @for(rec in recommendations)
+                <a href="/books/${rec.bookId}" class="discover-card" style="text-decoration:none;">
+                    @if(rec.coverUrl != null)
+                        <img src="${rec.coverUrl}" alt="" class="discover-cover">
+                    @else
+                        <div class="discover-cover-ph"><i class="ri-book-line" style="font-size:2rem;"></i></div>
+                    @endif
+                    <div class="discover-info">
+                        <div class="discover-title">${rec.title}</div>
+                        @if(rec.author != null)
+                            <div class="discover-author">${rec.author}</div>
+                        @endif
+                        <div class="discover-reason">
+                            <i class="ri-lightbulb-line"></i> ${rec.reason}
+                        </div>
+                    </div>
+                </a>
+            @endfor
+        </div>
+    @endif
+</div>
+
+<style>
+    .discover-card { display:flex; flex-direction:column; border-radius:0.5rem; border:1px solid var(--bt-border); background:var(--bt-surface); overflow:hidden; transition:border-color 0.15s, box-shadow 0.15s; }
+    .discover-card:hover { border-color:var(--bt-accent-dim); box-shadow:0 4px 12px rgba(0,0,0,0.1); }
+    .discover-cover { width:100%; aspect-ratio:2/3; object-fit:cover; }
+    .discover-cover-ph { width:100%; aspect-ratio:2/3; background:var(--bt-surface-raised); display:flex; align-items:center; justify-content:center; color:var(--bt-muted); }
+    .discover-info { padding:0.625rem; }
+    .discover-title { font-size:0.85rem; font-weight:600; color:var(--bt-text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .discover-author { font-size:0.75rem; color:var(--bt-muted); margin-top:0.1rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .discover-reason { font-size:0.7rem; color:var(--bt-accent-dim); margin-top:0.35rem; display:flex; align-items:center; gap:0.25rem; }
+</style>
+`)

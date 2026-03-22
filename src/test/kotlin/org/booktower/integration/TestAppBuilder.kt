@@ -244,6 +244,7 @@ fun buildTestApp(
             org.booktower.services.LibraryStatsService(jdbi),
             null, // webhookService
             null, // readingTimelineService
+            null, // discoveryService
         )
     val bgTaskHandler = BackgroundTaskHandler(bgTaskService)
     val journalHandler = JournalHandler(journal)
