@@ -24,6 +24,7 @@ private val MIGRATION_FILES =
         "V9__custom_metadata.sql",
         "V10__reading_lists.sql",
         "V11__shared_annotations.sql",
+        "V12__wishlist.sql",
     )
 
 class Database private constructor(

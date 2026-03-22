@@ -60,6 +60,7 @@ class UserApiRouter(
     private val bookConditionService: org.booktower.services.BookConditionService? = null,
     private val readingListService: org.booktower.services.ReadingListService? = null,
     private val annotationService: org.booktower.services.AnnotationService? = null,
+    private val wishlistService: org.booktower.services.WishlistService? = null,
 ) {
     @Suppress("LongMethod")
     fun routes(): List<RoutingHttpHandler> =
@@ -171,6 +172,11 @@ class UserApiRouter(
             // Shared annotations
             "/api/annotations/{id}/share" bind Method.POST to filters.auth.then(::shareAnnotation),
             "/api/books/{bookId}/shared-annotations" bind Method.GET to filters.auth.then(::getSharedAnnotations),
+            // Wishlist
+            "/api/wishlist" bind Method.GET to filters.auth.then(::listWishlist),
+            "/api/wishlist" bind Method.POST to filters.auth.then(::addToWishlist),
+            "/api/wishlist/{id}" bind Method.PUT to filters.auth.then(::updateWishlistItem),
+            "/api/wishlist/{id}" bind Method.DELETE to filters.auth.then(::deleteWishlistItem),
         )
 
     // ─── Collections ────────────────────────────────────────────────────────
@@ -1297,5 +1303,57 @@ class UserApiRouter(
                 org.booktower.config.Json.mapper
                     .writeValueAsString(svc.getSharedAnnotations(bookId)),
             )
+    }
+
+    // ─── Wishlist ─────────────────────────────────────────────────────────
+
+    private fun listWishlist(req: Request): Response {
+        val svc = wishlistService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(svc.getItems(AuthenticatedUser.from(req))),
+            )
+    }
+
+    private fun addToWishlist(req: Request): Response {
+        val svc = wishlistService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val body =
+            runCatching {
+                org.booktower.config.Json.mapper
+                    .readValue(req.bodyString(), org.booktower.services.CreateWishlistItemRequest::class.java)
+            }.getOrNull() ?: return Response(Status.BAD_REQUEST)
+        if (body.title.isBlank()) return Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"title is required"}""")
+        val item = svc.addItem(AuthenticatedUser.from(req), body)
+        return Response(Status.CREATED)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(item),
+            )
+    }
+
+    private fun updateWishlistItem(req: Request): Response {
+        val svc = wishlistService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val id =
+            req.uri.path
+                .split("/")
+                .lastOrNull() ?: return Response(Status.BAD_REQUEST)
+        val body =
+            runCatching {
+                org.booktower.config.Json.mapper
+                    .readValue(req.bodyString(), org.booktower.services.CreateWishlistItemRequest::class.java)
+            }.getOrNull() ?: return Response(Status.BAD_REQUEST)
+        return if (svc.updateItem(AuthenticatedUser.from(req), id, body)) Response(Status.NO_CONTENT) else Response(Status.NOT_FOUND)
+    }
+
+    private fun deleteWishlistItem(req: Request): Response {
+        val svc = wishlistService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val id =
+            req.uri.path
+                .split("/")
+                .lastOrNull() ?: return Response(Status.BAD_REQUEST)
+        return if (svc.deleteItem(AuthenticatedUser.from(req), id)) Response(Status.NO_CONTENT) else Response(Status.NOT_FOUND)
     }
 }
