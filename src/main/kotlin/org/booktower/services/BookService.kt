@@ -17,6 +17,7 @@ class BookService(
     private val readingSessionService: ReadingSessionService? = null,
     private val metadataLockService: MetadataLockService? = null,
     private val ftsService: org.booktower.services.FtsService? = null,
+    private val webhookService: WebhookService? = null,
 ) {
     companion object {
         private const val MAX_PAGE_SIZE = 100
@@ -441,21 +442,26 @@ class BookService(
 
         logger.info("Book created: ${request.title} (format=${format.name})")
 
-        return Result.success(
-            BookDto(
-                id = bookId.toString(),
-                libraryId = libId.toString(),
-                title = request.title,
-                author = request.author,
-                description = request.description,
-                coverUrl = null,
-                pageCount = null,
-                fileSize = 0,
-                addedAt = now.toString(),
-                progress = null,
-                bookFormat = format.name,
-            ),
-        )
+        return Result
+            .success(
+                BookDto(
+                    id = bookId.toString(),
+                    libraryId = libId.toString(),
+                    title = request.title,
+                    author = request.author,
+                    description = request.description,
+                    coverUrl = null,
+                    pageCount = null,
+                    fileSize = 0,
+                    addedAt = now.toString(),
+                    progress = null,
+                    bookFormat = format.name,
+                ),
+            ).also { result ->
+                result.onSuccess { book ->
+                    webhookService?.fire(userId, "book.added", mapOf("bookId" to book.id, "title" to book.title))
+                }
+            }
     }
 
     /** Creates a book record for a file imported from the BookDrop folder. Library ownership is pre-verified by the caller. */
@@ -683,6 +689,7 @@ class BookService(
         }
 
         logger.info("Book deleted: ${book.title}")
+        webhookService?.fire(userId, "book.deleted", mapOf("bookId" to bookId.toString(), "title" to book.title))
         return true
     }
 
@@ -1673,6 +1680,9 @@ class BookService(
             }
         }
         logger.info("Book status set to ${status.name} for book $bookId")
+        if (status == ReadStatus.FINISHED) {
+            webhookService?.fire(userId, "book.finished", mapOf("bookId" to bookId.toString()))
+        }
     }
 
     fun countByStatus(
