@@ -76,4 +76,56 @@ class AnnotationService(
                 userId.toString(),
             )
         } > 0
+
+    /** Toggle sharing on an annotation. Only the owner can share/unshare. */
+    fun setShared(
+        userId: UUID,
+        annotationId: UUID,
+        shared: Boolean,
+        note: String? = null,
+    ): Boolean {
+        val updated =
+            jdbi.withHandle<Int, Exception> { h ->
+                h
+                    .createUpdate("UPDATE book_annotations SET shared = ?, note = ? WHERE id = ? AND user_id = ?")
+                    .bind(0, shared)
+                    .bind(1, note?.take(2000))
+                    .bind(2, annotationId.toString())
+                    .bind(3, userId.toString())
+                    .execute()
+            }
+        return updated > 0
+    }
+
+    /**
+     * Get all shared annotations for a book from ALL users on the server.
+     * Returns annotations with the username of the person who shared them.
+     */
+    fun getSharedAnnotations(bookId: UUID): List<AnnotationDto> =
+        jdbi.withHandle<List<AnnotationDto>, Exception> { h ->
+            h
+                .createQuery(
+                    """
+                SELECT ba.id, ba.book_id, ba.page, ba.selected_text, ba.color,
+                       ba.created_at, ba.shared, ba.note, u.username
+                FROM book_annotations ba
+                INNER JOIN users u ON ba.user_id = u.id
+                WHERE ba.book_id = ? AND ba.shared = true
+                ORDER BY ba.page ASC, ba.created_at ASC
+                """,
+                ).bind(0, bookId.toString())
+                .map { rs, _ ->
+                    AnnotationDto(
+                        id = rs.getString("id"),
+                        bookId = rs.getString("book_id"),
+                        page = rs.getInt("page"),
+                        selectedText = rs.getString("selected_text"),
+                        color = rs.getString("color"),
+                        createdAt = rs.getString("created_at") ?: "",
+                        shared = true,
+                        note = rs.getString("note"),
+                        username = rs.getString("username"),
+                    )
+                }.list()
+        }
 }

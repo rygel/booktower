@@ -23,6 +23,7 @@ private val MIGRATION_FILES =
         "V8__position_sync.sql",
         "V9__custom_metadata.sql",
         "V10__reading_lists.sql",
+        "V11__shared_annotations.sql",
     )
 
 class Database private constructor(
