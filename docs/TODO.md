@@ -13,10 +13,6 @@
 - [ ] Duplicate page detection UI — surface ComicPageHashService results for user cleanup
 - [ ] CBL reading list import — import ComicRack reading lists (.cbl files)
 - [ ] Server-wide announcements — admin can post messages visible to all users
-- [ ] Reading streaks widget — daily streak counter on dashboard (data exists in ReadingStatsService)
-- [ ] Book condition tracker — for physical collections: condition, purchase price, shelf location
-- [ ] Reading speed analytics — pages/hour from session data, estimated time to finish current book
-- [ ] Health check endpoint (`/health`) — DB status, disk space, version for Docker/Kubernetes
 
 ### Performance
 - [ ] Profile actual page load times end-to-end and identify remaining bottlenecks
@@ -34,6 +30,14 @@
 
 ## Completed
 
+- [x] Reading streaks widget, book condition tracker, reading speed analytics, health check (PR #123)
+- [x] Public reading activity profile (PR #122)
+- [x] Custom metadata fields (PR #121)
+- [x] Table of contents sidebar for EPUB/PDF reader (PR #120)
+- [x] Batch import from directory (PR #119)
+- [x] Slim fat JAR — 90MB → 37MB (PR #117)
+- [x] Release workflow fix — publish without native builds (PR #116)
+- [x] Library stats, webhooks, timeline, goals, annotation export, discovery, backup, position sync, OPDS 2.0, duplicate merge (PR #114)
 - [x] KOReader + Kobo sync integration tests (17 tests, PR #107)
 - [x] Configurable page gaps for comic reader (PR #106)
 - [x] Per-book language FTS config — 30 languages (PR #105)
