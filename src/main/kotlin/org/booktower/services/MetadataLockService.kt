@@ -33,7 +33,7 @@ class MetadataLockService(
                         .createQuery("SELECT COUNT(*) FROM book_metadata_locks WHERE book_id = ? AND field_name = ?")
                         .bind(0, bookId.toString())
                         .bind(1, field)
-                        .mapTo(Int::class.java)
+                        .mapTo(Int::class.javaObjectType)
                         .firstOrNull()!! > 0
                 if (!exists) {
                     h
@@ -94,7 +94,7 @@ class MetadataLockService(
                 .createQuery("SELECT COUNT(*) FROM book_metadata_locks WHERE book_id = ? AND field_name = ?")
                 .bind(0, bookId.toString())
                 .bind(1, field)
-                .mapTo(Int::class.java)
+                .mapTo(Int::class.javaObjectType)
                 .firstOrNull()!! > 0
         }
 }

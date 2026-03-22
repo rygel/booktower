@@ -19,7 +19,7 @@ class OpdsCredentialsService(
             h
                 .createQuery("SELECT COUNT(*) FROM opds_credentials WHERE user_id = ?")
                 .bind(0, userId.toString())
-                .mapTo(Int::class.java)
+                .mapTo(Int::class.javaObjectType)
                 .firstOrNull() ?: 0
         } > 0
 

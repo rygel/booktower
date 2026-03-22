@@ -45,14 +45,14 @@ class ReadingStatsService(
                 h
                     .createQuery("SELECT COUNT(*) FROM book_status WHERE user_id = ? AND status = 'FINISHED'")
                     .bind(0, uid)
-                    .mapTo(Int::class.java)
+                    .mapTo(Int::class.javaObjectType)
                     .firstOrNull() ?: 0
 
             val totalSessions =
                 h
                     .createQuery("SELECT COUNT(*) FROM reading_sessions WHERE user_id = ?")
                     .bind(0, uid)
-                    .mapTo(Int::class.java)
+                    .mapTo(Int::class.javaObjectType)
                     .firstOrNull() ?: 0
 
             val dailyRows =

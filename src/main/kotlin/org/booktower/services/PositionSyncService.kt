@@ -54,7 +54,7 @@ class PositionSyncService(
                     .createQuery("SELECT COUNT(*) FROM reading_progress WHERE user_id = ? AND book_id = ?")
                     .bind(0, uid)
                     .bind(1, bid)
-                    .mapTo(Int::class.java)
+                    .mapTo(Int::class.javaObjectType)
                     .one() > 0
             }
 
@@ -124,7 +124,7 @@ class PositionSyncService(
                 .map { row ->
                     SyncedPosition(
                         bookId = bookId.toString(),
-                        currentPage = row.getColumn("current_page", Int::class.java) ?: 0,
+                        currentPage = row.getColumn("current_page", Int::class.javaObjectType) ?: 0,
                         percentage = row.getColumn("percentage", java.lang.Double::class.java)?.toDouble() ?: 0.0,
                         positionData = row.getColumn("position_data", String::class.java),
                         deviceId = row.getColumn("device_id", String::class.java),
@@ -141,7 +141,7 @@ class PositionSyncService(
             h
                 .createQuery("SELECT page_count FROM books WHERE id = ?")
                 .bind(0, bid)
-                .mapTo(Int::class.java)
+                .mapTo(Int::class.javaObjectType)
                 .firstOrNull()
         }
 

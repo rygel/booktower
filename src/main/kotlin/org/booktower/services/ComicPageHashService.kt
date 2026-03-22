@@ -39,7 +39,7 @@ class ComicPageHashService(
                 h
                     .createQuery("SELECT COUNT(*) FROM comic_hash_queue WHERE book_id = ?")
                     .bind(0, bookId)
-                    .mapTo(Int::class.java)
+                    .mapTo(Int::class.javaObjectType)
                     .one() > 0
             if (!exists) {
                 h
@@ -176,7 +176,7 @@ class ComicPageHashService(
                 .createQuery("SELECT status, COUNT(*) AS cnt FROM comic_hash_queue GROUP BY status")
                 .map { row ->
                     row.getColumn("status", String::class.java) to
-                        (row.getColumn("cnt", Int::class.java) ?: 0)
+                        (row.getColumn("cnt", Int::class.javaObjectType) ?: 0)
                 }.list()
                 .toMap()
         }

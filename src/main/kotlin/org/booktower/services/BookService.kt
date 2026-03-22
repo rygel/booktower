@@ -142,7 +142,7 @@ class BookService(
                     }
                     if (ratingGte != null) q.bind(idx++, ratingGte)
                     if (formatFilter != null) q.bind(idx++, formatFilter.uppercase())
-                    q.mapTo(Int::class.java).first() ?: 0
+                    q.mapTo(Int::class.javaObjectType).first() ?: 0
                 }
             } else {
                 jdbi.withHandle<Int, Exception> { handle ->
@@ -166,7 +166,7 @@ class BookService(
                     }
                     if (ratingGte != null) q.bind(idx++, ratingGte)
                     if (formatFilter != null) q.bind(idx++, formatFilter.uppercase())
-                    q.mapTo(Int::class.java).first() ?: 0
+                    q.mapTo(Int::class.javaObjectType).first() ?: 0
                 }
             }
 
@@ -662,7 +662,7 @@ class BookService(
                     .createQuery("SELECT COUNT(*) FROM libraries WHERE id = ? AND user_id = ?")
                     .bind(0, targetLibraryId.toString())
                     .bind(1, userId.toString())
-                    .mapTo(Int::class.java)
+                    .mapTo(Int::class.javaObjectType)
                     .first() > 0
             }
         if (!targetExists) return null
@@ -1222,7 +1222,7 @@ class BookService(
                         "SELECT COUNT(*) FROM books b JOIN libraries l ON b.library_id = l.id WHERE b.id = ? AND l.user_id = ?",
                     ).bind(0, bookId.toString())
                     .bind(1, userId.toString())
-                    .mapTo(Int::class.java)
+                    .mapTo(Int::class.javaObjectType)
                     .firstOrNull()!! > 0
             }
         if (!exists) return false
@@ -1342,7 +1342,7 @@ class BookService(
                         "SELECT COUNT(*) FROM books b JOIN libraries l ON b.library_id = l.id WHERE b.id = ? AND l.user_id = ?",
                     ).bind(0, bookId.toString())
                     .bind(1, userId.toString())
-                    .mapTo(Int::class.java)
+                    .mapTo(Int::class.javaObjectType)
                     .firstOrNull()!! > 0
             }
         if (!exists) return false
@@ -1405,7 +1405,7 @@ class BookService(
                         "SELECT COUNT(*) FROM books b JOIN libraries l ON b.library_id = l.id WHERE b.id = ? AND l.user_id = ?",
                     ).bind(0, bookId.toString())
                     .bind(1, userId.toString())
-                    .mapTo(Int::class.java)
+                    .mapTo(Int::class.javaObjectType)
                     .firstOrNull()!! > 0
             }
         if (!exists) return false
@@ -1784,7 +1784,7 @@ class BookService(
                     .createQuery("SELECT COUNT(*) FROM libraries WHERE id = ? AND user_id = ?")
                     .bind(0, targetLibraryId.toString())
                     .bind(1, userId.toString())
-                    .mapTo(Int::class.java)
+                    .mapTo(Int::class.javaObjectType)
                     .first() > 0
             }
         if (!targetExists) return 0
@@ -1836,7 +1836,7 @@ class BookService(
                        WHERE b.id = ? AND l.user_id = ?""",
                         ).bind(0, bookId.toString())
                         .bind(1, userId.toString())
-                        .mapTo(Int::class.java)
+                        .mapTo(Int::class.javaObjectType)
                         .first() > 0
                 if (!owned) return@count false
                 handle
@@ -1886,7 +1886,7 @@ class BookService(
                             "SELECT COUNT(*) FROM books b INNER JOIN libraries l ON b.library_id = l.id WHERE b.id = ? AND l.user_id = ?",
                         ).bind(0, bookId.toString())
                         .bind(1, userId.toString())
-                        .mapTo(Int::class.java)
+                        .mapTo(Int::class.javaObjectType)
                         .first() > 0
                 if (!owned) return@count false
                 val existing =
@@ -1941,7 +1941,7 @@ class BookService(
                WHERE bf.book_id = ? AND l.user_id = ?""",
                 ).bind(0, bookId.toString())
                 .bind(1, userId.toString())
-                .mapTo(Int::class.java)
+                .mapTo(Int::class.javaObjectType)
                 .one() > 0
         }
 

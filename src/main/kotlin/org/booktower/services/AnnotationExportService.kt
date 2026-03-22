@@ -47,7 +47,7 @@ class AnnotationExportService(
                     ExportedAnnotation(
                         bookTitle = row.getColumn("book_title", String::class.java) ?: "",
                         bookAuthor = row.getColumn("book_author", String::class.java),
-                        page = row.getColumn("page", Int::class.java) ?: 0,
+                        page = row.getColumn("page", Int::class.javaObjectType) ?: 0,
                         selectedText = row.getColumn("selected_text", String::class.java) ?: "",
                         color = row.getColumn("color", String::class.java) ?: "yellow",
                         createdAt = row.getColumn("created_at", String::class.java) ?: "",
@@ -74,7 +74,7 @@ class AnnotationExportService(
                     ExportedBookmark(
                         bookTitle = row.getColumn("book_title", String::class.java) ?: "",
                         bookAuthor = row.getColumn("book_author", String::class.java),
-                        page = row.getColumn("page", Int::class.java) ?: 0,
+                        page = row.getColumn("page", Int::class.javaObjectType) ?: 0,
                         title = row.getColumn("title", String::class.java),
                         note = row.getColumn("note", String::class.java),
                         createdAt = row.getColumn("created_at", String::class.java) ?: "",

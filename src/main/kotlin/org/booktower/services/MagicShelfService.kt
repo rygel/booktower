@@ -109,7 +109,7 @@ class MagicShelfService(
                         ).bind(0, userId.toString())
                         .bind(1, userId.toString())
                         .bind(2, shelf.ruleValue)
-                        .mapTo(Int::class.java)
+                        .mapTo(Int::class.javaObjectType)
                         .first() ?: 0
                 }
             }
@@ -125,7 +125,7 @@ class MagicShelfService(
                         ).bind(0, userId.toString())
                         .bind(1, shelf.ruleValue)
                         .bind(2, userId.toString())
-                        .mapTo(Int::class.java)
+                        .mapTo(Int::class.javaObjectType)
                         .first() ?: 0
                 }
             }
@@ -142,7 +142,7 @@ class MagicShelfService(
                         ).bind(0, userId.toString())
                         .bind(1, minRating)
                         .bind(2, userId.toString())
-                        .mapTo(Int::class.java)
+                        .mapTo(Int::class.javaObjectType)
                         .first() ?: 0
                 }
             }

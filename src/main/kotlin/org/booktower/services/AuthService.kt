@@ -429,7 +429,7 @@ class AuthService(
                 h
                     .createQuery("SELECT COUNT(*) FROM users WHERE username = ?")
                     .bind(0, candidate)
-                    .mapTo(Int::class.java)
+                    .mapTo(Int::class.javaObjectType)
                     .firstOrNull()!! > 0
             }
         ) {

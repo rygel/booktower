@@ -514,7 +514,7 @@ class FtsService(
                     h
                         .createQuery(
                             "SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'books' AND column_name = 'metadata_vector'",
-                        ).mapTo(Int::class.java)
+                        ).mapTo(Int::class.javaObjectType)
                         .one() > 0
                 }
             } catch (e: Exception) {
@@ -532,7 +532,7 @@ class FtsService(
                     jdbi.withHandle<Boolean, Exception> { h ->
                         h
                             .createQuery("SELECT COUNT(*) FROM pg_available_extensions WHERE name = 'pg_textsearch'")
-                            .mapTo(Int::class.java)
+                            .mapTo(Int::class.javaObjectType)
                             .one() > 0
                     }
                 if (!available) return

@@ -59,7 +59,7 @@ class ListeningSessionService(
                     .createQuery("SELECT COUNT(*) FROM listen_progress WHERE user_id = ? AND book_id = ?")
                     .bind(0, userId.toString())
                     .bind(1, bookId.toString())
-                    .mapTo(Int::class.java)
+                    .mapTo(Int::class.javaObjectType)
                     .firstOrNull() ?: 0
             }
         if (existing > 0) {

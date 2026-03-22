@@ -62,7 +62,7 @@ class LibraryAccessService(
                     .createQuery("SELECT COUNT(*) FROM user_library_access WHERE user_id = ? AND library_id = ?")
                     .bind(0, userId.toString())
                     .bind(1, libraryId.toString())
-                    .mapTo(Int::class.java)
+                    .mapTo(Int::class.javaObjectType)
                     .firstOrNull()!! > 0
             }
         if (!exists) {
