@@ -76,7 +76,7 @@ class DuplicateDetectionService(
                 val did = deleteId.toString()
                 val kid = keepBookId.toString()
                 h
-                    .createUpdate("UPDATE book_bookmarks SET book_id = ? WHERE book_id = ?")
+                    .createUpdate("UPDATE bookmarks SET book_id = ? WHERE book_id = ?")
                     .bind(0, kid)
                     .bind(1, did)
                     .execute()
