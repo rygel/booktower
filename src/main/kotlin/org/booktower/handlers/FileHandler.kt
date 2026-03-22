@@ -58,6 +58,13 @@ class FileHandler(
             .expireAfterWrite(10, TimeUnit.MINUTES)
             .build<String, ByteArray>()
 
+    /** Strip path separators and traversal sequences from a filename extension. */
+    private fun sanitizeExt(filename: String): String =
+        filename
+            .substringAfterLast('.', "")
+            .lowercase()
+            .replace(Regex("[^a-z0-9]"), "")
+
     fun upload(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
         val bookId =
@@ -78,7 +85,7 @@ class FileHandler(
             return badRequest("X-Filename header is required")
         }
 
-        val ext = filename.substringAfterLast('.', "").lowercase()
+        val ext = sanitizeExt(filename)
         if (ext !in ALLOWED_EXTENSIONS) {
             return badRequest("Unsupported file type '$ext'. Allowed: ${ALLOWED_EXTENSIONS.joinToString()}")
         }
@@ -393,7 +400,7 @@ class FileHandler(
         val filename = req.header("X-Filename")?.trim()
         if (filename.isNullOrBlank()) return badRequest("X-Filename header is required")
 
-        val ext = filename.substringAfterLast('.', "").lowercase()
+        val ext = sanitizeExt(filename)
         if (ext !in ALLOWED_COVER_EXTENSIONS) {
             return badRequest("Unsupported image type '$ext'. Allowed: ${ALLOWED_COVER_EXTENSIONS.joinToString()}")
         }
@@ -502,7 +509,7 @@ class FileHandler(
         val filename = req.header("X-Filename")?.trim()
         if (filename.isNullOrBlank()) return badRequest("X-Filename header is required")
 
-        val ext = filename.substringAfterLast('.', "").lowercase()
+        val ext = sanitizeExt(filename)
         if (ext !in setOf("mp3", "m4b", "m4a", "ogg", "flac", "aac")) {
             return badRequest("Unsupported audio format: $ext")
         }
