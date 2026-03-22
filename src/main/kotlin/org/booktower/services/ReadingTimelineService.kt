@@ -52,7 +52,7 @@ class ReadingTimelineService(
                     UNION ALL
 
                     -- Reading sessions (aggregated per day per book)
-                    SELECT SUBSTRING(rs.session_at, 1, 10) AS event_date,
+                    SELECT SUBSTRING(CAST(rs.session_at AS VARCHAR(30)), 1, 10) AS event_date,
                            b.id AS book_id, b.title AS book_title, b.author AS book_author,
                            b.cover_url,
                            'reading' AS event_type,
@@ -62,7 +62,7 @@ class ReadingTimelineService(
                     INNER JOIN libraries l ON b.library_id = l.id
                     WHERE rs.user_id = ? AND l.user_id = ?
                       AND rs.session_at >= ?
-                    GROUP BY SUBSTRING(rs.session_at, 1, 10), b.id, b.title, b.author, b.cover_url
+                    GROUP BY SUBSTRING(CAST(rs.session_at AS VARCHAR(30)), 1, 10), b.id, b.title, b.author, b.cover_url
 
                     UNION ALL
 

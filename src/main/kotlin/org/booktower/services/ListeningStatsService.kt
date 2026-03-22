@@ -45,7 +45,7 @@ class ListeningStatsService(
                 h
                     .createQuery("SELECT COUNT(*) FROM book_status WHERE user_id = ? AND status = 'FINISHED'")
                     .bind(0, userId.toString())
-                    .mapTo(Int::class.java)
+                    .mapTo(Int::class.javaObjectType)
                     .firstOrNull() ?: 0
             }
 
@@ -54,7 +54,7 @@ class ListeningStatsService(
                 h
                     .createQuery("SELECT COUNT(*) FROM listen_sessions WHERE user_id = ?")
                     .bind(0, userId.toString())
-                    .mapTo(Int::class.java)
+                    .mapTo(Int::class.javaObjectType)
                     .firstOrNull() ?: 0
             }
 

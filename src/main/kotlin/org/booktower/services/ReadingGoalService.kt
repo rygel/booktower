@@ -89,7 +89,7 @@ class ReadingGoalService(
                 ).bind(0, userId.toString())
                 .bind(1, "$year-01-01")
                 .bind(2, "${year + 1}-01-01")
-                .mapTo(Int::class.java)
+                .mapTo(Int::class.javaObjectType)
                 .one()
         }
 
@@ -104,18 +104,18 @@ class ReadingGoalService(
                 h
                     .createQuery(
                         """
-                    SELECT CAST(SUBSTRING(bs.updated_at, 6, 2) AS INT) AS month, COUNT(*) AS cnt
+                    SELECT CAST(SUBSTRING(bs.updated_at, 6, 2) AS INT) AS finish_month, COUNT(*) AS cnt
                     FROM book_status bs
                     WHERE bs.user_id = ? AND bs.status = 'FINISHED'
                       AND bs.updated_at >= ? AND bs.updated_at < ?
-                    GROUP BY month
+                    GROUP BY finish_month
                     """,
                     ).bind(0, userId.toString())
                     .bind(1, "$year-01-01")
                     .bind(2, "${year + 1}-01-01")
                     .map { row ->
-                        (row.getColumn("month", Int::class.java) ?: 0) to
-                            (row.getColumn("cnt", Int::class.java) ?: 0)
+                        (row.getColumn("finish_month", Int::class.javaObjectType) ?: 0) to
+                            (row.getColumn("cnt", Int::class.javaObjectType) ?: 0)
                     }.associate { it }
             }
 
