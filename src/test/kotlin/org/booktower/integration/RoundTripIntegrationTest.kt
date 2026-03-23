@@ -93,7 +93,7 @@ class RoundTripIntegrationTest {
             client(
                 Request(Method.POST, url("/auth/register"))
                     .header("Content-Type", "application/json")
-                    .body("""{"username":"$username","email":"$username@test.com","password":"password123"}"""),
+                    .body("""{"username":"$username","email":"$username@test.com","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
             )
         return Json.mapper.readValue(response.bodyString(), LoginResponse::class.java).token
     }
@@ -120,7 +120,7 @@ class RoundTripIntegrationTest {
             client(
                 Request(Method.POST, url("/auth/register"))
                     .header("Content-Type", "application/json")
-                    .body("""{"username":"$username","email":"$username@test.com","password":"password123"}"""),
+                    .body("""{"username":"$username","email":"$username@test.com","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
             )
 
         assertEquals(Status.CREATED, response.status)
@@ -139,7 +139,7 @@ class RoundTripIntegrationTest {
             client(
                 Request(Method.POST, url("/auth/login"))
                     .header("Content-Type", "application/json")
-                    .body("""{"username":"$username","password":"password123"}"""),
+                    .body("""{"username":"$username","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
             )
 
         assertEquals(Status.OK, response.status)
@@ -214,7 +214,7 @@ class RoundTripIntegrationTest {
                 Request(Method.POST, url("/auth/login"))
                     .header("Content-Type", "application/json")
                     .header("Origin", "http://localhost:$port")
-                    .body("""{"username":"nonexistent","password":"password123"}"""),
+                    .body("""{"username":"nonexistent","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
             )
         // Should not be 403 (CSRF blocked) - 401 means it got through the CSRF filter
         assertEquals(Status.UNAUTHORIZED, response.status)
@@ -236,7 +236,7 @@ class RoundTripIntegrationTest {
             client(
                 Request(Method.POST, url("/auth/login"))
                     .header("Content-Type", "application/x-www-form-urlencoded")
-                    .body("username=$username&password=password123"),
+                    .body("username=$username&password=${org.booktower.TestPasswords.DEFAULT}"),
             )
 
         // Jetty client follows redirects by default, so we may get 200 (the index page)

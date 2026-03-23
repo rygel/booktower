@@ -245,7 +245,7 @@ class AlternativeCoverIntegrationTest {
             app(
                 Request(Method.POST, "/auth/register")
                     .header("Content-Type", "application/json")
-                    .body("""{"username":"$u","email":"$u@test.com","password":"password123"}"""),
+                    .body("""{"username":"$u","email":"$u@test.com","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
             )
         return Json.mapper.readValue(resp.bodyString(), LoginResponse::class.java).token
     }

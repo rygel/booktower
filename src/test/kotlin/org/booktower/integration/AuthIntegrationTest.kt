@@ -17,12 +17,12 @@ class AuthIntegrationTest : IntegrationTestBase() {
     private fun registerJson(
         username: String,
         email: String = "$username@test.com",
-        password: String = "password123",
+        password: String = org.booktower.TestPasswords.DEFAULT,
     ): String = """{"username":"$username","email":"$email","password":"$password"}"""
 
     private fun loginJson(
         username: String,
-        password: String = "password123",
+        password: String = org.booktower.TestPasswords.DEFAULT,
     ): String = """{"username":"$username","password":"$password"}"""
 
     @Test
@@ -85,7 +85,7 @@ class AuthIntegrationTest : IntegrationTestBase() {
             app(
                 Request(Method.POST, "/auth/register")
                     .header("Content-Type", "application/json")
-                    .body("""{"username":"ab","email":"ab@test.com","password":"password123"}"""),
+                    .body("""{"username":"ab","email":"ab@test.com","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
             )
 
         assertEquals(Status.BAD_REQUEST, response.status)
@@ -110,7 +110,7 @@ class AuthIntegrationTest : IntegrationTestBase() {
             app(
                 Request(Method.POST, "/auth/register")
                     .header("Content-Type", "application/json")
-                    .body("""{"username":"${uniqueUser()}","email":"not-an-email","password":"password123"}"""),
+                    .body("""{"username":"${uniqueUser()}","email":"not-an-email","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
             )
 
         assertEquals(Status.BAD_REQUEST, response.status)
@@ -122,7 +122,7 @@ class AuthIntegrationTest : IntegrationTestBase() {
             app(
                 Request(Method.POST, "/auth/register")
                     .header("Content-Type", "application/json")
-                    .body("""{"username":"user@name!","email":"x@test.com","password":"password123"}"""),
+                    .body("""{"username":"user@name!","email":"x@test.com","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
             )
 
         assertEquals(Status.BAD_REQUEST, response.status)
@@ -203,7 +203,7 @@ class AuthIntegrationTest : IntegrationTestBase() {
             app(
                 Request(Method.POST, "/auth/login")
                     .header("Content-Type", "application/json")
-                    .body("""{"username":"$email","password":"password123"}"""),
+                    .body("""{"username":"$email","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
             )
         assertEquals(Status.OK, response.status)
         val body = Json.mapper.readValue(response.bodyString(), LoginResponse::class.java)
@@ -220,7 +220,7 @@ class AuthIntegrationTest : IntegrationTestBase() {
             app(
                 Request(Method.POST, "/auth/login")
                     .header("Content-Type", "application/x-www-form-urlencoded")
-                    .body("username=${email.replace("@", "%40")}&password=password123"),
+                    .body("username=${email.replace("@", "%40")}&password=${org.booktower.TestPasswords.DEFAULT}"),
             )
         assertEquals(Status.SEE_OTHER, response.status)
         assertNotNull(response.cookies().find { it.name == "token" && it.value.isNotBlank() })
@@ -268,7 +268,7 @@ class AuthIntegrationTest : IntegrationTestBase() {
             closedApp(
                 Request(Method.POST, "/auth/register")
                     .header("Content-Type", "application/x-www-form-urlencoded")
-                    .body("username=$username&email=$username%40test.com&password=password123"),
+                    .body("username=$username&email=$username%40test.com&password=${org.booktower.TestPasswords.DEFAULT}"),
             )
         assertEquals(Status.FORBIDDEN, response.status)
     }

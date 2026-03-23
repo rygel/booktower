@@ -37,7 +37,7 @@ class MagicShelfServiceTest {
 
         val result =
             authService.register(
-                CreateUserRequest("shelf_${System.nanoTime()}", "shelf_${System.nanoTime()}@test.com", "password123"),
+                CreateUserRequest("shelf_${System.nanoTime()}", "shelf_${System.nanoTime()}@test.com", org.booktower.TestPasswords.DEFAULT),
             )
         userId = jwtService.extractUserId(result.getOrThrow().token)!!
         libId = libraryService.createLibrary(userId, CreateLibraryRequest("Shelf Lib", "./data/sl-${System.nanoTime()}")).id
@@ -70,7 +70,7 @@ class MagicShelfServiceTest {
     fun `getShelves returns empty for user with no shelves`() {
         val otherResult =
             authService.register(
-                CreateUserRequest("shelfother_${System.nanoTime()}", "shelfother_${System.nanoTime()}@test.com", "password123"),
+                CreateUserRequest("shelfother_${System.nanoTime()}", "shelfother_${System.nanoTime()}@test.com", org.booktower.TestPasswords.DEFAULT),
             )
         val otherId = jwtService.extractUserId(otherResult.getOrThrow().token)!!
         assertTrue(magicShelfService.getShelves(otherId).isEmpty())
@@ -89,7 +89,7 @@ class MagicShelfServiceTest {
         val created = magicShelfService.createShelf(userId, CreateMagicShelfRequest("Mine", ShelfRuleType.STATUS, "READING"))
         val otherResult =
             authService.register(
-                CreateUserRequest("shelfwrong_${System.nanoTime()}", "shelfwrong_${System.nanoTime()}@test.com", "password123"),
+                CreateUserRequest("shelfwrong_${System.nanoTime()}", "shelfwrong_${System.nanoTime()}@test.com", org.booktower.TestPasswords.DEFAULT),
             )
         val otherId = jwtService.extractUserId(otherResult.getOrThrow().token)!!
         assertNull(magicShelfService.getShelf(otherId, UUID.fromString(created.id)))
@@ -112,7 +112,7 @@ class MagicShelfServiceTest {
         val shelf = magicShelfService.createShelf(userId, CreateMagicShelfRequest("Protected", ShelfRuleType.STATUS, "READING"))
         val otherResult =
             authService.register(
-                CreateUserRequest("shelfprot_${System.nanoTime()}", "shelfprot_${System.nanoTime()}@test.com", "password123"),
+                CreateUserRequest("shelfprot_${System.nanoTime()}", "shelfprot_${System.nanoTime()}@test.com", org.booktower.TestPasswords.DEFAULT),
             )
         val otherId = jwtService.extractUserId(otherResult.getOrThrow().token)!!
         assertFalse(magicShelfService.deleteShelf(otherId, UUID.fromString(shelf.id)))

@@ -20,7 +20,7 @@ class EdgeCaseIntegrationTest : IntegrationTestBase() {
             app(
                 Request(Method.POST, "/auth/register")
                     .header("Content-Type", "application/json")
-                    .body("""{"username":"$username","email":"$username@test.com","password":"password123"}"""),
+                    .body("""{"username":"$username","email":"$username@test.com","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
             )
         return Json.mapper.readValue(response.bodyString(), LoginResponse::class.java).token
     }
@@ -130,7 +130,7 @@ class EdgeCaseIntegrationTest : IntegrationTestBase() {
                 Request(Method.POST, "/auth/register")
                     .header("Content-Type", "application/json")
                     .body(
-                        """{"username":"u_${System.nanoTime() % 10000}","email":"min_${System.nanoTime()}@test.com","password":"password123"}""",
+                        """{"username":"u_${System.nanoTime() % 10000}","email":"min_${System.nanoTime()}@test.com","password":"${org.booktower.TestPasswords.DEFAULT}"}""",
                     ),
             )
         // May succeed or fail depending on username length - just shouldn't crash
@@ -144,7 +144,7 @@ class EdgeCaseIntegrationTest : IntegrationTestBase() {
             app(
                 Request(Method.POST, "/auth/register")
                     .header("Content-Type", "application/json")
-                    .body("""{"username":"$username","email":"long_${System.nanoTime()}@test.com","password":"password123"}"""),
+                    .body("""{"username":"$username","email":"long_${System.nanoTime()}@test.com","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
             )
         assertEquals(Status.CREATED, response.status)
     }
@@ -156,7 +156,7 @@ class EdgeCaseIntegrationTest : IntegrationTestBase() {
             app(
                 Request(Method.POST, "/auth/register")
                     .header("Content-Type", "application/json")
-                    .body("""{"username":"$username","email":"toolong_${System.nanoTime()}@test.com","password":"password123"}"""),
+                    .body("""{"username":"$username","email":"toolong_${System.nanoTime()}@test.com","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
             )
         assertEquals(Status.BAD_REQUEST, response.status)
     }
@@ -272,7 +272,7 @@ class EdgeCaseIntegrationTest : IntegrationTestBase() {
         app(
             Request(Method.POST, "/auth/register")
                 .header("Content-Type", "application/json")
-                .body("""{"username":"$user1","email":"$email","password":"password123"}"""),
+                .body("""{"username":"$user1","email":"$email","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
         )
 
         val user2 = uniqueUser()
@@ -280,7 +280,7 @@ class EdgeCaseIntegrationTest : IntegrationTestBase() {
             app(
                 Request(Method.POST, "/auth/register")
                     .header("Content-Type", "application/json")
-                    .body("""{"username":"$user2","email":"$email","password":"password123"}"""),
+                    .body("""{"username":"$user2","email":"$email","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
             )
         // H2 has unique constraint on email - should fail
         assertTrue(response.status.code >= 400)

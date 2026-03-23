@@ -50,7 +50,7 @@ class PublicProfilePageTest : IntegrationTestBase() {
             app(
                 Request(Method.POST, "/auth/register")
                     .header("Content-Type", "application/json")
-                    .body("""{"username":"$username","email":"$username@test.com","password":"password123"}"""),
+                    .body("""{"username":"$username","email":"$username@test.com","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
             )
         val token = Json.mapper.readValue(regResp.bodyString(), LoginResponse::class.java).token
 
@@ -76,7 +76,7 @@ class PublicProfilePageTest : IntegrationTestBase() {
         app(
             Request(Method.POST, "/auth/register")
                 .header("Content-Type", "application/json")
-                .body("""{"username":"$username","email":"$username@test.com","password":"password123"}"""),
+                .body("""{"username":"$username","email":"$username@test.com","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
         )
 
         // Don't enable — profile should be private by default

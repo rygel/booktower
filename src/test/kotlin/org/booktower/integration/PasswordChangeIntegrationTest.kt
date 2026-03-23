@@ -15,7 +15,7 @@ class PasswordChangeIntegrationTest : IntegrationTestBase() {
                 Request(Method.POST, "/api/auth/change-password")
                     .header("Cookie", "token=$token")
                     .header("Content-Type", "application/json")
-                    .body("""{"currentPassword":"password123","newPassword":"newpassword456"}"""),
+                    .body("""{"currentPassword":"${org.booktower.TestPasswords.DEFAULT}","newPassword":"newpassword456"}"""),
             )
         assertEquals(Status.OK, resp.status)
     }
@@ -41,7 +41,7 @@ class PasswordChangeIntegrationTest : IntegrationTestBase() {
                 Request(Method.POST, "/api/auth/change-password")
                     .header("Cookie", "token=$token")
                     .header("Content-Type", "application/json")
-                    .body("""{"currentPassword":"password123","newPassword":"abc"}"""),
+                    .body("""{"currentPassword":"${org.booktower.TestPasswords.DEFAULT}","newPassword":"abc"}"""),
             )
         assertEquals(Status.BAD_REQUEST, resp.status)
     }
@@ -67,7 +67,7 @@ class PasswordChangeIntegrationTest : IntegrationTestBase() {
                 Request(Method.POST, "/api/auth/change-password")
                     .header("Cookie", "token=$token")
                     .header("Content-Type", "application/json")
-                    .body("""{"currentPassword":"password123","newPassword":""}"""),
+                    .body("""{"currentPassword":"${org.booktower.TestPasswords.DEFAULT}","newPassword":""}"""),
             )
         assertEquals(Status.BAD_REQUEST, resp.status)
     }
@@ -91,7 +91,7 @@ class PasswordChangeIntegrationTest : IntegrationTestBase() {
             app(
                 Request(Method.POST, "/api/auth/change-password")
                     .header("Content-Type", "application/json")
-                    .body("""{"currentPassword":"password123","newPassword":"newpassword456"}"""),
+                    .body("""{"currentPassword":"${org.booktower.TestPasswords.DEFAULT}","newPassword":"newpassword456"}"""),
             )
         assertEquals(Status.UNAUTHORIZED, resp.status)
     }
@@ -103,7 +103,7 @@ class PasswordChangeIntegrationTest : IntegrationTestBase() {
             app(
                 Request(Method.POST, "/auth/register")
                     .header("Content-Type", "application/json")
-                    .body("""{"username":"$username","email":"$username@test.com","password":"password123"}"""),
+                    .body("""{"username":"$username","email":"$username@test.com","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
             )
         val token =
             org.booktower.config.Json.mapper
@@ -114,7 +114,7 @@ class PasswordChangeIntegrationTest : IntegrationTestBase() {
             Request(Method.POST, "/api/auth/change-password")
                 .header("Cookie", "token=$token")
                 .header("Content-Type", "application/json")
-                .body("""{"currentPassword":"password123","newPassword":"brandnewpass"}"""),
+                .body("""{"currentPassword":"${org.booktower.TestPasswords.DEFAULT}","newPassword":"brandnewpass"}"""),
         )
 
         // old password login fails
@@ -122,7 +122,7 @@ class PasswordChangeIntegrationTest : IntegrationTestBase() {
             app(
                 Request(Method.POST, "/auth/login")
                     .header("Content-Type", "application/json")
-                    .body("""{"username":"$username","password":"password123"}"""),
+                    .body("""{"username":"$username","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
             )
         assertEquals(Status.UNAUTHORIZED, oldLogin.status)
 
@@ -146,7 +146,7 @@ class PasswordChangeIntegrationTest : IntegrationTestBase() {
                     .header("Cookie", "token=$token")
                     .header("Content-Type", "application/json")
                     .header("X-Forwarded-For", ip)
-                    .body("""{"currentPassword":"password123","newPassword":"newpass_$it"}"""),
+                    .body("""{"currentPassword":"${org.booktower.TestPasswords.DEFAULT}","newPassword":"newpass_$it"}"""),
             )
         }
         val resp =

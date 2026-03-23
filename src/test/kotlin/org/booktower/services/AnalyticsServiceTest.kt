@@ -35,7 +35,7 @@ class AnalyticsServiceTest {
 
         val result =
             authService.register(
-                CreateUserRequest("analytics_${System.nanoTime()}", "analytics_${System.nanoTime()}@test.com", "password123"),
+                CreateUserRequest("analytics_${System.nanoTime()}", "analytics_${System.nanoTime()}@test.com", org.booktower.TestPasswords.DEFAULT),
             )
         userId = jwtService.extractUserId(result.getOrThrow().token)!!
         val libId = libraryService.createLibrary(userId, CreateLibraryRequest("Analytics Lib", "./data/al-${System.nanoTime()}")).id
@@ -122,7 +122,7 @@ class AnalyticsServiceTest {
     fun `analytics are isolated between users`() {
         val otherResult =
             authService.register(
-                CreateUserRequest("anaother_${System.nanoTime()}", "anaother_${System.nanoTime()}@test.com", "password123"),
+                CreateUserRequest("anaother_${System.nanoTime()}", "anaother_${System.nanoTime()}@test.com", org.booktower.TestPasswords.DEFAULT),
             )
         val otherId = jwtService.extractUserId(otherResult.getOrThrow().token)!!
         userSettingsService.set(userId, "analytics.enabled", "true")

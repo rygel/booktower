@@ -76,7 +76,7 @@ class JournalIntegrationTest {
             app(
                 Request(Method.POST, "/auth/register")
                     .header("Content-Type", "application/json")
-                    .body("""{"username":"$name","email":"$name@test.com","password":"password123"}"""),
+                    .body("""{"username":"$name","email":"$name@test.com","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
             )
         return Json.mapper
             .readTree(resp.bodyString())

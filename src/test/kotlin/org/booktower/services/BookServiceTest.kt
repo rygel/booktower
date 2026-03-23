@@ -32,7 +32,7 @@ class BookServiceTest {
 
         val result =
             authService.register(
-                CreateUserRequest("bookuser_${System.nanoTime()}", "book_${System.nanoTime()}@test.com", "password123"),
+                CreateUserRequest("bookuser_${System.nanoTime()}", "book_${System.nanoTime()}@test.com", org.booktower.TestPasswords.DEFAULT),
             )
         userId = jwtService.extractUserId(result.getOrThrow().token)!!
         libraryId = libraryService.createLibrary(userId, CreateLibraryRequest("BookLib", "./data/test-bl-${System.nanoTime()}")).id

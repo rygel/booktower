@@ -30,7 +30,7 @@ class GeoIpAuditIntegrationTest : IntegrationTestBase() {
         app(
             Request(Method.POST, "/auth/register")
                 .header("Content-Type", "application/json")
-                .body("""{"username":"$username","email":"$username@test.com","password":"password123"}"""),
+                .body("""{"username":"$username","email":"$username@test.com","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
         )
 
         // Login with spoofed IP
@@ -39,7 +39,7 @@ class GeoIpAuditIntegrationTest : IntegrationTestBase() {
                 Request(Method.POST, "/auth/login")
                     .header("Content-Type", "application/json")
                     .header("X-Forwarded-For", "203.0.113.42")
-                    .body("""{"username":"$username","password":"password123"}"""),
+                    .body("""{"username":"$username","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
             )
         assertEquals(Status.OK, resp.status)
 
@@ -61,7 +61,7 @@ class GeoIpAuditIntegrationTest : IntegrationTestBase() {
             Request(Method.POST, "/auth/register")
                 .header("Content-Type", "application/json")
                 .header("X-Forwarded-For", "198.51.100.7")
-                .body("""{"username":"$username","email":"$username@test.com","password":"password123"}"""),
+                .body("""{"username":"$username","email":"$username@test.com","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
         )
 
         val svc = auditService()
@@ -78,12 +78,12 @@ class GeoIpAuditIntegrationTest : IntegrationTestBase() {
         app(
             Request(Method.POST, "/auth/register")
                 .header("Content-Type", "application/json")
-                .body("""{"username":"$username","email":"$username@test.com","password":"password123"}"""),
+                .body("""{"username":"$username","email":"$username@test.com","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
         )
         app(
             Request(Method.POST, "/auth/login")
                 .header("Content-Type", "application/json")
-                .body("""{"username":"$username","password":"password123"}"""),
+                .body("""{"username":"$username","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
         )
 
         val svc = auditService()

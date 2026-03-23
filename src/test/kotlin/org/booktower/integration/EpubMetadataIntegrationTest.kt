@@ -51,7 +51,7 @@ class EpubMetadataIntegrationTest : IntegrationTestBase() {
 
         val result =
             authService.register(
-                CreateUserRequest("epub_${System.nanoTime()}", "epub_${System.nanoTime()}@test.com", "password123"),
+                CreateUserRequest("epub_${System.nanoTime()}", "epub_${System.nanoTime()}@test.com", org.booktower.TestPasswords.DEFAULT),
             )
         userId = jwtService.extractUserId(result.getOrThrow().token)!!
         libId = libraryService.createLibrary(userId, CreateLibraryRequest("EPUB Lib", "./data/epub-${System.nanoTime()}")).id

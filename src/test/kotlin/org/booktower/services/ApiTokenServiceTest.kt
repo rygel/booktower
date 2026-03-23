@@ -25,7 +25,7 @@ class ApiTokenServiceTest {
 
         val result =
             authService.register(
-                CreateUserRequest("apitoken_${System.nanoTime()}", "apitoken_${System.nanoTime()}@test.com", "password123"),
+                CreateUserRequest("apitoken_${System.nanoTime()}", "apitoken_${System.nanoTime()}@test.com", org.booktower.TestPasswords.DEFAULT),
             )
         userId = jwtService.extractUserId(result.getOrThrow().token)!!
     }
@@ -50,7 +50,7 @@ class ApiTokenServiceTest {
     fun `listTokens returns empty for user with no tokens`() {
         val otherResult =
             authService.register(
-                CreateUserRequest("notoken_${System.nanoTime()}", "notoken_${System.nanoTime()}@test.com", "password123"),
+                CreateUserRequest("notoken_${System.nanoTime()}", "notoken_${System.nanoTime()}@test.com", org.booktower.TestPasswords.DEFAULT),
             )
         val otherId = jwtService.extractUserId(otherResult.getOrThrow().token)!!
         val tokens = apiTokenService.listTokens(otherId)
@@ -82,7 +82,7 @@ class ApiTokenServiceTest {
     fun `revokeToken returns false for non-owned token`() {
         val otherResult =
             authService.register(
-                CreateUserRequest("revother_${System.nanoTime()}", "revother_${System.nanoTime()}@test.com", "password123"),
+                CreateUserRequest("revother_${System.nanoTime()}", "revother_${System.nanoTime()}@test.com", org.booktower.TestPasswords.DEFAULT),
             )
         val otherId = jwtService.extractUserId(otherResult.getOrThrow().token)!!
         val response = apiTokenService.createToken(userId, "Not Yours")
@@ -94,7 +94,7 @@ class ApiTokenServiceTest {
     fun `listTokens does not return another user's tokens`() {
         val otherResult =
             authService.register(
-                CreateUserRequest("isolate_${System.nanoTime()}", "isolate_${System.nanoTime()}@test.com", "password123"),
+                CreateUserRequest("isolate_${System.nanoTime()}", "isolate_${System.nanoTime()}@test.com", org.booktower.TestPasswords.DEFAULT),
             )
         val otherId = jwtService.extractUserId(otherResult.getOrThrow().token)!!
         apiTokenService.createToken(userId, "Owner Token")

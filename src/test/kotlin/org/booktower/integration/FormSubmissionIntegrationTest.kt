@@ -24,7 +24,7 @@ class FormSubmissionIntegrationTest : IntegrationTestBase() {
                     .header("Content-Type", "application/x-www-form-urlencoded")
                     .form("username", username)
                     .form("email", "$username@test.com")
-                    .form("password", "password123"),
+                    .form("password", org.booktower.TestPasswords.DEFAULT),
             )
 
         assertEquals(Status.SEE_OTHER, response.status)
@@ -42,7 +42,7 @@ class FormSubmissionIntegrationTest : IntegrationTestBase() {
                 .header("Content-Type", "application/x-www-form-urlencoded")
                 .form("username", username)
                 .form("email", "$username@test.com")
-                .form("password", "password123"),
+                .form("password", org.booktower.TestPasswords.DEFAULT),
         )
 
         val response =
@@ -50,7 +50,7 @@ class FormSubmissionIntegrationTest : IntegrationTestBase() {
                 Request(Method.POST, "/auth/login")
                     .header("Content-Type", "application/x-www-form-urlencoded")
                     .form("username", username)
-                    .form("password", "password123"),
+                    .form("password", org.booktower.TestPasswords.DEFAULT),
             )
 
         assertEquals(Status.SEE_OTHER, response.status)
@@ -67,7 +67,7 @@ class FormSubmissionIntegrationTest : IntegrationTestBase() {
                 .header("Content-Type", "application/x-www-form-urlencoded")
                 .form("username", username)
                 .form("email", "$username@test.com")
-                .form("password", "password123"),
+                .form("password", org.booktower.TestPasswords.DEFAULT),
         )
 
         val response =
@@ -88,7 +88,7 @@ class FormSubmissionIntegrationTest : IntegrationTestBase() {
                 Request(Method.POST, "/auth/register")
                     .header("Content-Type", "application/x-www-form-urlencoded")
                     .form("email", "x@test.com")
-                    .form("password", "password123"),
+                    .form("password", org.booktower.TestPasswords.DEFAULT),
             )
 
         assertEquals(Status.BAD_REQUEST, response.status)
@@ -113,7 +113,7 @@ class FormSubmissionIntegrationTest : IntegrationTestBase() {
             app(
                 Request(Method.POST, "/auth/register")
                     .header("Content-Type", "application/json")
-                    .body("""{"username":"$username","email":"$username@test.com","password":"password123"}"""),
+                    .body("""{"username":"$username","email":"$username@test.com","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
             )
 
         assertEquals(Status.CREATED, response.status)
@@ -127,14 +127,14 @@ class FormSubmissionIntegrationTest : IntegrationTestBase() {
         app(
             Request(Method.POST, "/auth/register")
                 .header("Content-Type", "application/json")
-                .body("""{"username":"$username","email":"$username@test.com","password":"password123"}"""),
+                .body("""{"username":"$username","email":"$username@test.com","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
         )
 
         val response =
             app(
                 Request(Method.POST, "/auth/login")
                     .header("Content-Type", "application/json")
-                    .body("""{"username":"$username","password":"password123"}"""),
+                    .body("""{"username":"$username","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
             )
 
         assertEquals(Status.OK, response.status)
@@ -150,7 +150,7 @@ class FormSubmissionIntegrationTest : IntegrationTestBase() {
                     .header("Content-Type", "application/x-www-form-urlencoded")
                     .form("username", username)
                     .form("email", "$username@test.com")
-                    .form("password", "password123"),
+                    .form("password", org.booktower.TestPasswords.DEFAULT),
             )
         val token = registerResponse.cookies().find { it.name == "token" }!!.value
 
@@ -169,7 +169,7 @@ class FormSubmissionIntegrationTest : IntegrationTestBase() {
                     .header("Content-Type", "application/x-www-form-urlencoded")
                     .form("username", username)
                     .form("email", "$username@test.com")
-                    .form("password", "password123"),
+                    .form("password", org.booktower.TestPasswords.DEFAULT),
             )
         val token = registerResponse.cookies().find { it.name == "token" }!!.value
 
