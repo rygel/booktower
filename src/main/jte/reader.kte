@@ -436,6 +436,11 @@
                     ${i18n.translate("page.reader.annotations")}
                 </p>
                 <div id="an-list"><p style="font-size:0.8rem; color:var(--bt-faint);">—</p></div>
+                <hr style="border:none; border-top:1px solid var(--bt-border); margin:1rem 0 0.75rem;">
+                <p style="font-size:0.7rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--bt-subtle); font-weight:600; margin:0 0 0.5rem;">
+                    ${i18n.translate("page.reader.shared.annotations")}
+                </p>
+                <div id="shared-an-list"><p style="font-size:0.8rem; color:var(--bt-faint);">—</p></div>
             </div>
         </div>
     @endif
@@ -1127,6 +1132,32 @@ var BT_DEVICE = (function() {
             // Render in reverse so newest appears first
             list.slice().reverse().forEach(function (a) { addAnnotationToPanel(a); });
         }).catch(function () {});
+        // Load shared annotations from other users
+        loadSharedAnnotations();
+    }
+
+    function loadSharedAnnotations() {
+        var sharedList = document.getElementById('shared-an-list');
+        if (!sharedList) return;
+        fetch('/api/books/' + BOOK_ID + '/shared-annotations').then(function(r) { return r.json(); }).then(function(list) {
+            sharedList.innerHTML = '';
+            if (!list || list.length === 0) {
+                sharedList.innerHTML = '<p style="font-size:0.8rem;color:var(--bt-faint);">—</p>';
+                return;
+            }
+            list.forEach(function(a) {
+                var item = document.createElement('div');
+                item.className = 'an-item';
+                item.style.cssText = 'border-color:var(--bt-border);';
+                var colorHex = { yellow:'#fbbf24', green:'#34d399', blue:'#60a5fa', pink:'#f472b6' }[a.color] || '#fbbf24';
+                item.innerHTML = '<div style="display:flex;align-items:center;gap:0.3rem;margin-bottom:0.2rem;">' +
+                    '<span style="display:inline-block;width:0.5rem;height:0.5rem;border-radius:50%;background:' + colorHex + ';"></span>' +
+                    '<span style="font-size:0.7rem;color:var(--bt-muted);">' + (a.username || '') + ' · p.' + a.page + '</span></div>' +
+                    '<div class="an-text">' + (a.selectedText || '') + '</div>' +
+                    (a.note ? '<div style="font-size:0.7rem;color:var(--bt-accent-dim);margin-top:0.2rem;font-style:italic;">' + a.note + '</div>' : '');
+                sharedList.appendChild(item);
+            });
+        }).catch(function() {});
     }
 
     window.deleteAnnotation = function (id) {
