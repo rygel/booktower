@@ -62,7 +62,7 @@ class AnnotationExportService(
                     """
                 SELECT bb.page, bb.title, bb.note, bb.created_at,
                        b.title AS book_title, b.author AS book_author
-                FROM book_bookmarks bb
+                FROM bookmarks bb
                 INNER JOIN books b ON bb.book_id = b.id
                 INNER JOIN libraries l ON b.library_id = l.id
                 WHERE bb.user_id = ? AND l.user_id = ?

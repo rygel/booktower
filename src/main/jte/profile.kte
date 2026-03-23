@@ -420,4 +420,28 @@ async function importGoodreads() {
     }
 }
 </script>
+
+<!-- Export & Data -->
+<div class="card card-pad" style="margin-top:1.5rem;">
+    <h2 class="profile-section-title">
+        <i class="ri-download-2-line"></i>
+        ${pc.i18n.translate("page.profile.export.title")}
+    </h2>
+    <p class="text-sm text-subtle" style="margin-bottom:1rem;">${pc.i18n.translate("page.profile.export.description")}</p>
+    <div style="display:flex; flex-wrap:wrap; gap:0.75rem;">
+        <a href="/api/export/annotations/markdown" class="btn-secondary flex-center gap-sm" style="padding:0.6rem 1rem; text-decoration:none;">
+            <i class="ri-markdown-line"></i> ${pc.i18n.translate("page.profile.export.markdown")}
+        </a>
+        <a href="/api/export/annotations/readwise" class="btn-secondary flex-center gap-sm" style="padding:0.6rem 1rem; text-decoration:none;">
+            <i class="ri-file-text-line"></i> ${pc.i18n.translate("page.profile.export.readwise")}
+        </a>
+        <a href="/api/export/annotations" class="btn-secondary flex-center gap-sm" style="padding:0.6rem 1rem; text-decoration:none;">
+            <i class="ri-braces-line"></i> ${pc.i18n.translate("page.profile.export.json")}
+        </a>
+        <a href="/api/export" class="btn-secondary flex-center gap-sm" style="padding:0.6rem 1rem; text-decoration:none;">
+            <i class="ri-database-2-line"></i> ${pc.i18n.translate("page.profile.export.full")}
+        </a>
+    </div>
+</div>
 `)
+

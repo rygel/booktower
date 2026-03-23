@@ -44,7 +44,7 @@ class BackupService(
                 "book_tags",
                 "book_categories",
                 "book_moods",
-                "book_bookmarks",
+                "bookmarks",
                 "book_annotations",
                 "book_authors",
                 "book_journal_entries",
