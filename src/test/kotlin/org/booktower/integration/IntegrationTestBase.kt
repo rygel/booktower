@@ -329,6 +329,7 @@ abstract class IntegrationTestBase {
                 bookConditionService = org.booktower.services.BookConditionService(org.booktower.services.CustomFieldService(jdbi)),
                 readingListService = org.booktower.services.ReadingListService(jdbi),
                 wishlistService = org.booktower.services.WishlistService(jdbi),
+                annotationService = annotationService,
             )
         val adminApiRouter =
             AdminApiRouter(
