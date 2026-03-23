@@ -247,6 +247,7 @@ fun buildTestApp(
             null, // discoveryService
             null, // readingListService
             null, // wishlistService
+            null, // collectionService
         )
     val bgTaskHandler = BackgroundTaskHandler(bgTaskService)
     val journalHandler = JournalHandler(journal)

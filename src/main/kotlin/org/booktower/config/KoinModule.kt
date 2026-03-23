@@ -287,6 +287,7 @@ val appModule =
                 getOrNull<org.booktower.services.DiscoveryService>(),
                 getOrNull<org.booktower.services.ReadingListService>(),
                 getOrNull<org.booktower.services.WishlistService>(),
+                getOrNull<org.booktower.services.CollectionService>(),
             )
         }
         single { BackgroundTaskHandler(get(), get()) }
