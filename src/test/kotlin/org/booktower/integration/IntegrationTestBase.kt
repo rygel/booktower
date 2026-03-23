@@ -332,9 +332,9 @@ abstract class IntegrationTestBase {
                 scheduledTaskService,
                 bulkCoverService,
                 telemetryService,
-                null,
-                null,
-                null,
+                null, // bulkMetadataRefreshService
+                org.booktower.services.BackupService(jdbi), // backupService
+                null, // batchImportService
             )
         val metadataApiRouter =
             MetadataApiRouter(
