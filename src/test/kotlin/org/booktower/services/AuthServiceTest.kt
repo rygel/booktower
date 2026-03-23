@@ -25,7 +25,7 @@ class AuthServiceTest {
             CreateUserRequest(
                 username = "newuser_${System.nanoTime()}",
                 email = "new_${System.nanoTime()}@example.com",
-                password = "password123",
+                password = org.booktower.TestPasswords.DEFAULT,
             )
         val result = authService.register(request)
         assertTrue(result.isSuccess)
@@ -38,8 +38,8 @@ class AuthServiceTest {
     @Test
     fun `register fails for duplicate username`() {
         val username = "duplicate_${System.nanoTime()}"
-        authService.register(CreateUserRequest(username, "a_${System.nanoTime()}@test.com", "password123"))
-        val result = authService.register(CreateUserRequest(username, "b_${System.nanoTime()}@test.com", "password123"))
+        authService.register(CreateUserRequest(username, "a_${System.nanoTime()}@test.com", org.booktower.TestPasswords.DEFAULT))
+        val result = authService.register(CreateUserRequest(username, "b_${System.nanoTime()}@test.com", org.booktower.TestPasswords.DEFAULT))
         assertTrue(result.isFailure)
         assertTrue(result.exceptionOrNull() is IllegalArgumentException)
     }
@@ -47,7 +47,7 @@ class AuthServiceTest {
     @Test
     fun `login succeeds with correct credentials`() {
         val username = "logintest_${System.nanoTime()}"
-        val password = "password123"
+        val password = org.booktower.TestPasswords.DEFAULT
         authService.register(CreateUserRequest(username, "login_${System.nanoTime()}@test.com", password))
         val result = authService.login(LoginRequest(username, password))
         assertTrue(result.isSuccess)
@@ -57,20 +57,20 @@ class AuthServiceTest {
     @Test
     fun `login fails with wrong password`() {
         val username = "wrongpw_${System.nanoTime()}"
-        authService.register(CreateUserRequest(username, "wp_${System.nanoTime()}@test.com", "password123"))
+        authService.register(CreateUserRequest(username, "wp_${System.nanoTime()}@test.com", org.booktower.TestPasswords.DEFAULT))
         assertTrue(authService.login(LoginRequest(username, "wrongpassword")).isFailure)
     }
 
     @Test
     fun `login fails with non-existent username`() {
-        assertTrue(authService.login(LoginRequest("nonexistent_${System.nanoTime()}", "password123")).isFailure)
+        assertTrue(authService.login(LoginRequest("nonexistent_${System.nanoTime()}", org.booktower.TestPasswords.DEFAULT)).isFailure)
     }
 
     @Test
     fun `login succeeds with email address`() {
         val username = "emaillogin_${System.nanoTime()}"
         val email = "$username@test.com"
-        val password = "password123"
+        val password = org.booktower.TestPasswords.DEFAULT
         authService.register(CreateUserRequest(username, email, password))
         val result = authService.login(LoginRequest(email, password))
         assertTrue(result.isSuccess)
@@ -80,7 +80,7 @@ class AuthServiceTest {
     @Test
     fun `getUserById returns registered user`() {
         val username = "getbyid_${System.nanoTime()}"
-        val registerResult = authService.register(CreateUserRequest(username, "gbi_${System.nanoTime()}@test.com", "password123"))
+        val registerResult = authService.register(CreateUserRequest(username, "gbi_${System.nanoTime()}@test.com", org.booktower.TestPasswords.DEFAULT))
         val userId = jwtService.extractUserId(registerResult.getOrThrow().token)!!
         val user = authService.getUserById(userId)
         assertNotNull(user)
@@ -91,7 +91,7 @@ class AuthServiceTest {
     fun `generated token is valid`() {
         val result =
             authService.register(
-                CreateUserRequest("tokentest_${System.nanoTime()}", "tt_${System.nanoTime()}@test.com", "password123"),
+                CreateUserRequest("tokentest_${System.nanoTime()}", "tt_${System.nanoTime()}@test.com", org.booktower.TestPasswords.DEFAULT),
             )
         assertNotNull(jwtService.extractUserId(result.getOrThrow().token))
     }

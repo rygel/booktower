@@ -1,0 +1,72 @@
+@import org.booktower.models.LibraryDto
+@import org.booktower.services.DroppedFile
+@import org.booktower.web.PageContext
+@param pc: PageContext
+@param files: List<DroppedFile>
+@param libraries: List<LibraryDto>
+
+@template.components.layout(title="${pc.i18n.translate("page.bookdrop.title")} - BookTower", pc=pc, currentPage="book-drop",
+    searchQuery="", content = @`
+<div class="page-container">
+    <h1 class="page-title"><i class="ri-upload-cloud-line"></i> ${pc.i18n.translate("page.bookdrop.title")}</h1>
+    <p class="text-sm text-subtle" style="margin-bottom:1.5rem;">${pc.i18n.translate("page.bookdrop.description")}</p>
+
+    <div id="bookdrop-list">
+        @if(files.isEmpty())
+            @template.components.emptyState(icon = "ri-upload-cloud-line", message = pc.i18n.translate("page.bookdrop.empty"), action = @``)
+        @else
+            @for(file in files)
+                <div class="panel" style="margin-bottom:0.75rem; padding:1rem; display:flex; justify-content:space-between; align-items:center;" data-filename="${file.filename}">
+                    <div style="flex:1;">
+                        <div style="font-weight:600; font-size:0.9rem; color:var(--bt-text);">
+                            <i class="ri-file-text-line"></i> ${file.filename}
+                        </div>
+                        <div class="text-sm text-subtle" style="margin-top:0.15rem;">
+                            ${file.format.uppercase()} &middot; ${file.sizeBytes / 1024} KB &middot; ${file.droppedAt}
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:0.5rem; align-items:center; flex-shrink:0; margin-left:1rem;">
+                        <select class="drop-library" style="padding:0.35rem; font-size:0.8rem;">
+                            @for(lib in libraries)
+                                <option value="${lib.id}">${lib.name}</option>
+                            @endfor
+                        </select>
+                        <button class="btn-primary drop-import" data-filename="${file.filename}" style="padding:0.35rem 0.75rem; font-size:0.8rem;">
+                            <i class="ri-download-line"></i> ${pc.i18n.translate("page.bookdrop.import")}
+                        </button>
+                        <button class="btn-icon drop-discard" data-filename="${file.filename}" title="${pc.i18n.translate("label.delete")}">
+                            <i class="ri-delete-bin-line" style="color:var(--bt-danger);"></i>
+                        </button>
+                    </div>
+                </div>
+            @endfor
+        @endif
+    </div>
+</div>
+
+<script>
+(function() {
+    document.querySelectorAll('.drop-import').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var panel = btn.closest('.panel');
+            var filename = btn.dataset.filename;
+            var libraryId = panel.querySelector('.drop-library').value;
+            fetch('/api/bookdrop/' + encodeURIComponent(filename) + '/import', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ libraryId: libraryId })
+            }).then(function(r) { if (r.ok) panel.remove(); });
+        });
+    });
+
+    document.querySelectorAll('.drop-discard').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var filename = btn.dataset.filename;
+            fetch('/api/bookdrop/' + encodeURIComponent(filename), { method: 'DELETE' }).then(function(r) {
+                if (r.ok) btn.closest('.panel').remove();
+            });
+        });
+    });
+})();
+</script>
+`)

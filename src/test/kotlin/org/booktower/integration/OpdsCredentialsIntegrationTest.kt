@@ -54,13 +54,13 @@ class OpdsCredentialsIntegrationTest : IntegrationTestBase() {
             Request(Method.PUT, "/api/user/opds-credentials")
                 .header("Cookie", "token=$token")
                 .header("Content-Type", "application/json")
-                .body("""{"opdsUsername":"opds_user","password":"password123"}"""),
+                .body("""{"opdsUsername":"opds_user","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
         )
 
         val opdsResp =
             app(
                 Request(Method.GET, "/opds/catalog")
-                    .header("Authorization", basicAuthHeader("opds_user", "password123")),
+                    .header("Authorization", basicAuthHeader("opds_user", org.booktower.TestPasswords.DEFAULT)),
             )
         assertEquals(Status.OK, opdsResp.status)
     }
@@ -90,7 +90,7 @@ class OpdsCredentialsIntegrationTest : IntegrationTestBase() {
             Request(Method.PUT, "/api/user/opds-credentials")
                 .header("Cookie", "token=$token")
                 .header("Content-Type", "application/json")
-                .body("""{"opdsUsername":"todelete","password":"password123"}"""),
+                .body("""{"opdsUsername":"todelete","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
         )
 
         val delResp = app(Request(Method.DELETE, "/api/user/opds-credentials").header("Cookie", "token=$token"))
@@ -126,7 +126,7 @@ class OpdsCredentialsIntegrationTest : IntegrationTestBase() {
     fun `OPDS catalog still works with main account credentials when no OPDS creds set`() {
         // Register a user whose main credentials work for OPDS
         val username = "mainuser_${System.nanoTime()}"
-        val password = "password123"
+        val password = org.booktower.TestPasswords.DEFAULT
         app(
             Request(Method.POST, "/auth/register")
                 .header("Content-Type", "application/json")

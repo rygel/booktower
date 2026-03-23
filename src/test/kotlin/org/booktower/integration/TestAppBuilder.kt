@@ -237,7 +237,29 @@ fun buildTestApp(
             magicShelfService,
             TestFixture.templateRenderer,
             readingSessionService,
-            null,
+            null, // libraryWatchService
+            null, // bookLinkService
+            null, // bookSharingService
+            bgTaskService,
+            org.booktower.services.LibraryStatsService(jdbi),
+            null, // webhookService
+            null, // readingTimelineService
+            null, // discoveryService
+            null, // readingListService
+            null, // wishlistService
+            null, // collectionService
+            null, // koboSyncService
+            null, // koreaderSyncService
+            null, // filterPresetService
+            null, // scheduledTaskService
+            null, // opdsCredentialsService
+            null, // contentRestrictionsService
+            null, // readingSpeedService
+            null, // libraryHealthService
+            null, // hardcoverSyncService
+            null, // bookDeliveryService
+            null, // bookDropService
+            null, // metadataProposalService
         )
     val bgTaskHandler = BackgroundTaskHandler(bgTaskService)
     val journalHandler = JournalHandler(journal)
@@ -322,6 +344,7 @@ fun buildTestApp(
             scheduledTaskService,
             bulkCoverService,
             telemetryService,
+            null,
             null,
             null,
         )

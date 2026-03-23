@@ -120,13 +120,81 @@
                     <i class="ri-bar-chart-line"></i>
                     ${pc.i18n.translate("nav.analytics")}
                 </a>
+                <a href="/stats" class="sidebar-link ${if (currentPage == "stats") "active" else ""}">
+                    <i class="ri-bar-chart-box-line"></i>
+                    ${pc.i18n.translate("page.stats.title")}
+                </a>
+                <a href="/discover" class="sidebar-link ${if (currentPage == "discover") "active" else ""}">
+                    <i class="ri-compass-3-line"></i>
+                    ${pc.i18n.translate("page.discover.title")}
+                </a>
+                <a href="/reading-lists" class="sidebar-link ${if (currentPage == "reading-lists") "active" else ""}">
+                    <i class="ri-list-ordered"></i>
+                    ${pc.i18n.translate("page.readinglists.title")}
+                </a>
+                <a href="/collections" class="sidebar-link ${if (currentPage == "collections") "active" else ""}">
+                    <i class="ri-folder-line"></i>
+                    ${pc.i18n.translate("page.collections.title")}
+                </a>
+                <a href="/wishlist" class="sidebar-link ${if (currentPage == "wishlist") "active" else ""}">
+                    <i class="ri-heart-line"></i>
+                    ${pc.i18n.translate("page.wishlist.title")}
+                </a>
+                <a href="/timeline" class="sidebar-link ${if (currentPage == "timeline") "active" else ""}">
+                    <i class="ri-time-line"></i>
+                    ${pc.i18n.translate("page.timeline.title")}
+                </a>
                 <a href="/activity" class="sidebar-link ${if (currentPage == "activity") "active" else ""}">
                     <i class="ri-history-line"></i>
                     ${pc.i18n.translate("nav.activity")}
                 </a>
+                <a href="/webhooks" class="sidebar-link ${if (currentPage == "webhooks") "active" else ""}">
+                    <i class="ri-webhook-line"></i>
+                    ${pc.i18n.translate("page.webhooks.title")}
+                </a>
                 <a href="/downloads" class="sidebar-link ${if (currentPage == "downloads") "active" else ""}">
                     <i class="ri-download-line"></i>
                     ${pc.i18n.translate("nav.downloads")}
+                </a>
+                <a href="/devices" class="sidebar-link ${if (currentPage == "devices") "active" else ""}">
+                    <i class="ri-tablet-line"></i>
+                    ${pc.i18n.translate("page.devices.title")}
+                </a>
+                <a href="/filter-presets" class="sidebar-link ${if (currentPage == "filter-presets") "active" else ""}">
+                    <i class="ri-filter-3-line"></i>
+                    ${pc.i18n.translate("page.filterpresets.title")}
+                </a>
+                <a href="/opds-settings" class="sidebar-link ${if (currentPage == "opds-settings") "active" else ""}">
+                    <i class="ri-rss-line"></i>
+                    ${pc.i18n.translate("page.opds.title")}
+                </a>
+                <a href="/content-restrictions" class="sidebar-link ${if (currentPage == "content-restrictions") "active" else ""}">
+                    <i class="ri-shield-check-line"></i>
+                    ${pc.i18n.translate("page.restrictions.title")}
+                </a>
+                <a href="/book-drop" class="sidebar-link ${if (currentPage == "book-drop") "active" else ""}">
+                    <i class="ri-upload-cloud-line"></i>
+                    ${pc.i18n.translate("page.bookdrop.title")}
+                </a>
+                <a href="/metadata-proposals" class="sidebar-link ${if (currentPage == "metadata-proposals") "active" else ""}">
+                    <i class="ri-file-edit-line"></i>
+                    ${pc.i18n.translate("page.proposals.title")}
+                </a>
+                <a href="/reading-speed" class="sidebar-link ${if (currentPage == "reading-speed") "active" else ""}">
+                    <i class="ri-speed-line"></i>
+                    ${pc.i18n.translate("page.speed.title")}
+                </a>
+                <a href="/library-health" class="sidebar-link ${if (currentPage == "library-health") "active" else ""}">
+                    <i class="ri-heart-pulse-line"></i>
+                    ${pc.i18n.translate("page.health.title")}
+                </a>
+                <a href="/hardcover-settings" class="sidebar-link ${if (currentPage == "hardcover-settings") "active" else ""}">
+                    <i class="ri-book-3-line"></i>
+                    ${pc.i18n.translate("page.hardcover.title")}
+                </a>
+                <a href="/book-delivery" class="sidebar-link ${if (currentPage == "book-delivery") "active" else ""}">
+                    <i class="ri-mail-send-line"></i>
+                    ${pc.i18n.translate("page.delivery.title")}
                 </a>
                 <a href="/profile" class="sidebar-link ${if (currentPage == "profile") "active" else ""}">
                     <i class="ri-user-settings-line"></i>

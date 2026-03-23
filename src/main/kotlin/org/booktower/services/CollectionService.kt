@@ -95,7 +95,7 @@ class CollectionService(
                     .createQuery("SELECT COUNT(*) FROM collections WHERE id = ? AND user_id = ?")
                     .bind(0, collectionId.toString())
                     .bind(1, userId.toString())
-                    .mapTo(Int::class.java)
+                    .mapTo(Int::class.javaObjectType)
                     .firstOrNull()!! > 0
             }
         if (!owns) return false
@@ -104,7 +104,7 @@ class CollectionService(
                 h
                     .createQuery("SELECT COALESCE(MAX(sort_order), 0) FROM collection_books WHERE collection_id = ?")
                     .bind(0, collectionId.toString())
-                    .mapTo(Int::class.java)
+                    .mapTo(Int::class.javaObjectType)
                     .firstOrNull() ?: 0
             }
         jdbi.useHandle<Exception> { h ->
@@ -133,7 +133,7 @@ class CollectionService(
                     .createQuery("SELECT COUNT(*) FROM collections WHERE id = ? AND user_id = ?")
                     .bind(0, collectionId.toString())
                     .bind(1, userId.toString())
-                    .mapTo(Int::class.java)
+                    .mapTo(Int::class.javaObjectType)
                     .firstOrNull()!! > 0
             }
         if (!owns) return false

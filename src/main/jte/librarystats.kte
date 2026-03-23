@@ -1,0 +1,139 @@
+@import org.booktower.services.LibraryStats
+@import org.booktower.web.PageContext
+@param pc: PageContext
+@param stats: LibraryStats?
+
+@template.components.layout(title="${pc.i18n.translate("page.stats.title")} - BookTower", pc=pc, currentPage="stats",
+    searchQuery="", content = @`
+<div class="page-container">
+    <h1 class="page-title"><i class="ri-bar-chart-box-line"></i> ${pc.i18n.translate("page.stats.title")}</h1>
+
+    @if(stats == null)
+        @template.components.emptyState(icon = "ri-bar-chart-box-line", message = pc.i18n.translate("page.stats.unavailable"), action = @``)
+    @else
+    <!-- Summary cards -->
+    <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(12rem, 1fr)); gap:1rem; margin-bottom:2rem;">
+        <div class="stat-card">
+            <div class="stat-value">${stats.totalBooks}</div>
+            <div class="stat-label">${pc.i18n.translate("page.stats.total.books")}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">${stats.totalLibraries}</div>
+            <div class="stat-label">${pc.i18n.translate("page.stats.total.libraries")}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">${if (stats.totalStorageBytes > 1_073_741_824) "${stats.totalStorageBytes / 1_073_741_824} GB" else "${stats.totalStorageBytes / 1_048_576} MB"}</div>
+            <div class="stat-label">${pc.i18n.translate("page.stats.storage")}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">${stats.averagePageCount}</div>
+            <div class="stat-label">${pc.i18n.translate("page.stats.avg.pages")}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">${stats.booksWithFiles}</div>
+            <div class="stat-label">${pc.i18n.translate("page.stats.with.files")}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">${stats.booksWithCovers}</div>
+            <div class="stat-label">${pc.i18n.translate("page.stats.with.covers")}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">${stats.booksWithIsbn}</div>
+            <div class="stat-label">${pc.i18n.translate("page.stats.with.isbn")}</div>
+        </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(20rem, 1fr)); gap:1.5rem;">
+        <!-- Format breakdown -->
+        <div class="panel">
+            <h2 class="panel-title">${pc.i18n.translate("page.stats.formats")}</h2>
+            @if(stats.formatBreakdown.isEmpty())
+                <p class="text-sm text-subtle">${pc.i18n.translate("page.stats.no.data")}</p>
+            @else
+                @for(entry in stats.formatBreakdown)
+                    <div style="display:flex; justify-content:space-between; padding:0.35rem 0; border-bottom:1px solid var(--bt-border);">
+                        <span class="text-sm">${entry.key}</span>
+                        <span class="text-sm text-subtle">${entry.value}</span>
+                    </div>
+                @endfor
+            @endif
+        </div>
+
+        <!-- Language breakdown -->
+        <div class="panel">
+            <h2 class="panel-title">${pc.i18n.translate("page.stats.languages")}</h2>
+            @if(stats.languageBreakdown.isEmpty())
+                <p class="text-sm text-subtle">${pc.i18n.translate("page.stats.no.data")}</p>
+            @else
+                @for(entry in stats.languageBreakdown)
+                    <div style="display:flex; justify-content:space-between; padding:0.35rem 0; border-bottom:1px solid var(--bt-border);">
+                        <span class="text-sm">${entry.key}</span>
+                        <span class="text-sm text-subtle">${entry.value}</span>
+                    </div>
+                @endfor
+            @endif
+        </div>
+
+        <!-- Top authors -->
+        <div class="panel">
+            <h2 class="panel-title">${pc.i18n.translate("page.stats.top.authors")}</h2>
+            @if(stats.topAuthors.isEmpty())
+                <p class="text-sm text-subtle">${pc.i18n.translate("page.stats.no.data")}</p>
+            @else
+                @for(author in stats.topAuthors)
+                    <div style="display:flex; justify-content:space-between; padding:0.35rem 0; border-bottom:1px solid var(--bt-border);">
+                        <span class="text-sm">${author.author}</span>
+                        <span class="text-sm text-subtle">${author.count}</span>
+                    </div>
+                @endfor
+            @endif
+        </div>
+
+        <!-- Top tags -->
+        <div class="panel">
+            <h2 class="panel-title">${pc.i18n.translate("page.stats.top.tags")}</h2>
+            @if(stats.topTags.isEmpty())
+                <p class="text-sm text-subtle">${pc.i18n.translate("page.stats.no.data")}</p>
+            @else
+                @for(tag in stats.topTags)
+                    <div style="display:flex; justify-content:space-between; padding:0.35rem 0; border-bottom:1px solid var(--bt-border);">
+                        <span class="text-sm">${tag.tag}</span>
+                        <span class="text-sm text-subtle">${tag.count}</span>
+                    </div>
+                @endfor
+            @endif
+        </div>
+
+        <!-- Reading status -->
+        <div class="panel">
+            <h2 class="panel-title">${pc.i18n.translate("page.stats.reading.status")}</h2>
+            @if(stats.statusBreakdown.isEmpty())
+                <p class="text-sm text-subtle">${pc.i18n.translate("page.stats.no.data")}</p>
+            @else
+                @for(entry in stats.statusBreakdown)
+                    <div style="display:flex; justify-content:space-between; padding:0.35rem 0; border-bottom:1px solid var(--bt-border);">
+                        <span class="text-sm">${entry.key}</span>
+                        <span class="text-sm text-subtle">${entry.value}</span>
+                    </div>
+                @endfor
+            @endif
+        </div>
+
+        <!-- Books added per month -->
+        <div class="panel">
+            <h2 class="panel-title">${pc.i18n.translate("page.stats.added.per.month")}</h2>
+            @if(stats.booksAddedPerMonth.isEmpty())
+                <p class="text-sm text-subtle">${pc.i18n.translate("page.stats.no.data")}</p>
+            @else
+                @for(month in stats.booksAddedPerMonth)
+                    <div style="display:flex; justify-content:space-between; padding:0.35rem 0; border-bottom:1px solid var(--bt-border);">
+                        <span class="text-sm">${month.month}</span>
+                        <span class="text-sm text-subtle">${month.count}</span>
+                    </div>
+                @endfor
+            @endif
+        </div>
+    </div>
+    @endif
+</div>
+`)

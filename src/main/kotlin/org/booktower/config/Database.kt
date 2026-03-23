@@ -21,6 +21,10 @@ private val MIGRATION_FILES =
         "V6__fts_metadata_search.sql",
         "V7__webhooks.sql",
         "V8__position_sync.sql",
+        "V9__custom_metadata.sql",
+        "V10__reading_lists.sql",
+        "V11__shared_annotations.sql",
+        "V12__wishlist.sql",
     )
 
 class Database private constructor(

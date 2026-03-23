@@ -51,6 +51,25 @@ class PageHandler(
     private val bookLinkService: org.booktower.services.BookLinkService? = null,
     private val bookSharingService: org.booktower.services.BookSharingService? = null,
     private val backgroundTaskService: org.booktower.services.BackgroundTaskService? = null,
+    private val libraryStatsService: org.booktower.services.LibraryStatsService? = null,
+    private val webhookService: org.booktower.services.WebhookService? = null,
+    private val readingTimelineService: org.booktower.services.ReadingTimelineService? = null,
+    private val discoveryService: org.booktower.services.DiscoveryService? = null,
+    private val readingListService: org.booktower.services.ReadingListService? = null,
+    private val wishlistService: org.booktower.services.WishlistService? = null,
+    private val collectionService: org.booktower.services.CollectionService? = null,
+    private val koboSyncService: org.booktower.services.KoboSyncService? = null,
+    private val koreaderSyncService: org.booktower.services.KOReaderSyncService? = null,
+    private val filterPresetService: org.booktower.services.FilterPresetService? = null,
+    private val scheduledTaskService: org.booktower.services.ScheduledTaskService? = null,
+    private val opdsCredentialsService: org.booktower.services.OpdsCredentialsService? = null,
+    private val contentRestrictionsService: org.booktower.services.ContentRestrictionsService? = null,
+    private val readingSpeedService: org.booktower.services.ReadingSpeedService? = null,
+    private val libraryHealthService: org.booktower.services.LibraryHealthService? = null,
+    private val hardcoverSyncService: org.booktower.services.HardcoverSyncService? = null,
+    private val bookDeliveryService: org.booktower.services.BookDeliveryService? = null,
+    private val bookDropService: org.booktower.services.BookDropService? = null,
+    private val metadataProposalService: org.booktower.services.MetadataProposalService? = null,
 ) {
     /** Build a PageContext for any authenticated request. */
     private fun pageContext(req: Request): org.booktower.web.PageContext =
@@ -344,6 +363,39 @@ class PageHandler(
             .cookie(Cookie("flash_type", "success", path = "/"))
     }
 
+    /** POST /ui/isbn/lookup — looks up metadata by ISBN, returns JSON */
+    fun isbnLookup(req: Request): Response {
+        auth(req) ?: return Response(Status.UNAUTHORIZED)
+        val isbn =
+            req.form("isbn")?.trim()
+                ?: return Response(Status.BAD_REQUEST)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"isbn required"}""")
+        val meta =
+            metadataFetchService.fetchMetadataByIsbn(isbn)
+                ?: return Response(Status.OK)
+                    .header("Content-Type", "application/json")
+                    .body("""{"found":false}""")
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper.writeValueAsString(
+                    mapOf(
+                        "found" to true,
+                        "title" to meta.title,
+                        "author" to meta.author,
+                        "description" to meta.description,
+                        "isbn" to meta.isbn,
+                        "publisher" to meta.publisher,
+                        "publishedDate" to meta.publishedDate,
+                        "pageCount" to meta.pageCount,
+                        "coverUrl" to meta.coverUrl,
+                        "source" to meta.source,
+                    ),
+                ),
+            )
+    }
+
     fun search(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
         val pc = pageContext(req)
@@ -393,8 +445,9 @@ class PageHandler(
             val fReadingCount = CompletableFuture.supplyAsync({ bookService.countByStatus(userId, org.booktower.models.ReadStatus.READING) }, vt)
             val fGoal = CompletableFuture.supplyAsync({ userSettingsService.get(userId, "reading.goal.$year")?.toIntOrNull() ?: 0 }, vt)
             val fFinishedThisYear = CompletableFuture.supplyAsync({ bookService.countFinishedThisYear(userId, year) }, vt)
+            val fAnalytics = CompletableFuture.supplyAsync({ analyticsService.getSummary(userId) }, vt)
 
-            CompletableFuture.allOf(fLibraries, fRecent, fRecentlyAdded, fRecentlyFinished, fReadingCount, fGoal, fFinishedThisYear).join()
+            CompletableFuture.allOf(fLibraries, fRecent, fRecentlyAdded, fRecentlyFinished, fReadingCount, fGoal, fFinishedThisYear, fAnalytics).join()
 
             val libraries = fLibraries.get()
             val recentBooks = fRecent.get()
@@ -403,6 +456,7 @@ class PageHandler(
             val currentlyReadingCount = fReadingCount.get()
             val goal = fGoal.get()
             val booksFinishedThisYear = fFinishedThisYear.get()
+            val analytics = fAnalytics.get()
             val totalBooks = libraries.sumOf { it.bookCount }
 
             return htmlOk(
@@ -419,6 +473,8 @@ class PageHandler(
                         "goal" to goal,
                         "booksFinishedThisYear" to booksFinishedThisYear,
                         "year" to year,
+                        "streak" to analytics.streak,
+                        "totalPagesRead" to analytics.totalPages,
                     ),
                 ),
             )
@@ -447,6 +503,7 @@ class PageHandler(
         val libraries = libraryService.getLibraries(userId)
         val prefDarkTheme = userSettingsService.get(userId, "pref.theme.dark") ?: "catppuccin-mocha"
         val prefLightTheme = userSettingsService.get(userId, "pref.theme.light") ?: "catppuccin-latte"
+        val profilePublic = userSettingsService.get(userId, "profile.public") == "true"
         return htmlOk(
             templateRenderer.render(
                 "profile.kte",
@@ -458,6 +515,7 @@ class PageHandler(
                     "libraries" to libraries,
                     "prefDarkTheme" to prefDarkTheme,
                     "prefLightTheme" to prefLightTheme,
+                    "profilePublic" to profilePublic,
                 ),
             ),
         )
@@ -519,6 +577,255 @@ class PageHandler(
                     "summary" to summary,
                     "recentSessions" to recentSessions,
                 ),
+            ),
+        )
+    }
+
+    fun libraryStats(req: Request): Response {
+        val userId = auth(req) ?: return redirectToLogin()
+        val pc = pageContext(req)
+        val stats = libraryStatsService?.getStats(userId)
+        return htmlOk(
+            templateRenderer.render(
+                "librarystats.kte",
+                pc.toMap("stats" to stats),
+            ),
+        )
+    }
+
+    fun timeline(req: Request): Response {
+        val userId = auth(req) ?: return redirectToLogin()
+        val pc = pageContext(req)
+        val days = 90
+        val entries = readingTimelineService?.getTimeline(userId, days, 50) ?: emptyList()
+        return htmlOk(
+            templateRenderer.render(
+                "timeline.kte",
+                pc.toMap("entries" to entries, "days" to days),
+            ),
+        )
+    }
+
+    fun discover(req: Request): Response {
+        val userId = auth(req) ?: return redirectToLogin()
+        val pc = pageContext(req)
+        val recommendations = discoveryService?.discover(userId) ?: emptyList()
+        return htmlOk(
+            templateRenderer.render(
+                "discover.kte",
+                pc.toMap("recommendations" to recommendations),
+            ),
+        )
+    }
+
+    fun readingLists(req: Request): Response {
+        val userId = auth(req) ?: return redirectToLogin()
+        val pc = pageContext(req)
+        val lists = readingListService?.getLists(userId) ?: emptyList()
+        return htmlOk(
+            templateRenderer.render(
+                "readinglists.kte",
+                pc.toMap("lists" to lists),
+            ),
+        )
+    }
+
+    fun collections(req: Request): Response {
+        val userId = auth(req) ?: return redirectToLogin()
+        val pc = pageContext(req)
+        val collections = collectionService?.getCollections(userId) ?: emptyList()
+        return htmlOk(
+            templateRenderer.render(
+                "collections.kte",
+                pc.toMap("collections" to collections),
+            ),
+        )
+    }
+
+    fun devices(req: Request): Response {
+        val userId = auth(req) ?: return redirectToLogin()
+        val pc = pageContext(req)
+        val koboDevices = koboSyncService?.listDevices(userId) ?: emptyList()
+        val koreaderDevices = koreaderSyncService?.listDevices(userId) ?: emptyList()
+        return htmlOk(
+            templateRenderer.render(
+                "devices.kte",
+                pc.toMap(
+                    "koboDevices" to koboDevices,
+                    "koreaderDevices" to koreaderDevices,
+                ),
+            ),
+        )
+    }
+
+    fun filterPresets(req: Request): Response {
+        val userId = auth(req) ?: return redirectToLogin()
+        val pc = pageContext(req)
+        val presets = filterPresetService?.list(userId) ?: emptyList()
+        return htmlOk(
+            templateRenderer.render(
+                "filter-presets.kte",
+                pc.toMap("presets" to presets),
+            ),
+        )
+    }
+
+    fun scheduledTasks(req: Request): Response {
+        val userId = auth(req) ?: return redirectToLogin()
+        if (!authIsAdmin(req)) return Response(Status.FORBIDDEN)
+        val pc = pageContext(req)
+        val tasks = scheduledTaskService?.list() ?: emptyList()
+        return htmlOk(
+            templateRenderer.render(
+                "scheduled-tasks.kte",
+                pc.toMap("tasks" to tasks),
+            ),
+        )
+    }
+
+    fun opdsSettings(req: Request): Response {
+        val userId = auth(req) ?: return redirectToLogin()
+        val pc = pageContext(req)
+        val creds = opdsCredentialsService?.getCredentials(userId)
+        return htmlOk(
+            templateRenderer.render(
+                "opds-settings.kte",
+                pc.toMap(
+                    "hasCredentials" to (creds != null),
+                    "opdsUsername" to (creds?.opdsUsername ?: ""),
+                ),
+            ),
+        )
+    }
+
+    fun contentRestrictions(req: Request): Response {
+        val userId = auth(req) ?: return redirectToLogin()
+        val pc = pageContext(req)
+        val restrictions = contentRestrictionsService?.get(userId)
+        return htmlOk(
+            templateRenderer.render(
+                "content-restrictions.kte",
+                pc.toMap(
+                    "maxAgeRating" to (restrictions?.maxAgeRating ?: ""),
+                    "blockedTags" to (restrictions?.blockedTags?.joinToString(", ") ?: ""),
+                ),
+            ),
+        )
+    }
+
+    fun readingSpeed(req: Request): Response {
+        val userId = auth(req) ?: return redirectToLogin()
+        val pc = pageContext(req)
+        val stats = readingSpeedService?.getStats(userId)
+        return htmlOk(
+            templateRenderer.render(
+                "reading-speed.kte",
+                pc.toMap(
+                    "avgPagesPerHour" to (stats?.averagePagesPerHour ?: 0.0),
+                    "totalReadingMinutes" to (stats?.totalReadingMinutes ?: 0L),
+                    "currentBookEstimate" to stats?.currentBookEstimate,
+                    "recentSessions" to (stats?.recentSessions ?: emptyList<Any>()),
+                ),
+            ),
+        )
+    }
+
+    fun libraryHealth(req: Request): Response {
+        val userId = auth(req) ?: return redirectToLogin()
+        val pc = pageContext(req)
+        val summary = libraryHealthService?.check(userId)
+        return htmlOk(
+            templateRenderer.render(
+                "library-health.kte",
+                pc.toMap(
+                    "totalIssues" to (summary?.totalIssues ?: 0),
+                    "libraries" to (summary?.libraries ?: emptyList<Any>()),
+                ),
+            ),
+        )
+    }
+
+    fun hardcoverSettings(req: Request): Response {
+        val userId = auth(req) ?: return redirectToLogin()
+        val pc = pageContext(req)
+        val hasKey = hardcoverSyncService?.hasApiKey(userId) ?: false
+        return htmlOk(
+            templateRenderer.render(
+                "hardcover-settings.kte",
+                pc.toMap(
+                    "hasApiKey" to hasKey,
+                ),
+            ),
+        )
+    }
+
+    fun bookDelivery(req: Request): Response {
+        val userId = auth(req) ?: return redirectToLogin()
+        val pc = pageContext(req)
+        val recipients = bookDeliveryService?.listRecipients(userId) ?: emptyList()
+        return htmlOk(
+            templateRenderer.render(
+                "book-delivery.kte",
+                pc.toMap("recipients" to recipients),
+            ),
+        )
+    }
+
+    fun bookDrop(req: Request): Response {
+        val userId = auth(req) ?: return redirectToLogin()
+        val pc = pageContext(req)
+        val pendingFiles = bookDropService?.listPending() ?: emptyList()
+        val libraries = libraryService.getLibraries(userId)
+        return htmlOk(
+            templateRenderer.render(
+                "book-drop.kte",
+                pc.toMap(
+                    "files" to pendingFiles,
+                    "libraries" to libraries,
+                ),
+            ),
+        )
+    }
+
+    fun metadataProposals(req: Request): Response {
+        val userId = auth(req) ?: return redirectToLogin()
+        val pc = pageContext(req)
+        // Get all books, then collect proposals across them
+        val allBooks = bookService.getBooks(userId, null, page = 1, pageSize = 500).getBooks()
+        val proposals =
+            allBooks.flatMap { book ->
+                val bookUuid = java.util.UUID.fromString(book.id)
+                (metadataProposalService?.listProposals(userId, bookUuid) ?: emptyList())
+                    .filter { it.status == "PENDING" }
+            }
+        return htmlOk(
+            templateRenderer.render(
+                "metadata-proposals.kte",
+                pc.toMap("proposals" to proposals),
+            ),
+        )
+    }
+
+    fun wishlist(req: Request): Response {
+        val userId = auth(req) ?: return redirectToLogin()
+        val pc = pageContext(req)
+        val items = wishlistService?.getItems(userId) ?: emptyList()
+        return htmlOk(
+            templateRenderer.render(
+                "wishlist.kte",
+                pc.toMap("items" to items),
+            ),
+        )
+    }
+
+    fun webhooks(req: Request): Response {
+        val userId = auth(req) ?: return redirectToLogin()
+        val pc = pageContext(req)
+        val hooks = webhookService?.list(userId) ?: emptyList()
+        return htmlOk(
+            templateRenderer.render(
+                "webhooks.kte",
+                pc.toMap("webhooks" to hooks),
             ),
         )
     }

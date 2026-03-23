@@ -248,4 +248,215 @@
     loadResetTokens();
 }());
 </script>
+
+<!-- Database Backup & Restore -->
+<div class="card card-pad" style="margin-top:2rem;" id="backup-section">
+    <h2 class="profile-section-title">
+        <i class="ri-database-2-line"></i>
+        ${pc.i18n.translate("page.admin.backup.title")}
+    </h2>
+    <p class="text-sm text-subtle" style="margin-bottom:1rem;">${pc.i18n.translate("page.admin.backup.description")}</p>
+    <div style="display:flex; flex-wrap:wrap; gap:0.75rem; align-items:center;">
+        <a href="/api/admin/backup" class="btn-primary flex-center gap-sm" style="padding:0.6rem 1.25rem; text-decoration:none;">
+            <i class="ri-download-line"></i> ${pc.i18n.translate("page.admin.backup.export")}
+        </a>
+        <label class="btn-secondary flex-center gap-sm" style="padding:0.6rem 1.25rem; cursor:pointer;">
+            <i class="ri-upload-line"></i> ${pc.i18n.translate("page.admin.backup.import")}
+            <input type="file" id="backup-file" accept=".json" style="display:none;">
+        </label>
+        <span id="backup-status" class="text-sm text-subtle"></span>
+    </div>
+</div>
+
+<script>
+(function() {
+    var fileInput = document.getElementById('backup-file');
+    var status = document.getElementById('backup-status');
+    if (!fileInput) return;
+    fileInput.addEventListener('change', function() {
+        var file = fileInput.files[0];
+        if (!file) return;
+        if (!confirm('This will replace ALL data in the database. Are you sure?')) {
+            fileInput.value = '';
+            return;
+        }
+        status.textContent = 'Importing...';
+        fetch('/api/admin/backup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: file
+        }).then(function(r) { return r.json(); }).then(function(data) {
+            if (data.error) {
+                status.textContent = 'Error: ' + data.error;
+                status.style.color = 'var(--bt-danger)';
+            } else {
+                status.textContent = 'Imported ' + data.totalRows + ' rows from ' + data.tableCount + ' tables.';
+                status.style.color = '#34d399';
+            }
+        }).catch(function(e) {
+            status.textContent = 'Import failed: ' + e.message;
+            status.style.color = 'var(--bt-danger)';
+        });
+        fileInput.value = '';
+    });
+}());
+</script>
+
+<!-- Bulk Metadata Refresh -->
+<div class="card card-pad" style="margin-top:1rem;">
+    <h2 class="profile-section-title">
+        <i class="ri-refresh-line"></i>
+        ${pc.i18n.translate("page.admin.metadata.title")}
+    </h2>
+    <p class="text-sm text-subtle" style="margin-bottom:1rem;">${pc.i18n.translate("page.admin.metadata.description")}</p>
+    <button id="metadata-refresh-btn" class="btn-primary flex-center gap-sm" style="padding:0.6rem 1.25rem;">
+        <i class="ri-refresh-line"></i> ${pc.i18n.translate("page.admin.metadata.refresh")}
+    </button>
+    <span id="metadata-status" class="text-sm text-subtle" style="margin-left:0.75rem;"></span>
+</div>
+
+<script>
+(function() {
+    var btn = document.getElementById('metadata-refresh-btn');
+    var status = document.getElementById('metadata-status');
+    if (!btn) return;
+    btn.addEventListener('click', function() {
+        status.textContent = 'Starting...';
+        fetch('/api/admin/metadata/refresh', { method: 'POST' }).then(function(r) { return r.json(); }).then(function(data) {
+            status.textContent = data.queued + ' book(s) queued for metadata refresh.';
+            status.style.color = '#34d399';
+        }).catch(function(e) {
+            status.textContent = 'Failed: ' + e.message;
+            status.style.color = 'var(--bt-danger)';
+        });
+    });
+}());
+</script>
+
+<!-- Duplicate Detection & Merge -->
+<div class="card card-pad" style="margin-top:1rem;" id="duplicates-section">
+    <h2 class="profile-section-title">
+        <i class="ri-file-copy-line"></i>
+        ${pc.i18n.translate("page.admin.duplicates.title")}
+    </h2>
+    <p class="text-sm text-subtle" style="margin-bottom:1rem;">${pc.i18n.translate("page.admin.duplicates.description")}</p>
+    <button id="dup-scan-btn" class="btn-primary flex-center gap-sm" style="padding:0.6rem 1.25rem;">
+        <i class="ri-search-line"></i> ${pc.i18n.translate("page.admin.duplicates.scan")}
+    </button>
+    <span id="dup-status" class="text-sm text-subtle" style="margin-left:0.75rem;"></span>
+    <div id="dup-results" style="margin-top:1rem;"></div>
+</div>
+
+<script>
+(function() {
+    var scanBtn = document.getElementById('dup-scan-btn');
+    var status = document.getElementById('dup-status');
+    var results = document.getElementById('dup-results');
+    if (!scanBtn) return;
+
+    scanBtn.addEventListener('click', function() {
+        status.textContent = 'Scanning...';
+        results.textContent = '';
+        fetch('/api/admin/duplicates').then(function(r) { return r.json(); }).then(function(groups) {
+            status.textContent = groups.length + ' duplicate group(s) found.';
+            status.style.color = groups.length > 0 ? 'var(--bt-danger)' : '#34d399';
+            if (groups.length === 0) return;
+
+            groups.forEach(function(group) {
+                var card = document.createElement('div');
+                card.className = 'panel';
+                card.style.marginBottom = '0.75rem';
+
+                var header = '<div style="font-weight:600; font-size:0.85rem; margin-bottom:0.5rem;">' +
+                    '<span style="background:var(--bt-icon-bg); color:var(--bt-icon-text); padding:0.15rem 0.5rem; border-radius:0.25rem; font-size:0.7rem; margin-right:0.5rem;">' +
+                    group.reason + '</span>' + escHtml(group.matchValue) + '</div>';
+
+                var rows = '';
+                group.books.forEach(function(b, i) {
+                    rows += '<div style="display:flex; justify-content:space-between; align-items:center; padding:0.3rem 0; border-bottom:1px solid var(--bt-border); font-size:0.8rem;">' +
+                        '<div><strong>' + escHtml(b.title) + '</strong>' + (b.author ? ' <span class="text-subtle">by ' + escHtml(b.author) + '</span>' : '') + '</div>' +
+                        '<div style="display:flex;gap:0.5rem;align-items:center;">' +
+                        '<span class="text-subtle">' + escHtml(b.libraryName) + '</span>' +
+                        (i > 0 ? '<button class="btn-secondary" style="padding:0.2rem 0.5rem; font-size:0.7rem;" onclick="mergeDup(\'' + group.books[0].id + '\',\'' + b.id + '\')">Merge → Keep First</button>' : '<span style="font-size:0.65rem; color:var(--bt-accent-dim);">KEEP</span>') +
+                        '</div></div>';
+                });
+
+                card.innerHTML = header + rows;
+                results.appendChild(card);
+            });
+        }).catch(function(e) {
+            status.textContent = 'Scan failed: ' + e.message;
+            status.style.color = 'var(--bt-danger)';
+        });
+    });
+
+    window.mergeDup = function(keepId, deleteId) {
+        if (!confirm('Merge duplicate? The second book will be deleted, its bookmarks/annotations moved to the first.')) return;
+        fetch('/api/admin/duplicates/merge', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ keepBookId: keepId, deleteBookIds: [deleteId] })
+        }).then(function(r) {
+            if (r.ok) { scanBtn.click(); } // re-scan
+        });
+    };
+
+    function escHtml(s) { var d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+}());
+</script>
+
+<!-- Batch Import from Directory -->
+<div class="card card-pad" style="margin-top:1rem;" id="batch-import-section">
+    <h2 class="profile-section-title">
+        <i class="ri-folder-add-line"></i>
+        ${pc.i18n.translate("page.admin.import.title")}
+    </h2>
+    <p class="text-sm text-subtle" style="margin-bottom:1rem;">${pc.i18n.translate("page.admin.import.description")}</p>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; margin-bottom:0.75rem;">
+        <div>
+            <label class="text-sm text-subtle" style="display:block; margin-bottom:0.2rem;">${pc.i18n.translate("page.admin.import.path")}</label>
+            <input type="text" id="import-path" placeholder="/data/books" style="width:100%; padding:0.5rem;">
+        </div>
+        <div>
+            <label class="text-sm text-subtle" style="display:block; margin-bottom:0.2rem;">${pc.i18n.translate("page.admin.import.library")}</label>
+            <select id="import-library" style="width:100%; padding:0.5rem;">
+                <option value="">—</option>
+            </select>
+        </div>
+    </div>
+    <button id="import-btn" class="btn-primary flex-center gap-sm" style="padding:0.6rem 1.25rem;">
+        <i class="ri-upload-line"></i> ${pc.i18n.translate("page.admin.import.start")}
+    </button>
+    <span id="import-status" class="text-sm text-subtle" style="margin-left:0.75rem;"></span>
+</div>
+
+<script>
+(function() {
+    // Load libraries into select
+    fetch('/api/settings').catch(function(){});
+    var libSelect = document.getElementById('import-library');
+    // We need to get libraries - use a simple approach
+    var importBtn = document.getElementById('import-btn');
+    var importStatus = document.getElementById('import-status');
+
+    importBtn.addEventListener('click', function() {
+        var path = document.getElementById('import-path').value.trim();
+        var libraryId = libSelect.value;
+        if (!path) { importStatus.textContent = 'Path is required'; return; }
+        if (!libraryId) { importStatus.textContent = 'Select a library'; return; }
+        importStatus.textContent = 'Importing...';
+        fetch('/api/admin/import/directory', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: path, libraryId: libraryId })
+        }).then(function(r) { return r.json(); }).then(function(data) {
+            importStatus.textContent = data.queued + ' file(s) queued, ' + data.alreadyImported + ' already imported.';
+            importStatus.style.color = '#34d399';
+        }).catch(function(e) {
+            importStatus.textContent = 'Failed: ' + e.message;
+            importStatus.style.color = 'var(--bt-danger)';
+        });
+    });
+}());
+</script>
 `)

@@ -5,6 +5,95 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-03-23
+
+### Added
+
+- **ISBN barcode scanner** — scan a book barcode with your phone/webcam camera to auto-fill title, author, and metadata (uses html5-qrcode, EAN-13/EAN-8/UPC-A)
+- `fetchMetadataByIsbn()` method in MetadataFetchService — ISBN-specific lookup via OpenLibrary and Google Books
+- Full-stack UI pages for 15+ features that previously had API-only support:
+  - Library statistics page
+  - Webhooks management page
+  - Reading timeline page
+  - Annotation export page
+  - Smart discovery / recommendations page
+  - Database backup/restore admin page
+  - Custom metadata fields page
+  - Public profile settings page
+  - Dashboard widgets (reading streaks, pages read)
+  - Book condition tracker page
+  - Reading lists page
+  - Wishlist (want to read) page
+  - Shared annotations in reader
+  - Admin duplicate detection/merge page
+  - Batch import + collections management page
+  - Device management page (Kobo + KOReader)
+  - Filter presets page
+  - Scheduled tasks admin page
+  - OPDS credentials settings page
+  - Content restrictions settings page
+  - Reading speed analytics page
+  - Library health check page
+  - Hardcover sync settings page
+  - Book delivery (email) settings page
+  - Book drop management page
+  - Metadata proposals review page
+- 80+ new E2E tests for all new UI pages
+- i18n keys for all new pages across 10 languages
+
+### Changed
+
+- Beta release workflow changed from auto (every push to develop) to manual dispatch
+- Test passwords now dynamically generated at runtime (no more hardcoded credentials)
+
+### Fixed
+
+- Path traversal defense in FileHandler — reject `..` sequences in stored file paths
+- Path traversal defense in LibraryHandler2 — sanitize icon extensions and validate icon paths
+- Input validation in BookHandler2 — validate libraryId as UUID before passing to service
+- CSS class injection in showNotification — whitelist allowed notification types
+- Content-Disposition header injection — sanitize filenames in download responses
+- H2 compatibility fixes across 19 service files (Int/Boolean boxing, reserved words)
+- PostgreSQL UNION type mismatches in ReadingTimelineService
+- Merge conflict markers in messages.properties
+- Fat JAR reduced from 90MB to 37MB (exclude kotlin-compiler-embeddable)
+
+### Security
+
+- Path traversal: all file-serving endpoints now reject paths containing `..`
+- Icon upload: extensions sanitized with `[^a-z0-9]` regex
+- Icon serve/delete: stored paths validated against traversal
+- CSS injection: notification type parameter whitelisted
+- Header injection: Content-Disposition filenames sanitized
+- Hardcoded test passwords: 177 occurrences across 68 test files replaced with `TestPasswords.DEFAULT`
+
+## [0.6.7] - 2026-03-22
+
+### Added
+
+- Table of contents sidebar for EPUB and PDF reader
+- Batch import from directory with performance limits
+- Custom metadata fields (text, number, date, select, boolean)
+- Public reading activity profile (opt-in)
+- Reading lists with ordered items and completion tracking
+- Shared annotations — share highlights with other users
+- Want-to-read wishlist for books not yet owned
+- Reading streaks widget, book condition tracker, reading speed analytics
+- Health check endpoint (`/health`)
+- Advanced search UI with per-field filters
+- Library statistics page with format/language breakdown
+
+### Changed
+
+- Fat JAR reduced from 90MB to 37MB
+- Release workflow: publish succeeds even when native builds fail
+
+### Fixed
+
+- Security: path traversal, DOM XSS, SQL injection defense
+- H2/PostgreSQL compatibility across all services
+- 3 critical feature gaps fixed
+
 ## [0.5.2] - 2026-03-18
 
 ### Added

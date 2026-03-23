@@ -97,13 +97,13 @@ class DemoModeIntegrationTest : IntegrationTestBase() {
         app(
             Request(Method.POST, "/auth/register")
                 .header("Content-Type", "application/json")
-                .body("""{"username":"$username","email":"$username@test.com","password":"password123"}"""),
+                .body("""{"username":"$username","email":"$username@test.com","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
         )
         val loginResp =
             demoApp(
                 Request(Method.POST, "/auth/login")
                     .header("Content-Type", "application/json")
-                    .body("""{"username":"$username","password":"password123"}"""),
+                    .body("""{"username":"$username","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
             )
         assertEquals(Status.OK, loginResp.status)
     }

@@ -304,8 +304,29 @@ class FtsHttpE2ETest {
                     magicShelfService,
                     templateRenderer,
                     readingSessionService,
-                    null,
-                    null,
+                    null, // libraryWatchService
+                    null, // bookLinkService
+                    null, // bookSharingService
+                    backgroundTaskService,
+                    null, // libraryStatsService
+                    null, // webhookService
+                    null, // readingTimelineService
+                    null, // discoveryService
+                    null, // readingListService
+                    null, // wishlistService
+                    null, // collectionService
+                    null, // koboSyncService
+                    null, // koreaderSyncService
+                    null, // filterPresetService
+                    null, // scheduledTaskService
+                    null, // opdsCredentialsService
+                    null, // contentRestrictionsService
+                    null, // readingSpeedService
+                    null, // libraryHealthService
+                    null, // hardcoverSyncService
+                    null, // bookDeliveryService
+                    null, // bookDropService
+                    null, // metadataProposalService
                 )
             val backgroundTaskHandler =
                 org.booktower.handlers.BackgroundTaskHandler(backgroundTaskService, seedService)
@@ -401,6 +422,7 @@ class FtsHttpE2ETest {
                     telemetryService,
                     null,
                     null,
+                    null,
                 )
             val metadataApiRouter =
                 org.booktower.routers.MetadataApiRouter(
@@ -454,7 +476,7 @@ class FtsHttpE2ETest {
                 app(
                     Request(Method.POST, "/auth/register")
                         .header("Content-Type", "application/json")
-                        .body("""{"username":"ftshttp","email":"fts@http.com","password":"password123"}"""),
+                        .body("""{"username":"ftshttp","email":"fts@http.com","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
                 )
             token = Json.mapper.readValue(regResp.bodyString(), LoginResponse::class.java).token
 

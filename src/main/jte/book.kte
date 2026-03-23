@@ -510,6 +510,147 @@
         </div>
     @endif
 
+    <!-- Book Condition Tracker -->
+    <div class="card" style="padding:1.25rem; margin-bottom:1.5rem;" id="condition-section">
+        <h2 style="font-size:0.9rem; font-weight:600; color:var(--bt-text-dim); margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem;">
+            <i class="ri-archive-line" style="color:var(--bt-accent-dim);"></i> ${pc.i18n.translate("page.book.condition.title")}
+        </h2>
+        <div id="condition-form" style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;">
+            <div>
+                <label class="text-sm text-subtle" style="display:block; margin-bottom:0.15rem;">${pc.i18n.translate("page.book.condition.condition")}</label>
+                <select id="cond-condition" style="width:100%; padding:0.4rem;">
+                    <option value="">—</option>
+                    <option value="mint">${pc.i18n.translate("page.book.condition.mint")}</option>
+                    <option value="good">${pc.i18n.translate("page.book.condition.good")}</option>
+                    <option value="fair">${pc.i18n.translate("page.book.condition.fair")}</option>
+                    <option value="poor">${pc.i18n.translate("page.book.condition.poor")}</option>
+                </select>
+            </div>
+            <div>
+                <label class="text-sm text-subtle" style="display:block; margin-bottom:0.15rem;">${pc.i18n.translate("page.book.condition.price")}</label>
+                <input type="text" id="cond-price" placeholder="19.99" style="width:100%; padding:0.4rem;">
+            </div>
+            <div>
+                <label class="text-sm text-subtle" style="display:block; margin-bottom:0.15rem;">${pc.i18n.translate("page.book.condition.date")}</label>
+                <input type="date" id="cond-date" style="width:100%; padding:0.4rem;">
+            </div>
+            <div>
+                <label class="text-sm text-subtle" style="display:block; margin-bottom:0.15rem;">${pc.i18n.translate("page.book.condition.source")}</label>
+                <input type="text" id="cond-source" placeholder="${pc.i18n.translate("page.book.condition.source.placeholder")}" style="width:100%; padding:0.4rem;">
+            </div>
+            <div style="grid-column:1/-1;">
+                <label class="text-sm text-subtle" style="display:block; margin-bottom:0.15rem;">${pc.i18n.translate("page.book.condition.location")}</label>
+                <input type="text" id="cond-location" placeholder="${pc.i18n.translate("page.book.condition.location.placeholder")}" style="width:100%; padding:0.4rem;">
+            </div>
+            <div style="grid-column:1/-1;">
+                <button id="cond-save-btn" class="btn-primary" style="padding:0.4rem 1rem; margin-top:0.5rem;">
+                    <i class="ri-save-line"></i> ${pc.i18n.translate("label.save")}
+                </button>
+                <span id="cond-status" class="text-sm text-subtle" style="margin-left:0.5rem;"></span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    (function() {
+        var bookId = '${book.id}';
+        // Load existing condition
+        fetch('/api/books/' + bookId + '/condition').then(function(r) { return r.json(); }).then(function(c) {
+            if (c.condition) document.getElementById('cond-condition').value = c.condition;
+            if (c.purchasePrice) document.getElementById('cond-price').value = c.purchasePrice;
+            if (c.purchaseDate) document.getElementById('cond-date').value = c.purchaseDate;
+            if (c.purchaseSource) document.getElementById('cond-source').value = c.purchaseSource;
+            if (c.shelfLocation) document.getElementById('cond-location').value = c.shelfLocation;
+        }).catch(function() {});
+
+        document.getElementById('cond-save-btn').addEventListener('click', function() {
+            var status = document.getElementById('cond-status');
+            fetch('/api/books/' + bookId + '/condition', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    condition: document.getElementById('cond-condition').value || null,
+                    purchasePrice: document.getElementById('cond-price').value || null,
+                    purchaseDate: document.getElementById('cond-date').value || null,
+                    purchaseSource: document.getElementById('cond-source').value || null,
+                    shelfLocation: document.getElementById('cond-location').value || null
+                })
+            }).then(function(r) {
+                if (r.ok) { status.textContent = 'Saved!'; status.style.color = '#34d399'; setTimeout(function() { status.textContent = ''; }, 2000); }
+                else { status.textContent = 'Error'; status.style.color = 'var(--bt-danger)'; }
+            });
+        });
+    }());
+    </script>
+
+    <!-- Custom Metadata Fields -->
+    <div class="card" style="padding:1.25rem; margin-bottom:1.5rem;" id="custom-fields-section">
+        <h2 style="font-size:0.9rem; font-weight:600; color:var(--bt-text-dim); margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem;">
+            <i class="ri-edit-box-line" style="color:var(--bt-accent-dim);"></i> ${pc.i18n.translate("page.book.custom.title")}
+        </h2>
+        <div id="custom-fields-list" style="margin-bottom:0.75rem;"></div>
+        <div style="display:flex; gap:0.5rem; align-items:end;">
+            <div style="flex:1;">
+                <label class="text-sm text-subtle" style="display:block; margin-bottom:0.15rem;">${pc.i18n.translate("page.book.custom.field")}</label>
+                <input type="text" id="cf-name" placeholder="${pc.i18n.translate("page.book.custom.field")}" style="width:100%; padding:0.4rem;">
+            </div>
+            <div style="flex:1;">
+                <label class="text-sm text-subtle" style="display:block; margin-bottom:0.15rem;">${pc.i18n.translate("page.book.custom.value")}</label>
+                <input type="text" id="cf-value" placeholder="${pc.i18n.translate("page.book.custom.value")}" style="width:100%; padding:0.4rem;">
+            </div>
+            <button id="cf-add-btn" class="btn-primary" style="padding:0.4rem 0.75rem; white-space:nowrap;">
+                <i class="ri-add-line"></i> ${pc.i18n.translate("label.add")}
+            </button>
+        </div>
+    </div>
+
+    <script>
+    (function() {
+        var bookId = '${book.id}';
+        var list = document.getElementById('custom-fields-list');
+        var nameInput = document.getElementById('cf-name');
+        var valueInput = document.getElementById('cf-value');
+        var addBtn = document.getElementById('cf-add-btn');
+
+        function loadFields() {
+            fetch('/api/books/' + bookId + '/custom-fields').then(function(r) { return r.json(); }).then(function(fields) {
+                list.textContent = '';
+                if (fields.length === 0) {
+                    list.innerHTML = '<p class="text-sm text-subtle">${pc.i18n.translate("page.book.custom.empty")}</p>';
+                    return;
+                }
+                fields.forEach(function(f) {
+                    var row = document.createElement('div');
+                    row.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding:0.35rem 0; border-bottom:1px solid var(--bt-border);';
+                    row.innerHTML = '<div><span class="text-sm" style="font-weight:600;">' + escapeHtml(f.fieldName) + '</span>' +
+                        '<span class="text-sm text-subtle" style="margin-left:0.5rem;">' + escapeHtml(f.fieldValue || '') + '</span></div>' +
+                        '<button onclick="deleteField(\'' + escapeHtml(f.fieldName) + '\')" style="background:none; border:none; color:var(--bt-danger); cursor:pointer; font-size:0.8rem;"><i class="ri-delete-bin-line"></i></button>';
+                    list.appendChild(row);
+                });
+            }).catch(function() {});
+        }
+
+        function escapeHtml(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+        window.deleteField = function(name) {
+            fetch('/api/books/' + bookId + '/custom-fields/' + encodeURIComponent(name), { method: 'DELETE' }).then(function() { loadFields(); });
+        };
+
+        addBtn.addEventListener('click', function() {
+            var name = nameInput.value.trim();
+            var value = valueInput.value.trim();
+            if (!name) return;
+            fetch('/api/books/' + bookId + '/custom-fields', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fieldName: name, fieldValue: value })
+            }).then(function() { nameInput.value = ''; valueInput.value = ''; loadFields(); });
+        });
+
+        loadFields();
+    }());
+    </script>
+
     <!-- Bookmarks -->
     <div class="card" style="padding:1.25rem;">
         <h2 style="font-size:0.9rem; font-weight:600; color:var(--bt-text-dim); margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem;">

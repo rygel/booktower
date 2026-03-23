@@ -165,7 +165,7 @@ class AlternativeCoverIntegrationTest {
                 null,
             )
         val pageHandler =
-            PageHandler(jwtService, authService, libraryService, bookService, bookmarkService, userSettingsService, analyticsService, annotationService, MetadataFetchService(), magicShelfService, TestFixture.templateRenderer, readingSessionService, null)
+            PageHandler(jwtService, authService, libraryService, bookService, bookmarkService, userSettingsService, analyticsService, annotationService, MetadataFetchService(), magicShelfService, TestFixture.templateRenderer, readingSessionService, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null)
         val opdsHandler = OpdsHandler(authService, libraryService, bookService, storage, apiTokenService, null)
         val apiTokenHandler = ApiTokenHandler(apiTokenService, jwtService)
         val exportHandler = ExportHandler(exportService, jwtService)
@@ -228,6 +228,7 @@ class AlternativeCoverIntegrationTest {
                 null,
                 null,
                 null,
+                null,
             )
         val metadataApiRouter = MetadataApiRouter(filters, MetadataFetchService(), bookService, null, null, null)
         val audiobookApiRouter = AudiobookApiRouter(filters, null, null, null, storage)
@@ -244,7 +245,7 @@ class AlternativeCoverIntegrationTest {
             app(
                 Request(Method.POST, "/auth/register")
                     .header("Content-Type", "application/json")
-                    .body("""{"username":"$u","email":"$u@test.com","password":"password123"}"""),
+                    .body("""{"username":"$u","email":"$u@test.com","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
             )
         return Json.mapper.readValue(resp.bodyString(), LoginResponse::class.java).token
     }

@@ -276,7 +276,7 @@ class DiscoveryService(
             h
                 .createQuery(
                     """
-                SELECT b.id, b.title, b.author, b.cover_url, b.series, b.series_index
+                SELECT b.id, b.title, b.author, b.cover_path, b.series, b.series_index
                 FROM books b
                 INNER JOIN libraries l ON b.library_id = l.id
                 LEFT JOIN book_status bs ON bs.book_id = b.id AND bs.user_id = ?
@@ -304,7 +304,7 @@ class DiscoveryService(
                         bookId = id,
                         title = row.getColumn("title", String::class.java) ?: "",
                         author = row.getColumn("author", String::class.java),
-                        coverUrl = row.getColumn("cover_url", String::class.java),
+                        coverUrl = row.getColumn("cover_path", String::class.java),
                         reason = "Next in series: ${row.getColumn("series", String::class.java) ?: ""}",
                         score = 0.9,
                     )
@@ -320,7 +320,7 @@ class DiscoveryService(
             h
                 .createQuery(
                     """
-                SELECT b.id, b.title, b.author, b.cover_url
+                SELECT b.id, b.title, b.author, b.cover_path
                 FROM books b
                 INNER JOIN libraries l ON b.library_id = l.id
                 LEFT JOIN book_status bs ON bs.book_id = b.id AND bs.user_id = ?
@@ -347,7 +347,7 @@ class DiscoveryService(
                         bookId = id,
                         title = row.getColumn("title", String::class.java) ?: "",
                         author = row.getColumn("author", String::class.java),
-                        coverUrl = row.getColumn("cover_url", String::class.java),
+                        coverUrl = row.getColumn("cover_path", String::class.java),
                         reason = "More from ${row.getColumn("author", String::class.java) ?: "favorite author"}",
                         score = 0.8,
                     )
@@ -373,7 +373,7 @@ class DiscoveryService(
             val q =
                 h.createQuery(
                     """
-                SELECT DISTINCT b.id, b.title, b.author, b.cover_url
+                SELECT DISTINCT b.id, b.title, b.author, b.cover_path
                 FROM books b
                 INNER JOIN libraries l ON b.library_id = l.id
                 INNER JOIN book_tags bt ON bt.book_id = b.id AND bt.user_id = ?
@@ -396,7 +396,7 @@ class DiscoveryService(
                         bookId = id,
                         title = row.getColumn("title", String::class.java) ?: "",
                         author = row.getColumn("author", String::class.java),
-                        coverUrl = row.getColumn("cover_url", String::class.java),
+                        coverUrl = row.getColumn("cover_path", String::class.java),
                         reason = "Matches your interests",
                         score = 0.7,
                     )
@@ -412,7 +412,7 @@ class DiscoveryService(
             h
                 .createQuery(
                     """
-                SELECT b.id, b.title, b.author, b.cover_url, b.community_rating
+                SELECT b.id, b.title, b.author, b.cover_path, b.community_rating
                 FROM books b
                 INNER JOIN libraries l ON b.library_id = l.id
                 LEFT JOIN book_status bs ON bs.book_id = b.id AND bs.user_id = ?
@@ -433,7 +433,7 @@ class DiscoveryService(
                         bookId = id,
                         title = row.getColumn("title", String::class.java) ?: "",
                         author = row.getColumn("author", String::class.java),
-                        coverUrl = row.getColumn("cover_url", String::class.java),
+                        coverUrl = row.getColumn("cover_path", String::class.java),
                         reason = "Highly rated (%.1f)".format(rating),
                         score = 0.6,
                     )

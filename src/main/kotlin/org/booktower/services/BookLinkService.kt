@@ -194,7 +194,7 @@ class BookLinkService(
             handle
                 .createQuery("SELECT COUNT(*) FROM book_files WHERE book_id = ?")
                 .bind(0, bookId)
-                .mapTo(Int::class.java)
+                .mapTo(Int::class.javaObjectType)
                 .one()
         }
 

@@ -20,7 +20,7 @@ class SeedIntegrationTest : IntegrationTestBase() {
             app(
                 Request(Method.POST, "/auth/register")
                     .header("Content-Type", "application/json")
-                    .body("""{"username":"$username","email":"$username@test.com","password":"password123"}"""),
+                    .body("""{"username":"$username","email":"$username@test.com","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
             )
         assertEquals(Status.CREATED, registerResponse.status)
         val userId =
@@ -34,7 +34,7 @@ class SeedIntegrationTest : IntegrationTestBase() {
             app(
                 Request(Method.POST, "/auth/login")
                     .header("Content-Type", "application/json")
-                    .body("""{"username":"$username","password":"password123"}"""),
+                    .body("""{"username":"$username","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
             )
         assertEquals(Status.OK, loginResponse.status)
         return Json.mapper.readValue(loginResponse.bodyString(), LoginResponse::class.java).token
@@ -361,13 +361,13 @@ class SeedIntegrationTest : IntegrationTestBase() {
         app(
             Request(Method.POST, "/auth/register")
                 .header("Content-Type", "application/json")
-                .body("""{"username":"$username","email":"$username@test.com","password":"password123"}"""),
+                .body("""{"username":"$username","email":"$username@test.com","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
         )
         val loginResp =
             app(
                 Request(Method.POST, "/auth/login")
                     .header("Content-Type", "application/json")
-                    .body("""{"username":"$username","password":"password123"}"""),
+                    .body("""{"username":"$username","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
             )
         val token = Json.mapper.readValue(loginResp.bodyString(), LoginResponse::class.java).token
 

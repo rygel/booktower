@@ -265,7 +265,7 @@ class LibraryHandler2(
         val filename = req.header("X-Filename")?.trim()
         if (filename.isNullOrBlank()) return badRequest("X-Filename header is required")
 
-        val ext = filename.substringAfterLast('.', "").lowercase()
+        val ext = filename.substringAfterLast('.', "").lowercase().replace(Regex("[^a-z0-9]"), "")
         if (ext !in ALLOWED_ICON_EXTENSIONS) {
             return badRequest(
                 "Unsupported image type '$ext'. Allowed: ${ALLOWED_ICON_EXTENSIONS.joinToString()}",
@@ -318,7 +318,17 @@ class LibraryHandler2(
                     .header("Content-Type", "application/json")
                     .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "No icon set for this library")))
 
+        // Reject path traversal in stored icon path
+        if (iconPath.contains("..")) {
+            logger.warn("Path traversal attempt in icon path: $iconPath")
+            return Response(Status.FORBIDDEN)
+        }
         val file = File(storage.coversPath, iconPath)
+        val baseDir = File(storage.coversPath)
+        if (!file.canonicalPath.startsWith(baseDir.canonicalPath)) {
+            logger.warn("Path traversal attempt blocked: ${file.absolutePath}")
+            return Response(Status.FORBIDDEN)
+        }
         if (!file.exists() || !file.isFile) {
             return Response(Status.NOT_FOUND)
                 .header("Content-Type", "application/json")
@@ -351,9 +361,14 @@ class LibraryHandler2(
 
         val storage = storageConfig
         val existingPath = libraryService.getIconPath(userId, libraryId)
-        if (existingPath != null && storage != null) {
+        if (existingPath != null && storage != null && !existingPath.contains("..")) {
             val iconFile = File(storage.coversPath, existingPath)
-            if (!iconFile.delete()) logger.warn("Could not delete file: ${iconFile.absolutePath}")
+            val baseDir = File(storage.coversPath)
+            if (iconFile.canonicalPath.startsWith(baseDir.canonicalPath)) {
+                if (!iconFile.delete()) logger.warn("Could not delete file: ${iconFile.absolutePath}")
+            } else {
+                logger.warn("Path traversal attempt blocked on icon delete: ${iconFile.absolutePath}")
+            }
         }
 
         val updated = libraryService.updateIconPath(userId, libraryId, null)

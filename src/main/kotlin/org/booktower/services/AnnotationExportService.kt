@@ -47,7 +47,7 @@ class AnnotationExportService(
                     ExportedAnnotation(
                         bookTitle = row.getColumn("book_title", String::class.java) ?: "",
                         bookAuthor = row.getColumn("book_author", String::class.java),
-                        page = row.getColumn("page", Int::class.java) ?: 0,
+                        page = row.getColumn("page", Int::class.javaObjectType) ?: 0,
                         selectedText = row.getColumn("selected_text", String::class.java) ?: "",
                         color = row.getColumn("color", String::class.java) ?: "yellow",
                         createdAt = row.getColumn("created_at", String::class.java) ?: "",
@@ -62,7 +62,7 @@ class AnnotationExportService(
                     """
                 SELECT bb.page, bb.title, bb.note, bb.created_at,
                        b.title AS book_title, b.author AS book_author
-                FROM book_bookmarks bb
+                FROM bookmarks bb
                 INNER JOIN books b ON bb.book_id = b.id
                 INNER JOIN libraries l ON b.library_id = l.id
                 WHERE bb.user_id = ? AND l.user_id = ?
@@ -74,7 +74,7 @@ class AnnotationExportService(
                     ExportedBookmark(
                         bookTitle = row.getColumn("book_title", String::class.java) ?: "",
                         bookAuthor = row.getColumn("book_author", String::class.java),
-                        page = row.getColumn("page", Int::class.java) ?: 0,
+                        page = row.getColumn("page", Int::class.javaObjectType) ?: 0,
                         title = row.getColumn("title", String::class.java),
                         note = row.getColumn("note", String::class.java),
                         createdAt = row.getColumn("created_at", String::class.java) ?: "",

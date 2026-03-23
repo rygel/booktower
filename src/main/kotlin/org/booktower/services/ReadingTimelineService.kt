@@ -38,9 +38,9 @@ class ReadingTimelineService(
                     """
                 SELECT * FROM (
                     -- Books finished
-                    SELECT bs.updated_at AS event_date,
+                    SELECT CAST(bs.updated_at AS VARCHAR(30)) AS event_date,
                            b.id AS book_id, b.title AS book_title, b.author AS book_author,
-                           b.cover_url,
+                           b.cover_path,
                            'finished' AS event_type,
                            NULL AS detail
                     FROM book_status bs
@@ -52,9 +52,9 @@ class ReadingTimelineService(
                     UNION ALL
 
                     -- Reading sessions (aggregated per day per book)
-                    SELECT SUBSTRING(rs.session_at, 1, 10) AS event_date,
+                    SELECT SUBSTRING(CAST(rs.session_at AS VARCHAR(30)), 1, 10) AS event_date,
                            b.id AS book_id, b.title AS book_title, b.author AS book_author,
-                           b.cover_url,
+                           b.cover_path,
                            'reading' AS event_type,
                            CAST(SUM(rs.pages_read) AS VARCHAR(20)) AS detail
                     FROM reading_sessions rs
@@ -62,14 +62,14 @@ class ReadingTimelineService(
                     INNER JOIN libraries l ON b.library_id = l.id
                     WHERE rs.user_id = ? AND l.user_id = ?
                       AND rs.session_at >= ?
-                    GROUP BY SUBSTRING(rs.session_at, 1, 10), b.id, b.title, b.author, b.cover_url
+                    GROUP BY SUBSTRING(CAST(rs.session_at AS VARCHAR(30)), 1, 10), b.id, b.title, b.author, b.cover_path
 
                     UNION ALL
 
                     -- Books added
-                    SELECT b.added_at AS event_date,
+                    SELECT CAST(b.added_at AS VARCHAR(30)) AS event_date,
                            b.id AS book_id, b.title AS book_title, b.author AS book_author,
-                           b.cover_url,
+                           b.cover_path,
                            'added' AS event_type,
                            NULL AS detail
                     FROM books b
@@ -95,7 +95,7 @@ class ReadingTimelineService(
                         bookId = row.getColumn("book_id", String::class.java) ?: "",
                         bookTitle = row.getColumn("book_title", String::class.java) ?: "",
                         bookAuthor = row.getColumn("book_author", String::class.java),
-                        coverUrl = row.getColumn("cover_url", String::class.java),
+                        coverUrl = row.getColumn("cover_path", String::class.java),
                         eventType = row.getColumn("event_type", String::class.java) ?: "",
                         detail = row.getColumn("detail", String::class.java),
                     )

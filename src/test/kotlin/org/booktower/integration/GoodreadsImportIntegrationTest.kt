@@ -44,7 +44,7 @@ class GoodreadsImportIntegrationTest : IntegrationTestBase() {
 
         val result =
             authService.register(
-                CreateUserRequest("gr_${System.nanoTime()}", "gr_${System.nanoTime()}@test.com", "password123"),
+                CreateUserRequest("gr_${System.nanoTime()}", "gr_${System.nanoTime()}@test.com", org.booktower.TestPasswords.DEFAULT),
             )
         val loginResponse = result.getOrThrow()
         userId = jwtService.extractUserId(loginResponse.token)!!

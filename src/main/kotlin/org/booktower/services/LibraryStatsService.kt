@@ -47,14 +47,14 @@ class LibraryStatsService(
                 h
                     .createQuery("SELECT COUNT(*) FROM books b INNER JOIN libraries l ON b.library_id = l.id WHERE l.user_id = ?")
                     .bind(0, uid)
-                    .mapTo(Int::class.java)
+                    .mapTo(Int::class.javaObjectType)
                     .one()
 
             val totalLibraries =
                 h
                     .createQuery("SELECT COUNT(*) FROM libraries WHERE user_id = ?")
                     .bind(0, uid)
-                    .mapTo(Int::class.java)
+                    .mapTo(Int::class.javaObjectType)
                     .one()
 
             val totalStorage =
@@ -76,7 +76,7 @@ class LibraryStatsService(
                     ).bind(0, uid)
                     .map { row ->
                         (row.getColumn("fmt", String::class.java) ?: "UNKNOWN") to
-                            (row.getColumn("cnt", Int::class.java) ?: 0)
+                            (row.getColumn("cnt", Int::class.javaObjectType) ?: 0)
                     }.associate { it }
 
             val languageBreakdown =
@@ -91,7 +91,7 @@ class LibraryStatsService(
                     ).bind(0, uid)
                     .map { row ->
                         (row.getColumn("lang", String::class.java) ?: "unknown") to
-                            (row.getColumn("cnt", Int::class.java) ?: 0)
+                            (row.getColumn("cnt", Int::class.javaObjectType) ?: 0)
                     }.associate { it }
 
             val topAuthors =
@@ -107,7 +107,7 @@ class LibraryStatsService(
                     .map { row ->
                         AuthorCount(
                             row.getColumn("author", String::class.java) ?: "",
-                            row.getColumn("cnt", Int::class.java) ?: 0,
+                            row.getColumn("cnt", Int::class.javaObjectType) ?: 0,
                         )
                     }.list()
 
@@ -124,7 +124,7 @@ class LibraryStatsService(
                     .map { row ->
                         TagCount(
                             row.getColumn("tag", String::class.java) ?: "",
-                            row.getColumn("cnt", Int::class.java) ?: 0,
+                            row.getColumn("cnt", Int::class.javaObjectType) ?: 0,
                         )
                     }.list()
 
@@ -140,23 +140,23 @@ class LibraryStatsService(
                     ).bind(0, uid)
                     .map { row ->
                         (row.getColumn("status", String::class.java) ?: "UNKNOWN") to
-                            (row.getColumn("cnt", Int::class.java) ?: 0)
+                            (row.getColumn("cnt", Int::class.javaObjectType) ?: 0)
                     }.associate { it }
 
             val booksAddedPerMonth =
                 h
                     .createQuery(
                         """
-                    SELECT SUBSTRING(b.added_at, 1, 7) AS month, COUNT(*) AS cnt
+                    SELECT SUBSTRING(CAST(b.added_at AS VARCHAR(30)), 1, 7) AS added_month, COUNT(*) AS cnt
                     FROM books b INNER JOIN libraries l ON b.library_id = l.id
                     WHERE l.user_id = ?
-                    GROUP BY month ORDER BY month DESC LIMIT 12
+                    GROUP BY added_month ORDER BY added_month DESC LIMIT 12
                     """,
                     ).bind(0, uid)
                     .map { row ->
                         MonthCount(
-                            row.getColumn("month", String::class.java) ?: "",
-                            row.getColumn("cnt", Int::class.java) ?: 0,
+                            row.getColumn("added_month", String::class.java) ?: "",
+                            row.getColumn("cnt", Int::class.javaObjectType) ?: 0,
                         )
                     }.list()
                     .reversed()
@@ -170,7 +170,7 @@ class LibraryStatsService(
                     WHERE l.user_id = ? AND b.page_count IS NOT NULL AND b.page_count > 0
                     """,
                     ).bind(0, uid)
-                    .mapTo(Int::class.java)
+                    .mapTo(Int::class.javaObjectType)
                     .one()
 
             val booksWithFiles =
@@ -181,7 +181,7 @@ class LibraryStatsService(
                     WHERE l.user_id = ? AND b.file_path IS NOT NULL AND b.file_path <> ''
                     """,
                     ).bind(0, uid)
-                    .mapTo(Int::class.java)
+                    .mapTo(Int::class.javaObjectType)
                     .one()
 
             val booksWithCovers =
@@ -189,10 +189,10 @@ class LibraryStatsService(
                     .createQuery(
                         """
                     SELECT COUNT(*) FROM books b INNER JOIN libraries l ON b.library_id = l.id
-                    WHERE l.user_id = ? AND b.cover_url IS NOT NULL AND b.cover_url <> ''
+                    WHERE l.user_id = ? AND b.cover_path IS NOT NULL AND b.cover_path <> ''
                     """,
                     ).bind(0, uid)
-                    .mapTo(Int::class.java)
+                    .mapTo(Int::class.javaObjectType)
                     .one()
 
             val booksWithIsbn =
@@ -203,7 +203,7 @@ class LibraryStatsService(
                     WHERE l.user_id = ? AND b.isbn IS NOT NULL AND b.isbn <> ''
                     """,
                     ).bind(0, uid)
-                    .mapTo(Int::class.java)
+                    .mapTo(Int::class.javaObjectType)
                     .one()
 
             LibraryStats(

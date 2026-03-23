@@ -58,6 +58,17 @@ class FileHandler(
             .expireAfterWrite(10, TimeUnit.MINUTES)
             .build<String, ByteArray>()
 
+    /** Strip path separators and traversal sequences from a filename extension. */
+    private fun sanitizeExt(filename: String): String =
+        filename
+            .substringAfterLast('.', "")
+            .lowercase()
+            .replace(Regex("[^a-z0-9]"), "")
+
+    /** Sanitize a filename for use in Content-Disposition headers (strip control chars and quotes). */
+    private fun sanitizeFilename(name: String): String =
+        name.replace(Regex("[\"\\\\\\r\\n]"), "_").take(200)
+
     fun upload(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
         val bookId =
@@ -78,7 +89,7 @@ class FileHandler(
             return badRequest("X-Filename header is required")
         }
 
-        val ext = filename.substringAfterLast('.', "").lowercase()
+        val ext = sanitizeExt(filename)
         if (ext !in ALLOWED_EXTENSIONS) {
             return badRequest("Unsupported file type '$ext'. Allowed: ${ALLOWED_EXTENSIONS.joinToString()}")
         }
@@ -161,6 +172,12 @@ class FileHandler(
                 .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "No file uploaded for this book")))
         }
 
+        // Reject path traversal sequences in DB-stored paths
+        if (filePath.contains("..")) {
+            logger.warn("Path traversal attempt blocked in stored file path: $filePath")
+            return Response(Status.FORBIDDEN)
+        }
+
         val file = File(filePath)
         if (!file.exists() || !file.isFile) {
             return Response(Status.NOT_FOUND)
@@ -173,7 +190,7 @@ class FileHandler(
 
         return Response(Status.OK)
             .header("Content-Type", contentType)
-            .header("Content-Disposition", "attachment; filename=\"${file.name}\"")
+            .header("Content-Disposition", "attachment; filename=\"${sanitizeFilename(file.name)}\"")
             .header("Content-Length", file.length().toString())
             .body(file.inputStream())
     }
@@ -200,7 +217,8 @@ class FileHandler(
                     .header("Content-Type", "application/json")
                     .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "Book not found")))
 
-        if (filePath.isBlank()) {
+        if (filePath.isBlank() || filePath.contains("..")) {
+            if (filePath.contains("..")) logger.warn("Path traversal attempt blocked in stored file path: $filePath")
             return Response(Status.NOT_FOUND)
                 .header("Content-Type", "application/json")
                 .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "No file uploaded for this book")))
@@ -219,7 +237,7 @@ class FileHandler(
                 .body(Json.mapper.writeValueAsString(ErrorResponse("UNSUPPORTED", "KEPUB conversion is only available for EPUB files")))
         }
 
-        val kepubFilename = file.nameWithoutExtension + ".kepub.epub"
+        val kepubFilename = sanitizeFilename(file.nameWithoutExtension + ".kepub.epub")
         return Response(Status.OK)
             .header("Content-Type", "application/x-kobo-epub+zip")
             .header("Content-Disposition", "attachment; filename=\"$kepubFilename\"")
@@ -245,6 +263,10 @@ class FileHandler(
         val filePath =
             bookService.getBookFilePath(userId, bookId)
                 ?: return Response(Status.NOT_FOUND)
+        if (filePath.contains("..")) {
+            logger.warn("Path traversal attempt blocked in stored file path: $filePath")
+            return Response(Status.FORBIDDEN)
+        }
         val file = File(filePath)
         if (!file.exists()) return Response(Status.NOT_FOUND)
 
@@ -310,7 +332,8 @@ class FileHandler(
                     .header("Content-Type", "application/json")
                     .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "Book not found")))
 
-        if (filePath.isBlank()) {
+        if (filePath.isBlank() || filePath.contains("..")) {
+            if (filePath.contains("..")) logger.warn("Path traversal attempt blocked in stored file path: $filePath")
             return Response(Status.NOT_FOUND)
                 .header("Content-Type", "application/json")
                 .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "No file uploaded for this book")))
@@ -393,7 +416,7 @@ class FileHandler(
         val filename = req.header("X-Filename")?.trim()
         if (filename.isNullOrBlank()) return badRequest("X-Filename header is required")
 
-        val ext = filename.substringAfterLast('.', "").lowercase()
+        val ext = sanitizeExt(filename)
         if (ext !in ALLOWED_COVER_EXTENSIONS) {
             return badRequest("Unsupported image type '$ext'. Allowed: ${ALLOWED_COVER_EXTENSIONS.joinToString()}")
         }
@@ -502,7 +525,7 @@ class FileHandler(
         val filename = req.header("X-Filename")?.trim()
         if (filename.isNullOrBlank()) return badRequest("X-Filename header is required")
 
-        val ext = filename.substringAfterLast('.', "").lowercase()
+        val ext = sanitizeExt(filename)
         if (ext !in setOf("mp3", "m4b", "m4a", "ogg", "flac", "aac")) {
             return badRequest("Unsupported audio format: $ext")
         }
@@ -561,6 +584,11 @@ class FileHandler(
                 ?: return Response(Status.NOT_FOUND)
                     .header("Content-Type", "application/json")
                     .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "Chapter not found")))
+
+        if (filePath.contains("..")) {
+            logger.warn("Path traversal attempt blocked in stored file path: $filePath")
+            return Response(Status.FORBIDDEN)
+        }
 
         val file = java.io.File(filePath)
         if (!file.exists() || !file.isFile) {

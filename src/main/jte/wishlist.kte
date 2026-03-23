@@ -1,0 +1,109 @@
+@import org.booktower.services.WishlistItemDto
+@import org.booktower.web.PageContext
+@param pc: PageContext
+@param items: List<WishlistItemDto>
+
+@template.components.layout(title="${pc.i18n.translate("page.wishlist.title")} - BookTower", pc=pc, currentPage="wishlist",
+    searchQuery="", content = @`
+<div class="page-container">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+        <h1 class="page-title"><i class="ri-heart-line"></i> ${pc.i18n.translate("page.wishlist.title")}</h1>
+        <button id="add-wish-btn" class="btn-primary" style="padding:0.6rem 1.25rem;">
+            <i class="ri-add-line"></i> ${pc.i18n.translate("page.wishlist.add")}
+        </button>
+    </div>
+
+    <p class="text-sm text-subtle" style="margin-bottom:1.5rem;">${pc.i18n.translate("page.wishlist.description")}</p>
+
+    <!-- Add form -->
+    <div id="add-wish-form" style="display:none; margin-bottom:1.5rem; padding:1.25rem; background:var(--bt-surface-raised); border-radius:0.5rem; border:1px solid var(--bt-border);">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+            <div>
+                <label class="text-sm text-subtle" style="display:block; margin-bottom:0.2rem;">${pc.i18n.translate("label.title")}</label>
+                <input type="text" id="wish-title" placeholder="${pc.i18n.translate("label.title")}" style="width:100%; padding:0.5rem;">
+            </div>
+            <div>
+                <label class="text-sm text-subtle" style="display:block; margin-bottom:0.2rem;">${pc.i18n.translate("label.author")}</label>
+                <input type="text" id="wish-author" placeholder="${pc.i18n.translate("label.author")}" style="width:100%; padding:0.5rem;">
+            </div>
+            <div>
+                <label class="text-sm text-subtle" style="display:block; margin-bottom:0.2rem;">ISBN</label>
+                <input type="text" id="wish-isbn" placeholder="ISBN" style="width:100%; padding:0.5rem;">
+            </div>
+            <div>
+                <label class="text-sm text-subtle" style="display:block; margin-bottom:0.2rem;">${pc.i18n.translate("page.wishlist.notes")}</label>
+                <input type="text" id="wish-notes" placeholder="${pc.i18n.translate("page.wishlist.notes.placeholder")}" style="width:100%; padding:0.5rem;">
+            </div>
+        </div>
+        <div style="display:flex; gap:0.5rem; margin-top:0.75rem;">
+            <button id="wish-save-btn" class="btn-primary" style="padding:0.5rem 1rem;">
+                <i class="ri-save-line"></i> ${pc.i18n.translate("label.save")}
+            </button>
+            <button id="wish-cancel-btn" class="btn-secondary" style="padding:0.5rem 1rem;">
+                ${pc.i18n.translate("label.cancel")}
+            </button>
+        </div>
+    </div>
+
+    @if(items.isEmpty())
+        @template.components.emptyState(icon = "ri-heart-line", message = pc.i18n.translate("page.wishlist.empty"), action = @``)
+    @else
+        <div class="book-grid" style="grid-template-columns:repeat(auto-fill, minmax(180px, 1fr));">
+            @for(item in items)
+                <div class="discover-card" data-wish-id="${item.id}">
+                    @if(item.coverUrl != null)
+                        <img src="${item.coverUrl}" alt="" class="discover-cover">
+                    @else
+                        <div class="discover-cover-ph"><i class="ri-heart-line" style="font-size:2rem;"></i></div>
+                    @endif
+                    <div class="discover-info">
+                        <div class="discover-title">${item.title}</div>
+                        @if(item.author != null)
+                            <div class="discover-author">${item.author}</div>
+                        @endif
+                        @if(item.notes != null)
+                            <div class="text-sm text-subtle" style="margin-top:0.25rem; font-style:italic;">${item.notes}</div>
+                        @endif
+                        <button class="btn-icon wish-delete" data-id="${item.id}" title="${pc.i18n.translate("label.delete")}"
+                            style="margin-top:0.35rem;" onclick="deleteWish('${item.id}')">
+                            <i class="ri-delete-bin-line" style="color:var(--bt-danger); font-size:0.8rem;"></i>
+                        </button>
+                    </div>
+                </div>
+            @endfor
+        </div>
+    @endif
+</div>
+
+<script>
+(function() {
+    var addBtn = document.getElementById('add-wish-btn');
+    var form = document.getElementById('add-wish-form');
+    var cancelBtn = document.getElementById('wish-cancel-btn');
+    var saveBtn = document.getElementById('wish-save-btn');
+
+    addBtn.addEventListener('click', function() { form.style.display = 'block'; addBtn.style.display = 'none'; });
+    cancelBtn.addEventListener('click', function() { form.style.display = 'none'; addBtn.style.display = ''; });
+
+    saveBtn.addEventListener('click', function() {
+        var title = document.getElementById('wish-title').value.trim();
+        if (!title) return;
+        fetch('/api/wishlist', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                title: title,
+                author: document.getElementById('wish-author').value.trim() || null,
+                isbn: document.getElementById('wish-isbn').value.trim() || null,
+                notes: document.getElementById('wish-notes').value.trim() || null
+            })
+        }).then(function(r) { if (r.ok) window.location.reload(); });
+    });
+
+    window.deleteWish = function(id) {
+        if (!confirm('Remove from wishlist?')) return;
+        fetch('/api/wishlist/' + id, { method: 'DELETE' }).then(function(r) { if (r.ok) window.location.reload(); });
+    };
+}());
+</script>
+`)

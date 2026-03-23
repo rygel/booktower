@@ -17,7 +17,7 @@ class PreferencesIntegrationTest : IntegrationTestBase() {
     @Test
     fun `login applies stored theme and language as cookies`() {
         val username = "prefsync_${System.nanoTime()}"
-        val password = "password123"
+        val password = org.booktower.TestPasswords.DEFAULT
         val regResponse =
             app(
                 Request(Method.POST, "/auth/register")
@@ -49,7 +49,7 @@ class PreferencesIntegrationTest : IntegrationTestBase() {
     @Test
     fun `login without stored preferences sets no preference cookies`() {
         val username = "noprefs_${System.nanoTime()}"
-        val password = "password123"
+        val password = org.booktower.TestPasswords.DEFAULT
         app(
             Request(Method.POST, "/auth/register")
                 .header("Content-Type", "application/json")

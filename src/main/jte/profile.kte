@@ -8,6 +8,7 @@
 @param libraries: List<LibraryDto> = emptyList()
 @param prefDarkTheme: String = "catppuccin-mocha"
 @param prefLightTheme: String = "catppuccin-latte"
+@param profilePublic: Boolean = false
 
 
 @template.components.layout(title="${pc.i18n.translate("page.profile.title")} - BookTower", pc=pc, currentPage="profile",
@@ -33,6 +34,46 @@
             <dd>${memberSince}</dd>
         </dl>
     </div>
+
+    <!-- Public Profile -->
+    <div class="card card-pad" id="public-profile-section">
+        <h2 class="profile-section-title">
+            <i class="ri-global-line"></i>
+            ${pc.i18n.translate("page.profile.public.title")}
+        </h2>
+        <p class="text-sm text-subtle" style="margin-bottom:0.75rem;">${pc.i18n.translate("page.profile.public.description")}</p>
+        <div style="display:flex; align-items:center; gap:0.75rem;">
+            <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer;">
+                @if(profilePublic)
+                    <input type="checkbox" id="public-toggle" checked>
+                @else
+                    <input type="checkbox" id="public-toggle">
+                @endif
+                <span class="text-sm">${pc.i18n.translate("page.profile.public.enable")}</span>
+            </label>
+            @if(profilePublic)
+                <a href="/api/profile/${userUsername}" target="_blank" class="text-sm" style="color:var(--bt-accent-dim);">
+                    <i class="ri-external-link-line"></i> ${pc.i18n.translate("page.profile.public.view")}
+                </a>
+            @endif
+        </div>
+    </div>
+
+    <script>
+    (function() {
+        var toggle = document.getElementById('public-toggle');
+        if (!toggle) return;
+        toggle.addEventListener('change', function() {
+            fetch('/api/user/profile/public', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 'public': toggle.checked })
+            }).then(function(r) {
+                if (r.ok) window.location.reload();
+            });
+        });
+    }());
+    </script>
 
     <!-- Preferences -->
     <div class="card card-pad">
@@ -420,4 +461,28 @@ async function importGoodreads() {
     }
 }
 </script>
+
+<!-- Export & Data -->
+<div class="card card-pad" style="margin-top:1.5rem;">
+    <h2 class="profile-section-title">
+        <i class="ri-download-2-line"></i>
+        ${pc.i18n.translate("page.profile.export.title")}
+    </h2>
+    <p class="text-sm text-subtle" style="margin-bottom:1rem;">${pc.i18n.translate("page.profile.export.description")}</p>
+    <div style="display:flex; flex-wrap:wrap; gap:0.75rem;">
+        <a href="/api/export/annotations/markdown" class="btn-secondary flex-center gap-sm" style="padding:0.6rem 1rem; text-decoration:none;">
+            <i class="ri-markdown-line"></i> ${pc.i18n.translate("page.profile.export.markdown")}
+        </a>
+        <a href="/api/export/annotations/readwise" class="btn-secondary flex-center gap-sm" style="padding:0.6rem 1rem; text-decoration:none;">
+            <i class="ri-file-text-line"></i> ${pc.i18n.translate("page.profile.export.readwise")}
+        </a>
+        <a href="/api/export/annotations" class="btn-secondary flex-center gap-sm" style="padding:0.6rem 1rem; text-decoration:none;">
+            <i class="ri-braces-line"></i> ${pc.i18n.translate("page.profile.export.json")}
+        </a>
+        <a href="/api/export" class="btn-secondary flex-center gap-sm" style="padding:0.6rem 1rem; text-decoration:none;">
+            <i class="ri-database-2-line"></i> ${pc.i18n.translate("page.profile.export.full")}
+        </a>
+    </div>
+</div>
 `)
+

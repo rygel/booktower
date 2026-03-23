@@ -192,6 +192,8 @@ input:focus, select:focus, textarea:focus {
 .stat-icon i { font-size: 1.25rem; }
 .stat-value { font-size: 1.5rem; font-weight: 700; color: var(--bt-text); line-height: 1; }
 .stat-label { font-size: 0.75rem; color: var(--bt-muted); margin-top: 0.25rem; }
+.panel { background: var(--bt-surface); border: 1px solid var(--bt-border); border-radius: 0.75rem; padding: 1.25rem; }
+.panel-title { font-size: 0.9rem; font-weight: 600; color: var(--bt-text); margin: 0 0 0.75rem; }
 
 .modal-panel { background-color: var(--bt-surface); }
 

@@ -126,7 +126,7 @@ val appModule =
                 get(),
             )
         }
-        single { BookService(get<Database>().getJdbi(), get(), get()) }
+        single { BookService(get<Database>().getJdbi(), get(), get(), webhookService = getOrNull()) }
         single { BookmarkService(get<Database>().getJdbi()) }
         single { UserSettingsService(get<Database>().getJdbi()) }
         single { AnalyticsService(get<Database>().getJdbi(), get()) }
@@ -206,6 +206,13 @@ val appModule =
         single { WeblateHandler(get<AppConfig>().weblate) }
         single { org.booktower.services.CollectionService(get<Database>().getJdbi()) }
         single { org.booktower.services.BulkMetadataRefreshService(get<Database>().getJdbi(), get(), get(), get()) }
+        single { org.booktower.services.BatchImportService(get<Database>().getJdbi(), get(), get(), get(), get(), get()) }
+        single { org.booktower.services.CustomFieldService(get<Database>().getJdbi()) }
+        single { org.booktower.services.PublicProfileService(get<Database>().getJdbi(), get()) }
+        single { org.booktower.services.ReadingSpeedService(get<Database>().getJdbi()) }
+        single { org.booktower.services.BookConditionService(get()) }
+        single { org.booktower.services.HealthService(get<Database>().getJdbi()) }
+        single { org.booktower.services.ReadingListService(get<Database>().getJdbi()) }
         single { org.booktower.services.LibraryStatsService(get<Database>().getJdbi()) }
         single { org.booktower.services.WebhookService(get<Database>().getJdbi()) }
         single { org.booktower.services.ReadingTimelineService(get<Database>().getJdbi()) }
@@ -214,6 +221,9 @@ val appModule =
         single { org.booktower.services.DiscoveryService(get<Database>().getJdbi()) }
         single { org.booktower.services.BackupService(get<Database>().getJdbi()) }
         single { org.booktower.services.PositionSyncService(get<Database>().getJdbi()) }
+
+        single { org.booktower.services.WishlistService(get<Database>().getJdbi()) }
+        single { org.booktower.services.AdvancedSearchService(get<Database>().getJdbi(), getOrNull()) }
 
         // ── Handler objects ──────────────────────────────────────────────────
         single {
@@ -271,6 +281,25 @@ val appModule =
                 getOrNull(),
                 getOrNull(),
                 get<BackgroundTaskService>(),
+                getOrNull<org.booktower.services.LibraryStatsService>(),
+                getOrNull<org.booktower.services.WebhookService>(),
+                getOrNull<org.booktower.services.ReadingTimelineService>(),
+                getOrNull<org.booktower.services.DiscoveryService>(),
+                getOrNull<org.booktower.services.ReadingListService>(),
+                getOrNull<org.booktower.services.WishlistService>(),
+                getOrNull<org.booktower.services.CollectionService>(),
+                getOrNull<org.booktower.services.KoboSyncService>(),
+                getOrNull<org.booktower.services.KOReaderSyncService>(),
+                getOrNull<org.booktower.services.FilterPresetService>(),
+                getOrNull<org.booktower.services.ScheduledTaskService>(),
+                getOrNull<org.booktower.services.OpdsCredentialsService>(),
+                getOrNull<org.booktower.services.ContentRestrictionsService>(),
+                getOrNull<org.booktower.services.ReadingSpeedService>(),
+                getOrNull<org.booktower.services.LibraryHealthService>(),
+                getOrNull<org.booktower.services.HardcoverSyncService>(),
+                getOrNull<org.booktower.services.BookDeliveryService>(),
+                getOrNull<org.booktower.services.BookDropService>(),
+                getOrNull<org.booktower.services.MetadataProposalService>(),
             )
         }
         single { BackgroundTaskHandler(get(), get()) }
@@ -387,6 +416,14 @@ val appModule =
                 annotationExportService = get<org.booktower.services.AnnotationExportService>(),
                 discoveryService = get<org.booktower.services.DiscoveryService>(),
                 positionSyncService = get<org.booktower.services.PositionSyncService>(),
+                customFieldService = get<org.booktower.services.CustomFieldService>(),
+                publicProfileService = get<org.booktower.services.PublicProfileService>(),
+                readingSpeedService = get<org.booktower.services.ReadingSpeedService>(),
+                bookConditionService = get<org.booktower.services.BookConditionService>(),
+                readingListService = get<org.booktower.services.ReadingListService>(),
+                annotationService = get<org.booktower.services.AnnotationService>(),
+                wishlistService = get<org.booktower.services.WishlistService>(),
+                advancedSearchService = get<org.booktower.services.AdvancedSearchService>(),
             )
         }
         single {
@@ -401,6 +438,7 @@ val appModule =
                 get<TelemetryService>(),
                 get<org.booktower.services.BulkMetadataRefreshService>(),
                 get<org.booktower.services.BackupService>(),
+                get<org.booktower.services.BatchImportService>(),
             )
         }
         single {
@@ -447,6 +485,7 @@ val appModule =
                 get<MetadataApiRouter>(),
                 get<AudiobookApiRouter>(),
                 get<DeviceSyncRouter>(),
+                get<org.booktower.services.HealthService>(),
             )
         }
     }

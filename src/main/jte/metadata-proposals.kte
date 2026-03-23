@@ -1,0 +1,76 @@
+@import org.booktower.services.MetadataProposalDto
+@import org.booktower.web.PageContext
+@param pc: PageContext
+@param proposals: List<MetadataProposalDto>
+
+@template.components.layout(title="${pc.i18n.translate("page.proposals.title")} - BookTower", pc=pc, currentPage="metadata-proposals",
+    searchQuery="", content = @`
+<div class="page-container">
+    <h1 class="page-title"><i class="ri-file-edit-line"></i> ${pc.i18n.translate("page.proposals.title")}</h1>
+    <p class="text-sm text-subtle" style="margin-bottom:1.5rem;">${pc.i18n.translate("page.proposals.description")}</p>
+
+    <div id="proposal-list">
+        @if(proposals.isEmpty())
+            @template.components.emptyState(icon = "ri-file-edit-line", message = pc.i18n.translate("page.proposals.empty"), action = @``)
+        @else
+            @for(proposal in proposals)
+                <div class="panel" style="margin-bottom:0.75rem; padding:1rem;" data-proposal-id="${proposal.id}" data-book-id="${proposal.bookId}">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                        <div style="flex:1;">
+                            <div style="font-weight:600; font-size:0.9rem; color:var(--bt-text);">
+                                ${proposal.metadata.title}
+                            </div>
+                            @if(proposal.metadata.author != null)
+                                <div class="text-sm text-subtle" style="margin-top:0.15rem;">
+                                    ${pc.i18n.translate("page.proposals.by")} ${proposal.metadata.author}
+                                </div>
+                            @endif
+                            <div style="margin-top:0.35rem; display:flex; gap:0.35rem; flex-wrap:wrap;">
+                                <span style="font-size:0.65rem; padding:0.1rem 0.4rem; border-radius:0.25rem; background:var(--bt-icon-bg); color:var(--bt-icon-text);">${proposal.source}</span>
+                                <span class="text-sm text-subtle">${proposal.proposedAt}</span>
+                            </div>
+                            @if(proposal.metadata.description != null)
+                                <div class="text-sm text-subtle" style="margin-top:0.5rem; max-height:3rem; overflow:hidden;">
+                                    ${proposal.metadata.description}
+                                </div>
+                            @endif
+                        </div>
+                        <div style="display:flex; gap:0.5rem; flex-shrink:0; margin-left:1rem;">
+                            <button class="btn-primary proposal-apply" data-book-id="${proposal.bookId}" data-id="${proposal.id}" style="padding:0.35rem 0.75rem; font-size:0.8rem;">
+                                <i class="ri-check-line"></i> ${pc.i18n.translate("page.proposals.apply")}
+                            </button>
+                            <button class="btn-icon proposal-dismiss" data-book-id="${proposal.bookId}" data-id="${proposal.id}" title="${pc.i18n.translate("page.proposals.dismiss")}">
+                                <i class="ri-close-line" style="color:var(--bt-danger);"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            @endfor
+        @endif
+    </div>
+</div>
+
+<script>
+(function() {
+    document.querySelectorAll('.proposal-apply').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var bookId = btn.dataset.bookId;
+            var proposalId = btn.dataset.id;
+            fetch('/api/books/' + bookId + '/metadata/proposals/' + proposalId + '/apply', {
+                method: 'POST'
+            }).then(function(r) { if (r.ok) btn.closest('.panel').remove(); });
+        });
+    });
+
+    document.querySelectorAll('.proposal-dismiss').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var bookId = btn.dataset.bookId;
+            var proposalId = btn.dataset.id;
+            fetch('/api/books/' + bookId + '/metadata/proposals/' + proposalId, {
+                method: 'DELETE'
+            }).then(function(r) { if (r.ok) btn.closest('.panel').remove(); });
+        });
+    });
+})();
+</script>
+`)

@@ -6,17 +6,70 @@
 
 ## Remaining
 
+### UI needed (API exists, no user interface)
+- [ ] Search bar in top navigation + advanced search page
+- [ ] Library statistics dashboard
+- [ ] Webhooks management UI
+- [ ] Reading timeline page
+- [ ] Reading goals progress card on dashboard
+- [ ] Annotation export buttons
+- [ ] Smart discovery / recommendations page
+- [ ] Database backup/restore UI in admin panel
+- [ ] Custom metadata fields UI on book detail
+- [ ] Public profile settings + profile page
+- [ ] Reading speed analytics card
+- [ ] Reading streaks widget on dashboard
+- [ ] Book condition tracker UI on book detail
+- [ ] Reading lists page
+- [ ] Shared annotations in reader
+- [ ] Wishlist page
+- [ ] Duplicate detection + merge UI in admin
+- [ ] Bulk metadata refresh button in admin
+- [ ] Batch import UI in admin
+- [ ] Collections management page
+- [ ] Filter presets UI
+- [ ] Book drop UI
+- [ ] Metadata proposals review UI
+- [ ] Alternative covers picker
+- [ ] Library health check dashboard
+- [ ] Email provider config UI
+- [ ] Scheduled tasks management UI
+- [ ] OPDS credentials settings
+- [ ] Content restrictions settings
+- [ ] Device management UI (Kobo/KOReader)
+- [ ] Hardcover.app sync settings
+- [ ] Book delivery config + send button
+- [ ] Position sync indicator in reader
+
+### Features (new)
+- [ ] Duplicate page detection UI
+- [ ] CBL reading list import
+- [ ] Server-wide announcements
+
 ### Performance
-- [ ] Profile actual page load times end-to-end and identify remaining bottlenecks
+- [ ] Profile actual page load times
 
 ### Testing
-- [ ] Book delivery to Kindle — needs real email + Kindle device
+- [ ] Book delivery to Kindle — needs real device
+- [ ] Integration tests for untested services
 
 ### Future
-- [ ] Standalone KOReader/Kobo device simulator (sub-Maven module for user self-testing)
+- [ ] Standalone KOReader/Kobo device simulator
+- [ ] ISBN barcode scanner
+- [ ] Text-to-speech in reader
+- [ ] Import from Calibre
+- [ ] Email digest
 
 ## Completed
 
+- [x] Reading streaks widget, book condition tracker, reading speed analytics, health check (PR #123)
+- [x] Public reading activity profile (PR #122)
+- [x] Custom metadata fields (PR #121)
+- [x] Table of contents sidebar for EPUB/PDF reader (PR #120)
+- [x] Batch import from directory (PR #119)
+- [x] Slim fat JAR — 90MB → 37MB (PR #117)
+- [x] Release workflow fix — publish without native builds (PR #116)
+- [x] Library stats, webhooks, timeline, goals, annotation export, discovery, backup, position sync, OPDS 2.0, duplicate merge (PR #114)
 - [x] KOReader + Kobo sync integration tests (17 tests, PR #107)
 - [x] Configurable page gaps for comic reader (PR #106)
 - [x] Per-book language FTS config — 30 languages (PR #105)

@@ -42,7 +42,7 @@ class RatingFilterIntegrationTest : IntegrationTestBase() {
 
         val result =
             authService.register(
-                CreateUserRequest("rf_${System.nanoTime()}", "rf_${System.nanoTime()}@test.com", "password123"),
+                CreateUserRequest("rf_${System.nanoTime()}", "rf_${System.nanoTime()}@test.com", org.booktower.TestPasswords.DEFAULT),
             )
         val loginResponse = result.getOrThrow()
         userId = jwtService.extractUserId(loginResponse.token)!!

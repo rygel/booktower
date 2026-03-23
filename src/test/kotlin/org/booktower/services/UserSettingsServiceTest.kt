@@ -26,7 +26,7 @@ class UserSettingsServiceTest {
 
         val result =
             authService.register(
-                CreateUserRequest("settings_${System.nanoTime()}", "settings_${System.nanoTime()}@test.com", "password123"),
+                CreateUserRequest("settings_${System.nanoTime()}", "settings_${System.nanoTime()}@test.com", org.booktower.TestPasswords.DEFAULT),
             )
         userId = jwtService.extractUserId(result.getOrThrow().token)!!
     }
@@ -64,7 +64,7 @@ class UserSettingsServiceTest {
     fun `getAll returns empty map for user with no settings`() {
         val otherResult =
             authService.register(
-                CreateUserRequest("emptyset_${System.nanoTime()}", "emptyset_${System.nanoTime()}@test.com", "password123"),
+                CreateUserRequest("emptyset_${System.nanoTime()}", "emptyset_${System.nanoTime()}@test.com", org.booktower.TestPasswords.DEFAULT),
             )
         val otherId = jwtService.extractUserId(otherResult.getOrThrow().token)!!
         assertTrue(userSettingsService.getAll(otherId).isEmpty())
@@ -109,7 +109,7 @@ class UserSettingsServiceTest {
     fun `settings are isolated between users`() {
         val otherResult =
             authService.register(
-                CreateUserRequest("isolated_${System.nanoTime()}", "isolated_${System.nanoTime()}@test.com", "password123"),
+                CreateUserRequest("isolated_${System.nanoTime()}", "isolated_${System.nanoTime()}@test.com", org.booktower.TestPasswords.DEFAULT),
             )
         val otherId = jwtService.extractUserId(otherResult.getOrThrow().token)!!
 

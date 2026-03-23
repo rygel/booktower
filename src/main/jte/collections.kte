@@ -1,0 +1,76 @@
+@import org.booktower.services.CollectionDto
+@import org.booktower.web.PageContext
+@param pc: PageContext
+@param collections: List<CollectionDto>
+
+@template.components.layout(title="${pc.i18n.translate("page.collections.title")} - BookTower", pc=pc, currentPage="collections",
+    searchQuery="", content = @`
+<div class="page-container">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+        <h1 class="page-title"><i class="ri-folder-line"></i> ${pc.i18n.translate("page.collections.title")}</h1>
+        <button id="add-coll-btn" class="btn-primary" style="padding:0.6rem 1.25rem;">
+            <i class="ri-add-line"></i> ${pc.i18n.translate("page.collections.create")}
+        </button>
+    </div>
+
+    <div id="create-coll-form" style="display:none; margin-bottom:1.5rem; padding:1.25rem; background:var(--bt-surface-raised); border-radius:0.5rem; border:1px solid var(--bt-border);">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+            <div>
+                <label class="text-sm text-subtle" style="display:block; margin-bottom:0.2rem;">${pc.i18n.translate("page.collections.name")}</label>
+                <input type="text" id="coll-name" placeholder="${pc.i18n.translate("page.collections.name")}" style="width:100%; padding:0.5rem;">
+            </div>
+            <div>
+                <label class="text-sm text-subtle" style="display:block; margin-bottom:0.2rem;">${pc.i18n.translate("page.collections.description")}</label>
+                <input type="text" id="coll-desc" placeholder="${pc.i18n.translate("page.collections.description")}" style="width:100%; padding:0.5rem;">
+            </div>
+        </div>
+        <div style="display:flex; gap:0.5rem; margin-top:0.75rem;">
+            <button id="coll-save-btn" class="btn-primary" style="padding:0.5rem 1rem;"><i class="ri-save-line"></i> ${pc.i18n.translate("label.save")}</button>
+            <button id="coll-cancel-btn" class="btn-secondary" style="padding:0.5rem 1rem;">${pc.i18n.translate("label.cancel")}</button>
+        </div>
+    </div>
+
+    @if(collections.isEmpty())
+        @template.components.emptyState(icon = "ri-folder-line", message = pc.i18n.translate("page.collections.empty"), action = @``)
+    @else
+        <div style="display:grid; gap:1rem;">
+            @for(coll in collections)
+                <div class="panel" style="display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <div style="font-weight:600; font-size:0.95rem; color:var(--bt-text);">${coll.name}</div>
+                        @if(coll.description != null)
+                            <div class="text-sm text-subtle" style="margin-top:0.15rem;">${coll.description}</div>
+                        @endif
+                        <div class="text-sm text-subtle" style="margin-top:0.25rem;">${coll.bookCount} ${pc.i18n.translate("page.collections.books")}</div>
+                    </div>
+                    <button class="btn-icon" onclick="deleteColl('${coll.id}')" title="${pc.i18n.translate("label.delete")}">
+                        <i class="ri-delete-bin-line" style="color:var(--bt-danger);"></i>
+                    </button>
+                </div>
+            @endfor
+        </div>
+    @endif
+</div>
+
+<script>
+(function() {
+    var addBtn = document.getElementById('add-coll-btn');
+    var form = document.getElementById('create-coll-form');
+    addBtn.addEventListener('click', function() { form.style.display = 'block'; addBtn.style.display = 'none'; });
+    document.getElementById('coll-cancel-btn').addEventListener('click', function() { form.style.display = 'none'; addBtn.style.display = ''; });
+    document.getElementById('coll-save-btn').addEventListener('click', function() {
+        var name = document.getElementById('coll-name').value.trim();
+        if (!name) return;
+        var body = new URLSearchParams();
+        body.append('name', name);
+        var desc = document.getElementById('coll-desc').value.trim();
+        if (desc) body.append('description', desc);
+        fetch('/api/collections', { method: 'POST', body: body }).then(function(r) { if (r.ok) window.location.reload(); });
+    });
+    window.deleteColl = function(id) {
+        if (!confirm('Delete this collection?')) return;
+        fetch('/api/collections/' + id, { method: 'DELETE' }).then(function(r) { if (r.ok) window.location.reload(); });
+    };
+}());
+</script>
+`)

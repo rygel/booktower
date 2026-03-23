@@ -76,7 +76,7 @@ class DuplicateDetectionService(
                 val did = deleteId.toString()
                 val kid = keepBookId.toString()
                 h
-                    .createUpdate("UPDATE book_bookmarks SET book_id = ? WHERE book_id = ?")
+                    .createUpdate("UPDATE bookmarks SET book_id = ? WHERE book_id = ?")
                     .bind(0, kid)
                     .bind(1, did)
                     .execute()
@@ -113,7 +113,7 @@ class DuplicateDetectionService(
         kept: Map<String, Any?>,
         donor: Map<String, Any?>,
     ) {
-        val fields = listOf("isbn", "description", "publisher", "published_date", "page_count", "series", "series_index", "language", "cover_url")
+        val fields = listOf("isbn", "description", "publisher", "published_date", "page_count", "series", "series_index", "language", "cover_path")
         val updates = mutableListOf<Pair<String, Any>>()
         for (field in fields) {
             val keptVal = kept[field]

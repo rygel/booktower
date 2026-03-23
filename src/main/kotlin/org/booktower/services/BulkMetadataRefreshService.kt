@@ -52,7 +52,7 @@ class BulkMetadataRefreshService(
                     WHERE l.user_id = ?
                       AND (b.isbn IS NULL OR b.isbn = ''
                            OR b.description IS NULL OR b.description = ''
-                           OR b.cover_url IS NULL OR b.cover_url = '')
+                           OR b.cover_path IS NULL OR b.cover_path = '')
                       $libFilter
                     ORDER BY b.title
                     """,

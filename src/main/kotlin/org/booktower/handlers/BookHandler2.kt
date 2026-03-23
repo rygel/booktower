@@ -23,13 +23,36 @@ class BookHandler2(
 ) {
     fun list(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
-        val libraryId = req.query("libraryId")
+        val libraryId =
+            req.query("libraryId")?.let { id ->
+                // Validate as UUID to prevent any injection via the library ID parameter
+                try {
+                    UUID.fromString(id).toString()
+                } catch (_: IllegalArgumentException) {
+                    return Response(Status.BAD_REQUEST)
+                        .header("Content-Type", "application/json")
+                        .body(Json.mapper.writeValueAsString(ErrorResponse("VALIDATION_ERROR", "Invalid library ID format")))
+                }
+            }
         val page = req.query("page")?.toIntOrNull() ?: 1
         val pageSize = req.query("pageSize")?.toIntOrNull() ?: 20
-        val statusFilter = req.query("status")?.takeIf { it.isNotBlank() }
-        val tagFilter = req.query("tag")?.takeIf { it.isNotBlank() }
-        val ratingGte = req.query("ratingGte")?.toIntOrNull()
-        val formatFilter = req.query("format")?.takeIf { it.isNotBlank() }
+        // Sanitize filter values — only allow safe characters (defense in depth; queries use parameterized bindings)
+        val statusFilter =
+            req
+                .query("status")
+                ?.takeIf { it.isNotBlank() }
+                ?.take(50)
+                ?.replace(Regex("[^A-Z_]"), "")
+                ?.takeIf { it.isNotBlank() }
+        val tagFilter = req.query("tag")?.takeIf { it.isNotBlank() }?.take(100)
+        val ratingGte = req.query("ratingGte")?.toIntOrNull()?.coerceIn(1, 5)
+        val formatFilter =
+            req
+                .query("format")
+                ?.takeIf { it.isNotBlank() }
+                ?.take(20)
+                ?.replace(Regex("[^A-Z_]"), "")
+                ?.takeIf { it.isNotBlank() }
 
         val bookList =
             bookService.getBooks(

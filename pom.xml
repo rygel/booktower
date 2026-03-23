@@ -6,7 +6,7 @@
 
     <groupId>org.booktower</groupId>
     <artifactId>booktower</artifactId>
-    <version>0.6.6</version>
+    <version>0.7.0</version>
     <packaging>jar</packaging>
 
     <properties>
@@ -76,9 +76,9 @@
         <jwt.version>4.5.1</jwt.version>
         <bcrypt.version>0.4</bcrypt.version>
         <pdfbox.version>3.0.7</pdfbox.version>
-        <jdbi3.version>3.51.0</jdbi3.version>
+        <jdbi3.version>3.52.0</jdbi3.version>
         <hikari.version>7.0.2</hikari.version>
-        <http4k.version>6.36.0.0</http4k.version>
+        <http4k.version>6.37.0.0</http4k.version>
         <kotlin-logging.version>8.0.01</kotlin-logging.version>
         <!-- kotlin-logging 8.x is available but is a pre-release rewrite; 7.0.7 is latest stable -->
         <testcontainers.version>1.21.4</testcontainers.version>
@@ -892,6 +892,20 @@
                             <shadedArtifactAttached>true</shadedArtifactAttached>
                             <shadedClassifierName>fat</shadedClassifierName>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <!-- Exclude Kotlin compiler from fat JAR — only needed for
+                                 JTE dynamic template compilation (dev mode). Production uses
+                                 precompiled templates. Saves ~55MB. -->
+                            <artifactSet>
+                                <excludes>
+                                    <exclude>org.jetbrains.kotlin:kotlin-compiler-embeddable</exclude>
+                                    <exclude>org.jetbrains.kotlin:kotlin-scripting-compiler-embeddable</exclude>
+                                    <exclude>org.jetbrains.kotlin:kotlin-scripting-compiler-impl-embeddable</exclude>
+                                    <exclude>org.jetbrains.kotlin:kotlin-scripting-common</exclude>
+                                    <exclude>org.jetbrains.kotlin:kotlin-scripting-jvm</exclude>
+                                    <exclude>org.jetbrains.kotlin:kotlin-daemon-embeddable</exclude>
+                                    <exclude>org.jetbrains.intellij.deps:trove4j</exclude>
+                                </excludes>
+                            </artifactSet>
                             <filters>
                                 <filter>
                                     <artifact>*:*</artifact>

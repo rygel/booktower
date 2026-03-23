@@ -32,6 +32,7 @@ class AdminApiRouter(
     private val telemetryService: TelemetryService?,
     private val bulkMetadataRefreshService: BulkMetadataRefreshService?,
     private val backupService: org.booktower.services.BackupService?,
+    private val batchImportService: org.booktower.services.BatchImportService?,
 ) {
     @Suppress("LongMethod")
     fun routes(): List<RoutingHttpHandler> =
@@ -78,6 +79,8 @@ class AdminApiRouter(
             // Database backup/restore
             "/api/admin/backup" bind Method.GET to filters.admin.then(::exportBackup),
             "/api/admin/backup" bind Method.POST to filters.admin.then(::importBackup),
+            // Batch import from directory
+            "/api/admin/import/directory" bind Method.POST to filters.admin.then(::batchImportDirectory),
             // Weblate translation sync (admin only)
             "/api/weblate/pull" bind Method.POST to filters.admin.then(weblateHandler::pull),
             "/api/weblate/push" bind Method.POST to filters.admin.then(weblateHandler::push),
@@ -310,5 +313,44 @@ class AdminApiRouter(
                 .header("Content-Type", "application/json")
                 .body("""{"error":"${e.message}"}""")
         }
+    }
+
+    // ─── Batch import ─────────────────────────────────────────────────────
+
+    private fun batchImportDirectory(req: Request): Response {
+        val svc = batchImportService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val userId = AuthenticatedUser.from(req)
+        val body =
+            runCatching {
+                org.booktower.config.Json.mapper
+                    .readTree(req.bodyString())
+            }.getOrNull()
+                ?: return Response(Status.BAD_REQUEST)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"Invalid request body"}""")
+        val directoryPath =
+            body.get("path")?.asText()?.takeIf { it.isNotBlank() }
+                ?: return Response(Status.BAD_REQUEST)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"path is required"}""")
+        val libraryId =
+            body.get("libraryId")?.asText()?.takeIf { it.isNotBlank() }
+                ?: return Response(Status.BAD_REQUEST)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"libraryId is required"}""")
+        val config =
+            org.booktower.services.BatchImportConfig(
+                maxConcurrency = body.get("maxConcurrency")?.asInt() ?: 2,
+                throttleMs = body.get("throttleMs")?.asLong() ?: 500,
+                maxFiles = body.get("maxFiles")?.asInt() ?: 1000,
+                maxFileSizeMb = body.get("maxFileSizeMb")?.asInt() ?: 500,
+            )
+        val result = svc.importDirectory(userId, libraryId, directoryPath, config)
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(result),
+            )
     }
 }

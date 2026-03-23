@@ -59,7 +59,7 @@ class UserWorkflowE2ETest : IntegrationTestBase() {
             app(
                 Request(Method.POST, "/auth/register")
                     .header("Content-Type", "application/json")
-                    .body("""{"username":"$username","email":"$username@test.com","password":"password123"}"""),
+                    .body("""{"username":"$username","email":"$username@test.com","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
             )
         assertEquals(Status.CREATED, registerResp.status, "Registration should succeed")
         val token = Json.mapper.readValue(registerResp.bodyString(), LoginResponse::class.java).token

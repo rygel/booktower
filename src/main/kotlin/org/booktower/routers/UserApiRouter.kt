@@ -54,6 +54,14 @@ class UserApiRouter(
     private val annotationExportService: org.booktower.services.AnnotationExportService? = null,
     private val discoveryService: org.booktower.services.DiscoveryService? = null,
     private val positionSyncService: org.booktower.services.PositionSyncService? = null,
+    private val customFieldService: org.booktower.services.CustomFieldService? = null,
+    private val publicProfileService: org.booktower.services.PublicProfileService? = null,
+    private val readingSpeedService: org.booktower.services.ReadingSpeedService? = null,
+    private val bookConditionService: org.booktower.services.BookConditionService? = null,
+    private val readingListService: org.booktower.services.ReadingListService? = null,
+    private val annotationService: org.booktower.services.AnnotationService? = null,
+    private val wishlistService: org.booktower.services.WishlistService? = null,
+    private val advancedSearchService: org.booktower.services.AdvancedSearchService? = null,
 ) {
     @Suppress("LongMethod")
     fun routes(): List<RoutingHttpHandler> =
@@ -135,6 +143,43 @@ class UserApiRouter(
             "/api/discover" bind Method.GET to filters.auth.then(::discover),
             "/api/books/{bookId}/position" bind Method.GET to filters.auth.then(::pullPosition),
             "/api/books/{bookId}/position" bind Method.PUT to filters.auth.then(::pushPosition),
+            // Custom metadata fields
+            "/api/custom-fields" bind Method.GET to filters.auth.then(::listFieldDefinitions),
+            "/api/custom-fields" bind Method.POST to filters.auth.then(::createFieldDefinition),
+            "/api/custom-fields/{id}" bind Method.DELETE to filters.auth.then(::deleteFieldDefinition),
+            "/api/books/{bookId}/custom-fields" bind Method.GET to filters.auth.then(::getBookCustomFields),
+            "/api/books/{bookId}/custom-fields" bind Method.PUT to filters.auth.then(::setBookCustomField),
+            "/api/books/{bookId}/custom-fields/{fieldName}" bind Method.DELETE to filters.auth.then(::deleteBookCustomField),
+            // Public profile
+            "/api/user/profile/public" bind Method.GET to filters.auth.then(::getProfilePublicStatus),
+            "/api/user/profile/public" bind Method.PUT to filters.auth.then(::setProfilePublic),
+            "/api/profile/{username}" bind Method.GET to ::getPublicProfile,
+            // Reading speed analytics
+            "/api/stats/speed" bind Method.GET to filters.auth.then(::getReadingSpeed),
+            // Reading streaks widget
+            "/api/stats/streaks" bind Method.GET to filters.auth.then(::getStreaks),
+            // Book condition tracker
+            "/api/books/{bookId}/condition" bind Method.GET to filters.auth.then(::getBookCondition),
+            "/api/books/{bookId}/condition" bind Method.PUT to filters.auth.then(::updateBookCondition),
+            // Reading lists
+            "/api/reading-lists" bind Method.GET to filters.auth.then(::listReadingLists),
+            "/api/reading-lists" bind Method.POST to filters.auth.then(::createReadingList),
+            "/api/reading-lists/{id}" bind Method.GET to filters.auth.then(::getReadingList),
+            "/api/reading-lists/{id}" bind Method.DELETE to filters.auth.then(::deleteReadingList),
+            "/api/reading-lists/{id}/books/{bookId}" bind Method.POST to filters.auth.then(::addBookToReadingList),
+            "/api/reading-lists/{id}/books/{bookId}" bind Method.DELETE to filters.auth.then(::removeBookFromReadingList),
+            "/api/reading-lists/{id}/books/{bookId}/toggle" bind Method.POST to filters.auth.then(::toggleReadingListItem),
+            "/api/reading-lists/{id}/reorder" bind Method.POST to filters.auth.then(::reorderReadingList),
+            // Shared annotations
+            "/api/annotations/{id}/share" bind Method.POST to filters.auth.then(::shareAnnotation),
+            "/api/books/{bookId}/shared-annotations" bind Method.GET to filters.auth.then(::getSharedAnnotations),
+            // Wishlist
+            "/api/wishlist" bind Method.GET to filters.auth.then(::listWishlist),
+            "/api/wishlist" bind Method.POST to filters.auth.then(::addToWishlist),
+            "/api/wishlist/{id}" bind Method.PUT to filters.auth.then(::updateWishlistItem),
+            "/api/wishlist/{id}" bind Method.DELETE to filters.auth.then(::deleteWishlistItem),
+            // Advanced search
+            "/api/search/advanced" bind Method.POST to filters.auth.then(::advancedSearch),
         )
 
     // ─── Collections ────────────────────────────────────────────────────────
@@ -917,5 +962,420 @@ class UserApiRouter(
             }.getOrNull() ?: return Response(Status.BAD_REQUEST)
         svc.push(userId, bookId, body)
         return Response(Status.NO_CONTENT)
+    }
+
+    // ─── Custom metadata fields ───────────────────────────────────────────
+
+    private fun listFieldDefinitions(req: Request): Response {
+        val svc = customFieldService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(svc.getDefinitions(AuthenticatedUser.from(req))),
+            )
+    }
+
+    private fun createFieldDefinition(req: Request): Response {
+        val svc = customFieldService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val body =
+            runCatching {
+                org.booktower.config.Json.mapper
+                    .readValue(req.bodyString(), org.booktower.services.CreateFieldDefinitionRequest::class.java)
+            }.getOrNull() ?: return Response(Status.BAD_REQUEST)
+        if (body.fieldName.isBlank()) return Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"fieldName is required"}""")
+        return try {
+            val def = svc.createDefinition(AuthenticatedUser.from(req), body)
+            Response(Status.CREATED)
+                .header("Content-Type", "application/json")
+                .body(
+                    org.booktower.config.Json.mapper
+                        .writeValueAsString(def),
+                )
+        } catch (e: Exception) {
+            Response(Status.CONFLICT)
+                .header("Content-Type", "application/json")
+                .body("""{"error":"Field already exists: ${body.fieldName}"}""")
+        }
+    }
+
+    private fun deleteFieldDefinition(req: Request): Response {
+        val svc = customFieldService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val id =
+            req.uri.path
+                .split("/")
+                .lastOrNull() ?: return Response(Status.BAD_REQUEST)
+        return if (svc.deleteDefinition(AuthenticatedUser.from(req), id)) Response(Status.NO_CONTENT) else Response(Status.NOT_FOUND)
+    }
+
+    private fun getBookCustomFields(req: Request): Response {
+        val svc = customFieldService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val userId = AuthenticatedUser.from(req)
+        val bookId =
+            req.uri.path
+                .split("/")
+                .let { p ->
+                    val i = p.indexOf("books")
+                    if (i >= 0 && i + 1 < p.size) p[i + 1] else null
+                }?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() } ?: return Response(Status.BAD_REQUEST)
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(svc.getValues(userId, bookId)),
+            )
+    }
+
+    private fun setBookCustomField(req: Request): Response {
+        val svc = customFieldService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val userId = AuthenticatedUser.from(req)
+        val bookId =
+            req.uri.path
+                .split("/")
+                .let { p ->
+                    val i = p.indexOf("books")
+                    if (i >= 0 && i + 1 < p.size) p[i + 1] else null
+                }?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() } ?: return Response(Status.BAD_REQUEST)
+        val body =
+            runCatching {
+                org.booktower.config.Json.mapper
+                    .readTree(req.bodyString())
+            }.getOrNull() ?: return Response(Status.BAD_REQUEST)
+        val fieldName = body.get("fieldName")?.asText()?.takeIf { it.isNotBlank() } ?: return Response(Status.BAD_REQUEST)
+        val fieldValue = body.get("fieldValue")?.asText()
+        svc.setValue(userId, bookId, fieldName, fieldValue)
+        return Response(Status.NO_CONTENT)
+    }
+
+    private fun deleteBookCustomField(req: Request): Response {
+        val svc = customFieldService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val userId = AuthenticatedUser.from(req)
+        val parts = req.uri.path.split("/")
+        val bookId =
+            parts
+                .let { p ->
+                    val i = p.indexOf("books")
+                    if (i >= 0 && i + 1 < p.size) p[i + 1] else null
+                }?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() } ?: return Response(Status.BAD_REQUEST)
+        val fieldName = java.net.URLDecoder.decode(parts.lastOrNull() ?: return Response(Status.BAD_REQUEST), "UTF-8")
+        return if (svc.deleteValue(userId, bookId, fieldName)) Response(Status.NO_CONTENT) else Response(Status.NOT_FOUND)
+    }
+
+    // ─── Public profile ───────────────────────────────────────────────────
+
+    private fun getProfilePublicStatus(req: Request): Response {
+        val svc = publicProfileService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val userId = AuthenticatedUser.from(req)
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body("""{"public":${svc.isPublic(userId)}}""")
+    }
+
+    private fun setProfilePublic(req: Request): Response {
+        val svc = publicProfileService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val userId = AuthenticatedUser.from(req)
+        val body =
+            runCatching {
+                org.booktower.config.Json.mapper
+                    .readTree(req.bodyString())
+            }.getOrNull()
+                ?: return Response(Status.BAD_REQUEST)
+        val enabled = body.get("public")?.asBoolean() ?: return Response(Status.BAD_REQUEST)
+        svc.setPublic(userId, enabled)
+        return Response(Status.NO_CONTENT)
+    }
+
+    /** Public endpoint — no auth required. Returns 404 if user not found or profile not public. */
+    private fun getPublicProfile(req: Request): Response {
+        val svc = publicProfileService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val username =
+            req.uri.path
+                .split("/")
+                .lastOrNull()
+                ?.takeIf { it.isNotBlank() }
+                ?: return Response(Status.BAD_REQUEST)
+        val profile = svc.getProfile(username) ?: return Response(Status.NOT_FOUND)
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(profile),
+            )
+    }
+
+    // ─── Reading speed ────────────────────────────────────────────────────
+
+    private fun getReadingSpeed(req: Request): Response {
+        val svc = readingSpeedService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(svc.getStats(AuthenticatedUser.from(req))),
+            )
+    }
+
+    // ─── Reading streaks widget ───────────────────────────────────────────
+
+    private fun getStreaks(req: Request): Response {
+        val svc = readingStatsService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val stats = svc.getStats(AuthenticatedUser.from(req), 365)
+        val data = mapOf("currentStreak" to stats.currentStreak, "longestStreak" to stats.longestStreak, "averagePagesPerDay" to stats.averagePagesPerDay)
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(data),
+            )
+    }
+
+    // ─── Book condition tracker ───────────────────────────────────────────
+
+    private fun getBookCondition(req: Request): Response {
+        val svc = bookConditionService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val userId = AuthenticatedUser.from(req)
+        val bookId =
+            req.uri.path
+                .split("/")
+                .let { p ->
+                    val i = p.indexOf("books")
+                    if (i >= 0 && i + 1 < p.size) p[i + 1] else null
+                }?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() } ?: return Response(Status.BAD_REQUEST)
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(svc.get(userId, bookId)),
+            )
+    }
+
+    private fun updateBookCondition(req: Request): Response {
+        val svc = bookConditionService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val userId = AuthenticatedUser.from(req)
+        val bookId =
+            req.uri.path
+                .split("/")
+                .let { p ->
+                    val i = p.indexOf("books")
+                    if (i >= 0 && i + 1 < p.size) p[i + 1] else null
+                }?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() } ?: return Response(Status.BAD_REQUEST)
+        val body =
+            runCatching {
+                org.booktower.config.Json.mapper
+                    .readValue(req.bodyString(), org.booktower.services.UpdateBookConditionRequest::class.java)
+            }.getOrNull() ?: return Response(Status.BAD_REQUEST)
+        svc.update(userId, bookId, body)
+        return Response(Status.NO_CONTENT)
+    }
+
+    // ─── Reading lists ────────────────────────────────────────────────────
+
+    private fun listReadingLists(req: Request): Response {
+        val svc = readingListService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(svc.getLists(AuthenticatedUser.from(req))),
+            )
+    }
+
+    private fun createReadingList(req: Request): Response {
+        val svc = readingListService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val body =
+            runCatching {
+                org.booktower.config.Json.mapper
+                    .readValue(req.bodyString(), org.booktower.services.CreateReadingListRequest::class.java)
+            }.getOrNull() ?: return Response(Status.BAD_REQUEST)
+        if (body.name.isBlank()) return Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"name is required"}""")
+        val list = svc.create(AuthenticatedUser.from(req), body)
+        return Response(Status.CREATED)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(list),
+            )
+    }
+
+    private fun getReadingList(req: Request): Response {
+        val svc = readingListService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val id =
+            req.uri.path
+                .split("/")
+                .lastOrNull() ?: return Response(Status.BAD_REQUEST)
+        val detail = svc.getDetail(AuthenticatedUser.from(req), id) ?: return Response(Status.NOT_FOUND)
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(detail),
+            )
+    }
+
+    private fun deleteReadingList(req: Request): Response {
+        val svc = readingListService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val id =
+            req.uri.path
+                .split("/")
+                .lastOrNull() ?: return Response(Status.BAD_REQUEST)
+        return if (svc.delete(AuthenticatedUser.from(req), id)) Response(Status.NO_CONTENT) else Response(Status.NOT_FOUND)
+    }
+
+    private fun addBookToReadingList(req: Request): Response {
+        val svc = readingListService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val parts = req.uri.path.split("/")
+        val listIdx = parts.indexOf("reading-lists")
+        val listId = if (listIdx >= 0 && listIdx + 1 < parts.size) parts[listIdx + 1] else return Response(Status.BAD_REQUEST)
+        val bookId = parts.lastOrNull() ?: return Response(Status.BAD_REQUEST)
+        return if (svc.addBook(AuthenticatedUser.from(req), listId, bookId)) Response(Status.NO_CONTENT) else Response(Status.CONFLICT)
+    }
+
+    private fun removeBookFromReadingList(req: Request): Response {
+        val svc = readingListService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val parts = req.uri.path.split("/")
+        val listIdx = parts.indexOf("reading-lists")
+        val listId = if (listIdx >= 0 && listIdx + 1 < parts.size) parts[listIdx + 1] else return Response(Status.BAD_REQUEST)
+        val bookId = parts.lastOrNull() ?: return Response(Status.BAD_REQUEST)
+        return if (svc.removeBook(AuthenticatedUser.from(req), listId, bookId)) Response(Status.NO_CONTENT) else Response(Status.NOT_FOUND)
+    }
+
+    private fun toggleReadingListItem(req: Request): Response {
+        val svc = readingListService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val parts = req.uri.path.split("/")
+        val listIdx = parts.indexOf("reading-lists")
+        val listId = if (listIdx >= 0 && listIdx + 1 < parts.size) parts[listIdx + 1] else return Response(Status.BAD_REQUEST)
+        val booksIdx = parts.indexOf("books")
+        val bookId = if (booksIdx >= 0 && booksIdx + 1 < parts.size) parts[booksIdx + 1] else return Response(Status.BAD_REQUEST)
+        val body =
+            runCatching {
+                org.booktower.config.Json.mapper
+                    .readTree(req.bodyString())
+            }.getOrNull() ?: return Response(Status.BAD_REQUEST)
+        val completed = body.get("completed")?.asBoolean() ?: return Response(Status.BAD_REQUEST)
+        return if (svc.toggleCompleted(AuthenticatedUser.from(req), listId, bookId, completed)) Response(Status.NO_CONTENT) else Response(Status.NOT_FOUND)
+    }
+
+    private fun reorderReadingList(req: Request): Response {
+        val svc = readingListService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val parts = req.uri.path.split("/")
+        val listIdx = parts.indexOf("reading-lists")
+        val listId = if (listIdx >= 0 && listIdx + 1 < parts.size) parts[listIdx + 1] else return Response(Status.BAD_REQUEST)
+        val body =
+            runCatching {
+                org.booktower.config.Json.mapper
+                    .readTree(req.bodyString())
+            }.getOrNull() ?: return Response(Status.BAD_REQUEST)
+        val bookIds = body.get("bookIds")?.map { it.asText() } ?: return Response(Status.BAD_REQUEST)
+        return if (svc.reorder(AuthenticatedUser.from(req), listId, bookIds)) Response(Status.NO_CONTENT) else Response(Status.NOT_FOUND)
+    }
+
+    // ─── Shared annotations ──────────────────────────────────────────────
+
+    private fun shareAnnotation(req: Request): Response {
+        val svc = annotationService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val userId = AuthenticatedUser.from(req)
+        val annotationId =
+            req.uri.path
+                .split("/")
+                .let { p ->
+                    val i = p.indexOf("annotations")
+                    if (i >= 0 && i + 1 < p.size) p[i + 1] else null
+                }?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() } ?: return Response(Status.BAD_REQUEST)
+        val body =
+            runCatching {
+                org.booktower.config.Json.mapper
+                    .readTree(req.bodyString())
+            }.getOrNull() ?: return Response(Status.BAD_REQUEST)
+        val shared = body.get("shared")?.asBoolean() ?: return Response(Status.BAD_REQUEST)
+        val note = body.get("note")?.asText()
+        return if (svc.setShared(userId, annotationId, shared, note)) Response(Status.NO_CONTENT) else Response(Status.NOT_FOUND)
+    }
+
+    private fun getSharedAnnotations(req: Request): Response {
+        val svc = annotationService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val bookId =
+            req.uri.path
+                .split("/")
+                .let { p ->
+                    val i = p.indexOf("books")
+                    if (i >= 0 && i + 1 < p.size) p[i + 1] else null
+                }?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() } ?: return Response(Status.BAD_REQUEST)
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(svc.getSharedAnnotations(bookId)),
+            )
+    }
+
+    // ─── Wishlist ─────────────────────────────────────────────────────────
+
+    private fun listWishlist(req: Request): Response {
+        val svc = wishlistService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(svc.getItems(AuthenticatedUser.from(req))),
+            )
+    }
+
+    private fun addToWishlist(req: Request): Response {
+        val svc = wishlistService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val body =
+            runCatching {
+                org.booktower.config.Json.mapper
+                    .readValue(req.bodyString(), org.booktower.services.CreateWishlistItemRequest::class.java)
+            }.getOrNull() ?: return Response(Status.BAD_REQUEST)
+        if (body.title.isBlank()) return Response(Status.BAD_REQUEST).header("Content-Type", "application/json").body("""{"error":"title is required"}""")
+        val item = svc.addItem(AuthenticatedUser.from(req), body)
+        return Response(Status.CREATED)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(item),
+            )
+    }
+
+    private fun updateWishlistItem(req: Request): Response {
+        val svc = wishlistService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val id =
+            req.uri.path
+                .split("/")
+                .lastOrNull() ?: return Response(Status.BAD_REQUEST)
+        val body =
+            runCatching {
+                org.booktower.config.Json.mapper
+                    .readValue(req.bodyString(), org.booktower.services.CreateWishlistItemRequest::class.java)
+            }.getOrNull() ?: return Response(Status.BAD_REQUEST)
+        return if (svc.updateItem(AuthenticatedUser.from(req), id, body)) Response(Status.NO_CONTENT) else Response(Status.NOT_FOUND)
+    }
+
+    private fun deleteWishlistItem(req: Request): Response {
+        val svc = wishlistService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val id =
+            req.uri.path
+                .split("/")
+                .lastOrNull() ?: return Response(Status.BAD_REQUEST)
+        return if (svc.deleteItem(AuthenticatedUser.from(req), id)) Response(Status.NO_CONTENT) else Response(Status.NOT_FOUND)
+    }
+
+    // ─── Advanced search ──────────────────────────────────────────────────
+
+    private fun advancedSearch(req: Request): Response {
+        val svc = advancedSearchService ?: return Response(Status.SERVICE_UNAVAILABLE)
+        val userId = AuthenticatedUser.from(req)
+        val body =
+            runCatching {
+                org.booktower.config.Json.mapper
+                    .readValue(req.bodyString(), org.booktower.services.AdvancedSearchRequest::class.java)
+            }.getOrNull() ?: return Response(Status.BAD_REQUEST)
+        val result = svc.search(userId, body)
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper
+                    .writeValueAsString(result),
+            )
     }
 }

@@ -188,7 +188,7 @@ class WorkflowIntegrationTest : IntegrationTestBase() {
             app(
                 Request(Method.POST, "/auth/register")
                     .header("Content-Type", "application/json")
-                    .body("""{"username":"$username","email":"$username@test.com","password":"password123"}"""),
+                    .body("""{"username":"$username","email":"$username@test.com","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
             )
         val token = Json.mapper.readValue(regResp.bodyString(), LoginResponse::class.java).token
 
@@ -357,7 +357,7 @@ class WorkflowIntegrationTest : IntegrationTestBase() {
             Request(Method.POST, "/api/auth/change-password")
                 .header("Cookie", "token=$token")
                 .header("Content-Type", "application/json")
-                .body("""{"currentPassword":"password123","newPassword":"newpassword99"}"""),
+                .body("""{"currentPassword":"${org.booktower.TestPasswords.DEFAULT}","newPassword":"newpassword99"}"""),
         )
 
         // Existing JWT still authorises API calls (no token rotation)
@@ -459,7 +459,7 @@ class WorkflowIntegrationTest : IntegrationTestBase() {
             app(
                 Request(Method.POST, "/auth/register")
                     .header("Content-Type", "application/json")
-                    .body("""{"username":"$username","email":"$username@test.com","password":"password123"}"""),
+                    .body("""{"username":"$username","email":"$username@test.com","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
             )
         val token = Json.mapper.readValue(regResp.bodyString(), LoginResponse::class.java).token
 
@@ -480,7 +480,7 @@ class WorkflowIntegrationTest : IntegrationTestBase() {
             app(
                 Request(Method.POST, "/auth/login")
                     .header("Content-Type", "application/json")
-                    .body("""{"username":"$username","password":"password123"}"""),
+                    .body("""{"username":"$username","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
             )
         assertEquals(Status.OK, loginResp.status)
         val themeCookie = loginResp.cookies().find { it.name == "app_theme" }

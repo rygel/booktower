@@ -36,7 +36,7 @@ class OidcIntegrationTest : IntegrationTestBase() {
             forceOnlyApp(
                 Request(Method.POST, "/auth/login")
                     .header("Content-Type", "application/json")
-                    .body("""{"username":"someone","password":"password123"}"""),
+                    .body("""{"username":"someone","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
             )
         assertEquals(403, response.status.code)
         val body = response.bodyString()

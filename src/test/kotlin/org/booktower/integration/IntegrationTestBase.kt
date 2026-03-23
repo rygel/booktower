@@ -243,6 +243,26 @@ abstract class IntegrationTestBase {
                 null, // libraryWatchService
                 null, // bookLinkService
                 org.booktower.services.BookSharingService(jdbi, bookService),
+                backgroundTaskService,
+                org.booktower.services.LibraryStatsService(jdbi),
+                org.booktower.services.WebhookService(jdbi),
+                org.booktower.services.ReadingTimelineService(jdbi),
+                null, // discoveryService
+                org.booktower.services.ReadingListService(jdbi),
+                org.booktower.services.WishlistService(jdbi),
+                org.booktower.services.CollectionService(jdbi),
+                koboSyncService,
+                koreaderSyncService,
+                filterPresetService,
+                scheduledTaskService,
+                opdsCredentialsService,
+                contentRestrictionsService,
+                org.booktower.services.ReadingSpeedService(jdbi),
+                org.booktower.services.LibraryHealthService(jdbi),
+                hardcoverSyncService,
+                null, // bookDeliveryService
+                null, // bookDropService
+                metadataProposalService,
             )
         val backgroundTaskHandler = BackgroundTaskHandler(backgroundTaskService)
         val journalHandler = JournalHandler(journalService)
@@ -315,6 +335,15 @@ abstract class IntegrationTestBase {
                 apiTokenHandler,
                 exportHandler,
                 goodreadsImportHandler,
+                webhookService = org.booktower.services.WebhookService(jdbi),
+                annotationExportService = org.booktower.services.AnnotationExportService(jdbi),
+                customFieldService = org.booktower.services.CustomFieldService(jdbi),
+                publicProfileService = org.booktower.services.PublicProfileService(jdbi, userSettingsService),
+                bookConditionService = org.booktower.services.BookConditionService(org.booktower.services.CustomFieldService(jdbi)),
+                readingListService = org.booktower.services.ReadingListService(jdbi),
+                wishlistService = org.booktower.services.WishlistService(jdbi),
+                annotationService = annotationService,
+                collectionService = org.booktower.services.CollectionService(jdbi),
             )
         val adminApiRouter =
             AdminApiRouter(
@@ -326,8 +355,9 @@ abstract class IntegrationTestBase {
                 scheduledTaskService,
                 bulkCoverService,
                 telemetryService,
-                null,
-                null,
+                null, // bulkMetadataRefreshService
+                org.booktower.services.BackupService(jdbi), // backupService
+                null, // batchImportService
             )
         val metadataApiRouter =
             MetadataApiRouter(
@@ -380,11 +410,12 @@ abstract class IntegrationTestBase {
 
     protected fun registerAndGetToken(prefix: String = "test"): String {
         val username = "${prefix}_${System.nanoTime()}"
+        val pw = org.booktower.TestPasswords.DEFAULT
         val response =
             app(
                 Request(Method.POST, "/auth/register")
                     .header("Content-Type", "application/json")
-                    .body("""{"username":"$username","email":"$username@test.com","password":"password123"}"""),
+                    .body("""{"username":"$username","email":"$username@test.com","password":"$pw"}"""),
             )
         return Json.mapper.readValue(response.bodyString(), LoginResponse::class.java).token
     }
@@ -396,7 +427,7 @@ abstract class IntegrationTestBase {
     protected fun createTestUser(
         username: String = "testuser_${System.nanoTime()}",
         email: String = "$username@test.com",
-        password: String = "password123",
+        password: String = org.booktower.TestPasswords.DEFAULT,
     ): String {
         val jdbi = TestFixture.database.getJdbi()
         val jwtService = org.booktower.services.JwtService(TestFixture.config.security)

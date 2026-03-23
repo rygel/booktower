@@ -451,6 +451,9 @@ data class AnnotationDto(
     val selectedText: String,
     val color: String,
     val createdAt: String,
+    val shared: Boolean = false,
+    val note: String? = null,
+    val username: String? = null,
 )
 
 enum class ShelfRuleType { STATUS, TAG, RATING_GTE }

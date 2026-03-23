@@ -34,7 +34,7 @@ class BookmarkServiceTest {
 
         val result =
             authService.register(
-                CreateUserRequest("bookmark_${System.nanoTime()}", "bookmark_${System.nanoTime()}@test.com", "password123"),
+                CreateUserRequest("bookmark_${System.nanoTime()}", "bookmark_${System.nanoTime()}@test.com", org.booktower.TestPasswords.DEFAULT),
             )
         userId = jwtService.extractUserId(result.getOrThrow().token)!!
         val libId = libraryService.createLibrary(userId, CreateLibraryRequest("BM Lib", "./data/bm-${System.nanoTime()}")).id
@@ -114,7 +114,7 @@ class BookmarkServiceTest {
     fun `createBookmark fails for another user's book`() {
         val otherResult =
             authService.register(
-                CreateUserRequest("bmother_${System.nanoTime()}", "bmother_${System.nanoTime()}@test.com", "password123"),
+                CreateUserRequest("bmother_${System.nanoTime()}", "bmother_${System.nanoTime()}@test.com", org.booktower.TestPasswords.DEFAULT),
             )
         val otherId = jwtService.extractUserId(otherResult.getOrThrow().token)!!
         val result =

@@ -1,0 +1,80 @@
+@import org.booktower.services.TimelineEntry
+@import org.booktower.web.PageContext
+@param pc: PageContext
+@param entries: List<TimelineEntry>
+@param days: Int
+
+@template.components.layout(title="${pc.i18n.translate("page.timeline.title")} - BookTower", pc=pc, currentPage="timeline",
+    searchQuery="", content = @`
+<div class="page-container">
+    <h1 class="page-title"><i class="ri-time-line"></i> ${pc.i18n.translate("page.timeline.title")}</h1>
+    <p class="text-sm text-subtle" style="margin-bottom:1.5rem;">${pc.i18n.translate("page.timeline.subtitle", days)}</p>
+
+    @if(entries.isEmpty())
+        @template.components.emptyState(icon = "ri-time-line", message = pc.i18n.translate("page.timeline.empty"), action = @``)
+    @else
+        <div class="timeline">
+            @for(entry in entries)
+                <div class="timeline-item">
+                    <div class="timeline-icon">
+                        @if(entry.eventType == "finished")
+                            <i class="ri-check-double-line" style="color:#34d399;"></i>
+                        @elseif(entry.eventType == "reading")
+                            <i class="ri-book-open-line" style="color:#60a5fa;"></i>
+                        @else
+                            <i class="ri-add-line" style="color:#fbbf24;"></i>
+                        @endif
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-header">
+                            <span class="timeline-event">
+                                @if(entry.eventType == "finished")
+                                    ${pc.i18n.translate("page.timeline.event.finished")}
+                                @elseif(entry.eventType == "reading")
+                                    ${pc.i18n.translate("page.timeline.event.reading")}
+                                    @if(entry.detail != null)
+                                        <span class="text-subtle">(${entry.detail} ${pc.i18n.translate("page.timeline.pages")})</span>
+                                    @endif
+                                @else
+                                    ${pc.i18n.translate("page.timeline.event.added")}
+                                @endif
+                            </span>
+                            <span class="timeline-date">${entry.date.take(10)}</span>
+                        </div>
+                        <a href="/books/${entry.bookId}" class="timeline-book">
+                            @if(entry.coverUrl != null)
+                                <img src="${entry.coverUrl}" alt="" class="timeline-cover">
+                            @else
+                                <div class="timeline-cover-ph"><i class="ri-book-line"></i></div>
+                            @endif
+                            <div>
+                                <div class="timeline-book-title">${entry.bookTitle}</div>
+                                @if(entry.bookAuthor != null)
+                                    <div class="timeline-book-author">${entry.bookAuthor}</div>
+                                @endif
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            @endfor
+        </div>
+    @endif
+</div>
+
+<style>
+    .timeline { position: relative; padding-left: 2rem; }
+    .timeline::before { content: ''; position: absolute; left: 0.9rem; top: 0; bottom: 0; width: 2px; background: var(--bt-border); }
+    .timeline-item { position: relative; margin-bottom: 1.25rem; }
+    .timeline-icon { position: absolute; left: -2rem; top: 0.1rem; width: 1.5rem; height: 1.5rem; display: flex; align-items: center; justify-content: center; background: var(--bt-bg); border-radius: 50%; border: 2px solid var(--bt-border); z-index: 1; font-size: 0.75rem; }
+    .timeline-content { padding: 0.75rem 1rem; background: var(--bt-surface); border: 1px solid var(--bt-border); border-radius: 0.5rem; }
+    .timeline-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+    .timeline-event { font-size: 0.8rem; font-weight: 600; color: var(--bt-text); }
+    .timeline-date { font-size: 0.7rem; color: var(--bt-muted); }
+    .timeline-book { display: flex; align-items: center; gap: 0.75rem; text-decoration: none; color: inherit; }
+    .timeline-book:hover { opacity: 0.8; }
+    .timeline-cover { width: 2.5rem; height: 3.5rem; object-fit: cover; border-radius: 0.25rem; flex-shrink: 0; }
+    .timeline-cover-ph { width: 2.5rem; height: 3.5rem; background: var(--bt-surface-raised); border-radius: 0.25rem; display: flex; align-items: center; justify-content: center; color: var(--bt-muted); flex-shrink: 0; }
+    .timeline-book-title { font-size: 0.85rem; font-weight: 600; color: var(--bt-text); }
+    .timeline-book-author { font-size: 0.75rem; color: var(--bt-muted); }
+</style>
+`)

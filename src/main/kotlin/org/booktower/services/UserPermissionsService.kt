@@ -77,7 +77,7 @@ class UserPermissionsService(
                 h
                     .createQuery("SELECT COUNT(*) FROM user_permissions WHERE user_id = ?")
                     .bind(0, userId.toString())
-                    .mapTo(Int::class.java)
+                    .mapTo(Int::class.javaObjectType)
                     .firstOrNull()!! > 0
             }
         if (existing) {
