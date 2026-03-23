@@ -308,26 +308,15 @@ class FtsHttpE2ETest {
                     null, // bookLinkService
                     null, // bookSharingService
                     backgroundTaskService,
-                    null, // libraryStatsService
-                    null, // webhookService
-                    null, // readingTimelineService
-                    null, // discoveryService
-                    null, // readingListService
-                    null, // wishlistService
-                    null, // collectionService
-                    null, // koboSyncService
-                    null, // koreaderSyncService
-                    null, // filterPresetService
-                    null, // scheduledTaskService
-                    null, // opdsCredentialsService
-                    null, // contentRestrictionsService
-                    null, // readingSpeedService
-                    null, // libraryHealthService
-                    null, // hardcoverSyncService
-                    null, // bookDeliveryService
-                    null, // bookDropService
-                    null, // metadataProposalService
                 )
+            val browsePageHandler =
+                org.booktower.handlers.BrowsePageHandler(jwtService, authService, bookService, magicShelfService, templateRenderer)
+            val statsPageHandler =
+                org.booktower.handlers.StatsPageHandler(jwtService, authService, analyticsService, templateRenderer, readingSessionService)
+            val settingsPageHandler =
+                org.booktower.handlers.SettingsPageHandler(jwtService, authService, templateRenderer)
+            val discoveryPageHandler =
+                org.booktower.handlers.DiscoveryPageHandler(jwtService, authService, libraryService, bookService, templateRenderer)
             val backgroundTaskHandler =
                 org.booktower.handlers.BackgroundTaskHandler(backgroundTaskService, seedService)
             val journalHandler = org.booktower.handlers.JournalHandler(journalService)
@@ -362,7 +351,7 @@ class FtsHttpE2ETest {
             val authRouter = org.booktower.routers.AuthRouter(authHandler, filters)
             val oidcRouter = org.booktower.routers.OidcRouter(null)
             val pageRouter =
-                org.booktower.routers.PageRouter(filters, pageHandler, adminHandler, jwtService, templateRenderer, true)
+                org.booktower.routers.PageRouter(filters, pageHandler, adminHandler, jwtService, templateRenderer, true, null, browsePageHandler, statsPageHandler, settingsPageHandler, discoveryPageHandler)
             val bookApiRouter =
                 org.booktower.routers.BookApiRouter(
                     filters,

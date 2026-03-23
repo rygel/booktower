@@ -22,7 +22,11 @@ import org.booktower.handlers.KoboSyncHandler
 import org.booktower.handlers.LibraryHandler2
 import org.booktower.handlers.OidcHandler
 import org.booktower.handlers.OpdsHandler
+import org.booktower.handlers.BrowsePageHandler
+import org.booktower.handlers.DiscoveryPageHandler
 import org.booktower.handlers.PageHandler
+import org.booktower.handlers.SettingsPageHandler
+import org.booktower.handlers.StatsPageHandler
 import org.booktower.handlers.ReaderPreferencesHandler
 import org.booktower.handlers.UserSettingsHandler
 import org.booktower.routers.AdminApiRouter
@@ -277,27 +281,61 @@ val appModule =
                 get(),
                 get(),
                 get(),
-                get(),
+                getOrNull(),
                 getOrNull(),
                 getOrNull(),
                 get<BackgroundTaskService>(),
+            )
+        }
+        single {
+            BrowsePageHandler(
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+            )
+        }
+        single {
+            StatsPageHandler(
+                get(),
+                get(),
+                get(),
+                get(),
+                getOrNull(),
                 getOrNull<org.booktower.services.LibraryStatsService>(),
-                getOrNull<org.booktower.services.WebhookService>(),
                 getOrNull<org.booktower.services.ReadingTimelineService>(),
-                getOrNull<org.booktower.services.DiscoveryService>(),
-                getOrNull<org.booktower.services.ReadingListService>(),
-                getOrNull<org.booktower.services.WishlistService>(),
-                getOrNull<org.booktower.services.CollectionService>(),
+                getOrNull<org.booktower.services.ReadingSpeedService>(),
+                getOrNull<org.booktower.services.LibraryHealthService>(),
+            )
+        }
+        single {
+            SettingsPageHandler(
+                get(),
+                get(),
+                get(),
                 getOrNull<org.booktower.services.KoboSyncService>(),
                 getOrNull<org.booktower.services.KOReaderSyncService>(),
                 getOrNull<org.booktower.services.FilterPresetService>(),
                 getOrNull<org.booktower.services.ScheduledTaskService>(),
                 getOrNull<org.booktower.services.OpdsCredentialsService>(),
                 getOrNull<org.booktower.services.ContentRestrictionsService>(),
-                getOrNull<org.booktower.services.ReadingSpeedService>(),
-                getOrNull<org.booktower.services.LibraryHealthService>(),
                 getOrNull<org.booktower.services.HardcoverSyncService>(),
                 getOrNull<org.booktower.services.BookDeliveryService>(),
+            )
+        }
+        single {
+            DiscoveryPageHandler(
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                getOrNull<org.booktower.services.DiscoveryService>(),
+                getOrNull<org.booktower.services.ReadingListService>(),
+                getOrNull<org.booktower.services.WishlistService>(),
+                getOrNull<org.booktower.services.CollectionService>(),
+                getOrNull<org.booktower.services.WebhookService>(),
                 getOrNull<org.booktower.services.BookDropService>(),
                 getOrNull<org.booktower.services.MetadataProposalService>(),
             )
@@ -351,6 +389,10 @@ val appModule =
                 get<TemplateRenderer>(),
                 get<AppConfig>().registrationOpen,
                 get<UserSettingsService>(),
+                get<BrowsePageHandler>(),
+                get<StatsPageHandler>(),
+                get<SettingsPageHandler>(),
+                get<DiscoveryPageHandler>(),
             )
         }
         single {

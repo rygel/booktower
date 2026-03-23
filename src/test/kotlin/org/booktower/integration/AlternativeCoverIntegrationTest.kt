@@ -21,7 +21,11 @@ import org.booktower.handlers.FileHandler
 import org.booktower.handlers.GoodreadsImportHandler
 import org.booktower.handlers.LibraryHandler2
 import org.booktower.handlers.OpdsHandler
+import org.booktower.handlers.BrowsePageHandler
+import org.booktower.handlers.DiscoveryPageHandler
 import org.booktower.handlers.PageHandler
+import org.booktower.handlers.SettingsPageHandler
+import org.booktower.handlers.StatsPageHandler
 import org.booktower.handlers.UserSettingsHandler
 import org.booktower.models.LoginResponse
 import org.booktower.routers.AdminApiRouter
@@ -165,7 +169,15 @@ class AlternativeCoverIntegrationTest {
                 null,
             )
         val pageHandler =
-            PageHandler(jwtService, authService, libraryService, bookService, bookmarkService, userSettingsService, analyticsService, annotationService, MetadataFetchService(), magicShelfService, TestFixture.templateRenderer, readingSessionService, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null)
+            PageHandler(jwtService, authService, libraryService, bookService, bookmarkService, userSettingsService, analyticsService, annotationService, MetadataFetchService(), magicShelfService, TestFixture.templateRenderer, readingSessionService)
+        val browsePageHandler =
+            BrowsePageHandler(jwtService, authService, bookService, magicShelfService, TestFixture.templateRenderer)
+        val statsPageHandler =
+            StatsPageHandler(jwtService, authService, analyticsService, TestFixture.templateRenderer, readingSessionService)
+        val settingsPageHandler =
+            SettingsPageHandler(jwtService, authService, TestFixture.templateRenderer)
+        val discoveryPageHandler =
+            DiscoveryPageHandler(jwtService, authService, libraryService, bookService, TestFixture.templateRenderer)
         val opdsHandler = OpdsHandler(authService, libraryService, bookService, storage, apiTokenService, null)
         val apiTokenHandler = ApiTokenHandler(apiTokenService, jwtService)
         val exportHandler = ExportHandler(exportService, jwtService)
@@ -188,7 +200,7 @@ class AlternativeCoverIntegrationTest {
         // Routers — inject stubCoverService into BookApiRouter
         val authRouter = AuthRouter(authHandler, filters)
         val oidcRouter = OidcRouter(null)
-        val pageRouter = PageRouter(filters, pageHandler, adminHandler, jwtService, TestFixture.templateRenderer, true)
+        val pageRouter = PageRouter(filters, pageHandler, adminHandler, jwtService, TestFixture.templateRenderer, true, null, browsePageHandler, statsPageHandler, settingsPageHandler, discoveryPageHandler)
         val bookApiRouter =
             BookApiRouter(
                 filters,
