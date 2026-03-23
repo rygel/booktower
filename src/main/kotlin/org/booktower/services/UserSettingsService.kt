@@ -14,6 +14,19 @@ class UserSettingsService(
         private const val MAX_KEY_LENGTH = 50
     }
 
+    /** Cache for individual settings: (userId:key) → value. TTL 5 minutes. */
+    private val settingsCache =
+        com.github.benmanes.caffeine.cache.Caffeine
+            .newBuilder()
+            .maximumSize(5_000)
+            .expireAfterWrite(5, java.util.concurrent.TimeUnit.MINUTES)
+            .build<String, String?>()
+
+    private fun cacheKey(
+        userId: UUID,
+        key: String,
+    ) = "$userId:$key"
+
     fun getAll(userId: UUID): Map<String, String?> =
         jdbi.withHandle<Map<String, String?>, Exception> { handle ->
             handle
@@ -28,15 +41,23 @@ class UserSettingsService(
     fun get(
         userId: UUID,
         key: String,
-    ): String? =
-        jdbi.withHandle<String?, Exception> { handle ->
-            handle
-                .createQuery("SELECT setting_value FROM user_settings WHERE user_id = ? AND setting_key = ?")
-                .bind(0, userId.toString())
-                .bind(1, key)
-                .mapTo(String::class.java)
-                .firstOrNull()
-        }
+    ): String? {
+        val ck = cacheKey(userId, key)
+        val cached = settingsCache.getIfPresent(ck)
+        if (cached != null) return cached
+
+        val value =
+            jdbi.withHandle<String?, Exception> { handle ->
+                handle
+                    .createQuery("SELECT setting_value FROM user_settings WHERE user_id = ? AND setting_key = ?")
+                    .bind(0, userId.toString())
+                    .bind(1, key)
+                    .mapTo(String::class.java)
+                    .firstOrNull()
+            }
+        if (value != null) settingsCache.put(ck, value)
+        return value
+    }
 
     fun set(
         userId: UUID,
@@ -74,6 +95,7 @@ class UserSettingsService(
             }
         }
 
+        settingsCache.invalidate(cacheKey(userId, key))
         logger.info("Setting '$key' updated for user $userId")
         return true
     }
@@ -90,7 +112,10 @@ class UserSettingsService(
                     .bind(1, key)
                     .execute()
             }
-        if (deleted > 0) logger.info("Setting '$key' deleted for user $userId")
+        if (deleted > 0) {
+            settingsCache.invalidate(cacheKey(userId, key))
+            logger.info("Setting '$key' deleted for user $userId")
+        }
         return deleted > 0
     }
 
