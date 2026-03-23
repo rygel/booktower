@@ -1,0 +1,49 @@
+# BookTower — systemd Service Unit
+# Install to: /etc/systemd/system/booktower.service
+#
+# Setup:
+#   sudo useradd -r -s /bin/false booktower
+#   sudo mkdir -p /opt/booktower /var/lib/booktower/{books,covers,db}
+#   sudo chown -R booktower:booktower /opt/booktower /var/lib/booktower
+#   sudo cp booktower-v0.7.1.jar /opt/booktower/booktower.jar
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now booktower
+
+[Unit]
+Description=BookTower — Personal Book Manager
+After=network.target
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=booktower
+Group=booktower
+WorkingDirectory=/opt/booktower
+
+ExecStart=/usr/bin/java -Xms128m -Xmx512m -jar /opt/booktower/booktower.jar
+
+Environment=BOOKTOWER_ENV=production
+Environment=BOOKTOWER_PORT=8080
+Environment=BOOKTOWER_JWT_SECRET=change-me-generate-with-openssl-rand-base64-32
+Environment=BOOKTOWER_BOOKS_PATH=/var/lib/booktower/books
+Environment=BOOKTOWER_COVERS_PATH=/var/lib/booktower/covers
+
+# Uncomment for PostgreSQL:
+# Environment=BOOKTOWER_DB_URL=jdbc:postgresql://localhost:5432/booktower
+# Environment=BOOKTOWER_DB_USERNAME=booktower
+# Environment=BOOKTOWER_DB_PASSWORD=change-me
+# Environment=BOOKTOWER_DB_DRIVER=org.postgresql.Driver
+# Environment=BOOKTOWER_FTS_ENABLED=true
+
+Restart=on-failure
+RestartSec=10
+SuccessExitStatus=143
+
+# Security hardening
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/var/lib/booktower
+
+[Install]
+WantedBy=multi-user.target

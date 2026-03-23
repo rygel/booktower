@@ -1,0 +1,84 @@
+# BookTower — Full Production Setup
+# PostgreSQL + FTS + OIDC/SSO + SMTP + Reverse Proxy Ready
+#
+# Setup:
+#   1. Copy this file and .env.example to your server
+#   2. Edit .env with your passwords and domain
+#   3. docker compose -f docker-compose.full.yml --env-file .env up -d
+
+services:
+  booktower:
+    image: ghcr.io/rygel/booktower:latest
+    container_name: booktower
+    restart: unless-stopped
+    ports:
+      - "9999:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - booktower_books:/data/books
+      - booktower_covers:/data/covers
+      # Mount your local book collection (read-only):
+      # - /path/to/your/books:/mnt/library:ro
+    environment:
+      BOOKTOWER_ENV: production
+      BOOKTOWER_JWT_SECRET: "${BOOKTOWER_JWT_SECRET}"
+      BOOKTOWER_BASE_URL: "${BOOKTOWER_BASE_URL}"
+      BOOKTOWER_CSRF_ALLOWED_HOSTS: "${BOOKTOWER_DOMAIN}"
+      # PostgreSQL
+      BOOKTOWER_DB_URL: "jdbc:postgresql://postgres:5432/booktower"
+      BOOKTOWER_DB_USERNAME: "booktower"
+      BOOKTOWER_DB_PASSWORD: "${DB_PASSWORD}"
+      BOOKTOWER_DB_DRIVER: "org.postgresql.Driver"
+      # Full-text search
+      BOOKTOWER_FTS_ENABLED: "true"
+      # Registration
+      BOOKTOWER_REGISTRATION_OPEN: "${REGISTRATION_OPEN:-true}"
+      # Auto-scan interval (minutes, 0 to disable)
+      BOOKTOWER_AUTO_SCAN_MINUTES: "60"
+      # SMTP (optional — for password reset, book delivery)
+      BOOKTOWER_SMTP_HOST: "${SMTP_HOST:-}"
+      BOOKTOWER_SMTP_PORT: "${SMTP_PORT:-587}"
+      BOOKTOWER_SMTP_USER: "${SMTP_USER:-}"
+      BOOKTOWER_SMTP_PASS: "${SMTP_PASS:-}"
+      BOOKTOWER_SMTP_FROM: "${SMTP_FROM:-}"
+      BOOKTOWER_SMTP_TLS: "true"
+      # OIDC / SSO (optional)
+      OIDC_ISSUER: "${OIDC_ISSUER:-}"
+      OIDC_CLIENT_ID: "${OIDC_CLIENT_ID:-}"
+      OIDC_CLIENT_SECRET: "${OIDC_CLIENT_SECRET:-}"
+      OIDC_REDIRECT_URI: "${BOOKTOWER_BASE_URL}/auth/oidc/callback"
+      OIDC_SCOPE: "openid email profile"
+      OIDC_FORCE_ONLY: "${OIDC_FORCE_ONLY:-false}"
+      OIDC_ADMIN_GROUP_PATTERN: "${OIDC_ADMIN_GROUP_PATTERN:-}"
+      # Metadata provider API keys (optional)
+      BOOKTOWER_HARDCOVER_API_KEY: "${HARDCOVER_API_KEY:-}"
+      BOOKTOWER_COMICVINE_API_KEY: "${COMICVINE_API_KEY:-}"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: booktower-postgres
+    restart: unless-stopped
+    volumes:
+      - booktower_pgdata:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: booktower
+      POSTGRES_USER: booktower
+      POSTGRES_PASSWORD: "${DB_PASSWORD}"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U booktower"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  booktower_books:
+  booktower_covers:
+  booktower_pgdata:

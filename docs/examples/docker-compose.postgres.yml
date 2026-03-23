@@ -1,0 +1,62 @@
+# BookTower — Production Docker Compose with PostgreSQL + Full-Text Search
+# Setup:
+#   1. Edit the passwords below
+#   2. docker compose -f docker-compose.postgres.yml up -d
+#   3. Access at: http://localhost:9999
+
+services:
+  booktower:
+    image: ghcr.io/rygel/booktower:latest
+    container_name: booktower
+    restart: unless-stopped
+    ports:
+      - "9999:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - booktower_books:/data/books
+      - booktower_covers:/data/covers
+      # Mount your local book collection (read-only):
+      # - /path/to/your/books:/mnt/library:ro
+    environment:
+      BOOKTOWER_ENV: production
+      # REQUIRED — generate with: openssl rand -base64 32
+      BOOKTOWER_JWT_SECRET: "change-me-generate-with-openssl-rand-base64-32"
+      # PostgreSQL connection
+      BOOKTOWER_DB_URL: "jdbc:postgresql://postgres:5432/booktower"
+      BOOKTOWER_DB_USERNAME: "booktower"
+      BOOKTOWER_DB_PASSWORD: "change-me-to-a-strong-password"
+      BOOKTOWER_DB_DRIVER: "org.postgresql.Driver"
+      # Full-text search (requires PostgreSQL)
+      BOOKTOWER_FTS_ENABLED: "true"
+      # Public URL (for OPDS links, Kobo sync, email links)
+      # BOOKTOWER_BASE_URL: "https://books.example.com"
+      # BOOKTOWER_CSRF_ALLOWED_HOSTS: "books.example.com"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: booktower-postgres
+    restart: unless-stopped
+    volumes:
+      - booktower_pgdata:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: booktower
+      POSTGRES_USER: booktower
+      POSTGRES_PASSWORD: "change-me-to-a-strong-password"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U booktower"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  booktower_books:
+  booktower_covers:
+  booktower_pgdata:

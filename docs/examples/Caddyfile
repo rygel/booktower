@@ -1,0 +1,7 @@
+# BookTower — Caddy Reverse Proxy
+# Caddy automatically provisions HTTPS via Let's Encrypt.
+# Replace books.example.com with your domain.
+
+books.example.com {
+    reverse_proxy localhost:9999
+}
