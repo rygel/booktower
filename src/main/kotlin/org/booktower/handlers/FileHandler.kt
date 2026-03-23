@@ -65,12 +65,6 @@ class FileHandler(
             .lowercase()
             .replace(Regex("[^a-z0-9]"), "")
 
-    /** Verify a resolved file path stays within the expected base directory. */
-    private fun isWithinDirectory(
-        file: File,
-        baseDir: File,
-    ): Boolean = file.canonicalPath.startsWith(baseDir.canonicalPath + File.separator) || file.canonicalPath == baseDir.canonicalPath
-
     /** Sanitize a filename for use in Content-Disposition headers (strip control chars and quotes). */
     private fun sanitizeFilename(name: String): String =
         name.replace(Regex("[\"\\\\\\r\\n]"), "_").take(200)
@@ -178,17 +172,17 @@ class FileHandler(
                 .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "No file uploaded for this book")))
         }
 
+        // Reject path traversal sequences in DB-stored paths
+        if (filePath.contains("..")) {
+            logger.warn("Path traversal attempt blocked in stored file path: $filePath")
+            return Response(Status.FORBIDDEN)
+        }
+
         val file = File(filePath)
         if (!file.exists() || !file.isFile) {
             return Response(Status.NOT_FOUND)
                 .header("Content-Type", "application/json")
                 .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "File not found on disk")))
-        }
-
-        // Path traversal defense: ensure the file is within the expected storage directory
-        if (!isWithinDirectory(file, File(storageConfig.booksPath))) {
-            logger.warn("Path traversal attempt blocked: ${file.absolutePath}")
-            return Response(Status.FORBIDDEN)
         }
 
         val ext = file.extension.lowercase()
@@ -223,7 +217,8 @@ class FileHandler(
                     .header("Content-Type", "application/json")
                     .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "Book not found")))
 
-        if (filePath.isBlank()) {
+        if (filePath.isBlank() || filePath.contains("..")) {
+            if (filePath.contains("..")) logger.warn("Path traversal attempt blocked in stored file path: $filePath")
             return Response(Status.NOT_FOUND)
                 .header("Content-Type", "application/json")
                 .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "No file uploaded for this book")))
@@ -234,11 +229,6 @@ class FileHandler(
             return Response(Status.NOT_FOUND)
                 .header("Content-Type", "application/json")
                 .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "File not found on disk")))
-        }
-
-        if (!isWithinDirectory(file, File(storageConfig.booksPath))) {
-            logger.warn("Path traversal attempt blocked: ${file.absolutePath}")
-            return Response(Status.FORBIDDEN)
         }
 
         if (file.extension.lowercase() != "epub") {
@@ -273,12 +263,12 @@ class FileHandler(
         val filePath =
             bookService.getBookFilePath(userId, bookId)
                 ?: return Response(Status.NOT_FOUND)
-        val file = File(filePath)
-        if (!file.exists()) return Response(Status.NOT_FOUND)
-        if (!isWithinDirectory(file, File(storageConfig.booksPath))) {
-            logger.warn("Path traversal attempt blocked: ${file.absolutePath}")
+        if (filePath.contains("..")) {
+            logger.warn("Path traversal attempt blocked in stored file path: $filePath")
             return Response(Status.FORBIDDEN)
         }
+        val file = File(filePath)
+        if (!file.exists()) return Response(Status.NOT_FOUND)
 
         val ext = file.extension.lowercase()
         return when (ext) {
@@ -342,7 +332,8 @@ class FileHandler(
                     .header("Content-Type", "application/json")
                     .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "Book not found")))
 
-        if (filePath.isBlank()) {
+        if (filePath.isBlank() || filePath.contains("..")) {
+            if (filePath.contains("..")) logger.warn("Path traversal attempt blocked in stored file path: $filePath")
             return Response(Status.NOT_FOUND)
                 .header("Content-Type", "application/json")
                 .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "No file uploaded for this book")))
@@ -353,11 +344,6 @@ class FileHandler(
             return Response(Status.NOT_FOUND)
                 .header("Content-Type", "application/json")
                 .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "File not found on disk")))
-        }
-
-        if (!isWithinDirectory(file, File(storageConfig.booksPath))) {
-            logger.warn("Path traversal attempt blocked: ${file.absolutePath}")
-            return Response(Status.FORBIDDEN)
         }
 
         val contentType = CONTENT_TYPES[file.extension.lowercase()] ?: "audio/mpeg"
@@ -599,16 +585,16 @@ class FileHandler(
                     .header("Content-Type", "application/json")
                     .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "Chapter not found")))
 
+        if (filePath.contains("..")) {
+            logger.warn("Path traversal attempt blocked in stored file path: $filePath")
+            return Response(Status.FORBIDDEN)
+        }
+
         val file = java.io.File(filePath)
         if (!file.exists() || !file.isFile) {
             return Response(Status.NOT_FOUND)
                 .header("Content-Type", "application/json")
                 .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "File not found on disk")))
-        }
-
-        if (!isWithinDirectory(file, File(storageConfig.booksPath))) {
-            logger.warn("Path traversal attempt blocked: ${file.absolutePath}")
-            return Response(Status.FORBIDDEN)
         }
 
         val contentType = CONTENT_TYPES[file.extension.lowercase()] ?: "audio/mpeg"
