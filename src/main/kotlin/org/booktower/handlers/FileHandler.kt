@@ -65,6 +65,16 @@ class FileHandler(
             .lowercase()
             .replace(Regex("[^a-z0-9]"), "")
 
+    /** Verify a resolved file path stays within the expected base directory. */
+    private fun isWithinDirectory(
+        file: File,
+        baseDir: File,
+    ): Boolean = file.canonicalPath.startsWith(baseDir.canonicalPath + File.separator) || file.canonicalPath == baseDir.canonicalPath
+
+    /** Sanitize a filename for use in Content-Disposition headers (strip control chars and quotes). */
+    private fun sanitizeFilename(name: String): String =
+        name.replace(Regex("[\"\\\\\\r\\n]"), "_").take(200)
+
     fun upload(req: Request): Response {
         val userId = AuthenticatedUser.from(req)
         val bookId =
@@ -175,12 +185,18 @@ class FileHandler(
                 .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "File not found on disk")))
         }
 
+        // Path traversal defense: ensure the file is within the expected storage directory
+        if (!isWithinDirectory(file, File(storageConfig.booksPath))) {
+            logger.warn("Path traversal attempt blocked: ${file.absolutePath}")
+            return Response(Status.FORBIDDEN)
+        }
+
         val ext = file.extension.lowercase()
         val contentType = CONTENT_TYPES[ext] ?: "application/octet-stream"
 
         return Response(Status.OK)
             .header("Content-Type", contentType)
-            .header("Content-Disposition", "attachment; filename=\"${file.name}\"")
+            .header("Content-Disposition", "attachment; filename=\"${sanitizeFilename(file.name)}\"")
             .header("Content-Length", file.length().toString())
             .body(file.inputStream())
     }
@@ -220,13 +236,18 @@ class FileHandler(
                 .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "File not found on disk")))
         }
 
+        if (!isWithinDirectory(file, File(storageConfig.booksPath))) {
+            logger.warn("Path traversal attempt blocked: ${file.absolutePath}")
+            return Response(Status.FORBIDDEN)
+        }
+
         if (file.extension.lowercase() != "epub") {
             return Response(Status.UNPROCESSABLE_ENTITY)
                 .header("Content-Type", "application/json")
                 .body(Json.mapper.writeValueAsString(ErrorResponse("UNSUPPORTED", "KEPUB conversion is only available for EPUB files")))
         }
 
-        val kepubFilename = file.nameWithoutExtension + ".kepub.epub"
+        val kepubFilename = sanitizeFilename(file.nameWithoutExtension + ".kepub.epub")
         return Response(Status.OK)
             .header("Content-Type", "application/x-kobo-epub+zip")
             .header("Content-Disposition", "attachment; filename=\"$kepubFilename\"")
@@ -254,6 +275,10 @@ class FileHandler(
                 ?: return Response(Status.NOT_FOUND)
         val file = File(filePath)
         if (!file.exists()) return Response(Status.NOT_FOUND)
+        if (!isWithinDirectory(file, File(storageConfig.booksPath))) {
+            logger.warn("Path traversal attempt blocked: ${file.absolutePath}")
+            return Response(Status.FORBIDDEN)
+        }
 
         val ext = file.extension.lowercase()
         return when (ext) {
@@ -328,6 +353,11 @@ class FileHandler(
             return Response(Status.NOT_FOUND)
                 .header("Content-Type", "application/json")
                 .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "File not found on disk")))
+        }
+
+        if (!isWithinDirectory(file, File(storageConfig.booksPath))) {
+            logger.warn("Path traversal attempt blocked: ${file.absolutePath}")
+            return Response(Status.FORBIDDEN)
         }
 
         val contentType = CONTENT_TYPES[file.extension.lowercase()] ?: "audio/mpeg"
@@ -574,6 +604,11 @@ class FileHandler(
             return Response(Status.NOT_FOUND)
                 .header("Content-Type", "application/json")
                 .body(Json.mapper.writeValueAsString(ErrorResponse("NOT_FOUND", "File not found on disk")))
+        }
+
+        if (!isWithinDirectory(file, File(storageConfig.booksPath))) {
+            logger.warn("Path traversal attempt blocked: ${file.absolutePath}")
+            return Response(Status.FORBIDDEN)
         }
 
         val contentType = CONTENT_TYPES[file.extension.lowercase()] ?: "audio/mpeg"
