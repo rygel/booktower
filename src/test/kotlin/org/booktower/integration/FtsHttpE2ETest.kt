@@ -313,6 +313,7 @@ class FtsHttpE2ETest {
                     null, // readingTimelineService
                     null, // discoveryService
                     null, // readingListService
+                    null, // wishlistService
                 )
             val backgroundTaskHandler =
                 org.booktower.handlers.BackgroundTaskHandler(backgroundTaskService, seedService)

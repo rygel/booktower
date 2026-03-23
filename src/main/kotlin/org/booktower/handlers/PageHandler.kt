@@ -56,6 +56,7 @@ class PageHandler(
     private val readingTimelineService: org.booktower.services.ReadingTimelineService? = null,
     private val discoveryService: org.booktower.services.DiscoveryService? = null,
     private val readingListService: org.booktower.services.ReadingListService? = null,
+    private val wishlistService: org.booktower.services.WishlistService? = null,
 ) {
     /** Build a PageContext for any authenticated request. */
     private fun pageContext(req: Request): org.booktower.web.PageContext =
@@ -579,6 +580,18 @@ class PageHandler(
             templateRenderer.render(
                 "readinglists.kte",
                 pc.toMap("lists" to lists),
+            ),
+        )
+    }
+
+    fun wishlist(req: Request): Response {
+        val userId = auth(req) ?: return redirectToLogin()
+        val pc = pageContext(req)
+        val items = wishlistService?.getItems(userId) ?: emptyList()
+        return htmlOk(
+            templateRenderer.render(
+                "wishlist.kte",
+                pc.toMap("items" to items),
             ),
         )
     }
