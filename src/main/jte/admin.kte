@@ -332,4 +332,76 @@
     });
 }());
 </script>
+
+<!-- Duplicate Detection & Merge -->
+<div class="card card-pad" style="margin-top:1rem;" id="duplicates-section">
+    <h2 class="profile-section-title">
+        <i class="ri-file-copy-line"></i>
+        ${pc.i18n.translate("page.admin.duplicates.title")}
+    </h2>
+    <p class="text-sm text-subtle" style="margin-bottom:1rem;">${pc.i18n.translate("page.admin.duplicates.description")}</p>
+    <button id="dup-scan-btn" class="btn-primary flex-center gap-sm" style="padding:0.6rem 1.25rem;">
+        <i class="ri-search-line"></i> ${pc.i18n.translate("page.admin.duplicates.scan")}
+    </button>
+    <span id="dup-status" class="text-sm text-subtle" style="margin-left:0.75rem;"></span>
+    <div id="dup-results" style="margin-top:1rem;"></div>
+</div>
+
+<script>
+(function() {
+    var scanBtn = document.getElementById('dup-scan-btn');
+    var status = document.getElementById('dup-status');
+    var results = document.getElementById('dup-results');
+    if (!scanBtn) return;
+
+    scanBtn.addEventListener('click', function() {
+        status.textContent = 'Scanning...';
+        results.textContent = '';
+        fetch('/api/admin/duplicates').then(function(r) { return r.json(); }).then(function(groups) {
+            status.textContent = groups.length + ' duplicate group(s) found.';
+            status.style.color = groups.length > 0 ? 'var(--bt-danger)' : '#34d399';
+            if (groups.length === 0) return;
+
+            groups.forEach(function(group) {
+                var card = document.createElement('div');
+                card.className = 'panel';
+                card.style.marginBottom = '0.75rem';
+
+                var header = '<div style="font-weight:600; font-size:0.85rem; margin-bottom:0.5rem;">' +
+                    '<span style="background:var(--bt-icon-bg); color:var(--bt-icon-text); padding:0.15rem 0.5rem; border-radius:0.25rem; font-size:0.7rem; margin-right:0.5rem;">' +
+                    group.reason + '</span>' + escHtml(group.matchValue) + '</div>';
+
+                var rows = '';
+                group.books.forEach(function(b, i) {
+                    rows += '<div style="display:flex; justify-content:space-between; align-items:center; padding:0.3rem 0; border-bottom:1px solid var(--bt-border); font-size:0.8rem;">' +
+                        '<div><strong>' + escHtml(b.title) + '</strong>' + (b.author ? ' <span class="text-subtle">by ' + escHtml(b.author) + '</span>' : '') + '</div>' +
+                        '<div style="display:flex;gap:0.5rem;align-items:center;">' +
+                        '<span class="text-subtle">' + escHtml(b.libraryName) + '</span>' +
+                        (i > 0 ? '<button class="btn-secondary" style="padding:0.2rem 0.5rem; font-size:0.7rem;" onclick="mergeDup(\'' + group.books[0].id + '\',\'' + b.id + '\')">Merge → Keep First</button>' : '<span style="font-size:0.65rem; color:var(--bt-accent-dim);">KEEP</span>') +
+                        '</div></div>';
+                });
+
+                card.innerHTML = header + rows;
+                results.appendChild(card);
+            });
+        }).catch(function(e) {
+            status.textContent = 'Scan failed: ' + e.message;
+            status.style.color = 'var(--bt-danger)';
+        });
+    });
+
+    window.mergeDup = function(keepId, deleteId) {
+        if (!confirm('Merge duplicate? The second book will be deleted, its bookmarks/annotations moved to the first.')) return;
+        fetch('/api/admin/duplicates/merge', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ keepBookId: keepId, deleteBookIds: [deleteId] })
+        }).then(function(r) {
+            if (r.ok) { scanBtn.click(); } // re-scan
+        });
+    };
+
+    function escHtml(s) { var d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+}());
+</script>
 `)
