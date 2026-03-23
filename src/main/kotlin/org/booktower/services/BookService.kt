@@ -43,65 +43,53 @@ class BookService(
         val formatClause = if (formatFilter != null) " AND b.book_format = ?" else ""
         val tagClause = if (tagFilter != null) " AND EXISTS (SELECT 1 FROM book_tags bt WHERE bt.book_id = b.id AND bt.user_id = ? AND bt.tag = ?)" else ""
         val ratingGteClause = if (ratingGte != null) " AND br.rating >= ?" else ""
+        val libraryClause = if (libraryId != null) "b.library_id = ? AND l.user_id = ?" else "l.user_id = ?"
+        val filterClauses = "$statusClause$tagClause$ratingGteClause$formatClause"
+
+        // Shared binding logic for filter parameters
+        fun bindFilters(
+            q: org.jdbi.v3.core.statement.Query,
+            startIdx: Int,
+        ): Int {
+            var idx = startIdx
+            if (statusFilter != null) q.bind(idx++, statusFilter)
+            if (tagFilter != null) {
+                q.bind(idx++, userId.toString())
+                q.bind(idx++, tagFilter)
+            }
+            if (ratingGte != null) q.bind(idx++, ratingGte)
+            if (formatFilter != null) q.bind(idx++, formatFilter.uppercase())
+            return idx
+        }
 
         val books =
-            if (libraryId != null) {
-                jdbi.withHandle<List<BookDto>, Exception> { handle ->
-                    val q =
-                        handle
-                            .createQuery(
-                                """
+            jdbi.withHandle<List<BookDto>, Exception> { handle ->
+                val q =
+                    handle.createQuery(
+                        """
                         SELECT b.*, bs.status AS book_status_value, br.rating AS book_rating_value FROM books b
                         INNER JOIN libraries l ON b.library_id = l.id
                         LEFT JOIN book_status bs ON bs.book_id = b.id AND bs.user_id = ?
                         LEFT JOIN book_ratings br ON br.book_id = b.id AND br.user_id = ?
-                        WHERE b.library_id = ? AND l.user_id = ?${statusClause}${tagClause}${ratingGteClause}$formatClause
+                        WHERE $libraryClause$filterClauses
                         ORDER BY $orderClause LIMIT ? OFFSET ?
                         """,
-                            ).bind(0, userId.toString())
-                            .bind(1, userId.toString())
-                            .bind(2, libraryId)
-                            .bind(3, userId.toString())
-                    var idx = 4
-                    if (statusFilter != null) q.bind(idx++, statusFilter)
-                    if (tagFilter != null) {
-                        q.bind(idx++, userId.toString())
-                        q.bind(idx++, tagFilter)
+                    )
+                q.bind(0, userId.toString())
+                q.bind(1, userId.toString())
+                var idx =
+                    if (libraryId != null) {
+                        q.bind(2, libraryId)
+                        q.bind(3, userId.toString())
+                        4
+                    } else {
+                        q.bind(2, userId.toString())
+                        3
                     }
-                    if (ratingGte != null) q.bind(idx++, ratingGte)
-                    if (formatFilter != null) q.bind(idx++, formatFilter.uppercase())
-                    q.bind(idx++, safePageSize)
-                    q.bind(idx, offset)
-                    q.map { row -> mapBook(row) }.list()
-                }
-            } else {
-                jdbi.withHandle<List<BookDto>, Exception> { handle ->
-                    val q =
-                        handle
-                            .createQuery(
-                                """
-                    SELECT b.*, bs.status AS book_status_value, br.rating AS book_rating_value FROM books b
-                    INNER JOIN libraries l ON b.library_id = l.id
-                    LEFT JOIN book_status bs ON bs.book_id = b.id AND bs.user_id = ?
-                    LEFT JOIN book_ratings br ON br.book_id = b.id AND br.user_id = ?
-                    WHERE l.user_id = ?${statusClause}${tagClause}${ratingGteClause}$formatClause
-                    ORDER BY $orderClause LIMIT ? OFFSET ?
-                """,
-                            ).bind(0, userId.toString())
-                            .bind(1, userId.toString())
-                            .bind(2, userId.toString())
-                    var idx = 3
-                    if (statusFilter != null) q.bind(idx++, statusFilter)
-                    if (tagFilter != null) {
-                        q.bind(idx++, userId.toString())
-                        q.bind(idx++, tagFilter)
-                    }
-                    if (ratingGte != null) q.bind(idx++, ratingGte)
-                    if (formatFilter != null) q.bind(idx++, formatFilter.uppercase())
-                    q.bind(idx++, safePageSize)
-                    q.bind(idx, offset)
-                    q.map { row -> mapBook(row) }.list()
-                }
+                idx = bindFilters(q, idx)
+                q.bind(idx++, safePageSize)
+                q.bind(idx, offset)
+                q.map { row -> mapBook(row) }.list()
             }
 
         val tagMap = fetchTagsForBooks(userId, books.map { it.id })
@@ -119,55 +107,29 @@ class BookService(
             }
 
         val total =
-            if (libraryId != null) {
-                jdbi.withHandle<Int, Exception> { handle ->
-                    val q =
-                        handle
-                            .createQuery(
-                                """
+            jdbi.withHandle<Int, Exception> { handle ->
+                val q =
+                    handle.createQuery(
+                        """
                         SELECT COUNT(*) FROM books b INNER JOIN libraries l ON b.library_id = l.id
                         LEFT JOIN book_status bs ON bs.book_id = b.id AND bs.user_id = ?
                         LEFT JOIN book_ratings br ON br.book_id = b.id AND br.user_id = ?
-                        WHERE b.library_id = ? AND l.user_id = ?${statusClause}${tagClause}${ratingGteClause}$formatClause
+                        WHERE $libraryClause$filterClauses
                         """,
-                            ).bind(0, userId.toString())
-                            .bind(1, userId.toString())
-                            .bind(2, libraryId)
-                            .bind(3, userId.toString())
-                    var idx = 4
-                    if (statusFilter != null) q.bind(idx++, statusFilter)
-                    if (tagFilter != null) {
-                        q.bind(idx++, userId.toString())
-                        q.bind(idx++, tagFilter)
+                    )
+                q.bind(0, userId.toString())
+                q.bind(1, userId.toString())
+                val idx =
+                    if (libraryId != null) {
+                        q.bind(2, libraryId)
+                        q.bind(3, userId.toString())
+                        4
+                    } else {
+                        q.bind(2, userId.toString())
+                        3
                     }
-                    if (ratingGte != null) q.bind(idx++, ratingGte)
-                    if (formatFilter != null) q.bind(idx++, formatFilter.uppercase())
-                    q.mapTo(Int::class.javaObjectType).first() ?: 0
-                }
-            } else {
-                jdbi.withHandle<Int, Exception> { handle ->
-                    val q =
-                        handle
-                            .createQuery(
-                                """
-                        SELECT COUNT(*) FROM books b INNER JOIN libraries l ON b.library_id = l.id
-                        LEFT JOIN book_status bs ON bs.book_id = b.id AND bs.user_id = ?
-                        LEFT JOIN book_ratings br ON br.book_id = b.id AND br.user_id = ?
-                        WHERE l.user_id = ?${statusClause}${tagClause}${ratingGteClause}$formatClause
-                        """,
-                            ).bind(0, userId.toString())
-                            .bind(1, userId.toString())
-                            .bind(2, userId.toString())
-                    var idx = 3
-                    if (statusFilter != null) q.bind(idx++, statusFilter)
-                    if (tagFilter != null) {
-                        q.bind(idx++, userId.toString())
-                        q.bind(idx++, tagFilter)
-                    }
-                    if (ratingGte != null) q.bind(idx++, ratingGte)
-                    if (formatFilter != null) q.bind(idx++, formatFilter.uppercase())
-                    q.mapTo(Int::class.javaObjectType).first() ?: 0
-                }
+                bindFilters(q, idx)
+                q.mapTo(Int::class.javaObjectType).first() ?: 0
             }
 
         return BookListDto(enriched, total, safePage, safePageSize)

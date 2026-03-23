@@ -26,7 +26,16 @@ class LibraryService(
     private val ftsService: org.booktower.services.FtsService? = null,
     private val comicPageHashService: ComicPageHashService? = null,
 ) {
+    /** Cache library listings per user — invalidated on create/delete/rename. */
+    private val libraryCache =
+        com.github.benmanes.caffeine.cache.Caffeine
+            .newBuilder()
+            .maximumSize(500)
+            .expireAfterWrite(10, java.util.concurrent.TimeUnit.MINUTES)
+            .build<UUID, List<LibraryDto>>()
+
     fun getLibraries(userId: UUID): List<LibraryDto> {
+        libraryCache.getIfPresent(userId)?.let { return it }
         val accessibleIds = libraryAccessService?.getAccessibleLibraryIds(userId)
         return jdbi
             .withHandle<List<LibraryDto>, Exception> { handle ->
@@ -49,7 +58,7 @@ class LibraryService(
                 } else {
                     all.filter { it.id in accessibleIds }
                 }
-            }
+            }.also { libraryCache.put(userId, it) }
     }
 
     fun getLibrary(
@@ -108,6 +117,7 @@ class LibraryService(
                 .execute()
         }
 
+        libraryCache.invalidate(userId)
         logger.info("Library created: ${request.name}")
 
         return LibraryDto(libId.toString(), request.name, request.path, 0, now.toString())
@@ -130,6 +140,7 @@ class LibraryService(
                 .execute()
         }
 
+        libraryCache.invalidate(userId)
         logger.info("Library renamed to: ${request.name}")
         return library.copy(name = request.name)
     }
@@ -282,6 +293,7 @@ class LibraryService(
             handle.createUpdate("DELETE FROM libraries WHERE id = ?").bind(0, libraryId.toString()).execute()
         }
 
+        libraryCache.invalidate(userId)
         logger.info("Library deleted: ${lib.name}")
         return true
     }

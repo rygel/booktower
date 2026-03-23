@@ -24,7 +24,11 @@ import org.booktower.handlers.GoodreadsImportHandler
 import org.booktower.handlers.JournalHandler
 import org.booktower.handlers.LibraryHandler2
 import org.booktower.handlers.OpdsHandler
+import org.booktower.handlers.BrowsePageHandler
+import org.booktower.handlers.DiscoveryPageHandler
 import org.booktower.handlers.PageHandler
+import org.booktower.handlers.SettingsPageHandler
+import org.booktower.handlers.StatsPageHandler
 import org.booktower.handlers.UserSettingsHandler
 import org.booktower.models.BookDto
 import org.booktower.models.LibraryDto
@@ -226,44 +230,36 @@ abstract class IntegrationTestBase {
                 libraryAccessService,
                 comicPageHashService,
             )
-        val pageHandler =
-            PageHandler(
-                jwtService,
-                authService,
-                libraryService,
-                bookService,
-                bookmarkService,
-                userSettingsService,
-                analyticsService,
-                annotationService,
-                metadataFetchService,
-                magicShelfService,
-                TestFixture.templateRenderer,
-                readingSessionService,
-                null, // libraryWatchService
-                null, // bookLinkService
-                org.booktower.services.BookSharingService(jdbi, bookService),
-                backgroundTaskService,
-                org.booktower.services.LibraryStatsService(jdbi),
-                org.booktower.services.WebhookService(jdbi),
-                org.booktower.services.ReadingTimelineService(jdbi),
-                null, // discoveryService
-                org.booktower.services.ReadingListService(jdbi),
-                org.booktower.services.WishlistService(jdbi),
-                org.booktower.services.CollectionService(jdbi),
-                koboSyncService,
-                koreaderSyncService,
-                filterPresetService,
-                scheduledTaskService,
-                opdsCredentialsService,
-                contentRestrictionsService,
-                org.booktower.services.ReadingSpeedService(jdbi),
-                org.booktower.services.LibraryHealthService(jdbi),
-                hardcoverSyncService,
-                null, // bookDeliveryService
-                null, // bookDropService
-                metadataProposalService,
+        val handlers =
+            TestPageHandlers.create(
+                jwtService, authService, libraryService, bookService, bookmarkService,
+                userSettingsService, analyticsService, annotationService, metadataFetchService,
+                magicShelfService, TestFixture.templateRenderer,
+                readingSessionService = readingSessionService,
+                bookSharingService = org.booktower.services.BookSharingService(jdbi, bookService),
+                backgroundTaskService = backgroundTaskService,
+                webhookService = org.booktower.services.WebhookService(jdbi),
+                libraryStatsService = org.booktower.services.LibraryStatsService(jdbi),
+                readingTimelineService = org.booktower.services.ReadingTimelineService(jdbi),
+                readingSpeedService = org.booktower.services.ReadingSpeedService(jdbi),
+                libraryHealthService = org.booktower.services.LibraryHealthService(jdbi),
+                readingListService = org.booktower.services.ReadingListService(jdbi),
+                wishlistService = org.booktower.services.WishlistService(jdbi),
+                collectionService = org.booktower.services.CollectionService(jdbi),
+                koboSyncService = koboSyncService,
+                koreaderSyncService = koreaderSyncService,
+                filterPresetService = filterPresetService,
+                scheduledTaskService = scheduledTaskService,
+                opdsCredentialsService = opdsCredentialsService,
+                contentRestrictionsService = contentRestrictionsService,
+                hardcoverSyncService = hardcoverSyncService,
+                metadataProposalService = metadataProposalService,
             )
+        val pageHandler = handlers.pageHandler
+        val browsePageHandler = handlers.browsePageHandler
+        val statsPageHandler = handlers.statsPageHandler
+        val settingsPageHandler = handlers.settingsPageHandler
+        val discoveryPageHandler = handlers.discoveryPageHandler
         val backgroundTaskHandler = BackgroundTaskHandler(backgroundTaskService)
         val journalHandler = JournalHandler(journalService)
         val oidcHandler = oidcService?.let { org.booktower.handlers.OidcHandler(it, authService) }
@@ -289,7 +285,7 @@ abstract class IntegrationTestBase {
         // ── Domain routers ───────────────────────────────────────────────
         val authRouter = AuthRouter(authHandler, filters)
         val oidcRouter = OidcRouter(oidcHandler)
-        val pageRouter = PageRouter(filters, pageHandler, adminHandler, jwtService, TestFixture.templateRenderer, registrationOpen)
+        val pageRouter = PageRouter(filters, pageHandler, adminHandler, jwtService, TestFixture.templateRenderer, registrationOpen, null, browsePageHandler, statsPageHandler, settingsPageHandler, discoveryPageHandler)
         val bookApiRouter =
             BookApiRouter(
                 filters,

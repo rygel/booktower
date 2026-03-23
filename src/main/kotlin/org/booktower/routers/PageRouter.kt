@@ -2,7 +2,11 @@ package org.booktower.routers
 
 import org.booktower.config.TemplateRenderer
 import org.booktower.handlers.AdminHandler
+import org.booktower.handlers.BrowsePageHandler
+import org.booktower.handlers.DiscoveryPageHandler
 import org.booktower.handlers.PageHandler
+import org.booktower.handlers.SettingsPageHandler
+import org.booktower.handlers.StatsPageHandler
 import org.booktower.model.ThemeCatalog
 import org.booktower.services.JwtService
 import org.booktower.services.UserSettingsService
@@ -26,6 +30,10 @@ class PageRouter(
     private val templateRenderer: TemplateRenderer,
     private val registrationOpen: Boolean,
     private val userSettingsService: UserSettingsService? = null,
+    private val browsePageHandler: BrowsePageHandler? = null,
+    private val statsPageHandler: StatsPageHandler? = null,
+    private val settingsPageHandler: SettingsPageHandler? = null,
+    private val discoveryPageHandler: DiscoveryPageHandler? = null,
 ) {
     fun routes(): List<RoutingHttpHandler> =
         listOf(
@@ -41,35 +49,35 @@ class PageRouter(
             "/books/{id}/read" bind Method.GET to filters.optionalAuth.then(pageHandler::reader),
             "/search" bind Method.GET to filters.optionalAuth.then(pageHandler::search),
             "/queue" bind Method.GET to filters.auth.then(pageHandler::queue),
-            "/series" bind Method.GET to filters.auth.then(pageHandler::seriesList),
-            "/series/{name}" bind Method.GET to filters.auth.then(pageHandler::series),
-            "/authors" bind Method.GET to filters.auth.then(pageHandler::authorList),
-            "/authors/{name}" bind Method.GET to filters.auth.then(pageHandler::author),
-            "/tags" bind Method.GET to filters.auth.then(pageHandler::tagList),
-            "/tags/{name}" bind Method.GET to filters.auth.then(pageHandler::tag),
+            "/series" bind Method.GET to filters.auth.then(browsePageHandler!!::seriesList),
+            "/series/{name}" bind Method.GET to filters.auth.then(browsePageHandler!!::series),
+            "/authors" bind Method.GET to filters.auth.then(browsePageHandler!!::authorList),
+            "/authors/{name}" bind Method.GET to filters.auth.then(browsePageHandler!!::author),
+            "/tags" bind Method.GET to filters.auth.then(browsePageHandler!!::tagList),
+            "/tags/{name}" bind Method.GET to filters.auth.then(browsePageHandler!!::tag),
             "/profile" bind Method.GET to filters.optionalAuth.then(pageHandler::profile),
             "/activity" bind Method.GET to filters.auth.then(pageHandler::activity),
             "/downloads" bind Method.GET to filters.optionalAuth.then(pageHandler::downloads),
             "/shared/book/{token}" bind Method.GET to filters.optionalAuth.then(pageHandler::sharedBook),
-            "/analytics" bind Method.GET to filters.optionalAuth.then(pageHandler::analytics),
-            "/stats" bind Method.GET to filters.optionalAuth.then(pageHandler::libraryStats),
-            "/timeline" bind Method.GET to filters.auth.then(pageHandler::timeline),
-            "/discover" bind Method.GET to filters.auth.then(pageHandler::discover),
-            "/webhooks" bind Method.GET to filters.auth.then(pageHandler::webhooks),
-            "/reading-lists" bind Method.GET to filters.auth.then(pageHandler::readingLists),
-            "/wishlist" bind Method.GET to filters.auth.then(pageHandler::wishlist),
-            "/collections" bind Method.GET to filters.auth.then(pageHandler::collections),
-            "/devices" bind Method.GET to filters.auth.then(pageHandler::devices),
-            "/filter-presets" bind Method.GET to filters.auth.then(pageHandler::filterPresets),
-            "/scheduled-tasks" bind Method.GET to filters.admin.then(pageHandler::scheduledTasks),
-            "/opds-settings" bind Method.GET to filters.auth.then(pageHandler::opdsSettings),
-            "/content-restrictions" bind Method.GET to filters.auth.then(pageHandler::contentRestrictions),
-            "/reading-speed" bind Method.GET to filters.auth.then(pageHandler::readingSpeed),
-            "/book-drop" bind Method.GET to filters.auth.then(pageHandler::bookDrop),
-            "/metadata-proposals" bind Method.GET to filters.auth.then(pageHandler::metadataProposals),
-            "/library-health" bind Method.GET to filters.auth.then(pageHandler::libraryHealth),
-            "/hardcover-settings" bind Method.GET to filters.auth.then(pageHandler::hardcoverSettings),
-            "/book-delivery" bind Method.GET to filters.auth.then(pageHandler::bookDelivery),
+            "/analytics" bind Method.GET to filters.optionalAuth.then(statsPageHandler!!::analytics),
+            "/stats" bind Method.GET to filters.optionalAuth.then(statsPageHandler!!::libraryStats),
+            "/timeline" bind Method.GET to filters.auth.then(statsPageHandler!!::timeline),
+            "/discover" bind Method.GET to filters.auth.then(discoveryPageHandler!!::discover),
+            "/webhooks" bind Method.GET to filters.auth.then(discoveryPageHandler!!::webhooks),
+            "/reading-lists" bind Method.GET to filters.auth.then(discoveryPageHandler!!::readingLists),
+            "/wishlist" bind Method.GET to filters.auth.then(discoveryPageHandler!!::wishlist),
+            "/collections" bind Method.GET to filters.auth.then(discoveryPageHandler!!::collections),
+            "/devices" bind Method.GET to filters.auth.then(settingsPageHandler!!::devices),
+            "/filter-presets" bind Method.GET to filters.auth.then(settingsPageHandler!!::filterPresets),
+            "/scheduled-tasks" bind Method.GET to filters.admin.then(settingsPageHandler!!::scheduledTasks),
+            "/opds-settings" bind Method.GET to filters.auth.then(settingsPageHandler!!::opdsSettings),
+            "/content-restrictions" bind Method.GET to filters.auth.then(settingsPageHandler!!::contentRestrictions),
+            "/reading-speed" bind Method.GET to filters.auth.then(statsPageHandler!!::readingSpeed),
+            "/book-drop" bind Method.GET to filters.auth.then(discoveryPageHandler!!::bookDrop),
+            "/metadata-proposals" bind Method.GET to filters.auth.then(discoveryPageHandler!!::metadataProposals),
+            "/library-health" bind Method.GET to filters.auth.then(statsPageHandler!!::libraryHealth),
+            "/hardcover-settings" bind Method.GET to filters.auth.then(settingsPageHandler!!::hardcoverSettings),
+            "/book-delivery" bind Method.GET to filters.auth.then(settingsPageHandler!!::bookDelivery),
             "/ui/isbn/lookup" bind Method.POST to pageHandler::isbnLookup,
             "/ui/preferences/analytics" bind Method.POST to pageHandler::setAnalytics,
             "/admin" bind Method.GET to filters.admin.then(adminHandler::adminPage),
@@ -97,9 +105,9 @@ class PageRouter(
             "/preferences/theme-pair" bind Method.POST to ::setThemePair,
             "/preferences/lang" bind Method.POST to ::setLanguage,
             // Smart shelves (UI)
-            "/shelves/{id}" bind Method.GET to pageHandler::magicShelf,
-            "/ui/shelves" bind Method.POST to pageHandler::createMagicShelf,
-            "/ui/shelves/{id}" bind Method.DELETE to pageHandler::deleteMagicShelf,
+            "/shelves/{id}" bind Method.GET to browsePageHandler!!::magicShelf,
+            "/ui/shelves" bind Method.POST to browsePageHandler!!::createMagicShelf,
+            "/ui/shelves/{id}" bind Method.DELETE to browsePageHandler!!::deleteMagicShelf,
         )
 
     private fun index(req: Request): Response {

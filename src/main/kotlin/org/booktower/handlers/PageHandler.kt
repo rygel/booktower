@@ -6,9 +6,7 @@ import org.booktower.models.BookSortOrder
 import org.booktower.models.CreateBookRequest
 import org.booktower.models.CreateBookmarkRequest
 import org.booktower.models.CreateLibraryRequest
-import org.booktower.models.CreateMagicShelfRequest
 import org.booktower.models.ReadStatus
-import org.booktower.models.ShelfRuleType
 import org.booktower.models.UpdateBookRequest
 import org.booktower.models.UpdateLibraryRequest
 import org.booktower.models.UpdateProgressRequest
@@ -51,36 +49,14 @@ class PageHandler(
     private val bookLinkService: org.booktower.services.BookLinkService? = null,
     private val bookSharingService: org.booktower.services.BookSharingService? = null,
     private val backgroundTaskService: org.booktower.services.BackgroundTaskService? = null,
-    private val libraryStatsService: org.booktower.services.LibraryStatsService? = null,
-    private val webhookService: org.booktower.services.WebhookService? = null,
-    private val readingTimelineService: org.booktower.services.ReadingTimelineService? = null,
-    private val discoveryService: org.booktower.services.DiscoveryService? = null,
-    private val readingListService: org.booktower.services.ReadingListService? = null,
-    private val wishlistService: org.booktower.services.WishlistService? = null,
-    private val collectionService: org.booktower.services.CollectionService? = null,
-    private val koboSyncService: org.booktower.services.KoboSyncService? = null,
-    private val koreaderSyncService: org.booktower.services.KOReaderSyncService? = null,
-    private val filterPresetService: org.booktower.services.FilterPresetService? = null,
-    private val scheduledTaskService: org.booktower.services.ScheduledTaskService? = null,
-    private val opdsCredentialsService: org.booktower.services.OpdsCredentialsService? = null,
-    private val contentRestrictionsService: org.booktower.services.ContentRestrictionsService? = null,
-    private val readingSpeedService: org.booktower.services.ReadingSpeedService? = null,
-    private val libraryHealthService: org.booktower.services.LibraryHealthService? = null,
-    private val hardcoverSyncService: org.booktower.services.HardcoverSyncService? = null,
-    private val bookDeliveryService: org.booktower.services.BookDeliveryService? = null,
-    private val bookDropService: org.booktower.services.BookDropService? = null,
-    private val metadataProposalService: org.booktower.services.MetadataProposalService? = null,
 ) {
-    /** Build a PageContext for any authenticated request. */
-    private fun pageContext(req: Request): org.booktower.web.PageContext =
-        org.booktower.web.PageContext
-            .from(req, jwtService, authService)
+    private fun pc(req: Request) = pageContext(req, jwtService, authService)
 
     // ── Page routes ────────────────────────────────────────────────────────────
 
     fun libraries(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
-        val pc = pageContext(req)
+        val pc = pc(req)
         val libraries = libraryService.getLibraries(userId)
         val shelves = magicShelfService.getShelves(userId)
         return htmlOk(
@@ -91,89 +67,9 @@ class PageHandler(
         )
     }
 
-    /** GET /shelves/{id} */
-    fun magicShelf(req: Request): Response {
-        val userId = auth(req) ?: return redirectToLogin()
-        val pc = pageContext(req)
-        val shelfId = req.lastPathSegment().toUuidOrNull() ?: return Response(Status.NOT_FOUND)
-        val shelf = magicShelfService.getShelf(userId, shelfId) ?: return Response(Status.NOT_FOUND)
-        val books = magicShelfService.resolveBooks(userId, shelf)
-        return htmlOk(
-            templateRenderer.render(
-                "shelf.kte",
-                pc.toMap(
-                    "shelf" to shelf,
-                    "books" to books,
-                ),
-            ),
-        )
-    }
-
-    /** POST /ui/shelves */
-    fun createMagicShelf(req: Request): Response {
-        val userId = auth(req) ?: return Response(Status.UNAUTHORIZED)
-        val ctx = WebContext(req)
-        val name =
-            req.form("name")?.trim()?.takeIf { it.isNotBlank() }
-                ?: return Response(Status.BAD_REQUEST).body("Name is required")
-        if (name.length > 100) return Response(Status.BAD_REQUEST).body("Name must be 100 characters or fewer")
-        val ruleTypeStr =
-            req.form("ruleType")?.trim()
-                ?: return Response(Status.BAD_REQUEST).body("ruleType is required")
-        val ruleType =
-            try {
-                ShelfRuleType.valueOf(ruleTypeStr)
-            } catch (
-                _: IllegalArgumentException,
-            ) {
-                return Response(Status.BAD_REQUEST).body("Invalid ruleType")
-            }
-        val ruleValue: String? =
-            when (ruleType) {
-                ShelfRuleType.STATUS -> {
-                    req.form("ruleValueStatus")?.takeIf { it.isNotBlank() }
-                        ?: return Response(Status.BAD_REQUEST).body("Status is required")
-                }
-
-                ShelfRuleType.TAG -> {
-                    req
-                        .form("ruleValueTag")
-                        ?.trim()
-                        ?.lowercase()
-                        ?.takeIf { it.isNotBlank() }
-                        ?: return Response(Status.BAD_REQUEST).body("Tag is required")
-                }
-
-                ShelfRuleType.RATING_GTE -> {
-                    req
-                        .form("ruleValueRating")
-                        ?.toIntOrNull()
-                        ?.coerceIn(1, 5)
-                        ?.toString()
-                        ?: return Response(Status.BAD_REQUEST).body("Rating is required")
-                }
-            }
-        val shelf = magicShelfService.createShelf(userId, CreateMagicShelfRequest(name, ruleType, ruleValue))
-        val rendered = templateRenderer.render("components/shelfCard.kte", mapOf("shelf" to shelf, "i18n" to ctx.i18n))
-        return Response(Status.CREATED)
-            .header("Content-Type", "text/html; charset=utf-8")
-            .header("HX-Trigger", toast(ctx.i18n.translate("msg.shelf-created")))
-            .body(rendered)
-    }
-
-    /** DELETE /ui/shelves/{id} */
-    fun deleteMagicShelf(req: Request): Response {
-        val userId = auth(req) ?: return Response(Status.UNAUTHORIZED)
-        val ctx = WebContext(req)
-        val shelfId = req.lastPathSegment().toUuidOrNull() ?: return Response(Status.BAD_REQUEST)
-        magicShelfService.deleteShelf(userId, shelfId)
-        return Response(Status.OK)
-            .header("HX-Trigger", toast(ctx.i18n.translate("msg.shelf-deleted")))
-    }
-
     fun library(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
-        val pc = pageContext(req)
+        val pc = pc(req)
         val libId = req.lastPathSegment().toUuidOrNull() ?: return Response(Status.NOT_FOUND)
         val library = libraryService.getLibrary(userId, libId) ?: return Response(Status.NOT_FOUND)
         val sortParam = req.query("sort")
@@ -236,7 +132,7 @@ class PageHandler(
 
     fun book(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
-        val pc = pageContext(req)
+        val pc = pc(req)
         val bookId = req.lastPathSegment().toUuidOrNull() ?: return Response(Status.NOT_FOUND)
         val book = bookService.getBook(userId, bookId) ?: return Response(Status.NOT_FOUND)
         val bookmarks = bookmarkService.getBookmarks(userId, bookId)
@@ -398,7 +294,7 @@ class PageHandler(
 
     fun search(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
-        val pc = pageContext(req)
+        val pc = pc(req)
         val query = req.query("q") ?: ""
         val page = req.query("page")?.toIntOrNull() ?: 1
         val libId = req.query("libId")?.takeIf { it.isNotBlank() }
@@ -429,7 +325,7 @@ class PageHandler(
 
     fun dashboard(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
-        val pc = pageContext(req)
+        val pc = pc(req)
         val year =
             java.time.LocalDate
                 .now()
@@ -497,7 +393,7 @@ class PageHandler(
 
     fun profile(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
-        val pc = pageContext(req)
+        val pc = pc(req)
         val user = authService.getUserById(userId)
         val analyticsEnabled = userSettingsService.get(userId, "analytics.enabled") == "true"
         val libraries = libraryService.getLibraries(userId)
@@ -531,7 +427,7 @@ class PageHandler(
                 ?.takeIf { it.isNotBlank() }
                 ?: return Response(Status.NOT_FOUND)
         val sharedBook = svc.getPublicBook(token) ?: return Response(Status.NOT_FOUND)
-        val pc = pageContext(req)
+        val pc = pc(req)
         return htmlOk(
             templateRenderer.render(
                 "shared-book.kte",
@@ -544,7 +440,7 @@ class PageHandler(
 
     fun downloads(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
-        val pc = pageContext(req)
+        val pc = pc(req)
         val tasks = backgroundTaskService?.listForUser(userId) ?: emptyList()
         return htmlOk(
             templateRenderer.render(
@@ -556,276 +452,11 @@ class PageHandler(
 
     fun activity(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
-        val pc = pageContext(req)
+        val pc = pc(req)
         return htmlOk(
             templateRenderer.render(
                 "activity.kte",
                 pc.toMap(),
-            ),
-        )
-    }
-
-    fun analytics(req: Request): Response {
-        val userId = auth(req) ?: return redirectToLogin()
-        val pc = pageContext(req)
-        val summary = analyticsService.getSummary(userId)
-        val recentSessions = readingSessionService?.getRecentSessions(userId, 20) ?: emptyList()
-        return htmlOk(
-            templateRenderer.render(
-                "analytics.kte",
-                pc.toMap(
-                    "summary" to summary,
-                    "recentSessions" to recentSessions,
-                ),
-            ),
-        )
-    }
-
-    fun libraryStats(req: Request): Response {
-        val userId = auth(req) ?: return redirectToLogin()
-        val pc = pageContext(req)
-        val stats = libraryStatsService?.getStats(userId)
-        return htmlOk(
-            templateRenderer.render(
-                "librarystats.kte",
-                pc.toMap("stats" to stats),
-            ),
-        )
-    }
-
-    fun timeline(req: Request): Response {
-        val userId = auth(req) ?: return redirectToLogin()
-        val pc = pageContext(req)
-        val days = 90
-        val entries = readingTimelineService?.getTimeline(userId, days, 50) ?: emptyList()
-        return htmlOk(
-            templateRenderer.render(
-                "timeline.kte",
-                pc.toMap("entries" to entries, "days" to days),
-            ),
-        )
-    }
-
-    fun discover(req: Request): Response {
-        val userId = auth(req) ?: return redirectToLogin()
-        val pc = pageContext(req)
-        val recommendations = discoveryService?.discover(userId) ?: emptyList()
-        return htmlOk(
-            templateRenderer.render(
-                "discover.kte",
-                pc.toMap("recommendations" to recommendations),
-            ),
-        )
-    }
-
-    fun readingLists(req: Request): Response {
-        val userId = auth(req) ?: return redirectToLogin()
-        val pc = pageContext(req)
-        val lists = readingListService?.getLists(userId) ?: emptyList()
-        return htmlOk(
-            templateRenderer.render(
-                "readinglists.kte",
-                pc.toMap("lists" to lists),
-            ),
-        )
-    }
-
-    fun collections(req: Request): Response {
-        val userId = auth(req) ?: return redirectToLogin()
-        val pc = pageContext(req)
-        val collections = collectionService?.getCollections(userId) ?: emptyList()
-        return htmlOk(
-            templateRenderer.render(
-                "collections.kte",
-                pc.toMap("collections" to collections),
-            ),
-        )
-    }
-
-    fun devices(req: Request): Response {
-        val userId = auth(req) ?: return redirectToLogin()
-        val pc = pageContext(req)
-        val koboDevices = koboSyncService?.listDevices(userId) ?: emptyList()
-        val koreaderDevices = koreaderSyncService?.listDevices(userId) ?: emptyList()
-        return htmlOk(
-            templateRenderer.render(
-                "devices.kte",
-                pc.toMap(
-                    "koboDevices" to koboDevices,
-                    "koreaderDevices" to koreaderDevices,
-                ),
-            ),
-        )
-    }
-
-    fun filterPresets(req: Request): Response {
-        val userId = auth(req) ?: return redirectToLogin()
-        val pc = pageContext(req)
-        val presets = filterPresetService?.list(userId) ?: emptyList()
-        return htmlOk(
-            templateRenderer.render(
-                "filter-presets.kte",
-                pc.toMap("presets" to presets),
-            ),
-        )
-    }
-
-    fun scheduledTasks(req: Request): Response {
-        val userId = auth(req) ?: return redirectToLogin()
-        if (!authIsAdmin(req)) return Response(Status.FORBIDDEN)
-        val pc = pageContext(req)
-        val tasks = scheduledTaskService?.list() ?: emptyList()
-        return htmlOk(
-            templateRenderer.render(
-                "scheduled-tasks.kte",
-                pc.toMap("tasks" to tasks),
-            ),
-        )
-    }
-
-    fun opdsSettings(req: Request): Response {
-        val userId = auth(req) ?: return redirectToLogin()
-        val pc = pageContext(req)
-        val creds = opdsCredentialsService?.getCredentials(userId)
-        return htmlOk(
-            templateRenderer.render(
-                "opds-settings.kte",
-                pc.toMap(
-                    "hasCredentials" to (creds != null),
-                    "opdsUsername" to (creds?.opdsUsername ?: ""),
-                ),
-            ),
-        )
-    }
-
-    fun contentRestrictions(req: Request): Response {
-        val userId = auth(req) ?: return redirectToLogin()
-        val pc = pageContext(req)
-        val restrictions = contentRestrictionsService?.get(userId)
-        return htmlOk(
-            templateRenderer.render(
-                "content-restrictions.kte",
-                pc.toMap(
-                    "maxAgeRating" to (restrictions?.maxAgeRating ?: ""),
-                    "blockedTags" to (restrictions?.blockedTags?.joinToString(", ") ?: ""),
-                ),
-            ),
-        )
-    }
-
-    fun readingSpeed(req: Request): Response {
-        val userId = auth(req) ?: return redirectToLogin()
-        val pc = pageContext(req)
-        val stats = readingSpeedService?.getStats(userId)
-        return htmlOk(
-            templateRenderer.render(
-                "reading-speed.kte",
-                pc.toMap(
-                    "avgPagesPerHour" to (stats?.averagePagesPerHour ?: 0.0),
-                    "totalReadingMinutes" to (stats?.totalReadingMinutes ?: 0L),
-                    "currentBookEstimate" to stats?.currentBookEstimate,
-                    "recentSessions" to (stats?.recentSessions ?: emptyList<Any>()),
-                ),
-            ),
-        )
-    }
-
-    fun libraryHealth(req: Request): Response {
-        val userId = auth(req) ?: return redirectToLogin()
-        val pc = pageContext(req)
-        val summary = libraryHealthService?.check(userId)
-        return htmlOk(
-            templateRenderer.render(
-                "library-health.kte",
-                pc.toMap(
-                    "totalIssues" to (summary?.totalIssues ?: 0),
-                    "libraries" to (summary?.libraries ?: emptyList<Any>()),
-                ),
-            ),
-        )
-    }
-
-    fun hardcoverSettings(req: Request): Response {
-        val userId = auth(req) ?: return redirectToLogin()
-        val pc = pageContext(req)
-        val hasKey = hardcoverSyncService?.hasApiKey(userId) ?: false
-        return htmlOk(
-            templateRenderer.render(
-                "hardcover-settings.kte",
-                pc.toMap(
-                    "hasApiKey" to hasKey,
-                ),
-            ),
-        )
-    }
-
-    fun bookDelivery(req: Request): Response {
-        val userId = auth(req) ?: return redirectToLogin()
-        val pc = pageContext(req)
-        val recipients = bookDeliveryService?.listRecipients(userId) ?: emptyList()
-        return htmlOk(
-            templateRenderer.render(
-                "book-delivery.kte",
-                pc.toMap("recipients" to recipients),
-            ),
-        )
-    }
-
-    fun bookDrop(req: Request): Response {
-        val userId = auth(req) ?: return redirectToLogin()
-        val pc = pageContext(req)
-        val pendingFiles = bookDropService?.listPending() ?: emptyList()
-        val libraries = libraryService.getLibraries(userId)
-        return htmlOk(
-            templateRenderer.render(
-                "book-drop.kte",
-                pc.toMap(
-                    "files" to pendingFiles,
-                    "libraries" to libraries,
-                ),
-            ),
-        )
-    }
-
-    fun metadataProposals(req: Request): Response {
-        val userId = auth(req) ?: return redirectToLogin()
-        val pc = pageContext(req)
-        // Get all books, then collect proposals across them
-        val allBooks = bookService.getBooks(userId, null, page = 1, pageSize = 500).getBooks()
-        val proposals =
-            allBooks.flatMap { book ->
-                val bookUuid = java.util.UUID.fromString(book.id)
-                (metadataProposalService?.listProposals(userId, bookUuid) ?: emptyList())
-                    .filter { it.status == "PENDING" }
-            }
-        return htmlOk(
-            templateRenderer.render(
-                "metadata-proposals.kte",
-                pc.toMap("proposals" to proposals),
-            ),
-        )
-    }
-
-    fun wishlist(req: Request): Response {
-        val userId = auth(req) ?: return redirectToLogin()
-        val pc = pageContext(req)
-        val items = wishlistService?.getItems(userId) ?: emptyList()
-        return htmlOk(
-            templateRenderer.render(
-                "wishlist.kte",
-                pc.toMap("items" to items),
-            ),
-        )
-    }
-
-    fun webhooks(req: Request): Response {
-        val userId = auth(req) ?: return redirectToLogin()
-        val pc = pageContext(req)
-        val hooks = webhookService?.list(userId) ?: emptyList()
-        return htmlOk(
-            templateRenderer.render(
-                "webhooks.kte",
-                pc.toMap("webhooks" to hooks),
             ),
         )
     }
@@ -1084,7 +715,7 @@ class PageHandler(
     /** GET /queue — Want to Read books across all libraries, sorted by date added */
     fun queue(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
-        val pc = pageContext(req)
+        val pc = pc(req)
         val page = req.query("page")?.toIntOrNull() ?: 1
         val result =
             bookService.getBooks(
@@ -1109,121 +740,9 @@ class PageHandler(
         )
     }
 
-    /** GET /authors — list all authors for the user */
-    fun authorList(req: Request): Response {
-        val userId = auth(req) ?: return redirectToLogin()
-        val pc = pageContext(req)
-        val authors = bookService.getAuthors(userId)
-        return htmlOk(
-            templateRenderer.render(
-                "author-list.kte",
-                pc.toMap(
-                    "authors" to authors,
-                ),
-            ),
-        )
-    }
-
-    /** GET /authors/{name} — books by a specific author */
-    fun author(req: Request): Response {
-        val userId = auth(req) ?: return redirectToLogin()
-        val pc = pageContext(req)
-        val name =
-            req
-                .lastPathSegment()
-                ?.let { java.net.URLDecoder.decode(it, "UTF-8") }
-                ?: return Response(Status.NOT_FOUND)
-        val books = bookService.getBooksByAuthor(userId, name)
-        return htmlOk(
-            templateRenderer.render(
-                "author.kte",
-                pc.toMap(
-                    "authorName" to name,
-                    "books" to books,
-                ),
-            ),
-        )
-    }
-
-    /** GET /series — list all series for the user */
-    fun seriesList(req: Request): Response {
-        val userId = auth(req) ?: return redirectToLogin()
-        val pc = pageContext(req)
-        val series = bookService.getSeries(userId)
-        return htmlOk(
-            templateRenderer.render(
-                "series-list.kte",
-                pc.toMap(
-                    "series" to series,
-                ),
-            ),
-        )
-    }
-
-    /** GET /series/{name} — books in a specific series */
-    fun series(req: Request): Response {
-        val userId = auth(req) ?: return redirectToLogin()
-        val pc = pageContext(req)
-        val name =
-            req
-                .lastPathSegment()
-                ?.let { java.net.URLDecoder.decode(it, "UTF-8") }
-                ?: return Response(Status.NOT_FOUND)
-        val books = bookService.getBooksBySeries(userId, name)
-        return htmlOk(
-            templateRenderer.render(
-                "series.kte",
-                pc.toMap(
-                    "seriesName" to name,
-                    "books" to books,
-                ),
-            ),
-        )
-    }
-
-    /** GET /tags — list all tags for the user */
-    fun tagList(req: Request): Response {
-        val userId = auth(req) ?: return redirectToLogin()
-        val pc = pageContext(req)
-        val tags = bookService.getTagsWithCounts(userId)
-        return htmlOk(
-            templateRenderer.render(
-                "tag-list.kte",
-                pc.toMap(
-                    "tags" to tags,
-                ),
-            ),
-        )
-    }
-
-    /** GET /tags/{name} — books with a specific tag */
-    fun tag(req: Request): Response {
-        val userId = auth(req) ?: return redirectToLogin()
-        val pc = pageContext(req)
-        val name =
-            req
-                .lastPathSegment()
-                ?.let { java.net.URLDecoder.decode(it, "UTF-8") }
-                ?: return Response(Status.NOT_FOUND)
-        val books = bookService.getBooksByTag(userId, name)
-        return htmlOk(
-            templateRenderer.render(
-                "tag.kte",
-                pc.toMap(
-                    "tagName" to name,
-                    "books" to books,
-                ),
-            ),
-        )
-    }
-
     // ── Helpers ────────────────────────────────────────────────────────────────
 
-    private fun auth(req: Request): UUID? {
-        val token = req.cookie("token")?.value ?: return null
-        val userId = jwtService.extractUserId(token) ?: return null
-        return if (authService.getUserById(userId) != null) userId else null
-    }
+    private fun auth(req: Request) = pageAuth(req, jwtService, authService)
 
     /** Returns the username and Gravatar hash for the authenticated user. */
     private fun userDisplayInfo(userId: UUID): Pair<String?, String> {
@@ -1237,43 +756,4 @@ class PageHandler(
             .digest(email.trim().lowercase().toByteArray())
             .joinToString("") { "%02x".format(it) }
     }
-
-    private fun authIsAdmin(req: Request): Boolean {
-        val token = req.cookie("token")?.value ?: return false
-        return jwtService.extractIsAdmin(token)
-    }
-
-    private fun redirectToLogin() =
-        Response(Status.SEE_OTHER)
-            .header("Location", "/login")
-            .cookie(Cookie(name = "token", value = "", path = "/", maxAge = 0))
-
-    private fun htmlOk(html: String) = Response(Status.OK).header("Content-Type", "text/html; charset=utf-8").body(html)
-
-    private fun Request.lastPathSegment(): String? =
-        uri.path
-            .split("/")
-            .filter { it.isNotBlank() }
-            .lastOrNull()
-
-    private fun Request.secondToLastPathSegment(): String? {
-        val parts = uri.path.split("/").filter { it.isNotBlank() }
-        return if (parts.size >= 2) parts[parts.size - 2] else null
-    }
-
-    private fun String?.toUuidOrNull(): UUID? =
-        if (this == null) {
-            null
-        } else {
-            try {
-                UUID.fromString(this)
-            } catch (_: IllegalArgumentException) {
-                null
-            }
-        }
-
-    private fun toast(
-        message: String,
-        type: String = "success",
-    ): String = """{"showToast":{"message":"${message.replace("\"", "\\\"")}","type":"$type"}}"""
 }
