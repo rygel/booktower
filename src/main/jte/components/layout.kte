@@ -172,6 +172,22 @@
                     <i class="ri-shield-check-line"></i>
                     ${pc.i18n.translate("page.restrictions.title")}
                 </a>
+                <a href="/reading-speed" class="sidebar-link ${if (currentPage == "reading-speed") "active" else ""}">
+                    <i class="ri-speed-line"></i>
+                    ${pc.i18n.translate("page.speed.title")}
+                </a>
+                <a href="/library-health" class="sidebar-link ${if (currentPage == "library-health") "active" else ""}">
+                    <i class="ri-heart-pulse-line"></i>
+                    ${pc.i18n.translate("page.health.title")}
+                </a>
+                <a href="/hardcover-settings" class="sidebar-link ${if (currentPage == "hardcover-settings") "active" else ""}">
+                    <i class="ri-book-3-line"></i>
+                    ${pc.i18n.translate("page.hardcover.title")}
+                </a>
+                <a href="/book-delivery" class="sidebar-link ${if (currentPage == "book-delivery") "active" else ""}">
+                    <i class="ri-mail-send-line"></i>
+                    ${pc.i18n.translate("page.delivery.title")}
+                </a>
                 <a href="/profile" class="sidebar-link ${if (currentPage == "profile") "active" else ""}">
                     <i class="ri-user-settings-line"></i>
                     ${pc.i18n.translate("nav.profile")}

@@ -294,6 +294,10 @@ val appModule =
                 getOrNull<org.booktower.services.ScheduledTaskService>(),
                 getOrNull<org.booktower.services.OpdsCredentialsService>(),
                 getOrNull<org.booktower.services.ContentRestrictionsService>(),
+                getOrNull<org.booktower.services.ReadingSpeedService>(),
+                getOrNull<org.booktower.services.LibraryHealthService>(),
+                getOrNull<org.booktower.services.HardcoverSyncService>(),
+                getOrNull<org.booktower.services.BookDeliveryService>(),
             )
         }
         single { BackgroundTaskHandler(get(), get()) }

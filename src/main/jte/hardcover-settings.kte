@@ -1,0 +1,73 @@
+@import org.booktower.web.PageContext
+@param pc: PageContext
+@param hasApiKey: Boolean
+
+@template.components.layout(title="${pc.i18n.translate("page.hardcover.title")} - BookTower", pc=pc, currentPage="hardcover-settings",
+    searchQuery="", content = @`
+<div class="page-container">
+    <h1 class="page-title"><i class="ri-book-3-line"></i> ${pc.i18n.translate("page.hardcover.title")}</h1>
+    <p class="text-sm text-subtle" style="margin-bottom:1.5rem;">${pc.i18n.translate("page.hardcover.description")}</p>
+
+    <div class="panel" style="padding:1.25rem;">
+        <h2 style="font-size:1rem; margin-bottom:1rem; color:var(--bt-text);">${pc.i18n.translate("page.hardcover.apikey")}</h2>
+
+        @if(hasApiKey)
+            <div style="margin-bottom:1rem; padding:0.75rem; background:var(--bt-icon-bg); border-radius:0.5rem;" id="hardcover-status">
+                <div class="text-sm" style="color:var(--bt-text);">
+                    <i class="ri-check-line" style="color:var(--bt-accent-dim);"></i>
+                    ${pc.i18n.translate("page.hardcover.connected")}
+                </div>
+            </div>
+        @else
+            <div style="margin-bottom:1rem; padding:0.75rem; background:var(--bt-icon-bg); border-radius:0.5rem;" id="hardcover-status">
+                <div class="text-sm text-subtle">
+                    <i class="ri-information-line"></i>
+                    ${pc.i18n.translate("page.hardcover.not.connected")}
+                </div>
+            </div>
+        @endif
+
+        <div style="margin-bottom:0.75rem;">
+            <label style="font-size:0.75rem; color:var(--bt-muted); display:block; margin-bottom:0.2rem;">${pc.i18n.translate("page.hardcover.apikey")}</label>
+            <input type="password" id="hc-api-key" placeholder="${pc.i18n.translate("page.hardcover.apikey.placeholder")}" style="width:100%; max-width:400px; padding:0.5rem;">
+        </div>
+        <div style="display:flex; gap:0.5rem;">
+            <button id="hc-save-btn" class="btn-primary" style="padding:0.5rem 1rem;">
+                <i class="ri-save-line"></i> ${pc.i18n.translate("label.save")}
+            </button>
+            <button id="hc-test-btn" class="btn-secondary" style="padding:0.5rem 1rem;">
+                <i class="ri-link"></i> ${pc.i18n.translate("page.hardcover.test")}
+            </button>
+        </div>
+        <div id="hc-test-result" class="text-sm" style="margin-top:0.5rem;"></div>
+    </div>
+</div>
+
+<script>
+(function() {
+    document.getElementById('hc-save-btn').addEventListener('click', function() {
+        var key = document.getElementById('hc-api-key').value.trim();
+        if (!key) return;
+        fetch('/api/user/hardcover/key', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ apiKey: key })
+        }).then(function(r) { if (r.ok) window.location.reload(); });
+    });
+
+    document.getElementById('hc-test-btn').addEventListener('click', function() {
+        var result = document.getElementById('hc-test-result');
+        result.textContent = 'Testing...';
+        fetch('/api/user/hardcover/status').then(function(r) { return r.json(); }).then(function(data) {
+            if (data.connected) {
+                result.style.color = 'var(--bt-accent-dim)';
+                result.textContent = 'Connected as: ' + (data.username || 'unknown');
+            } else {
+                result.style.color = 'var(--bt-danger)';
+                result.textContent = 'Not connected. Please set your API key.';
+            }
+        });
+    });
+})();
+</script>
+`)
