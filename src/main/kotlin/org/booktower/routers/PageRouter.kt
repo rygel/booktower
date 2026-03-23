@@ -65,6 +65,8 @@ class PageRouter(
             "/opds-settings" bind Method.GET to filters.auth.then(pageHandler::opdsSettings),
             "/content-restrictions" bind Method.GET to filters.auth.then(pageHandler::contentRestrictions),
             "/reading-speed" bind Method.GET to filters.auth.then(pageHandler::readingSpeed),
+            "/book-drop" bind Method.GET to filters.auth.then(pageHandler::bookDrop),
+            "/metadata-proposals" bind Method.GET to filters.auth.then(pageHandler::metadataProposals),
             "/library-health" bind Method.GET to filters.auth.then(pageHandler::libraryHealth),
             "/hardcover-settings" bind Method.GET to filters.auth.then(pageHandler::hardcoverSettings),
             "/book-delivery" bind Method.GET to filters.auth.then(pageHandler::bookDelivery),

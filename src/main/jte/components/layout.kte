@@ -172,6 +172,14 @@
                     <i class="ri-shield-check-line"></i>
                     ${pc.i18n.translate("page.restrictions.title")}
                 </a>
+                <a href="/book-drop" class="sidebar-link ${if (currentPage == "book-drop") "active" else ""}">
+                    <i class="ri-upload-cloud-line"></i>
+                    ${pc.i18n.translate("page.bookdrop.title")}
+                </a>
+                <a href="/metadata-proposals" class="sidebar-link ${if (currentPage == "metadata-proposals") "active" else ""}">
+                    <i class="ri-file-edit-line"></i>
+                    ${pc.i18n.translate("page.proposals.title")}
+                </a>
                 <a href="/reading-speed" class="sidebar-link ${if (currentPage == "reading-speed") "active" else ""}">
                     <i class="ri-speed-line"></i>
                     ${pc.i18n.translate("page.speed.title")}

@@ -68,6 +68,8 @@ class PageHandler(
     private val libraryHealthService: org.booktower.services.LibraryHealthService? = null,
     private val hardcoverSyncService: org.booktower.services.HardcoverSyncService? = null,
     private val bookDeliveryService: org.booktower.services.BookDeliveryService? = null,
+    private val bookDropService: org.booktower.services.BookDropService? = null,
+    private val metadataProposalService: org.booktower.services.MetadataProposalService? = null,
 ) {
     /** Build a PageContext for any authenticated request. */
     private fun pageContext(req: Request): org.booktower.web.PageContext =
@@ -732,6 +734,41 @@ class PageHandler(
             templateRenderer.render(
                 "book-delivery.kte",
                 pc.toMap("recipients" to recipients),
+            ),
+        )
+    }
+
+    fun bookDrop(req: Request): Response {
+        val userId = auth(req) ?: return redirectToLogin()
+        val pc = pageContext(req)
+        val pendingFiles = bookDropService?.listPending() ?: emptyList()
+        val libraries = libraryService.getLibraries(userId)
+        return htmlOk(
+            templateRenderer.render(
+                "book-drop.kte",
+                pc.toMap(
+                    "files" to pendingFiles,
+                    "libraries" to libraries,
+                ),
+            ),
+        )
+    }
+
+    fun metadataProposals(req: Request): Response {
+        val userId = auth(req) ?: return redirectToLogin()
+        val pc = pageContext(req)
+        // Get all books, then collect proposals across them
+        val allBooks = bookService.getBooks(userId, null, page = 1, pageSize = 500).getBooks()
+        val proposals =
+            allBooks.flatMap { book ->
+                val bookUuid = java.util.UUID.fromString(book.id)
+                (metadataProposalService?.listProposals(userId, bookUuid) ?: emptyList())
+                    .filter { it.status == "PENDING" }
+            }
+        return htmlOk(
+            templateRenderer.render(
+                "metadata-proposals.kte",
+                pc.toMap("proposals" to proposals),
             ),
         )
     }

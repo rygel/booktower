@@ -261,6 +261,8 @@ abstract class IntegrationTestBase {
                 org.booktower.services.LibraryHealthService(jdbi),
                 hardcoverSyncService,
                 null, // bookDeliveryService
+                null, // bookDropService
+                metadataProposalService,
             )
         val backgroundTaskHandler = BackgroundTaskHandler(backgroundTaskService)
         val journalHandler = JournalHandler(journalService)

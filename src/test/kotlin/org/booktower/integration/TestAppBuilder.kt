@@ -258,6 +258,8 @@ fun buildTestApp(
             null, // libraryHealthService
             null, // hardcoverSyncService
             null, // bookDeliveryService
+            null, // bookDropService
+            null, // metadataProposalService
         )
     val bgTaskHandler = BackgroundTaskHandler(bgTaskService)
     val journalHandler = JournalHandler(journal)
