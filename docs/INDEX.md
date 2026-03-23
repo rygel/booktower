@@ -1,4 +1,4 @@
-# BookTower Documentation Index
+# Runary Documentation Index
 
 ## For Users & Operators
 

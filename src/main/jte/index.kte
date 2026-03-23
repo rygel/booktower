@@ -1,4 +1,4 @@
-@import org.booktower.i18n.I18nService
+@import org.runary.i18n.I18nService
 @param title: String
 @param isAuthenticated: Boolean
 @param username: String?
@@ -146,7 +146,7 @@
 
     <footer style="background:var(--bt-surface); border-top:1px solid var(--bt-border);">
         <div style="max-width:72rem; margin:0 auto; padding:0.75rem 1.5rem; display:flex; align-items:center; justify-content:space-between; font-size:0.75rem; color:var(--bt-subtle);">
-            <span>&copy; 2026 BookTower. ${i18n.translate("footer.rights")}</span>
+            <span>&copy; 2026 Runary. ${i18n.translate("footer.rights")}</span>
             <span>${i18n.translate("footer.made.with")} <i class="ri-heart-fill" style="color:var(--bt-danger);"></i> Kotlin &amp; http4k</span>
         </div>
     </footer>

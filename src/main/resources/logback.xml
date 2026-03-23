@@ -5,7 +5,7 @@
         </encoder>
     </appender>
 
-    <logger name="org.booktower" level="INFO"/>
+    <logger name="org.runary" level="INFO"/>
     <logger name="org.http4k" level="INFO"/>
     <logger name="org.jdbi" level="INFO"/>
     <logger name="org.flyway" level="INFO"/>

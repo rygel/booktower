@@ -1,4 +1,4 @@
-# BookTower Frontend Implementation & Testing Summary
+# Runary Frontend Implementation & Testing Summary
 
 ## ✅ **Completed Frontend Work**
 
@@ -150,7 +150,7 @@ Since all manual test scenarios are covered by automated tests, manual testing i
 # Test script syntax
 Get-Content start-dev.ps1 | Select-String "mvn exec:java"
 
-# Should see: mvn exec:java "-Dexec.mainClass=org.booktower.BookTowerAppKt"
+# Should see: mvn exec:java "-Dexec.mainClass=org.runary.RunaryAppKt"
 ```
 
 ### **2. Verify Server Starts**
@@ -160,7 +160,7 @@ Get-Content start-dev.ps1 | Select-String "mvn exec:java"
 # Should see:
 # - Maven compilation
 # - Server startup message
-# - "BookTower started successfully!"
+# - "Runary started successfully!"
 ```
 
 ### **3. Verify Tests Pass**

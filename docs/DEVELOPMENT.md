@@ -12,14 +12,14 @@
 # Foreground mode (see logs directly, Ctrl+C to stop)
 .\dev.ps1
 
-# Background mode (logs to data\booktower.log)
+# Background mode (logs to data\runary.log)
 .\start-dev.ps1
 .\start-dev.ps1 -OpenBrowser   # also opens browser
 .\start-dev.ps1 -Clean         # mvn clean first
 .\start-dev.ps1 -SkipBuild     # skip compilation
 ```
 
-Both scripts auto-kill any previous BookTower instance on port 9999.
+Both scripts auto-kill any previous Runary instance on port 9999.
 
 Default dev credentials: **dev / dev12345**
 
@@ -27,18 +27,18 @@ Default dev credentials: **dev / dev12345**
 
 | | Dev Mode | Production Mode |
 |---|---------|----------------|
-| **Activated by** | Default (no env var) | `BOOKTOWER_ENV=production` |
-| **Database** | H2 file (`data/booktower`) | PostgreSQL via `BOOKTOWER_DB_*` |
+| **Activated by** | Default (no env var) | `RUNARY_ENV=production` |
+| **Database** | H2 file (`data/runary`) | PostgreSQL via `RUNARY_DB_*` |
 | **Templates** | Dynamic — live-reload from `src/main/jte/` | Precompiled into JAR |
-| **JWT secret** | Auto-generated (warning logged) | **Must** set `BOOKTOWER_JWT_SECRET` |
+| **JWT secret** | Auto-generated (warning logged) | **Must** set `RUNARY_JWT_SECRET` |
 | **Dev user** | Auto-created (dev/dev12345) | Not created |
-| **Registration** | Open by default | Set `BOOKTOWER_REGISTRATION_OPEN` |
+| **Registration** | Open by default | Set `RUNARY_REGISTRATION_OPEN` |
 | **HTML caching** | `no-cache` (always fresh) | `no-cache` (revalidates) |
 | **Static assets** | 1-day cache | 1-day cache |
 
 ## Template Engine
 
-BookTower uses [JTE](https://jte.gg/) templates in `src/main/jte/`.
+Runary uses [JTE](https://jte.gg/) templates in `src/main/jte/`.
 
 **Dev mode**: Templates compile on-the-fly from source. Edit a `.kte` file, refresh the browser — changes appear immediately. Compiled classes go to `target/jte-dynamic/` (auto-cleaned on startup).
 
@@ -88,30 +88,30 @@ Never run the full suite without reason. See [CLAUDE.md](../CLAUDE.md) for test 
 ### Build locally
 
 ```bash
-docker build -t booktower:dev .
-docker run -p 9999:8080 -e BOOKTOWER_QUICKSTART=true booktower:dev
+docker build -t runary:dev .
+docker run -p 9999:8080 -e RUNARY_QUICKSTART=true runary:dev
 ```
 
 ### Dockerfile details
 
 - **Build stage**: `maven:3.9-eclipse-temurin-21` — compiles and packages the fat JAR
 - **Runtime stage**: `eclipse-temurin:21-jre-jammy` — minimal JRE, ~200MB
-- **Internal port**: 8080 (set by `BOOKTOWER_PORT=8080` in Dockerfile)
+- **Internal port**: 8080 (set by `RUNARY_PORT=8080` in Dockerfile)
 - **External port**: Map to whatever you want (`-p 9999:8080`)
-- **User**: Runs as non-root `booktower` user
+- **User**: Runs as non-root `runary` user
 - **Data**: Mount volumes at `/data/books`, `/data/covers`, `/data/db`
 
 ### Pre-built images
 
 ```bash
 # Latest stable
-docker pull ghcr.io/rygel/booktower:latest
+docker pull ghcr.io/rygel/runary:latest
 
 # Latest from develop
-docker pull ghcr.io/rygel/booktower:beta
+docker pull ghcr.io/rygel/runary:beta
 
 # Specific version
-docker pull ghcr.io/rygel/booktower:0.6.0
+docker pull ghcr.io/rygel/runary:0.6.0
 ```
 
 Multi-arch: `linux/amd64` + `linux/arm64` (Raspberry Pi, AWS Graviton).
@@ -147,8 +147,8 @@ mvn versions:display-plugin-updates
 mvn package -DskipTests -Dflyway.skip=true
 
 # Run from fat JAR
-BOOKTOWER_QUICKSTART=true java -jar target/booktower-*-fat.jar
+RUNARY_QUICKSTART=true java -jar target/runary-*-fat.jar
 
 # Run from Maven (dev mode, dynamic templates)
-mvn exec:java -Dexec.mainClass=org.booktower.BookTowerAppKt
+mvn exec:java -Dexec.mainClass=org.runary.RunaryAppKt
 ```

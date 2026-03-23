@@ -1,5 +1,5 @@
-@import org.booktower.i18n.I18nService
-@import org.booktower.models.LibraryDto
+@import org.runary.i18n.I18nService
+@import org.runary.models.LibraryDto
 @param lib: LibraryDto
 @param i18n: I18nService
 

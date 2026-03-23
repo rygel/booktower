@@ -1,4 +1,4 @@
--- BookTower consolidated schema (V1–V42 merged into a single migration)
+-- Runary consolidated schema (V1–V42 merged into a single migration)
 -- Compatible with both H2 (PostgreSQL mode) and PostgreSQL
 
 -------------------------------------------------------------------

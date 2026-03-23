@@ -13,7 +13,7 @@ Only the latest release receives security updates.
 
 **Please do not open a public GitHub issue for security vulnerabilities.**
 
-Instead, use [GitHub Private Security Advisories](https://github.com/rygel/booktower/security/advisories/new) to report vulnerabilities. This keeps the details private until a fix is available.
+Instead, use [GitHub Private Security Advisories](https://github.com/rygel/runary/security/advisories/new) to report vulnerabilities. This keeps the details private until a fix is available.
 
 ### What to include
 
@@ -31,7 +31,7 @@ Instead, use [GitHub Private Security Advisories](https://github.com/rygel/bookt
 ### Scope
 
 The following are in scope:
-- BookTower application code (Kotlin/Java backend, JTE templates, JavaScript frontend)
+- Runary application code (Kotlin/Java backend, JTE templates, JavaScript frontend)
 - Docker image configuration
 - Default configuration security
 

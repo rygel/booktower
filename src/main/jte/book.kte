@@ -1,11 +1,11 @@
-@import org.booktower.models.BookDto
-@import org.booktower.models.BookFileDto
-@import org.booktower.models.BookmarkDto
-@import org.booktower.models.LibraryDto
-@import org.booktower.models.LinkedBookDto
-@import org.booktower.models.ReadStatus
-@import org.booktower.models.SyncPositionDto
-@import org.booktower.web.PageContext
+@import org.runary.models.BookDto
+@import org.runary.models.BookFileDto
+@import org.runary.models.BookmarkDto
+@import org.runary.models.LibraryDto
+@import org.runary.models.LinkedBookDto
+@import org.runary.models.ReadStatus
+@import org.runary.models.SyncPositionDto
+@import org.runary.web.PageContext
 @param pc: PageContext
 @param book: BookDto
 @param libraryName: String?
@@ -16,7 +16,7 @@
 @param syncPosition: SyncPositionDto? = null
 
 
-@template.components.layout(title="${book.title} - BookTower", pc=pc, currentPage="library",
+@template.components.layout(title="${book.title} - Runary", pc=pc, currentPage="library",
     content = @`
 <div class="book-detail">
 

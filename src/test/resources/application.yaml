@@ -1,5 +1,5 @@
 app:
-  name: BookTower
+  name: Runary
   host: 0.0.0.0
   port: 9999
 
@@ -10,14 +10,14 @@ app:
       - 0.0.0.0
 
   database:
-    url: "jdbc:h2:mem:booktower-test;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1"
+    url: "jdbc:h2:mem:runary-test;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1"
     username: sa
     password: ""
     driver: org.h2.Driver
 
   security:
     jwtSecret: "test-secret-key-not-for-production"
-    jwtIssuer: booktower
+    jwtIssuer: runary
     sessionTimeout: 86400
 
   storage:
@@ -28,5 +28,5 @@ app:
   weblate:
     url: ""
     apiToken: ""
-    component: "booktower/translations"
+    component: "runary/translations"
     enabled: false

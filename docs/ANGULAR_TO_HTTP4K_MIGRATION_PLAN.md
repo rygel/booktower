@@ -112,13 +112,13 @@ This document outlines a comprehensive migration strategy to move from the curre
 ## Project Structure
 
 ```
-booktower-web/
+runary-web/
 ├── build.gradle.kts              # Gradle build configuration
 ├── src/
 │   ├── main/
 │   │   ├── kotlin/
-│   │   │   └── org/booktower/web/
-│   │   │       ├── BookTowerWebApp.kt           # Application entry point
+│   │   │   └── org/runary/web/
+│   │   │       ├── RunaryWebApp.kt           # Application entry point
 │   │   │       ├── config/
 │   │   │       │   ├── AppConfig.kt            # Application configuration
 │   │   │       │   ├── SecurityConfig.kt       # JWT/OAuth2 configuration
@@ -182,7 +182,7 @@ booktower-web/
 │   │       └── application.conf                # Configuration
 │   └── test/
 │       └── kotlin/
-│           └── org/booktower/web/
+│           └── org/runary/web/
 │               └── handlers/
 │                   └── BookHandlerTest.kt
 ├── docker/
@@ -430,7 +430,7 @@ booktower-web/
 ### 1. HTTP4K Application Structure
 
 ```kotlin
-// BookTowerWebApp.kt
+// RunaryWebApp.kt
 fun main() {
     val config = AppConfig.load()
     val apiClient = ApiClient(config.apiBaseUrl)
@@ -792,7 +792,7 @@ if (req.header("HX-Request") != null) {
 2. **Real-time Features**
    - WebSocket → SSE transition
    - Risk: SSE less efficient for high-frequency updates
-   - Mitigation: SSE is sufficient for BookTower's use case
+   - Mitigation: SSE is sufficient for Runary's use case
 
 3. **Performance**
    - Server rendering vs client rendering
@@ -837,7 +837,7 @@ if (req.header("HX-Request") != null) {
 
 ## Conclusion
 
-This migration moves BookTower from a complex SPA to a simpler, more maintainable hypermedia-driven architecture. While significant work, the benefits include:
+This migration moves Runary from a complex SPA to a simpler, more maintainable hypermedia-driven architecture. While significant work, the benefits include:
 
 - Reduced complexity (10x fewer source files)
 - Better performance

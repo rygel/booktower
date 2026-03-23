@@ -1,20 +1,20 @@
-# BookTower Installation Guide
+# Runary Installation Guide
 
-This guide covers setting up BookTower for production use, including PostgreSQL full-text search, OIDC single sign-on, email delivery, and reverse proxy configuration.
+This guide covers setting up Runary for production use, including PostgreSQL full-text search, OIDC single sign-on, email delivery, and reverse proxy configuration.
 
 ## Quick Start (5 minutes)
 
-The fastest way to get BookTower running:
+The fastest way to get Runary running:
 
 ```bash
-docker run -d --name booktower \
+docker run -d --name runary \
   -p 9999:8080 \
-  -v booktower_db:/data/db \
-  -v booktower_books:/data/books \
-  -v booktower_covers:/data/covers \
-  -e BOOKTOWER_ENV=production \
-  -e BOOKTOWER_JWT_SECRET="$(openssl rand -base64 32)" \
-  ghcr.io/rygel/booktower:latest
+  -v runary_db:/data/db \
+  -v runary_books:/data/books \
+  -v runary_covers:/data/covers \
+  -e RUNARY_ENV=production \
+  -e RUNARY_JWT_SECRET="$(openssl rand -base64 32)" \
+  ghcr.io/rygel/runary:latest
 ```
 
 Open http://localhost:9999 and register your first account. The first registered user becomes admin.
@@ -26,7 +26,7 @@ Open http://localhost:9999 and register your first account. The first registered
 Best for personal use with a small library (< 10,000 books). Zero external dependencies.
 
 ```bash
-curl -O https://raw.githubusercontent.com/rygel/booktower/main/docs/examples/docker-compose.simple.yml
+curl -O https://raw.githubusercontent.com/rygel/runary/main/docs/examples/docker-compose.simple.yml
 docker compose -f docker-compose.simple.yml up -d
 ```
 
@@ -37,7 +37,7 @@ See [`docs/examples/docker-compose.simple.yml`](examples/docker-compose.simple.y
 Recommended for larger libraries, multi-user setups, or when you need full-text search.
 
 ```bash
-curl -O https://raw.githubusercontent.com/rygel/booktower/main/docs/examples/docker-compose.postgres.yml
+curl -O https://raw.githubusercontent.com/rygel/runary/main/docs/examples/docker-compose.postgres.yml
 # Edit the file — change passwords!
 docker compose -f docker-compose.postgres.yml up -d
 ```
@@ -49,8 +49,8 @@ See [`docs/examples/docker-compose.postgres.yml`](examples/docker-compose.postgr
 For organizations or advanced self-hosters who want SSO, email notifications, and all features enabled.
 
 ```bash
-curl -O https://raw.githubusercontent.com/rygel/booktower/main/docs/examples/docker-compose.full.yml
-curl -O https://raw.githubusercontent.com/rygel/booktower/main/docs/examples/.env.example
+curl -O https://raw.githubusercontent.com/rygel/runary/main/docs/examples/docker-compose.full.yml
+curl -O https://raw.githubusercontent.com/rygel/runary/main/docs/examples/.env.example
 cp .env.example .env
 # Edit .env with your passwords and domain
 docker compose -f docker-compose.full.yml --env-file .env up -d
@@ -64,12 +64,12 @@ Requires Java 21 or later.
 
 ```bash
 # Download the latest release
-curl -LO https://github.com/rygel/booktower/releases/latest/download/booktower.jar
+curl -LO https://github.com/rygel/runary/releases/latest/download/runary.jar
 
 # Run with H2 (zero config)
-BOOKTOWER_ENV=production \
-BOOKTOWER_JWT_SECRET="$(openssl rand -base64 32)" \
-java -Xms128m -Xmx512m -jar booktower.jar
+RUNARY_ENV=production \
+RUNARY_JWT_SECRET="$(openssl rand -base64 32)" \
+java -Xms128m -Xmx512m -jar runary.jar
 ```
 
 ### systemd Service
@@ -77,17 +77,17 @@ java -Xms128m -Xmx512m -jar booktower.jar
 For Linux servers, install as a systemd service:
 
 ```bash
-sudo useradd -r -s /bin/false booktower
-sudo mkdir -p /opt/booktower /var/lib/booktower/{books,covers,db}
-sudo chown -R booktower:booktower /opt/booktower /var/lib/booktower
-sudo cp booktower.jar /opt/booktower/booktower.jar
-sudo cp docs/examples/booktower.service /etc/systemd/system/
-# Edit /etc/systemd/system/booktower.service — set JWT_SECRET and DB config
+sudo useradd -r -s /bin/false runary
+sudo mkdir -p /opt/runary /var/lib/runary/{books,covers,db}
+sudo chown -R runary:runary /opt/runary /var/lib/runary
+sudo cp runary.jar /opt/runary/runary.jar
+sudo cp docs/examples/runary.service /etc/systemd/system/
+# Edit /etc/systemd/system/runary.service — set JWT_SECRET and DB config
 sudo systemctl daemon-reload
-sudo systemctl enable --now booktower
+sudo systemctl enable --now runary
 ```
 
-See [`docs/examples/booktower.service`](examples/booktower.service).
+See [`docs/examples/runary.service`](examples/runary.service).
 
 ## Native Binary (Experimental)
 
@@ -95,17 +95,17 @@ Pre-built binaries for Linux, macOS, and Windows. No JVM required.
 
 | Platform | Binary |
 |----------|--------|
-| Linux x64 | `booktower-linux-x64` |
-| Linux ARM64 | `booktower-linux-arm64` |
-| macOS Intel | `booktower-macos-x64` |
-| macOS Apple Silicon | `booktower-macos-arm64` |
-| Windows x64 | `booktower-windows-x64.exe` |
+| Linux x64 | `runary-linux-x64` |
+| Linux ARM64 | `runary-linux-arm64` |
+| macOS Intel | `runary-macos-x64` |
+| macOS Apple Silicon | `runary-macos-arm64` |
+| Windows x64 | `runary-windows-x64.exe` |
 
 ```bash
-chmod +x booktower-linux-x64
-BOOKTOWER_ENV=production \
-BOOKTOWER_JWT_SECRET="$(openssl rand -base64 32)" \
-./booktower-linux-x64
+chmod +x runary-linux-x64
+RUNARY_ENV=production \
+RUNARY_JWT_SECRET="$(openssl rand -base64 32)" \
+./runary-linux-x64
 ```
 
 ## PostgreSQL Setup
@@ -119,27 +119,27 @@ BOOKTOWER_JWT_SECRET="$(openssl rand -base64 32)" \
 ### Database Creation
 
 ```sql
-CREATE USER booktower WITH PASSWORD 'your-strong-password';
-CREATE DATABASE booktower OWNER booktower;
+CREATE USER runary WITH PASSWORD 'your-strong-password';
+CREATE DATABASE runary OWNER runary;
 ```
 
 ### Environment Variables
 
 ```bash
-BOOKTOWER_DB_URL=jdbc:postgresql://localhost:5432/booktower
-BOOKTOWER_DB_USERNAME=booktower
-BOOKTOWER_DB_PASSWORD=your-strong-password
-BOOKTOWER_DB_DRIVER=org.postgresql.Driver
+RUNARY_DB_URL=jdbc:postgresql://localhost:5432/runary
+RUNARY_DB_USERNAME=runary
+RUNARY_DB_PASSWORD=your-strong-password
+RUNARY_DB_DRIVER=org.postgresql.Driver
 ```
 
-BookTower runs Flyway migrations automatically on startup — no manual schema setup needed.
+Runary runs Flyway migrations automatically on startup — no manual schema setup needed.
 
 ## Full-Text Search
 
 Full-text search requires PostgreSQL and is enabled with:
 
 ```bash
-BOOKTOWER_FTS_ENABLED=true
+RUNARY_FTS_ENABLED=true
 ```
 
 ### Features
@@ -153,17 +153,17 @@ BOOKTOWER_FTS_ENABLED=true
 
 ### Search-as-you-type
 
-The search bar debounces queries by 300ms (configurable via `BOOKTOWER_FTS_THROTTLE_MS`).
+The search bar debounces queries by 300ms (configurable via `RUNARY_FTS_THROTTLE_MS`).
 
 ## OIDC / Single Sign-On
 
-BookTower supports OpenID Connect for SSO with any OIDC provider (Keycloak, Authentik, Auth0, etc.).
+Runary supports OpenID Connect for SSO with any OIDC provider (Keycloak, Authentik, Auth0, etc.).
 
 ### Environment Variables
 
 ```bash
-OIDC_ISSUER=https://auth.example.com/realms/booktower
-OIDC_CLIENT_ID=booktower
+OIDC_ISSUER=https://auth.example.com/realms/runary
+OIDC_CLIENT_ID=runary
 OIDC_CLIENT_SECRET=your-client-secret
 OIDC_REDIRECT_URI=https://books.example.com/auth/oidc/callback
 OIDC_SCOPE=openid email profile
@@ -176,7 +176,7 @@ OIDC_SCOPE=openid email profile
 OIDC_FORCE_ONLY=true
 
 # Auto-grant admin to users in a specific group
-OIDC_ADMIN_GROUP_PATTERN=^booktower-admin$
+OIDC_ADMIN_GROUP_PATTERN=^runary-admin$
 
 # Custom groups claim name (default: "groups")
 OIDC_GROUPS_CLAIM=groups
@@ -189,19 +189,19 @@ OIDC_GROUPS_CLAIM=groups
 3. Set **Access Type** to `confidential`
 4. Add `https://books.example.com/auth/oidc/callback` to **Valid Redirect URIs**
 5. Copy the client secret from the **Credentials** tab
-6. Create a group `booktower-admin` and add admin users to it
+6. Create a group `runary-admin` and add admin users to it
 
 ## Email / SMTP
 
 Email enables password reset and send-to-Kindle book delivery.
 
 ```bash
-BOOKTOWER_SMTP_HOST=smtp.gmail.com
-BOOKTOWER_SMTP_PORT=587
-BOOKTOWER_SMTP_USER=you@gmail.com
-BOOKTOWER_SMTP_PASS=app-specific-password
-BOOKTOWER_SMTP_FROM=you@gmail.com
-BOOKTOWER_SMTP_TLS=true
+RUNARY_SMTP_HOST=smtp.gmail.com
+RUNARY_SMTP_PORT=587
+RUNARY_SMTP_USER=you@gmail.com
+RUNARY_SMTP_PASS=app-specific-password
+RUNARY_SMTP_FROM=you@gmail.com
+RUNARY_SMTP_TLS=true
 ```
 
 ## Reverse Proxy
@@ -214,11 +214,11 @@ Key points:
 - Set `client_max_body_size 500M` for large book uploads
 - Forward `Host`, `X-Real-IP`, `X-Forwarded-For`, `X-Forwarded-Proto` headers
 - Disable buffering for SSE notification streaming
-- Set `BOOKTOWER_CSRF_ALLOWED_HOSTS` to your domain
+- Set `RUNARY_CSRF_ALLOWED_HOSTS` to your domain
 
 ```bash
-BOOKTOWER_BASE_URL=https://books.example.com
-BOOKTOWER_CSRF_ALLOWED_HOSTS=books.example.com
+RUNARY_BASE_URL=https://books.example.com
+RUNARY_CSRF_ALLOWED_HOSTS=books.example.com
 ```
 
 ### Caddy
@@ -229,7 +229,7 @@ See [`docs/examples/Caddyfile`](examples/Caddyfile). Caddy auto-provisions HTTPS
 
 ### Kobo
 
-1. Go to **Devices** in BookTower and register a Kobo device
+1. Go to **Devices** in Runary and register a Kobo device
 2. Copy the device token
 3. On your Kobo, set the sync URL to: `https://books.example.com/kobo/{token}/v1`
 
@@ -244,7 +244,7 @@ See [`docs/examples/Caddyfile`](examples/Caddyfile). Caddy auto-provisions HTTPS
 Access your library from any OPDS-compatible reader:
 
 - **Catalog URL**: `https://books.example.com/opds/catalog`
-- **Authentication**: HTTP Basic (your BookTower username/password) or Bearer API token
+- **Authentication**: HTTP Basic (your Runary username/password) or Bearer API token
 
 Compatible readers: KOReader, Librera, Moon+ Reader, Kybook, Aldiko, Thorium, Calibre.
 
@@ -278,26 +278,26 @@ The Docker image includes a built-in `HEALTHCHECK` that polls `/health` every 30
 
 ### H2 Database
 
-Stop BookTower and copy the database file:
+Stop Runary and copy the database file:
 
 ```bash
-docker compose stop booktower
-docker cp booktower:/data/db ./backup-db
-docker compose start booktower
+docker compose stop runary
+docker cp runary:/data/db ./backup-db
+docker compose start runary
 ```
 
 ### PostgreSQL
 
 ```bash
-docker exec booktower-postgres pg_dump -U booktower booktower > backup.sql
+docker exec runary-postgres pg_dump -U runary runary > backup.sql
 ```
 
 ### Full Export (JSON)
 
-BookTower provides a JSON export of all user data:
+Runary provides a JSON export of all user data:
 
 ```bash
-curl -H "Cookie: token=YOUR_JWT" http://localhost:9999/api/export > booktower-export.json
+curl -H "Cookie: token=YOUR_JWT" http://localhost:9999/api/export > runary-export.json
 ```
 
 ## Environment Variable Reference
@@ -317,4 +317,4 @@ All example configurations are in [`docs/examples/`](examples/):
 | [`.env.example`](examples/.env.example) | Environment variable template |
 | [`nginx.conf`](examples/nginx.conf) | Nginx reverse proxy |
 | [`Caddyfile`](examples/Caddyfile) | Caddy reverse proxy |
-| [`booktower.service`](examples/booktower.service) | systemd service unit |
+| [`runary.service`](examples/runary.service) | systemd service unit |

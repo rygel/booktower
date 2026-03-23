@@ -1,10 +1,10 @@
-@import org.booktower.services.SharedBookDto
-@import org.booktower.web.PageContext
+@import org.runary.services.SharedBookDto
+@import org.runary.web.PageContext
 @param pc: PageContext
 @param sharedBook: SharedBookDto
 
 
-@template.components.layout(title="${sharedBook.title} - BookTower", pc=pc, currentPage="",
+@template.components.layout(title="${sharedBook.title} - Runary", pc=pc, currentPage="",
     content = @`
 <div style="padding:2rem; max-width:42rem; margin:0 auto;">
 

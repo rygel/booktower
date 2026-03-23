@@ -6,13 +6,13 @@
 
 ## Context
 
-BookTower needs a way for users to share books with other users on the same instance. The question is whether shared books should be accessible publicly (no login required) or only to authenticated users.
+Runary needs a way for users to share books with other users on the same instance. The question is whether shared books should be accessible publicly (no login required) or only to authenticated users.
 
-Competitors like Kavita offer public share links that anyone with the URL can access. However, BookTower is designed as a self-hosted personal library manager, typically running on a home network or small server for a household or friend group.
+Competitors like Kavita offer public share links that anyone with the URL can access. However, Runary is designed as a self-hosted personal library manager, typically running on a home network or small server for a household or friend group.
 
 ## Decision
 
-**Shared books require authentication.** A share link (`/shared/book/{token}`) is only accessible to users who are logged in to the BookTower instance. Anonymous visitors are redirected to the login page.
+**Shared books require authentication.** A share link (`/shared/book/{token}`) is only accessible to users who are logged in to the Runary instance. Anonymous visitors are redirected to the login page.
 
 ### Design Rules
 
@@ -26,7 +26,7 @@ Competitors like Kavita offer public share links that anyone with the URL can ac
 ## Consequences
 
 - Users cannot share books with people who don't have an account on the server
-- This is intentional — BookTower is not a public content distribution platform
+- This is intentional — Runary is not a public content distribution platform
 - If public sharing is ever needed, it can be added as a separate opt-in feature with a different endpoint (`/public/book/{token}`) behind an admin flag
 - The existing API endpoints (`/public/book/{token}`) will be changed to require authentication and moved to `/shared/book/{token}`
 

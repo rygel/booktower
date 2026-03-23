@@ -1,12 +1,12 @@
-@import org.booktower.models.ReadingSessionDto
-@import org.booktower.services.AnalyticsSummary
-@import org.booktower.web.PageContext
+@import org.runary.models.ReadingSessionDto
+@import org.runary.services.AnalyticsSummary
+@import org.runary.web.PageContext
 @param pc: PageContext
 @param summary: AnalyticsSummary
 @param recentSessions: List<ReadingSessionDto> = emptyList()
 
 
-@template.components.layout(title="${pc.i18n.translate("page.analytics.title")} - BookTower", pc=pc, currentPage="analytics",
+@template.components.layout(title="${pc.i18n.translate("page.analytics.title")} - Runary", pc=pc, currentPage="analytics",
     content = @`
 <div class="page-container" style="max-width:56rem;">
     <h1 class="page-title flex-center gap-sm" style="font-size:1.25rem;">

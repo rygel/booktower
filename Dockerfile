@@ -20,23 +20,23 @@ WORKDIR /app
 
 # Install curl for healthcheck and create non-root user
 RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/* && \
-    groupadd -r booktower && useradd -r -g booktower booktower
+    groupadd -r runary && useradd -r -g runary runary
 
 # Copy fat jar (the -fat.jar variant has the main manifest)
-COPY --from=build /build/target/booktower-*-fat.jar app.jar
+COPY --from=build /build/target/runary-*-fat.jar app.jar
 
 # Data directories (override with volumes in docker-compose)
 RUN mkdir -p /data/books /data/covers /data/db && \
-    chown -R booktower:booktower /data /app
+    chown -R runary:runary /data /app
 
-USER booktower
+USER runary
 
 EXPOSE 8080
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
     CMD curl -f http://localhost:8080/health || exit 1
 
-ENV BOOKTOWER_ENV=production \
-    BOOKTOWER_PORT=8080
+ENV RUNARY_ENV=production \
+    RUNARY_PORT=8080
 
 ENTRYPOINT ["java", "-Xms128m", "-Xmx512m", "-jar", "app.jar"]

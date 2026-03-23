@@ -1,6 +1,6 @@
-# BookTower
+# Runary
 
-A modern book management application built with Kotlin, http4k, and HTMX. BookTower allows you to organize your digital book collection, track reading progress, and manage your libraries.
+A modern book management application built with Kotlin, http4k, and HTMX. Runary allows you to organize your digital book collection, track reading progress, and manage your libraries.
 
 ## Features
 
@@ -31,15 +31,15 @@ A modern book management application built with Kotlin, http4k, and HTMX. BookTo
 ### Clone and Build
 
 ```bash
-git clone https://github.com/rygel/booktower.git
-cd booktower
+git clone https://github.com/rygel/runary.git
+cd runary
 mvn clean compile
 ```
 
 ### Run the Application
 
 ```bash
-mvn exec:java -Dexec.mainClass="org.booktower.BookTowerAppKt"
+mvn exec:java -Dexec.mainClass="org.runary.RunaryAppKt"
 ```
 
 The application will start on `http://localhost:9999`
@@ -104,11 +104,11 @@ Reports are generated in `target/` directory:
 ## Project Structure
 
 ```
-booktower/
+runary/
 ├── src/
 │   ├── main/
-│   │   ├── kotlin/org/booktower/
-│   │   │   ├── BookTowerApp.kt          # Application entry point
+│   │   ├── kotlin/org/runary/
+│   │   │   ├── RunaryApp.kt          # Application entry point
 │   │   │   ├── config/                  # Configuration classes
 │   │   │   ├── handlers/                # HTTP request handlers
 │   │   │   ├── model/                   # Domain models
@@ -121,7 +121,7 @@ booktower/
 │   │       ├── db/migration/            # Flyway migrations
 │   │       └── static/                  # Static assets
 │   └── test/
-│       └── kotlin/org/booktower/
+│       └── kotlin/org/runary/
 │           └── e2e/                     # End-to-end tests
 ├── pom.xml                              # Maven configuration
 ├── detekt.yml                           # Detekt configuration

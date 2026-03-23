@@ -1,10 +1,10 @@
-@import org.booktower.services.BackgroundTask
-@import org.booktower.services.TaskStatus
-@import org.booktower.web.PageContext
+@import org.runary.services.BackgroundTask
+@import org.runary.services.TaskStatus
+@import org.runary.web.PageContext
 @param pc: PageContext
 @param tasks: List<BackgroundTask>
 
-@template.components.layout(pc=pc, title="${pc.i18n.translate("page.downloads.title")} - BookTower", currentPage="downloads", content = @`
+@template.components.layout(pc=pc, title="${pc.i18n.translate("page.downloads.title")} - Runary", currentPage="downloads", content = @`
 <div class="page-container" style="max-width:56rem;">
 
     <div class="flex-between mb-3">

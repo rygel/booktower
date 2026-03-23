@@ -1,9 +1,9 @@
-@import org.booktower.services.FilterPresetDto
-@import org.booktower.web.PageContext
+@import org.runary.services.FilterPresetDto
+@import org.runary.web.PageContext
 @param pc: PageContext
 @param presets: List<FilterPresetDto>
 
-@template.components.layout(title="${pc.i18n.translate("page.filterpresets.title")} - BookTower", pc=pc, currentPage="filter-presets",
+@template.components.layout(title="${pc.i18n.translate("page.filterpresets.title")} - Runary", pc=pc, currentPage="filter-presets",
     searchQuery="", content = @`
 <div class="page-container">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">

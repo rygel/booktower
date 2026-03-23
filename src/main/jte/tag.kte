@@ -1,11 +1,11 @@
-@import org.booktower.models.BookDto
-@import org.booktower.web.PageContext
+@import org.runary.models.BookDto
+@import org.runary.web.PageContext
 @param pc: PageContext
 @param tagName: String
 @param books: List<BookDto>
 
 
-@template.components.layout(title="${tagName} - BookTower", pc=pc, currentPage="tags",
+@template.components.layout(title="${tagName} - Runary", pc=pc, currentPage="tags",
     content = @`
 <div style="padding:2rem; max-width:72rem; margin:0 auto;">
 

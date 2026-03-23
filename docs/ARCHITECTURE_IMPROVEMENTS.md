@@ -1,6 +1,6 @@
 # Architecture Improvement Suggestions
 
-This document provides recommendations for improving both the backend and frontend architectures of BookTower based on modern best practices and architectural patterns.
+This document provides recommendations for improving both the backend and frontend architectures of Runary based on modern best practices and architectural patterns.
 
 ## Backend Improvements
 
@@ -11,7 +11,7 @@ This document provides recommendations for improving both the backend and fronte
 **Recommendation**: Move toward a more DDD-oriented structure:
 
 ```
-org.booktower/
+org.runary/
 ├── domain/                    # Domain layer
 │   ├── book/                 # Book bounded context
 │   │   ├── model/           # Aggregates, entities, value objects

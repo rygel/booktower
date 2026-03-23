@@ -1,9 +1,9 @@
-@import org.booktower.services.EmailRecipient
-@import org.booktower.web.PageContext
+@import org.runary.services.EmailRecipient
+@import org.runary.web.PageContext
 @param pc: PageContext
 @param recipients: List<EmailRecipient>
 
-@template.components.layout(title="${pc.i18n.translate("page.delivery.title")} - BookTower", pc=pc, currentPage="book-delivery",
+@template.components.layout(title="${pc.i18n.translate("page.delivery.title")} - Runary", pc=pc, currentPage="book-delivery",
     searchQuery="", content = @`
 <div class="page-container">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">

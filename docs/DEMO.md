@@ -1,16 +1,16 @@
-# BookTower Demo Instance Setup
+# Runary Demo Instance Setup
 
-Set up a demo instance of BookTower with pre-seeded sample data for evaluation, showcasing, or testing.
+Set up a demo instance of Runary with pre-seeded sample data for evaluation, showcasing, or testing.
 
 ## Quick Start (One Command)
 
 ```bash
-docker run -d --name booktower-demo \
+docker run -d --name runary-demo \
   -p 9999:8080 \
-  -e BOOKTOWER_QUICKSTART=true \
-  -e BOOKTOWER_DEMO_MODE=true \
-  -e BOOKTOWER_JWT_SECRET=demo-instance-not-for-production \
-  ghcr.io/rygel/booktower:latest
+  -e RUNARY_QUICKSTART=true \
+  -e RUNARY_DEMO_MODE=true \
+  -e RUNARY_JWT_SECRET=demo-instance-not-for-production \
+  ghcr.io/rygel/runary:latest
 ```
 
 Open http://localhost:9999 and log in with:
@@ -20,7 +20,7 @@ Open http://localhost:9999 and log in with:
 ## Docker Compose
 
 ```bash
-curl -O https://raw.githubusercontent.com/rygel/booktower/main/docs/examples/docker-compose.demo.yml
+curl -O https://raw.githubusercontent.com/rygel/runary/main/docs/examples/docker-compose.demo.yml
 docker compose -f docker-compose.demo.yml up -d
 ```
 
@@ -29,22 +29,22 @@ See [`docs/examples/docker-compose.demo.yml`](examples/docker-compose.demo.yml).
 ## Fat JAR
 
 ```bash
-BOOKTOWER_QUICKSTART=true java -jar booktower.jar
+RUNARY_QUICKSTART=true java -jar runary.jar
 ```
 
 ## Native Binary
 
 ```bash
-BOOKTOWER_QUICKSTART=true ./booktower-linux-x64
+RUNARY_QUICKSTART=true ./runary-linux-x64
 ```
 
 ## What Gets Seeded
 
-When `BOOKTOWER_QUICKSTART=true`, BookTower automatically creates:
+When `RUNARY_QUICKSTART=true`, Runary automatically creates:
 
 ### Demo Account
 - **Username**: `demo`
-- **Email**: `demo@booktower.local`
+- **Email**: `demo@runary.local`
 - **Password**: `demo1234`
 - **Library**: "My Library" with a default storage folder
 
@@ -75,8 +75,8 @@ Audio chapters are downloaded from LibriVox on first startup (requires internet)
 
 | Setting | Purpose |
 |---------|---------|
-| `BOOKTOWER_QUICKSTART=true` | Seeds the demo account and sample data on first startup |
-| `BOOKTOWER_DEMO_MODE=true` | Restricts destructive operations (no deleting libraries/users) and shows a demo banner |
+| `RUNARY_QUICKSTART=true` | Seeds the demo account and sample data on first startup |
+| `RUNARY_DEMO_MODE=true` | Restricts destructive operations (no deleting libraries/users) and shows a demo banner |
 
 You can use them independently:
 - **Quickstart only** — seeds data but allows full access (good for dev/testing)
@@ -85,7 +85,7 @@ You can use them independently:
 
 ## Dev Account
 
-When `BOOKTOWER_ENV` is **not** set to `production`, a dev account is also created:
+When `RUNARY_ENV` is **not** set to `production`, a dev account is also created:
 - **Username**: `dev`
 - **Password**: `dev12345`
 
@@ -100,15 +100,15 @@ docker compose -f docker-compose.demo.yml up -d
 
 # Fat JAR — delete the data directory
 rm -rf ./data
-BOOKTOWER_QUICKSTART=true java -jar booktower.jar
+RUNARY_QUICKSTART=true java -jar runary.jar
 ```
 
 ## Running a Public Demo
 
 If you want to expose a demo instance publicly:
 
-1. Use both `BOOKTOWER_QUICKSTART=true` and `BOOKTOWER_DEMO_MODE=true`
-2. Set `BOOKTOWER_REGISTRATION_OPEN=false` to prevent new sign-ups
+1. Use both `RUNARY_QUICKSTART=true` and `RUNARY_DEMO_MODE=true`
+2. Set `RUNARY_REGISTRATION_OPEN=false` to prevent new sign-ups
 3. Put it behind a reverse proxy with HTTPS (see [INSTALLATION.md](INSTALLATION.md#reverse-proxy))
 4. Consider restarting the container daily to reset data:
 

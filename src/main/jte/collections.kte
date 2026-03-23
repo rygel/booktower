@@ -1,9 +1,9 @@
-@import org.booktower.services.CollectionDto
-@import org.booktower.web.PageContext
+@import org.runary.services.CollectionDto
+@import org.runary.web.PageContext
 @param pc: PageContext
 @param collections: List<CollectionDto>
 
-@template.components.layout(title="${pc.i18n.translate("page.collections.title")} - BookTower", pc=pc, currentPage="collections",
+@template.components.layout(title="${pc.i18n.translate("page.collections.title")} - Runary", pc=pc, currentPage="collections",
     searchQuery="", content = @`
 <div class="page-container">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">

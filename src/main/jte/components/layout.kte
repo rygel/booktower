@@ -1,5 +1,5 @@
 @import gg.jte.Content
-@import org.booktower.web.PageContext
+@import org.runary.web.PageContext
 @param pc: PageContext
 @param title: String
 @param currentPage: String = ""
@@ -17,7 +17,7 @@
     <meta name="theme-color" content="#6366f1">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="BookTower">
+    <meta name="apple-mobile-web-app-title" content="Runary">
     <style id="theme-style" data-theme="${pc.currentTheme}">${pc.themeCss}</style>
     <link rel="stylesheet" href="/static/css/app.css">
     <link rel="stylesheet" href="/static/vendor/remixicon.css">
@@ -218,7 +218,7 @@
     <!-- Footer -->
     <footer class="bt-footer">
         <div class="bt-footer-inner">
-            <span>&copy; 2026 BookTower v${org.booktower.services.VersionService.info.display}. ${pc.i18n.translate("footer.rights")}</span>
+            <span>&copy; 2026 Runary v${org.runary.services.VersionService.info.display}. ${pc.i18n.translate("footer.rights")}</span>
             <span>${pc.i18n.translate("footer.made.with")} <i class="ri-heart-fill" style="color:var(--bt-danger);"></i> Kotlin &amp; http4k</span>
         </div>
     </footer>

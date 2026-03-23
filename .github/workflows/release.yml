@@ -33,13 +33,13 @@ jobs:
         env:
           REF_NAME: ${{ github.ref_name }}
         run: |
-          FAT=$(find target/ -name "booktower-*-fat.jar" | head -1)
-          cp "$FAT" "target/booktower-${REF_NAME}.jar"
+          FAT=$(find target/ -name "runary-*-fat.jar" | head -1)
+          cp "$FAT" "target/runary-${REF_NAME}.jar"
 
       - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
         with:
           name: fat-jar
-          path: target/booktower-${{ github.ref_name }}.jar
+          path: target/runary-${{ github.ref_name }}.jar
 
   # ── Native binaries — one job per platform ────────────────────────────────
   native:
@@ -54,28 +54,28 @@ jobs:
         include:
           - os: ubuntu-latest
             label: linux-x64
-            binary: booktower
-            asset: booktower-linux-x64
+            binary: runary
+            asset: runary-linux-x64
 
           - os: ubuntu-24.04-arm
             label: linux-arm64
-            binary: booktower
-            asset: booktower-linux-arm64
+            binary: runary
+            asset: runary-linux-arm64
 
           - os: macos-15-intel    # Intel runner
             label: macos-x64
-            binary: booktower
-            asset: booktower-macos-x64
+            binary: runary
+            asset: runary-macos-x64
 
           - os: macos-latest      # Apple Silicon (M-series)
             label: macos-arm64
-            binary: booktower
-            asset: booktower-macos-arm64
+            binary: runary
+            asset: runary-macos-arm64
 
           - os: windows-latest
             label: windows-x64
-            binary: booktower.exe
-            asset: booktower-windows-x64.exe
+            binary: runary.exe
+            asset: runary-windows-x64.exe
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
@@ -103,7 +103,7 @@ jobs:
           MATRIX_BINARY: ${{ matrix.binary }}
         run: |
           chmod +x "target/${MATRIX_BINARY}" 2>/dev/null || true
-          BOOKTOWER_QUICKSTART=true BOOKTOWER_JWT_SECRET=ci-release-test "target/${MATRIX_BINARY}" &
+          RUNARY_QUICKSTART=true RUNARY_JWT_SECRET=ci-release-test "target/${MATRIX_BINARY}" &
           echo "APP_PID=$!" >> "$GITHUB_ENV"
           for i in $(seq 1 30); do
             if curl -sf http://localhost:9999/health > /dev/null 2>&1; then
@@ -166,18 +166,18 @@ jobs:
 
       - name: Prepare Docker context
         run: |
-          cp docker-build/booktower-*.jar docker-build/app.jar
+          cp docker-build/runary-*.jar docker-build/app.jar
           cat > docker-build/Dockerfile <<'DOCKERFILE'
           FROM eclipse-temurin:21.0.9_10-jre-jammy
           WORKDIR /app
-          RUN groupadd -r booktower && useradd -r -g booktower booktower
+          RUN groupadd -r runary && useradd -r -g runary runary
           COPY app.jar app.jar
           RUN mkdir -p /data/books /data/covers /data/db && \
-              chown -R booktower:booktower /data /app
-          USER booktower
+              chown -R runary:runary /data /app
+          USER runary
           EXPOSE 8080
-          ENV BOOKTOWER_ENV=production \
-              BOOKTOWER_PORT=8080
+          ENV RUNARY_ENV=production \
+              RUNARY_PORT=8080
           ENTRYPOINT ["java", "-Xms128m", "-Xmx512m", "-jar", "app.jar"]
           DOCKERFILE
 
@@ -244,50 +244,50 @@ jobs:
         uses: softprops/action-gh-release@153bb8e04406b158c6c84fc1615b65b24149a1fe # v2
         with:
           tag_name: ${{ github.ref_name }}
-          name: BookTower ${{ github.ref_name }}
+          name: Runary ${{ github.ref_name }}
           draft: false
           prerelease: ${{ contains(github.ref_name, '-') }}   # v1.0.0-rc1 → pre-release
           body: |
-            ## BookTower ${{ github.ref_name }}
+            ## Runary ${{ github.ref_name }}
 
             ### Quick start (self-hosted)
 
             **Linux / macOS:**
             ```bash
-            chmod +x booktower-linux-x64   # or macos-arm64, etc.
-            BOOKTOWER_QUICKSTART=true ./booktower-linux-x64
+            chmod +x runary-linux-x64   # or macos-arm64, etc.
+            RUNARY_QUICKSTART=true ./runary-linux-x64
             # Open http://localhost:9999  •  demo / demo1234
             ```
 
             **Windows:**
             ```powershell
-            $env:BOOKTOWER_QUICKSTART="true"
-            .\booktower-windows-x64.exe
+            $env:RUNARY_QUICKSTART="true"
+            .\runary-windows-x64.exe
             # Open http://localhost:9999  •  demo / demo1234
             ```
 
             **Fat JAR (requires Java 21+):**
             ```bash
-            BOOKTOWER_QUICKSTART=true java -jar booktower-${{ github.ref_name }}.jar
+            RUNARY_QUICKSTART=true java -jar runary-${{ github.ref_name }}.jar
             ```
 
             **Docker (linux/amd64 + linux/arm64):**
             ```bash
-            docker run -p 9999:8080 -e BOOKTOWER_QUICKSTART=true ghcr.io/rygel/booktower:latest
+            docker run -p 9999:8080 -e RUNARY_QUICKSTART=true ghcr.io/rygel/runary:latest
             ```
 
             ### Downloads
             | File | Platform |
             |------|----------|
-            | `booktower-linux-x64` | Linux x86-64 |
-            | `booktower-linux-arm64` | Linux ARM64 (Raspberry Pi, AWS Graviton …) |
-            | `booktower-macos-x64` | macOS Intel |
-            | `booktower-macos-arm64` | macOS Apple Silicon |
-            | `booktower-windows-x64.exe` | Windows x86-64 |
-            | `booktower-${{ github.ref_name }}.jar` | Fat JAR (any platform, needs Java 21) |
+            | `runary-linux-x64` | Linux x86-64 |
+            | `runary-linux-arm64` | Linux ARM64 (Raspberry Pi, AWS Graviton …) |
+            | `runary-macos-x64` | macOS Intel |
+            | `runary-macos-arm64` | macOS Apple Silicon |
+            | `runary-windows-x64.exe` | Windows x86-64 |
+            | `runary-${{ github.ref_name }}.jar` | Fat JAR (any platform, needs Java 21) |
 
             > Native binaries include the JVM — no installation required.
-            > Set `BOOKTOWER_ENV=production` and `BOOKTOWER_JWT_SECRET=<random>` for production deployments.
+            > Set `RUNARY_ENV=production` and `RUNARY_JWT_SECRET=<random>` for production deployments.
           files: |
             dist/fat-jar/*
             dist/native-linux-x64/*

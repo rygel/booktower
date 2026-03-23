@@ -1,5 +1,5 @@
-@import org.booktower.models.LibraryDto
-@import org.booktower.web.PageContext
+@import org.runary.models.LibraryDto
+@import org.runary.web.PageContext
 @param pc: PageContext
 @param userEmail: String
 @param userUsername: String
@@ -11,7 +11,7 @@
 @param profilePublic: Boolean = false
 
 
-@template.components.layout(title="${pc.i18n.translate("page.profile.title")} - BookTower", pc=pc, currentPage="profile",
+@template.components.layout(title="${pc.i18n.translate("page.profile.title")} - Runary", pc=pc, currentPage="profile",
     content = @`
 <div class="page-container" style="max-width:36rem;">
     <h1 class="page-title flex-center gap-sm" style="font-size:1.25rem;">

@@ -1,10 +1,10 @@
-@import org.booktower.models.AuthorDto
-@import org.booktower.web.PageContext
+@import org.runary.models.AuthorDto
+@import org.runary.web.PageContext
 @param pc: PageContext
 @param authors: List<AuthorDto>
 
 
-@template.components.layout(title="${pc.i18n.translate("page.authors.title")} - BookTower", pc=pc, currentPage="authors",
+@template.components.layout(title="${pc.i18n.translate("page.authors.title")} - Runary", pc=pc, currentPage="authors",
     content = @`
 <div style="padding:2rem; max-width:72rem; margin:0 auto;">
 
