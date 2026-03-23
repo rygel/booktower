@@ -247,6 +247,8 @@ abstract class IntegrationTestBase {
                 org.booktower.services.LibraryStatsService(jdbi),
                 org.booktower.services.WebhookService(jdbi),
                 org.booktower.services.ReadingTimelineService(jdbi),
+                null, // discoveryService
+                org.booktower.services.ReadingListService(jdbi),
             )
         val backgroundTaskHandler = BackgroundTaskHandler(backgroundTaskService)
         val journalHandler = JournalHandler(journalService)
@@ -324,6 +326,7 @@ abstract class IntegrationTestBase {
                 customFieldService = org.booktower.services.CustomFieldService(jdbi),
                 publicProfileService = org.booktower.services.PublicProfileService(jdbi, userSettingsService),
                 bookConditionService = org.booktower.services.BookConditionService(org.booktower.services.CustomFieldService(jdbi)),
+                readingListService = org.booktower.services.ReadingListService(jdbi),
             )
         val adminApiRouter =
             AdminApiRouter(
