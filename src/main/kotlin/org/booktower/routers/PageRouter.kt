@@ -56,6 +56,7 @@ class PageRouter(
             "/timeline" bind Method.GET to filters.auth.then(pageHandler::timeline),
             "/discover" bind Method.GET to filters.auth.then(pageHandler::discover),
             "/webhooks" bind Method.GET to filters.auth.then(pageHandler::webhooks),
+            "/reading-lists" bind Method.GET to filters.auth.then(pageHandler::readingLists),
             "/ui/preferences/analytics" bind Method.POST to pageHandler::setAnalytics,
             "/admin" bind Method.GET to filters.admin.then(adminHandler::adminPage),
             // HTMX UI mutations

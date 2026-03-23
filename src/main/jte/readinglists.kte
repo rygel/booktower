@@ -1,0 +1,100 @@
+@import org.booktower.services.ReadingListDto
+@import org.booktower.web.PageContext
+@param pc: PageContext
+@param lists: List<ReadingListDto>
+
+@template.components.layout(title="${pc.i18n.translate("page.readinglists.title")} - BookTower", pc=pc, currentPage="reading-lists",
+    searchQuery="", content = @`
+<div class="page-container">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+        <h1 class="page-title"><i class="ri-list-ordered"></i> ${pc.i18n.translate("page.readinglists.title")}</h1>
+        <button id="add-list-btn" class="btn-primary" style="padding:0.6rem 1.25rem;">
+            <i class="ri-add-line"></i> ${pc.i18n.translate("page.readinglists.create")}
+        </button>
+    </div>
+
+    <!-- Create form -->
+    <div id="create-list-form" style="display:none; margin-bottom:1.5rem; padding:1.25rem; background:var(--bt-surface-raised); border-radius:0.5rem; border:1px solid var(--bt-border);">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+            <div>
+                <label class="text-sm text-subtle" style="display:block; margin-bottom:0.2rem;">${pc.i18n.translate("page.readinglists.name")}</label>
+                <input type="text" id="rl-name" placeholder="${pc.i18n.translate("page.readinglists.name.placeholder")}" style="width:100%; padding:0.5rem;">
+            </div>
+            <div>
+                <label class="text-sm text-subtle" style="display:block; margin-bottom:0.2rem;">${pc.i18n.translate("page.readinglists.description")}</label>
+                <input type="text" id="rl-desc" placeholder="${pc.i18n.translate("page.readinglists.description.placeholder")}" style="width:100%; padding:0.5rem;">
+            </div>
+        </div>
+        <div style="display:flex; gap:0.5rem; margin-top:0.75rem;">
+            <button id="rl-save-btn" class="btn-primary" style="padding:0.5rem 1rem;">
+                <i class="ri-save-line"></i> ${pc.i18n.translate("label.save")}
+            </button>
+            <button id="rl-cancel-btn" class="btn-secondary" style="padding:0.5rem 1rem;">
+                ${pc.i18n.translate("label.cancel")}
+            </button>
+        </div>
+    </div>
+
+    @if(lists.isEmpty())
+        @template.components.emptyState(icon = "ri-list-ordered", message = pc.i18n.translate("page.readinglists.empty"), action = @``)
+    @else
+        <div style="display:grid; gap:1rem;">
+            @for(list in lists)
+                <a href="#" class="panel" style="text-decoration:none; display:flex; justify-content:space-between; align-items:center;" data-list-id="${list.id}">
+                    <div>
+                        <div style="font-weight:600; font-size:0.95rem; color:var(--bt-text);">${list.name}</div>
+                        @if(list.description != null)
+                            <div class="text-sm text-subtle" style="margin-top:0.15rem;">${list.description}</div>
+                        @endif
+                        <div class="text-sm text-subtle" style="margin-top:0.35rem;">
+                            ${list.completedCount} / ${list.itemCount} ${pc.i18n.translate("page.readinglists.completed")}
+                        </div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:0.75rem;">
+                        @if(list.itemCount > 0)
+                            <div style="width:4rem; height:0.4rem; background:var(--bt-border); border-radius:0.2rem; overflow:hidden;">
+                                <div style="height:100%; background:var(--bt-accent-dim); width:${if (list.itemCount > 0) (list.completedCount * 100 / list.itemCount) else 0}%;"></div>
+                            </div>
+                        @endif
+                        <button class="btn-icon rl-delete" data-id="${list.id}" title="${pc.i18n.translate("label.delete")}" onclick="event.preventDefault(); event.stopPropagation(); deleteList('${list.id}');">
+                            <i class="ri-delete-bin-line" style="color:var(--bt-danger);"></i>
+                        </button>
+                    </div>
+                </a>
+            @endfor
+        </div>
+    @endif
+</div>
+
+<script>
+(function() {
+    var addBtn = document.getElementById('add-list-btn');
+    var form = document.getElementById('create-list-form');
+    var cancelBtn = document.getElementById('rl-cancel-btn');
+    var saveBtn = document.getElementById('rl-save-btn');
+
+    addBtn.addEventListener('click', function() { form.style.display = 'block'; addBtn.style.display = 'none'; });
+    cancelBtn.addEventListener('click', function() { form.style.display = 'none'; addBtn.style.display = ''; });
+
+    saveBtn.addEventListener('click', function() {
+        var name = document.getElementById('rl-name').value.trim();
+        if (!name) return;
+        var desc = document.getElementById('rl-desc').value.trim() || null;
+        fetch('/api/reading-lists', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: name, description: desc })
+        }).then(function(r) {
+            if (r.ok) window.location.reload();
+        });
+    });
+
+    window.deleteList = function(id) {
+        if (!confirm('Delete this reading list?')) return;
+        fetch('/api/reading-lists/' + id, { method: 'DELETE' }).then(function(r) {
+            if (r.ok) window.location.reload();
+        });
+    };
+}());
+</script>
+`)
