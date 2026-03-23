@@ -379,7 +379,6 @@ class FtsHttpE2ETest {
                     filterPresetService,
                     telemetryService,
                     null,
-                    notificationService,
                     backgroundTaskHandler,
                     apiTokenHandler,
                     exportHandler,

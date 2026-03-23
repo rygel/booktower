@@ -229,7 +229,7 @@ class AlternativeCoverIntegrationTest {
             )
         val libraryApiRouter = LibraryApiRouter(filters, libraryHandler, libraryService, null, null)
         val userApiRouter =
-            UserApiRouter(filters, settingsHandler, bookService, userSettingsService, null, null, null, null, null, null, null, null, backgroundTaskHandler, apiTokenHandler, exportHandler, goodreadsImportHandler)
+            UserApiRouter(filters, settingsHandler, bookService, userSettingsService, null, null, null, null, null, null, null, backgroundTaskHandler, apiTokenHandler, exportHandler, goodreadsImportHandler)
         val adminApiRouter =
             AdminApiRouter(
                 filters,

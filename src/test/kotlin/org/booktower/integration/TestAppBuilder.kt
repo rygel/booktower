@@ -307,7 +307,6 @@ fun buildTestApp(
             filterPresetService,
             telemetryService,
             bookDeliveryService,
-            notificationService,
             bgTaskHandler,
             apiTokenHandler,
             exportHandler,
