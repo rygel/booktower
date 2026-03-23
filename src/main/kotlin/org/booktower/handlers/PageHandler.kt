@@ -397,8 +397,9 @@ class PageHandler(
             val fReadingCount = CompletableFuture.supplyAsync({ bookService.countByStatus(userId, org.booktower.models.ReadStatus.READING) }, vt)
             val fGoal = CompletableFuture.supplyAsync({ userSettingsService.get(userId, "reading.goal.$year")?.toIntOrNull() ?: 0 }, vt)
             val fFinishedThisYear = CompletableFuture.supplyAsync({ bookService.countFinishedThisYear(userId, year) }, vt)
+            val fAnalytics = CompletableFuture.supplyAsync({ analyticsService.getSummary(userId) }, vt)
 
-            CompletableFuture.allOf(fLibraries, fRecent, fRecentlyAdded, fRecentlyFinished, fReadingCount, fGoal, fFinishedThisYear).join()
+            CompletableFuture.allOf(fLibraries, fRecent, fRecentlyAdded, fRecentlyFinished, fReadingCount, fGoal, fFinishedThisYear, fAnalytics).join()
 
             val libraries = fLibraries.get()
             val recentBooks = fRecent.get()
@@ -407,6 +408,7 @@ class PageHandler(
             val currentlyReadingCount = fReadingCount.get()
             val goal = fGoal.get()
             val booksFinishedThisYear = fFinishedThisYear.get()
+            val analytics = fAnalytics.get()
             val totalBooks = libraries.sumOf { it.bookCount }
 
             return htmlOk(
@@ -423,6 +425,8 @@ class PageHandler(
                         "goal" to goal,
                         "booksFinishedThisYear" to booksFinishedThisYear,
                         "year" to year,
+                        "streak" to analytics.streak,
+                        "totalPagesRead" to analytics.totalPages,
                     ),
                 ),
             )

@@ -12,6 +12,8 @@
 @param goal: Int = 0
 @param booksFinishedThisYear: Int = 0
 @param year: Int = 2026
+@param streak: Int = 0
+@param totalPagesRead: Int = 0
 
 
 @template.components.layout(title="${pc.i18n.translate("page.dashboard.title")} - BookTower", pc=pc, currentPage="home",
@@ -51,6 +53,20 @@
             @endif
             <button onclick="document.getElementById('goal-modal').style.display='flex'"
                 class="link-btn" style="margin-top:0.625rem;">${pc.i18n.translate("action.set.goal")}</button>
+        </div>
+        <div class="card stat-card" id="streak-widget">
+            <div class="stat-icon"><i class="ri-fire-line"></i></div>
+            <div>
+                <p class="stat-value">${streak}</p>
+                <p class="stat-label">${pc.i18n.translate("page.dashboard.stat.streak")}</p>
+            </div>
+        </div>
+        <div class="card stat-card" id="pages-widget">
+            <div class="stat-icon"><i class="ri-pages-line"></i></div>
+            <div>
+                <p class="stat-value">${totalPagesRead}</p>
+                <p class="stat-label">${pc.i18n.translate("page.dashboard.stat.pages.read")}</p>
+            </div>
         </div>
     </div>
 
