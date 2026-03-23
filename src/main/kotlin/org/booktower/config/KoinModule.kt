@@ -288,6 +288,12 @@ val appModule =
                 getOrNull<org.booktower.services.ReadingListService>(),
                 getOrNull<org.booktower.services.WishlistService>(),
                 getOrNull<org.booktower.services.CollectionService>(),
+                getOrNull<org.booktower.services.KoboSyncService>(),
+                getOrNull<org.booktower.services.KOReaderSyncService>(),
+                getOrNull<org.booktower.services.FilterPresetService>(),
+                getOrNull<org.booktower.services.ScheduledTaskService>(),
+                getOrNull<org.booktower.services.OpdsCredentialsService>(),
+                getOrNull<org.booktower.services.ContentRestrictionsService>(),
             )
         }
         single { BackgroundTaskHandler(get(), get()) }

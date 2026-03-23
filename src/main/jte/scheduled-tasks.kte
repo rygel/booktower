@@ -1,0 +1,126 @@
+@import org.booktower.services.ScheduledTaskDto
+@import org.booktower.web.PageContext
+@param pc: PageContext
+@param tasks: List<ScheduledTaskDto>
+
+@template.components.layout(title="${pc.i18n.translate("page.scheduledtasks.title")} - BookTower", pc=pc, currentPage="admin",
+    searchQuery="", content = @`
+<div class="page-container">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+        <h1 class="page-title"><i class="ri-calendar-schedule-line"></i> ${pc.i18n.translate("page.scheduledtasks.title")}</h1>
+        <button id="add-task-btn" class="btn-primary" style="padding:0.6rem 1.25rem;">
+            <i class="ri-add-line"></i> ${pc.i18n.translate("page.scheduledtasks.create")}
+        </button>
+    </div>
+
+    <p class="text-sm text-subtle" style="margin-bottom:1.5rem;">${pc.i18n.translate("page.scheduledtasks.description")}</p>
+
+    <div id="add-task-form" style="display:none; margin-bottom:1.5rem; padding:1.25rem; background:var(--bt-surface-raised); border-radius:0.5rem; border:1px solid var(--bt-border);">
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:0.75rem;">
+            <div>
+                <label style="font-size:0.75rem; color:var(--bt-muted); display:block; margin-bottom:0.2rem;">${pc.i18n.translate("page.scheduledtasks.name")}</label>
+                <input type="text" id="task-name" placeholder="${pc.i18n.translate("page.scheduledtasks.name.placeholder")}" style="width:100%; padding:0.5rem;">
+            </div>
+            <div>
+                <label style="font-size:0.75rem; color:var(--bt-muted); display:block; margin-bottom:0.2rem;">${pc.i18n.translate("page.scheduledtasks.type")}</label>
+                <select id="task-type" style="width:100%; padding:0.5rem;">
+                    <option value="library.scan.all">library.scan.all</option>
+                    <option value="covers.regenerate">covers.regenerate</option>
+                    <option value="metadata.refresh">metadata.refresh</option>
+                    <option value="export.cleanup">export.cleanup</option>
+                </select>
+            </div>
+            <div>
+                <label style="font-size:0.75rem; color:var(--bt-muted); display:block; margin-bottom:0.2rem;">${pc.i18n.translate("page.scheduledtasks.cron")}</label>
+                <input type="text" id="task-cron" placeholder="0 0 * * *" style="width:100%; padding:0.5rem;">
+            </div>
+        </div>
+        <div style="display:flex; gap:0.5rem; margin-top:0.75rem;">
+            <button id="task-save-btn" class="btn-primary" style="padding:0.5rem 1rem;">
+                <i class="ri-save-line"></i> ${pc.i18n.translate("label.save")}
+            </button>
+            <button id="task-cancel-btn" class="btn-secondary" style="padding:0.5rem 1rem;">
+                ${pc.i18n.translate("label.cancel")}
+            </button>
+        </div>
+    </div>
+
+    <div id="task-list">
+        @if(tasks.isEmpty())
+            @template.components.emptyState(icon = "ri-calendar-schedule-line", message = pc.i18n.translate("page.scheduledtasks.empty"), action = @``)
+        @else
+            @for(task in tasks)
+                <div class="panel" style="margin-bottom:0.75rem; display:flex; justify-content:space-between; align-items:center;" data-task-id="${task.id}">
+                    <div style="flex:1;">
+                        <div style="font-weight:600; font-size:0.9rem; color:var(--bt-text);">${task.name}</div>
+                        <div class="text-sm text-subtle" style="margin-top:0.15rem;">
+                            <span style="font-size:0.65rem; padding:0.1rem 0.4rem; border-radius:0.25rem; background:var(--bt-icon-bg); color:var(--bt-icon-text);">${task.taskType}</span>
+                            <code style="font-size:0.7rem; margin-left:0.5rem;">${task.cronExpression}</code>
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:0.5rem; align-items:center; flex-shrink:0; margin-left:1rem;">
+                        <button class="btn-icon task-trigger" data-id="${task.id}" title="${pc.i18n.translate("page.scheduledtasks.trigger")}">
+                            <i class="ri-play-line" style="color:var(--bt-accent-dim);"></i>
+                        </button>
+                        <button class="btn-icon task-toggle" data-id="${task.id}" data-enabled="${task.enabled}" title="${if (task.enabled) pc.i18n.translate("page.webhooks.disable") else pc.i18n.translate("page.webhooks.enable")}">
+                            <i class="${if (task.enabled) "ri-toggle-fill" else "ri-toggle-line"}" style="font-size:1.25rem; color:${if (task.enabled) "var(--bt-accent-dim)" else "var(--bt-muted)"};"></i>
+                        </button>
+                        <button class="btn-icon task-delete" data-id="${task.id}" title="${pc.i18n.translate("label.delete")}">
+                            <i class="ri-delete-bin-line" style="color:var(--bt-danger);"></i>
+                        </button>
+                    </div>
+                </div>
+            @endfor
+        @endif
+    </div>
+</div>
+
+<script>
+(function() {
+    var addBtn = document.getElementById('add-task-btn');
+    var form = document.getElementById('add-task-form');
+    var cancelBtn = document.getElementById('task-cancel-btn');
+    var saveBtn = document.getElementById('task-save-btn');
+
+    addBtn.addEventListener('click', function() { form.style.display = 'block'; addBtn.style.display = 'none'; });
+    cancelBtn.addEventListener('click', function() { form.style.display = 'none'; addBtn.style.display = ''; });
+
+    saveBtn.addEventListener('click', function() {
+        var name = document.getElementById('task-name').value.trim();
+        var taskType = document.getElementById('task-type').value;
+        var cron = document.getElementById('task-cron').value.trim();
+        if (!name || !cron) return;
+        fetch('/api/admin/scheduled-tasks', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: name, taskType: taskType, cronExpression: cron })
+        }).then(function(r) { if (r.ok) window.location.reload(); });
+    });
+
+    document.querySelectorAll('.task-delete').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            fetch('/api/admin/scheduled-tasks/' + btn.dataset.id, { method: 'DELETE' }).then(function(r) {
+                if (r.ok) btn.closest('.panel').remove();
+            });
+        });
+    });
+
+    document.querySelectorAll('.task-trigger').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            fetch('/api/admin/scheduled-tasks/' + btn.dataset.id + '/trigger', { method: 'POST' });
+        });
+    });
+
+    document.querySelectorAll('.task-toggle').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var enabled = btn.dataset.enabled !== 'true';
+            fetch('/api/admin/scheduled-tasks/' + btn.dataset.id, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ enabled: enabled })
+            }).then(function(r) { if (r.ok) window.location.reload(); });
+        });
+    });
+})();
+</script>
+`)

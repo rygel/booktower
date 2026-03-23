@@ -1,0 +1,70 @@
+@import org.booktower.web.PageContext
+@param pc: PageContext
+@param maxAgeRating: String
+@param blockedTags: String
+
+@template.components.layout(title="${pc.i18n.translate("page.restrictions.title")} - BookTower", pc=pc, currentPage="content-restrictions",
+    searchQuery="", content = @`
+<div class="page-container">
+    <h1 class="page-title"><i class="ri-shield-check-line"></i> ${pc.i18n.translate("page.restrictions.title")}</h1>
+    <p class="text-sm text-subtle" style="margin-bottom:1.5rem;">${pc.i18n.translate("page.restrictions.description")}</p>
+
+    <div class="panel" style="padding:1.25rem;">
+        <div style="margin-bottom:1rem;">
+            <label style="font-size:0.75rem; color:var(--bt-muted); display:block; margin-bottom:0.2rem;">${pc.i18n.translate("page.restrictions.maxage")}</label>
+            <select id="max-age-rating" style="width:100%; max-width:300px; padding:0.5rem;">
+                <option value="">-- ${pc.i18n.translate("label.none")} --</option>
+                @if(maxAgeRating == "G")
+                    <option value="G" selected>G</option>
+                @else
+                    <option value="G">G</option>
+                @endif
+                @if(maxAgeRating == "PG")
+                    <option value="PG" selected>PG</option>
+                @else
+                    <option value="PG">PG</option>
+                @endif
+                @if(maxAgeRating == "PG-13")
+                    <option value="PG-13" selected>PG-13</option>
+                @else
+                    <option value="PG-13">PG-13</option>
+                @endif
+                @if(maxAgeRating == "R")
+                    <option value="R" selected>R</option>
+                @else
+                    <option value="R">R</option>
+                @endif
+                @if(maxAgeRating == "NC-17")
+                    <option value="NC-17" selected>NC-17</option>
+                @else
+                    <option value="NC-17">NC-17</option>
+                @endif
+            </select>
+        </div>
+
+        <div style="margin-bottom:1rem;">
+            <label style="font-size:0.75rem; color:var(--bt-muted); display:block; margin-bottom:0.2rem;">${pc.i18n.translate("page.restrictions.blockedtags")}</label>
+            <input type="text" id="blocked-tags" value="${blockedTags}" placeholder="${pc.i18n.translate("page.restrictions.blockedtags.placeholder")}" style="width:100%; padding:0.5rem;">
+            <div class="text-sm text-subtle" style="margin-top:0.2rem;">${pc.i18n.translate("page.restrictions.blockedtags.hint")}</div>
+        </div>
+
+        <button id="restrictions-save-btn" class="btn-primary" style="padding:0.5rem 1rem;">
+            <i class="ri-save-line"></i> ${pc.i18n.translate("label.save")}
+        </button>
+    </div>
+</div>
+
+<script>
+(function() {
+    document.getElementById('restrictions-save-btn').addEventListener('click', function() {
+        var maxAge = document.getElementById('max-age-rating').value;
+        var tags = document.getElementById('blocked-tags').value.trim();
+        fetch('/api/user/content-restrictions', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ maxAgeRating: maxAge || null, blockedTags: tags ? tags.split(',').map(function(t) { return t.trim(); }) : [] })
+        }).then(function(r) { if (r.ok) window.location.reload(); });
+    });
+})();
+</script>
+`)

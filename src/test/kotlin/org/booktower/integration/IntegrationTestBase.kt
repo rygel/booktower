@@ -251,6 +251,12 @@ abstract class IntegrationTestBase {
                 org.booktower.services.ReadingListService(jdbi),
                 org.booktower.services.WishlistService(jdbi),
                 org.booktower.services.CollectionService(jdbi),
+                koboSyncService,
+                koreaderSyncService,
+                filterPresetService,
+                scheduledTaskService,
+                opdsCredentialsService,
+                contentRestrictionsService,
             )
         val backgroundTaskHandler = BackgroundTaskHandler(backgroundTaskService)
         val journalHandler = JournalHandler(journalService)
