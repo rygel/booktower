@@ -227,36 +227,19 @@ fun buildTestApp(
             libraryAccessService,
             comicPageHashService,
         )
-    val pageHandler =
-        PageHandler(
-            jwt,
-            auth,
-            lib,
-            book,
-            bookmarkService,
-            userSettingsService,
-            analyticsService,
-            annotationService,
-            metaFetch,
-            magicShelfService,
-            TestFixture.templateRenderer,
-            readingSessionService,
-            null, // libraryWatchService
-            null, // bookLinkService
-            null, // bookSharingService
-            bgTaskService,
+    val handlers =
+        TestPageHandlers.create(
+            jwt, auth, lib, book, bookmarkService, userSettingsService, analyticsService,
+            annotationService, metaFetch, magicShelfService, TestFixture.templateRenderer,
+            readingSessionService = readingSessionService,
+            backgroundTaskService = bgTaskService,
+            libraryStatsService = org.booktower.services.LibraryStatsService(jdbi),
         )
-    val browsePageHandler =
-        BrowsePageHandler(jwt, auth, book, magicShelfService, TestFixture.templateRenderer)
-    val statsPageHandler =
-        StatsPageHandler(
-            jwt, auth, analyticsService, TestFixture.templateRenderer, readingSessionService,
-            org.booktower.services.LibraryStatsService(jdbi),
-        )
-    val settingsPageHandler =
-        SettingsPageHandler(jwt, auth, TestFixture.templateRenderer)
-    val discoveryPageHandler =
-        DiscoveryPageHandler(jwt, auth, lib, book, TestFixture.templateRenderer)
+    val pageHandler = handlers.pageHandler
+    val browsePageHandler = handlers.browsePageHandler
+    val statsPageHandler = handlers.statsPageHandler
+    val settingsPageHandler = handlers.settingsPageHandler
+    val discoveryPageHandler = handlers.discoveryPageHandler
     val bgTaskHandler = BackgroundTaskHandler(bgTaskService)
     val journalHandler = JournalHandler(journal)
     val oidcHandler = oidcService?.let { org.booktower.handlers.OidcHandler(it, auth) }

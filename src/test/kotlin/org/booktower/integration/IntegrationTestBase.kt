@@ -230,50 +230,36 @@ abstract class IntegrationTestBase {
                 libraryAccessService,
                 comicPageHashService,
             )
-        val pageHandler =
-            PageHandler(
-                jwtService,
-                authService,
-                libraryService,
-                bookService,
-                bookmarkService,
-                userSettingsService,
-                analyticsService,
-                annotationService,
-                metadataFetchService,
-                magicShelfService,
-                TestFixture.templateRenderer,
-                readingSessionService,
-                null, // libraryWatchService
-                null, // bookLinkService
-                org.booktower.services.BookSharingService(jdbi, bookService),
-                backgroundTaskService,
+        val handlers =
+            TestPageHandlers.create(
+                jwtService, authService, libraryService, bookService, bookmarkService,
+                userSettingsService, analyticsService, annotationService, metadataFetchService,
+                magicShelfService, TestFixture.templateRenderer,
+                readingSessionService = readingSessionService,
+                bookSharingService = org.booktower.services.BookSharingService(jdbi, bookService),
+                backgroundTaskService = backgroundTaskService,
+                webhookService = org.booktower.services.WebhookService(jdbi),
+                libraryStatsService = org.booktower.services.LibraryStatsService(jdbi),
+                readingTimelineService = org.booktower.services.ReadingTimelineService(jdbi),
+                readingSpeedService = org.booktower.services.ReadingSpeedService(jdbi),
+                libraryHealthService = org.booktower.services.LibraryHealthService(jdbi),
+                readingListService = org.booktower.services.ReadingListService(jdbi),
+                wishlistService = org.booktower.services.WishlistService(jdbi),
+                collectionService = org.booktower.services.CollectionService(jdbi),
+                koboSyncService = koboSyncService,
+                koreaderSyncService = koreaderSyncService,
+                filterPresetService = filterPresetService,
+                scheduledTaskService = scheduledTaskService,
+                opdsCredentialsService = opdsCredentialsService,
+                contentRestrictionsService = contentRestrictionsService,
+                hardcoverSyncService = hardcoverSyncService,
+                metadataProposalService = metadataProposalService,
             )
-        val browsePageHandler =
-            BrowsePageHandler(jwtService, authService, bookService, magicShelfService, TestFixture.templateRenderer)
-        val statsPageHandler =
-            StatsPageHandler(
-                jwtService, authService, analyticsService, TestFixture.templateRenderer, readingSessionService,
-                org.booktower.services.LibraryStatsService(jdbi),
-                org.booktower.services.ReadingTimelineService(jdbi),
-                org.booktower.services.ReadingSpeedService(jdbi),
-                org.booktower.services.LibraryHealthService(jdbi),
-            )
-        val settingsPageHandler =
-            SettingsPageHandler(
-                jwtService, authService, TestFixture.templateRenderer, koboSyncService, koreaderSyncService,
-                filterPresetService, scheduledTaskService, opdsCredentialsService, contentRestrictionsService,
-                hardcoverSyncService, null,
-            )
-        val discoveryPageHandler =
-            DiscoveryPageHandler(
-                jwtService, authService, libraryService, bookService, TestFixture.templateRenderer,
-                null, org.booktower.services.ReadingListService(jdbi),
-                org.booktower.services.WishlistService(jdbi),
-                org.booktower.services.CollectionService(jdbi),
-                org.booktower.services.WebhookService(jdbi),
-                null, metadataProposalService,
-            )
+        val pageHandler = handlers.pageHandler
+        val browsePageHandler = handlers.browsePageHandler
+        val statsPageHandler = handlers.statsPageHandler
+        val settingsPageHandler = handlers.settingsPageHandler
+        val discoveryPageHandler = handlers.discoveryPageHandler
         val backgroundTaskHandler = BackgroundTaskHandler(backgroundTaskService)
         val journalHandler = JournalHandler(journalService)
         val oidcHandler = oidcService?.let { org.booktower.handlers.OidcHandler(it, authService) }

@@ -290,33 +290,19 @@ class FtsHttpE2ETest {
                     libraryAccessService,
                     comicPageHashService,
                 )
-            val pageHandler =
-                org.booktower.handlers.PageHandler(
-                    jwtService,
-                    authService,
-                    libraryService,
-                    bookService,
-                    bookmarkService,
-                    userSettingsService,
-                    analyticsService,
-                    annotationService,
-                    metadataFetchService,
-                    magicShelfService,
-                    templateRenderer,
-                    readingSessionService,
-                    null, // libraryWatchService
-                    null, // bookLinkService
-                    null, // bookSharingService
-                    backgroundTaskService,
+            val handlers =
+                TestPageHandlers.create(
+                    jwtService, authService, libraryService, bookService, bookmarkService,
+                    userSettingsService, analyticsService, annotationService, metadataFetchService,
+                    magicShelfService, templateRenderer,
+                    readingSessionService = readingSessionService,
+                    backgroundTaskService = backgroundTaskService,
                 )
-            val browsePageHandler =
-                org.booktower.handlers.BrowsePageHandler(jwtService, authService, bookService, magicShelfService, templateRenderer)
-            val statsPageHandler =
-                org.booktower.handlers.StatsPageHandler(jwtService, authService, analyticsService, templateRenderer, readingSessionService)
-            val settingsPageHandler =
-                org.booktower.handlers.SettingsPageHandler(jwtService, authService, templateRenderer)
-            val discoveryPageHandler =
-                org.booktower.handlers.DiscoveryPageHandler(jwtService, authService, libraryService, bookService, templateRenderer)
+            val pageHandler = handlers.pageHandler
+            val browsePageHandler = handlers.browsePageHandler
+            val statsPageHandler = handlers.statsPageHandler
+            val settingsPageHandler = handlers.settingsPageHandler
+            val discoveryPageHandler = handlers.discoveryPageHandler
             val backgroundTaskHandler =
                 org.booktower.handlers.BackgroundTaskHandler(backgroundTaskService, seedService)
             val journalHandler = org.booktower.handlers.JournalHandler(journalService)

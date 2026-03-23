@@ -168,16 +168,18 @@ class AlternativeCoverIntegrationTest {
                 null,
                 null,
             )
-        val pageHandler =
-            PageHandler(jwtService, authService, libraryService, bookService, bookmarkService, userSettingsService, analyticsService, annotationService, MetadataFetchService(), magicShelfService, TestFixture.templateRenderer, readingSessionService)
-        val browsePageHandler =
-            BrowsePageHandler(jwtService, authService, bookService, magicShelfService, TestFixture.templateRenderer)
-        val statsPageHandler =
-            StatsPageHandler(jwtService, authService, analyticsService, TestFixture.templateRenderer, readingSessionService)
-        val settingsPageHandler =
-            SettingsPageHandler(jwtService, authService, TestFixture.templateRenderer)
-        val discoveryPageHandler =
-            DiscoveryPageHandler(jwtService, authService, libraryService, bookService, TestFixture.templateRenderer)
+        val handlers =
+            TestPageHandlers.create(
+                jwtService, authService, libraryService, bookService, bookmarkService,
+                userSettingsService, analyticsService, annotationService, MetadataFetchService(),
+                magicShelfService, TestFixture.templateRenderer,
+                readingSessionService = readingSessionService,
+            )
+        val pageHandler = handlers.pageHandler
+        val browsePageHandler = handlers.browsePageHandler
+        val statsPageHandler = handlers.statsPageHandler
+        val settingsPageHandler = handlers.settingsPageHandler
+        val discoveryPageHandler = handlers.discoveryPageHandler
         val opdsHandler = OpdsHandler(authService, libraryService, bookService, storage, apiTokenService, null)
         val apiTokenHandler = ApiTokenHandler(apiTokenService, jwtService)
         val exportHandler = ExportHandler(exportService, jwtService)
