@@ -132,6 +132,10 @@
                     <i class="ri-list-ordered"></i>
                     ${pc.i18n.translate("page.readinglists.title")}
                 </a>
+                <a href="/wishlist" class="sidebar-link ${if (currentPage == "wishlist") "active" else ""}">
+                    <i class="ri-heart-line"></i>
+                    ${pc.i18n.translate("page.wishlist.title")}
+                </a>
                 <a href="/timeline" class="sidebar-link ${if (currentPage == "timeline") "active" else ""}">
                     <i class="ri-time-line"></i>
                     ${pc.i18n.translate("page.timeline.title")}

@@ -249,6 +249,7 @@ abstract class IntegrationTestBase {
                 org.booktower.services.ReadingTimelineService(jdbi),
                 null, // discoveryService
                 org.booktower.services.ReadingListService(jdbi),
+                org.booktower.services.WishlistService(jdbi),
             )
         val backgroundTaskHandler = BackgroundTaskHandler(backgroundTaskService)
         val journalHandler = JournalHandler(journalService)
@@ -327,6 +328,7 @@ abstract class IntegrationTestBase {
                 publicProfileService = org.booktower.services.PublicProfileService(jdbi, userSettingsService),
                 bookConditionService = org.booktower.services.BookConditionService(org.booktower.services.CustomFieldService(jdbi)),
                 readingListService = org.booktower.services.ReadingListService(jdbi),
+                wishlistService = org.booktower.services.WishlistService(jdbi),
             )
         val adminApiRouter =
             AdminApiRouter(
