@@ -2,7 +2,7 @@
 
 A self-hosted personal book, audiobook, and comic manager with a built-in reader and rich metadata support.
 
-[![Version](https://img.shields.io/badge/version-0.6.7-blue)](https://github.com/rygel/booktower/releases)
+[![Version](https://img.shields.io/badge/version-0.7.0-blue)](https://github.com/rygel/booktower/releases)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-green)](LICENSE)
 [![Docker](https://img.shields.io/badge/docker-ghcr.io%2Frygel%2Fbooktower-blue)](https://ghcr.io/rygel/booktower)
 
@@ -15,7 +15,7 @@ A self-hosted personal book, audiobook, and comic manager with a built-in reader
 
 | Area | Status | How tested |
 |------|--------|------------|
-| Core (libraries, books, auth, search) | **Stable** | 1600+ integration tests, CI on Linux/macOS/Windows |
+| Core (libraries, books, auth, search) | **Stable** | 1900+ integration tests, CI on Linux/macOS/Windows |
 | EPUB reader (with TOC sidebar) | **Stable** | Playwright browser tests + manual testing |
 | PDF reader (with TOC sidebar) | **Stable** | Integration tests |
 | Comic reader (CBZ/CBR) | **Stable** | Double page, continuous scroll, fit modes, swipe, page gaps |
@@ -33,7 +33,8 @@ A self-hosted personal book, audiobook, and comic manager with a built-in reader
 | Collections | **Works** | API + UI |
 | Metadata fetching | **Stable** | Bulk refresh, 5 providers |
 | Demo data seeding | **Stable** | Resumable downloads, retry on failure |
-| Webhook notifications | **Works** | API exists, async delivery |
+| ISBN barcode scanner | **Works** | Camera-based scanning with html5-qrcode |
+| Webhook notifications | **Works** | API + full management UI |
 | Custom metadata fields | **Works** | User-defined fields per book |
 | Public reading profile | **Works** | Opt-in, metadata only |
 | Database backup/restore | **Works** | Full JSON export/import |
@@ -51,6 +52,7 @@ A self-hosted personal book, audiobook, and comic manager with a built-in reader
 - Smart shelves with auto-population driven by status, tag, or minimum rating rules
 - Filter presets for saved search configurations
 - **Custom metadata fields** — user-defined fields (text, number, date, select, boolean) per book
+- **ISBN barcode scanner** — scan a book's barcode with your camera to auto-fill metadata
 - Book drop: drag-and-drop file upload into libraries
 - Auto-scan: background folder scanning on a configurable interval
 - Library health checks and **duplicate detection with merge**
@@ -195,7 +197,7 @@ Open `http://localhost:9999` and register your first account.
 Download the latest release JAR from [Releases](https://github.com/rygel/booktower/releases), then:
 
 ```bash
-java -jar booktower-v0.6.7.jar
+java -jar booktower-v0.7.0.jar
 ```
 
 ### Native Binary
