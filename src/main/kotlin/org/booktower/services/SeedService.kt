@@ -1100,10 +1100,12 @@ class SeedService(
                 javax.xml.parsers.DocumentBuilderFactory
                     .newInstance()
                     .also {
-                        // Prevent XXE — block external entities while allowing DOCTYPE for RSS feeds
+                        // Prevent XXE — OWASP recommended settings
+                        // Note: disallow-doctype-decl not set because RSS feeds may contain DOCTYPE
                         it.setFeature("http://xml.org/sax/features/external-general-entities", false)
                         it.setFeature("http://xml.org/sax/features/external-parameter-entities", false)
                         it.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false)
+                        it.isExpandEntityReferences = false
                         it.isXIncludeAware = false
                         it.isNamespaceAware = true
                     }
