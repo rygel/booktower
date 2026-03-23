@@ -1,7 +1,10 @@
-# BookTower — Caddy Reverse Proxy
+# Runary — Caddy Reverse Proxy
 # Caddy automatically provisions HTTPS via Let's Encrypt.
 # Replace books.example.com with your domain.
+#
+# For Docker Compose: use with docker-compose.caddy.yml
+# For standalone Caddy: change runary:8080 to localhost:9999
 
 books.example.com {
-    reverse_proxy localhost:9999
+    reverse_proxy runary:8080
 }

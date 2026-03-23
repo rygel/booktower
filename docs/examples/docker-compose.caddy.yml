@@ -1,0 +1,58 @@
+# Runary — Docker Compose with Caddy (automatic HTTPS)
+# Caddy provisions Let's Encrypt certificates automatically.
+#
+# Setup:
+#   1. Edit this file — set your domain and passwords
+#   2. Edit the Caddyfile — set your domain
+#   3. Point your domain's DNS to this server's IP
+#   4. docker compose -f docker-compose.caddy.yml up -d
+#   5. Access at: https://yourdomain.com
+
+services:
+  runary:
+    image: ghcr.io/rygel/runary:latest
+    container_name: runary
+    restart: unless-stopped
+    # No ports exposed — Caddy handles external traffic
+    expose:
+      - "8080"
+    volumes:
+      - runary_db:/data/db
+      - runary_books:/data/books
+      - runary_covers:/data/covers
+    environment:
+      RUNARY_ENV: production
+      # REQUIRED — generate with: openssl rand -base64 32
+      RUNARY_JWT_SECRET: "change-me-generate-with-openssl-rand-base64-32"
+      # Set to your domain
+      RUNARY_BASE_URL: "https://books.example.com"
+      RUNARY_CSRF_ALLOWED_HOSTS: "books.example.com"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: runary-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"  # HTTP/3
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      runary:
+        condition: service_healthy
+
+volumes:
+  runary_db:
+  runary_books:
+  runary_covers:
+  caddy_data:
+  caddy_config:
