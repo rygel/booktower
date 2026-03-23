@@ -1,4 +1,4 @@
-# BookTower — Agent Instructions
+# Runary — Agent Instructions
 
 ## Testing Rules (CRITICAL)
 
@@ -23,8 +23,8 @@
 
 ## Database
 
-- H2 PostgreSQL mode for dev/test: `jdbc:h2:mem:booktower-test;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE`
-- PostgreSQL for production via `BOOKTOWER_DB_*` env vars
+- H2 PostgreSQL mode for dev/test: `jdbc:h2:mem:runary-test;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE`
+- PostgreSQL for production via `RUNARY_DB_*` env vars
 - SQL must be compatible with both H2 and PostgreSQL
 
 ## Code Style

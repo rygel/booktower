@@ -1,6 +1,6 @@
-@import org.booktower.i18n.I18nService
-@import org.booktower.models.BookDto
-@import org.booktower.models.ReadStatus
+@import org.runary.i18n.I18nService
+@import org.runary.models.BookDto
+@import org.runary.models.ReadStatus
 @param book: BookDto
 @param i18n: I18nService
 

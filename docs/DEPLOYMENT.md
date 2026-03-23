@@ -14,37 +14,37 @@
 mvn package -DskipTests
 ```
 
-This produces `target/booktower-*.jar` as a fat JAR with all dependencies.
+This produces `target/runary-*.jar` as a fat JAR with all dependencies.
 
 ### Run
 
 ```bash
-java -jar target/booktower-*.jar
+java -jar target/runary-*.jar
 ```
 
 Set environment variables before running, or pass them inline:
 
 ```bash
-BOOKTOWER_JWT_SECRET=my-secret \
-BOOKTOWER_DB_URL=jdbc:h2:file:/var/lib/booktower/db \
-BOOKTOWER_BOOKS_PATH=/var/lib/booktower/books \
-BOOKTOWER_COVERS_PATH=/var/lib/booktower/covers \
-BOOKTOWER_ENV=production \
-java -jar target/booktower-*.jar
+RUNARY_JWT_SECRET=my-secret \
+RUNARY_DB_URL=jdbc:h2:file:/var/lib/runary/db \
+RUNARY_BOOKS_PATH=/var/lib/runary/books \
+RUNARY_COVERS_PATH=/var/lib/runary/covers \
+RUNARY_ENV=production \
+java -jar target/runary-*.jar
 ```
 
 ### systemd Unit
 
 ```ini
 [Unit]
-Description=BookTower
+Description=Runary
 After=network.target
 
 [Service]
-User=booktower
-WorkingDirectory=/opt/booktower
-EnvironmentFile=/etc/booktower/env
-ExecStart=/usr/bin/java -Xmx512m -jar /opt/booktower/booktower.jar
+User=runary
+WorkingDirectory=/opt/runary
+EnvironmentFile=/etc/runary/env
+ExecStart=/usr/bin/java -Xmx512m -jar /opt/runary/runary.jar
 Restart=on-failure
 RestartSec=5
 
@@ -52,41 +52,41 @@ RestartSec=5
 WantedBy=multi-user.target
 ```
 
-`/etc/booktower/env`:
+`/etc/runary/env`:
 
 ```env
-BOOKTOWER_ENV=production
-BOOKTOWER_JWT_SECRET=change-me
-BOOKTOWER_DB_URL=jdbc:h2:file:/var/lib/booktower/db
-BOOKTOWER_BOOKS_PATH=/var/lib/booktower/books
-BOOKTOWER_COVERS_PATH=/var/lib/booktower/covers
-BOOKTOWER_TEMP_PATH=/var/lib/booktower/temp
-BOOKTOWER_CSRF_ALLOWED_HOSTS=books.example.com
+RUNARY_ENV=production
+RUNARY_JWT_SECRET=change-me
+RUNARY_DB_URL=jdbc:h2:file:/var/lib/runary/db
+RUNARY_BOOKS_PATH=/var/lib/runary/books
+RUNARY_COVERS_PATH=/var/lib/runary/covers
+RUNARY_TEMP_PATH=/var/lib/runary/temp
+RUNARY_CSRF_ALLOWED_HOSTS=books.example.com
 ```
 
 ## Option 2: Docker Compose
 
 ```yaml
 services:
-  booktower:
-    image: booktower:latest          # build locally or from registry
+  runary:
+    image: runary:latest          # build locally or from registry
     restart: unless-stopped
     ports:
       - "8080:8080"
     environment:
-      BOOKTOWER_ENV: production
-      BOOKTOWER_JWT_SECRET: change-me-in-production
-      BOOKTOWER_DB_URL: jdbc:h2:file:/data/booktower;AUTO_SERVER=TRUE
-      BOOKTOWER_BOOKS_PATH: /data/books
-      BOOKTOWER_COVERS_PATH: /data/covers
-      BOOKTOWER_TEMP_PATH: /data/temp
-      BOOKTOWER_CSRF_ALLOWED_HOSTS: books.example.com
-      BOOKTOWER_AUTO_SCAN_MINUTES: "60"
+      RUNARY_ENV: production
+      RUNARY_JWT_SECRET: change-me-in-production
+      RUNARY_DB_URL: jdbc:h2:file:/data/runary;AUTO_SERVER=TRUE
+      RUNARY_BOOKS_PATH: /data/books
+      RUNARY_COVERS_PATH: /data/covers
+      RUNARY_TEMP_PATH: /data/temp
+      RUNARY_CSRF_ALLOWED_HOSTS: books.example.com
+      RUNARY_AUTO_SCAN_MINUTES: "60"
     volumes:
-      - booktower_data:/data
+      - runary_data:/data
 
 volumes:
-  booktower_data:
+  runary_data:
 ```
 
 ### Build the Docker image
@@ -94,19 +94,19 @@ volumes:
 ```dockerfile
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
-COPY target/booktower-*.jar app.jar
+COPY target/runary-*.jar app.jar
 EXPOSE 8080
 ENTRYPOINT ["java", "-Xmx512m", "-jar", "app.jar"]
 ```
 
 ```bash
 mvn package -DskipTests
-docker build -t booktower:latest .
+docker build -t runary:latest .
 ```
 
 ## Reverse Proxy
 
-BookTower itself handles HTTPS termination if you put it behind a reverse proxy. Set `BOOKTOWER_CSRF_ALLOWED_HOSTS` to your external hostname.
+Runary itself handles HTTPS termination if you put it behind a reverse proxy. Set `RUNARY_CSRF_ALLOWED_HOSTS` to your external hostname.
 
 ### Nginx
 
@@ -143,7 +143,7 @@ Caddy handles TLS automatically.
 The default H2 in-memory database loses all data on restart. For production, use file-based H2:
 
 ```
-BOOKTOWER_DB_URL=jdbc:h2:file:/var/lib/booktower/db;AUTO_SERVER=TRUE
+RUNARY_DB_URL=jdbc:h2:file:/var/lib/runary/db;AUTO_SERVER=TRUE
 ```
 
 The database file is created automatically. Flyway migrations run on every startup and are idempotent.
@@ -153,21 +153,21 @@ The database file is created automatically. Flyway migrations run on every start
 Stop the server, then copy the H2 database files:
 
 ```bash
-systemctl stop booktower
-cp /var/lib/booktower/db.mv.db /backup/booktower-$(date +%Y%m%d).mv.db
-systemctl start booktower
+systemctl stop runary
+cp /var/lib/runary/db.mv.db /backup/runary-$(date +%Y%m%d).mv.db
+systemctl start runary
 ```
 
 ## First-time Setup
 
-1. Start BookTower.
+1. Start Runary.
 2. Register the first account — it automatically receives admin privileges.
 3. Create a library, point it at a folder containing your books.
 4. Use "Scan Folder" to import existing files.
 
 ## Upgrading
 
-BookTower applies Flyway database migrations automatically on startup. To upgrade:
+Runary applies Flyway database migrations automatically on startup. To upgrade:
 
 1. Replace the JAR (or Docker image).
 2. Restart the service.
@@ -178,7 +178,7 @@ No manual migration steps are required.
 
 ```
 /data/
-├── booktower.mv.db     # H2 database (if using file mode)
+├── runary.mv.db     # H2 database (if using file mode)
 ├── books/
 │   └── <library-id>/   # One directory per library
 │       └── mybook.pdf

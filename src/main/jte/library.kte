@@ -1,8 +1,8 @@
-@import org.booktower.models.BookDto
-@import org.booktower.models.BookSortOrder
-@import org.booktower.models.LibraryDto
-@import org.booktower.models.ReadStatus
-@import org.booktower.web.PageContext
+@import org.runary.models.BookDto
+@import org.runary.models.BookSortOrder
+@import org.runary.models.LibraryDto
+@import org.runary.models.ReadStatus
+@import org.runary.web.PageContext
 @param pc: PageContext
 @param library: LibraryDto
 @param books: List<BookDto>
@@ -18,7 +18,7 @@
 @param totalBooks: Int = 0
 
 
-@template.components.layout(title="${library.name} - BookTower", pc=pc, currentPage="library",
+@template.components.layout(title="${library.name} - Runary", pc=pc, currentPage="library",
     content = @`
 <div class="page-container">
 

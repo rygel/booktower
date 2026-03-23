@@ -1,6 +1,6 @@
-# Contributing to BookTower
+# Contributing to Runary
 
-Thank you for your interest in contributing to BookTower. This guide covers everything you need to get started.
+Thank you for your interest in contributing to Runary. This guide covers everything you need to get started.
 
 ## Prerequisites
 
@@ -17,8 +17,8 @@ Optional:
 
 ```bash
 # Clone the repository
-git clone https://github.com/rygel/booktower.git
-cd booktower
+git clone https://github.com/rygel/runary.git
+cd runary
 
 # Compile (includes template precompilation)
 mvn compile
@@ -27,11 +27,11 @@ mvn compile
 mvn exec:java
 ```
 
-BookTower starts at `http://localhost:9999` by default. The first user to register becomes an admin.
+Runary starts at `http://localhost:9999` by default. The first user to register becomes an admin.
 
 ### Running Tests
 
-BookTower uses integration tests extensively. Always scope test runs to the affected test class:
+Runary uses integration tests extensively. Always scope test runs to the affected test class:
 
 ```bash
 # Compile tests without running them
@@ -56,7 +56,7 @@ All SQL must be compatible with both H2 and PostgreSQL.
 
 ## Code Style
 
-BookTower enforces code formatting with **Spotless** (using **ktlint** rules). Formatting is checked automatically during `mvn verify`.
+Runary enforces code formatting with **Spotless** (using **ktlint** rules). Formatting is checked automatically during `mvn verify`.
 
 To auto-fix formatting:
 
@@ -77,7 +77,7 @@ General guidelines:
 
 ```
 src/
-  main/kotlin/org/booktower/
+  main/kotlin/org/runary/
     config/       # Application configuration, DI (Koin), JSON setup
     filters/      # HTTP filters (auth, CSRF, rate limiting, logging)
     handlers/     # HTTP request handlers
@@ -91,7 +91,7 @@ src/
 
 ## Testing Requirements
 
-- **Prefer integration tests** over unit tests. Integration tests in `src/test/kotlin/org/booktower/integration/` test the full HTTP stack.
+- **Prefer integration tests** over unit tests. Integration tests in `src/test/kotlin/org/runary/integration/` test the full HTTP stack.
 - Every new feature or bug fix should include test coverage.
 - Tests must pass individually (`mvn test -Dtest="YourTestClass"`) and as part of the full suite.
 - Use the shared `IntegrationTestBase` for integration tests to avoid JTE classloader conflicts.

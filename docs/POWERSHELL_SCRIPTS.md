@@ -1,4 +1,4 @@
-# BookTower PowerShell Scripts - Fixed and Tested
+# Runary PowerShell Scripts - Fixed and Tested
 
 ## Overview
 All PowerShell scripts have been fixed, tested, and verified to work correctly.
@@ -9,7 +9,7 @@ All PowerShell scripts have been fixed, tested, and verified to work correctly.
 **Purpose**: Quick start server (assumes project is already compiled)
 
 **Features**:
-- Stops any existing BookTower instances before starting
+- Stops any existing Runary instances before starting
 - Maven installation check
 - Java installation check
 - Starts server on http://localhost:9999 (default)
@@ -32,7 +32,7 @@ All PowerShell scripts have been fixed, tested, and verified to work correctly.
 **Purpose**: Development mode - compile and start server
 
 **Features**:
-- Stops any existing BookTower instances before starting
+- Stops any existing Runary instances before starting
 - Maven installation check
 - Java installation check
 - Optional project clean with `-Clean` flag
@@ -84,10 +84,10 @@ All PowerShell scripts have been fixed, tested, and verified to work correctly.
 ```
 
 ### 4. stop.ps1 (3.7K)
-**Purpose**: Stop all running BookTower instances
+**Purpose**: Stop all running Runary instances
 
 **Features**:
-- Find all Java processes with "BookTower" in command line
+- Find all Java processes with "Runary" in command line
 - Graceful stop with Stop-Process
 - Verification of stopped processes
 - Force kill with taskkill if processes persist
@@ -154,7 +154,7 @@ All PowerShell scripts have been fixed, tested, and verified to work correctly.
 
 ### Stop-Before-Start
 All start scripts (start-server.ps1, start-dev.ps1, start-app.ps1) include:
-- Automatic detection of running BookTower instances
+- Automatic detection of running Runary instances
 - Multi-stage process termination:
   1. Graceful stop with Stop-Process
   2. 3-second wait period
@@ -164,8 +164,8 @@ All start scripts (start-server.ps1, start-dev.ps1, start-app.ps1) include:
 
 ### Process Detection
 ```powershell
-# Find all Java processes with BookTower in command line
-Get-Process -Name java | Where-Object { $_.CommandLine -match "BookTower" }
+# Find all Java processes with Runary in command line
+Get-Process -Name java | Where-Object { $_.CommandLine -match "Runary" }
 ```
 
 ### Force Kill

@@ -1,9 +1,9 @@
-@import org.booktower.services.DiscoveryRecommendation
-@import org.booktower.web.PageContext
+@import org.runary.services.DiscoveryRecommendation
+@import org.runary.web.PageContext
 @param pc: PageContext
 @param recommendations: List<DiscoveryRecommendation>
 
-@template.components.layout(title="${pc.i18n.translate("page.discover.title")} - BookTower", pc=pc, currentPage="discover",
+@template.components.layout(title="${pc.i18n.translate("page.discover.title")} - Runary", pc=pc, currentPage="discover",
     searchQuery="", content = @`
 <div class="page-container">
     <h1 class="page-title"><i class="ri-compass-3-line"></i> ${pc.i18n.translate("page.discover.title")}</h1>

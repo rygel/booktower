@@ -1,12 +1,12 @@
-# BookTower
+# Runary
 
 A self-hosted personal book, audiobook, and comic manager with a built-in reader and rich metadata support.
 
-[![Version](https://img.shields.io/badge/version-0.7.1-blue)](https://github.com/rygel/booktower/releases)
+[![Version](https://img.shields.io/badge/version-0.7.2-blue)](https://github.com/rygel/runary/releases)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-green)](LICENSE)
-[![Docker](https://img.shields.io/badge/docker-ghcr.io%2Frygel%2Fbooktower-blue)](https://ghcr.io/rygel/booktower)
+[![Docker](https://img.shields.io/badge/docker-ghcr.io%2Frygel%2Frunary-blue)](https://ghcr.io/rygel/runary)
 
-<!-- ![BookTower Screenshot](docs/screenshot.png) -->
+<!-- ![Runary Screenshot](docs/screenshot.png) -->
 
 > [!WARNING]
 > This is a new project and still under active development. There may be bugs. Test it with a small set of books before entrusting it with your entire library.
@@ -172,18 +172,18 @@ A self-hosted personal book, audiobook, and comic manager with a built-in reader
 
 ```yaml
 services:
-  booktower:
-    image: ghcr.io/rygel/booktower:latest
+  runary:
+    image: ghcr.io/rygel/runary:latest
     ports:
       - "9999:9999"
     environment:
-      BOOKTOWER_JWT_SECRET: change-me-in-production
-      BOOKTOWER_ENV: production
+      RUNARY_JWT_SECRET: change-me-in-production
+      RUNARY_ENV: production
     volumes:
-      - booktower_data:/data
+      - runary_data:/data
 
 volumes:
-  booktower_data:
+  runary_data:
 ```
 
 ```bash
@@ -194,27 +194,27 @@ Open `http://localhost:9999` and register your first account.
 
 ### Fat JAR
 
-Download the latest release JAR from [Releases](https://github.com/rygel/booktower/releases), then:
+Download the latest release JAR from [Releases](https://github.com/rygel/runary/releases), then:
 
 ```bash
-java -jar booktower-v0.7.1.jar
+java -jar runary-v0.7.2.jar
 ```
 
 ### Native Binary
 
-Native binaries are built with GraalVM 25 Community Edition — no JVM installation required. Download from [Releases](https://github.com/rygel/booktower/releases):
+Native binaries are built with GraalVM 25 Community Edition — no JVM installation required. Download from [Releases](https://github.com/rygel/runary/releases):
 
 | Platform       | Binary                          |
 |----------------|---------------------------------|
-| Linux x64      | `booktower-linux-x64`           |
-| Linux arm64    | `booktower-linux-arm64`         |
-| macOS x64      | `booktower-macos-x64`           |
-| macOS arm64    | `booktower-macos-arm64`         |
-| Windows x64    | `booktower-windows-x64.exe`     |
+| Linux x64      | `runary-linux-x64`           |
+| Linux arm64    | `runary-linux-arm64`         |
+| macOS x64      | `runary-macos-x64`           |
+| macOS arm64    | `runary-macos-arm64`         |
+| Windows x64    | `runary-windows-x64.exe`     |
 
 ```bash
-chmod +x booktower-linux-x64
-./booktower-linux-x64
+chmod +x runary-linux-x64
+./runary-linux-x64
 ```
 
 ## Support Matrix
@@ -241,7 +241,7 @@ chmod +x booktower-linux-x64
 | Database | Versions | Notes |
 |----------|----------|-------|
 | **H2** (embedded) | 2.4.x | Default for dev/quickstart — zero config |
-| **PostgreSQL** | 17, 18 | Recommended for production. Set `BOOKTOWER_DB_*` env vars |
+| **PostgreSQL** | 17, 18 | Recommended for production. Set `RUNARY_DB_*` env vars |
 
 ### Java Versions (Fat JAR only)
 
@@ -257,41 +257,41 @@ All settings can be overridden with environment variables. See [docs/CONFIGURATI
 
 | Variable | Default | Description |
 |---|---|---|
-| `BOOKTOWER_HOST` | `0.0.0.0` | Bind address |
-| `BOOKTOWER_PORT` | `9999` | HTTP port |
-| `BOOKTOWER_ENV` | — | Set to `production` to enforce JWT secret |
-| `BOOKTOWER_JWT_SECRET` | *(dev default)* | **Change in production** |
-| `BOOKTOWER_DB_URL` | H2 file-backed | JDBC URL (H2 or PostgreSQL) |
-| `BOOKTOWER_DB_USERNAME` | `sa` | Database username |
-| `BOOKTOWER_DB_PASSWORD` | — | Database password |
-| `BOOKTOWER_DB_DRIVER` | `org.h2.Driver` | JDBC driver class |
-| `BOOKTOWER_BOOKS_PATH` | `./data/books` | Book file storage |
-| `BOOKTOWER_COVERS_PATH` | `./data/covers` | Cover image storage |
+| `RUNARY_HOST` | `0.0.0.0` | Bind address |
+| `RUNARY_PORT` | `9999` | HTTP port |
+| `RUNARY_ENV` | — | Set to `production` to enforce JWT secret |
+| `RUNARY_JWT_SECRET` | *(dev default)* | **Change in production** |
+| `RUNARY_DB_URL` | H2 file-backed | JDBC URL (H2 or PostgreSQL) |
+| `RUNARY_DB_USERNAME` | `sa` | Database username |
+| `RUNARY_DB_PASSWORD` | — | Database password |
+| `RUNARY_DB_DRIVER` | `org.h2.Driver` | JDBC driver class |
+| `RUNARY_BOOKS_PATH` | `./data/books` | Book file storage |
+| `RUNARY_COVERS_PATH` | `./data/covers` | Cover image storage |
 
 ### PostgreSQL example
 
 ```bash
-export BOOKTOWER_DB_URL=jdbc:postgresql://localhost:5432/booktower
-export BOOKTOWER_DB_USERNAME=booktower
-export BOOKTOWER_DB_PASSWORD=secret
-export BOOKTOWER_DB_DRIVER=org.postgresql.Driver
+export RUNARY_DB_URL=jdbc:postgresql://localhost:5432/runary
+export RUNARY_DB_USERNAME=runary
+export RUNARY_DB_PASSWORD=secret
+export RUNARY_DB_DRIVER=org.postgresql.Driver
 ```
 
 ## Full-Text Search
 
-BookTower supports full-text search on PostgreSQL with two backends. H2 (dev mode) uses basic LIKE search.
+Runary supports full-text search on PostgreSQL with two backends. H2 (dev mode) uses basic LIKE search.
 
 ### Enabling FTS
 
 ```bash
-export BOOKTOWER_FTS_ENABLED=true
+export RUNARY_FTS_ENABLED=true
 ```
 
-Requires PostgreSQL. On startup, BookTower creates the necessary tsvector columns, GIN indexes, and triggers automatically.
+Requires PostgreSQL. On startup, Runary creates the necessary tsvector columns, GIN indexes, and triggers automatically.
 
 ### Built-in PostgreSQL FTS (default)
 
-When FTS is enabled, BookTower uses PostgreSQL's native full-text search with:
+When FTS is enabled, Runary uses PostgreSQL's native full-text search with:
 
 - **`websearch_to_tsquery`** — natural query syntax:
   - `war worlds` — find books matching both words
@@ -304,14 +304,14 @@ When FTS is enabled, BookTower uses PostgreSQL's native full-text search with:
 
 ### pg_textsearch BM25 (optional)
 
-If you install the [pg_textsearch](https://github.com/timescale/pg_textsearch) extension (PostgreSQL 17+), BookTower automatically detects it and uses BM25 ranking for content search. BM25 provides statistically better relevance scoring than the built-in `ts_rank`.
+If you install the [pg_textsearch](https://github.com/timescale/pg_textsearch) extension (PostgreSQL 17+), Runary automatically detects it and uses BM25 ranking for content search. BM25 provides statistically better relevance scoring than the built-in `ts_rank`.
 
 ```sql
 -- Install pg_textsearch (requires shared_preload_libraries config)
 CREATE EXTENSION pg_textsearch;
 ```
 
-BookTower logs which backend is active at startup:
+Runary logs which backend is active at startup:
 ```
 FTS: metadata=true, bm25=false   -- built-in only
 FTS: metadata=true, bm25=true    -- pg_textsearch detected

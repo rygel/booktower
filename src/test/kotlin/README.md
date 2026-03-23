@@ -1,10 +1,10 @@
-# BookTower End-to-End Tests
+# Runary End-to-End Tests
 
-This directory contains comprehensive end-to-end tests for the BookTower application.
+This directory contains comprehensive end-to-end tests for the Runary application.
 
 ## Prerequisites
 
-1. BookTower application must be running on `http://localhost:9999` (or configured port)
+1. Runary application must be running on `http://localhost:9999` (or configured port)
 2. Java 21 or later installed
 3. curl command available
 4. Maven installed
@@ -32,7 +32,7 @@ mvn test -Dtest=EndToEndTest
 
 1. Start the application:
    ```bash
-   mvn compile exec:java -Dexec.mainClass="org.booktower.BookTowerAppKt"
+   mvn compile exec:java -Dexec.mainClass="org.runary.RunaryAppKt"
    ```
 
 2. Open browser to `http://localhost:9999`
@@ -135,7 +135,7 @@ export BASE_URL=http://localhost:8080
 - Verify API endpoints match the test expectations
 
 **Connection refused:**
-- Start the BookTower application first
+- Start the Runary application first
 - Wait 15-20 seconds for the app to initialize
 - Check if the correct port is configured in `application.conf`
 
@@ -167,7 +167,7 @@ jobs:
       - name: Build
         run: mvn compile
       - name: Start Application
-        run: mvn exec:java -Dexec.mainClass="org.booktower.BookTowerAppKt" &
+        run: mvn exec:java -Dexec.mainClass="org.runary.RunaryAppKt" &
         shell: bash
       - name: Wait for startup
         run: sleep 20

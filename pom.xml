@@ -4,9 +4,9 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.booktower</groupId>
-    <artifactId>booktower</artifactId>
-    <version>0.7.1</version>
+    <groupId>org.runary</groupId>
+    <artifactId>runary</artifactId>
+    <version>0.7.2</version>
     <packaging>jar</packaging>
 
     <properties>
@@ -63,8 +63,8 @@
         
         <!-- SonarQube Properties (Override via -D or settings.xml) -->
         <sonar.host.url>http://localhost:9000</sonar.host.url>
-        <sonar.projectKey>org.booktower:booktower</sonar.projectKey>
-        <sonar.projectName>BookTower</sonar.projectName>
+        <sonar.projectKey>org.runary:runary</sonar.projectKey>
+        <sonar.projectName>Runary</sonar.projectName>
         
         <!-- Logging Versions -->
         <slf4j.version>2.0.17</slf4j.version>
@@ -544,7 +544,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${maven-surefire-plugin.version}</version>
                 <configuration>
-                    <argLine>-Dapp.name=booktower-test</argLine>
+                    <argLine>-Dapp.name=runary-test</argLine>
                     <excludedGroups>browser,e2e-network</excludedGroups>
                 </configuration>
             </plugin>
@@ -578,7 +578,7 @@
                 <configuration>
                     <locations>classpath:db/migration</locations>
                     <baselineOnMigrate>true</baselineOnMigrate>
-                    <url>jdbc:h2:mem:booktower;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE</url>
+                    <url>jdbc:h2:mem:runary;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE</url>
                     <user>sa</user>
                     <password></password>
                     <driver>org.h2.Driver</driver>
@@ -618,7 +618,7 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>${exec-maven-plugin.version}</version>
                 <configuration>
-                    <mainClass>org.booktower.BookTowerAppKt</mainClass>
+                    <mainClass>org.runary.RunaryAppKt</mainClass>
                 </configuration>
             </plugin>
 
@@ -879,7 +879,7 @@
                 </executions>
             </plugin>
 
-            <!-- Fat JAR: mvn package produces a self-contained booktower-*-fat.jar -->
+            <!-- Fat JAR: mvn package produces a self-contained runary-*-fat.jar -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
@@ -919,7 +919,7 @@
                             </filters>
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>org.booktower.BookTowerAppKt</mainClass>
+                                    <mainClass>org.runary.RunaryAppKt</mainClass>
                                 </transformer>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
@@ -955,7 +955,7 @@
                     </watches>
                     <goals>
                         <goal>compile</goal>
-                        <goal>exec:java -Dexec.mainClass=org.booktower.BookTowerAppKt</goal>
+                        <goal>exec:java -Dexec.mainClass=org.runary.RunaryAppKt</goal>
                     </goals>
                 </configuration>
             </plugin>
@@ -1113,8 +1113,8 @@
                         <artifactId>native-maven-plugin</artifactId>
                         <version>${native-maven-plugin.version}</version>
                         <configuration>
-                            <imageName>booktower</imageName>
-                            <mainClass>org.booktower.BookTowerAppKt</mainClass>
+                            <imageName>runary</imageName>
+                            <mainClass>org.runary.RunaryAppKt</mainClass>
                             <buildCache>true</buildCache>
                             <!--
                                 Pull pre-written reflect/resource/proxy configs for known
@@ -1170,7 +1170,7 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
-                            <argLine>-Dapp.name=booktower-test</argLine>
+                            <argLine>-Dapp.name=runary-test</argLine>
                             <excludedGroups/>
                             <groups>browser</groups>
                             <!-- Kill any single test after 60 s, entire forked JVM after 10 min -->
@@ -1212,7 +1212,7 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <version>${maven-surefire-plugin.version}</version>
                         <configuration>
-                            <argLine>-Dapp.name=booktower-test</argLine>
+                            <argLine>-Dapp.name=runary-test</argLine>
                             <excludedGroups combine.self="override"></excludedGroups>
                             <groups>e2e-network</groups>
                             <forkedProcessTimeoutInSeconds>600</forkedProcessTimeoutInSeconds>

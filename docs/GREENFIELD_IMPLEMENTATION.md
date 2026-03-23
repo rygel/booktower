@@ -1,8 +1,8 @@
-# Greenfield BookTower: Building from Scratch with http4k + HTMX
+# Greenfield Runary: Building from Scratch with http4k + HTMX
 
 ## Executive Summary
 
-**The Question:** What if we forget the existing 879 Java files and 404 TypeScript files, and build BookTower completely from scratch using http4k + HTMX?
+**The Question:** What if we forget the existing 879 Java files and 404 TypeScript files, and build Runary completely from scratch using http4k + HTMX?
 
 **Short Answer:** It's **technically possible** and would result in a cleaner architecture, but it's a **massive undertaking** requiring **40-52 weeks** (10-13 months) with a dedicated team.
 
@@ -13,11 +13,11 @@
 - ✅ Budget allows 1+ year without new features
 - ✅ The existing app is truly unmaintainable
 
-**For BookTower: Still recommend frontend-only migration** (5 months vs 12 months)
+**For Runary: Still recommend frontend-only migration** (5 months vs 12 months)
 
 ---
 
-## Feature Inventory from Existing BookTower
+## Feature Inventory from Existing Runary
 
 ### Backend Controllers (57 total)
 
@@ -114,9 +114,9 @@
 ### Backend (http4k + Kotlin)
 
 ```
-booktower-server/
-├── src/main/kotlin/org/booktower/
-│   ├── BookTowerApp.kt              # Application entry
+runary-server/
+├── src/main/kotlin/org/runary/
+│   ├── RunaryApp.kt              # Application entry
 │   ├── config/
 │   │   ├── DatabaseConfig.kt       # DB setup (Exposed)
 │   │   ├── SecurityConfig.kt       # JWT/OAuth2
@@ -578,7 +578,7 @@ class BookService(
 
 ## Code Size Estimates
 
-### Greenfield BookTower
+### Greenfield Runary
 
 **Backend:**
 - Kotlin files: ~150-200
@@ -594,7 +594,7 @@ class BookService(
 
 ---
 
-### Current BookTower (for comparison)
+### Current Runary (for comparison)
 
 **Backend:**
 - Java files: 879
@@ -686,7 +686,7 @@ class BookService(
 - Competitors move ahead
 - User needs change
 - Technology shifts
-- BookTower becomes irrelevant
+- Runary becomes irrelevant
 
 ---
 
@@ -699,7 +699,7 @@ class BookService(
    - No data to migrate
 
 2. ✅ **Current app is unmaintainable**
-   - BookTower: Code is clean, maintainable
+   - Runary: Code is clean, maintainable
 
 3. ✅ **Technology is end-of-life**
    - Spring Boot: Supported until 2029+
@@ -715,14 +715,14 @@ class BookService(
 
 6. ✅ **Feature set is small**
    - MVP only
-   - Not full BookTower
+   - Not full Runary
 
 7. ✅ **Existing app has fundamental flaws**
    - Security issues
    - Performance issues
    - Scalability issues
 
-**BookTower: 0/7 conditions met**
+**Runary: 0/7 conditions met**
 
 ---
 
@@ -777,7 +777,7 @@ Year 3-5: Eventually all services in Kotlin
 1. **Too long** - 17-23 months vs 6-7.5 months
 2. **Too risky** - Everything at once
 3. **No users** - No feedback during development
-4. **BookTower works** - Current code is fine
+4. **Runary works** - Current code is fine
 5. **Market risk** - Competitors don't wait
 
 ### ✅ Do Frontend Migration + Gradual Backend Modernization
@@ -791,7 +791,7 @@ Year 3-5: Eventually all services in Kotlin
 
 ### 🟡 Consider Greenfield If:
 
-- Building BookTower **v2** as separate product
+- Building Runary **v2** as separate product
 - Current app is truly broken
 - 2 years of runway with no revenue pressure
 - Team is expert Kotlin developers
@@ -829,7 +829,7 @@ Year 3-5: Eventually all services in Kotlin
 - ❌ High risk of project failure
 - ❌ Market opportunity loss
 
-**For BookTower:**
+**For Runary:**
 - Keep existing Spring Boot backend
 - Migrate Angular → HTMX (6-7.5 months)
 - Gradually modernize backend if needed (3-5 years)

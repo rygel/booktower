@@ -1,8 +1,8 @@
-@import org.booktower.web.PageContext
+@import org.runary.web.PageContext
 @param pc: PageContext
 @param hasApiKey: Boolean
 
-@template.components.layout(title="${pc.i18n.translate("page.hardcover.title")} - BookTower", pc=pc, currentPage="hardcover-settings",
+@template.components.layout(title="${pc.i18n.translate("page.hardcover.title")} - Runary", pc=pc, currentPage="hardcover-settings",
     searchQuery="", content = @`
 <div class="page-container">
     <h1 class="page-title"><i class="ri-book-3-line"></i> ${pc.i18n.translate("page.hardcover.title")}</h1>

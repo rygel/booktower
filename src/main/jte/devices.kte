@@ -1,11 +1,11 @@
-@import org.booktower.services.KoboDevice
-@import org.booktower.services.KOReaderDevice
-@import org.booktower.web.PageContext
+@import org.runary.services.KoboDevice
+@import org.runary.services.KOReaderDevice
+@import org.runary.web.PageContext
 @param pc: PageContext
 @param koboDevices: List<KoboDevice>
 @param koreaderDevices: List<KOReaderDevice>
 
-@template.components.layout(title="${pc.i18n.translate("page.devices.title")} - BookTower", pc=pc, currentPage="devices",
+@template.components.layout(title="${pc.i18n.translate("page.devices.title")} - Runary", pc=pc, currentPage="devices",
     searchQuery="", content = @`
 <div class="page-container">
     <h1 class="page-title"><i class="ri-tablet-line"></i> ${pc.i18n.translate("page.devices.title")}</h1>

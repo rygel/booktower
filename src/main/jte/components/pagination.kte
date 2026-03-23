@@ -1,4 +1,4 @@
-@import org.booktower.i18n.I18nService
+@import org.runary.i18n.I18nService
 @param currentPage: Int
 @param totalPages: Int
 @param totalItems: Int

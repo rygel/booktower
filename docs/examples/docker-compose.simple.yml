@@ -1,0 +1,29 @@
+# Runary — Simple Docker Compose (H2 embedded database)
+# Quick setup: docker compose -f docker-compose.simple.yml up -d
+# Access at: http://localhost:9999
+
+services:
+  runary:
+    image: ghcr.io/rygel/runary:latest
+    container_name: runary
+    restart: unless-stopped
+    ports:
+      - "9999:8080"
+    volumes:
+      - runary_db:/data/db
+      - runary_books:/data/books
+      - runary_covers:/data/covers
+    environment:
+      RUNARY_ENV: production
+      RUNARY_JWT_SECRET: "change-me-generate-with-openssl-rand-base64-32"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+volumes:
+  runary_db:
+  runary_books:
+  runary_covers:

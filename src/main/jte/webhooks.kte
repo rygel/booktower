@@ -1,9 +1,9 @@
-@import org.booktower.services.WebhookDto
-@import org.booktower.web.PageContext
+@import org.runary.services.WebhookDto
+@import org.runary.web.PageContext
 @param pc: PageContext
 @param webhooks: List<WebhookDto>
 
-@template.components.layout(title="${pc.i18n.translate("page.webhooks.title")} - BookTower", pc=pc, currentPage="webhooks",
+@template.components.layout(title="${pc.i18n.translate("page.webhooks.title")} - Runary", pc=pc, currentPage="webhooks",
     searchQuery="", content = @`
 <div class="page-container">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">

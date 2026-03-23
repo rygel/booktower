@@ -1,9 +1,9 @@
-@import org.booktower.services.LibraryStats
-@import org.booktower.web.PageContext
+@import org.runary.services.LibraryStats
+@import org.runary.web.PageContext
 @param pc: PageContext
 @param stats: LibraryStats?
 
-@template.components.layout(title="${pc.i18n.translate("page.stats.title")} - BookTower", pc=pc, currentPage="stats",
+@template.components.layout(title="${pc.i18n.translate("page.stats.title")} - Runary", pc=pc, currentPage="stats",
     searchQuery="", content = @`
 <div class="page-container">
     <h1 class="page-title"><i class="ri-bar-chart-box-line"></i> ${pc.i18n.translate("page.stats.title")}</h1>

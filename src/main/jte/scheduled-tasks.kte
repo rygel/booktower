@@ -1,9 +1,9 @@
-@import org.booktower.services.ScheduledTaskDto
-@import org.booktower.web.PageContext
+@import org.runary.services.ScheduledTaskDto
+@import org.runary.web.PageContext
 @param pc: PageContext
 @param tasks: List<ScheduledTaskDto>
 
-@template.components.layout(title="${pc.i18n.translate("page.scheduledtasks.title")} - BookTower", pc=pc, currentPage="admin",
+@template.components.layout(title="${pc.i18n.translate("page.scheduledtasks.title")} - Runary", pc=pc, currentPage="admin",
     searchQuery="", content = @`
 <div class="page-container">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">

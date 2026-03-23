@@ -17,36 +17,36 @@ The `release` GitHub Actions workflow triggers automatically, builds all artifac
 
 ### Fat JAR
 
-Built by `mvn package`. Produces `target/booktower-{version}-fat.jar` — a single file containing the application and all dependencies merged together.
+Built by `mvn package`. Produces `target/runary-{version}-fat.jar` — a single file containing the application and all dependencies merged together.
 
 **Requires Java 21+ on the host machine.**
 
 ```bash
-java -jar booktower-1.0.0-fat.jar
+java -jar runary-1.0.0-fat.jar
 ```
 
-The regular `booktower-{version}.jar` only contains application classes; the fat JAR is what you distribute to end users.
+The regular `runary-{version}.jar` only contains application classes; the fat JAR is what you distribute to end users.
 
 ### Native binary
 
-Built by `mvn package -Pnative` using GraalVM. Produces a single platform-specific executable (`booktower` on Linux/macOS, `booktower.exe` on Windows).
+Built by `mvn package -Pnative` using GraalVM. Produces a single platform-specific executable (`runary` on Linux/macOS, `runary.exe` on Windows).
 
 **Requires nothing on the host machine — no JVM, no runtime.**
 
 ```bash
-./booktower          # Linux / macOS
-booktower.exe        # Windows
+./runary          # Linux / macOS
+runary.exe        # Windows
 ```
 
 Native binaries are produced for five targets in CI:
 
 | File | Platform |
 |------|----------|
-| `booktower-linux-x64` | Linux x86-64 |
-| `booktower-linux-arm64` | Linux ARM64 (Raspberry Pi, AWS Graviton) |
-| `booktower-macos-x64` | macOS Intel |
-| `booktower-macos-arm64` | macOS Apple Silicon |
-| `booktower-windows-x64.exe` | Windows x86-64 |
+| `runary-linux-x64` | Linux x86-64 |
+| `runary-linux-arm64` | Linux ARM64 (Raspberry Pi, AWS Graviton) |
+| `runary-macos-x64` | macOS Intel |
+| `runary-macos-arm64` | macOS Apple Silicon |
+| `runary-windows-x64.exe` | Windows x86-64 |
 
 ---
 
@@ -77,9 +77,9 @@ The build time cost is paid once in CI; end users get the fast binary.
 
 AOT compilation cannot see code that is loaded dynamically at runtime (reflection, `Class.forName`, `ServiceLoader`). These must be declared explicitly:
 
-- `src/main/resources/META-INF/native-image/org.booktower/booktower/reflect-config.json` — classes accessed via reflection (JTE templates, Jackson DTOs, H2 driver, Logback appenders)
-- `src/main/resources/META-INF/native-image/org.booktower/booktower/resource-config.json` — classpath resources bundled into the binary (i18n files, SQL migrations, static assets, PDFBox fonts)
-- `src/main/resources/META-INF/native-image/org.booktower/booktower/native-image.properties` — build flags
+- `src/main/resources/META-INF/native-image/org.runary/runary/reflect-config.json` — classes accessed via reflection (JTE templates, Jackson DTOs, H2 driver, Logback appenders)
+- `src/main/resources/META-INF/native-image/org.runary/runary/resource-config.json` — classpath resources bundled into the binary (i18n files, SQL migrations, static assets, PDFBox fonts)
+- `src/main/resources/META-INF/native-image/org.runary/runary/native-image.properties` — build flags
 
 Additionally, the native profile activates the **GraalVM Reachability Metadata Repository** — a community-maintained database of pre-written configs for common libraries (PDFBox, H2, Jackson, Logback, Flyway, HikariCP). This is what makes PDFBox work in the native binary without writing hundreds of lines of config manually.
 
@@ -91,10 +91,10 @@ JTE templates are compiled to Kotlin/Java source files during `mvn compile` (the
 
 ## Quickstart mode
 
-Set `BOOKTOWER_QUICKSTART=true` to seed a demo user on first boot:
+Set `RUNARY_QUICKSTART=true` to seed a demo user on first boot:
 
 ```bash
-BOOKTOWER_QUICKSTART=true ./booktower-linux-x64
+RUNARY_QUICKSTART=true ./runary-linux-x64
 # Username: demo  |  Password: demo1234
 # Open: http://localhost:9999
 ```
@@ -106,9 +106,9 @@ The demo user and its starter library are created only once; subsequent starts w
 ## Production deployment
 
 ```bash
-export BOOKTOWER_ENV=production
-export BOOKTOWER_JWT_SECRET=$(openssl rand -hex 32)
-./booktower-linux-x64
+export RUNARY_ENV=production
+export RUNARY_JWT_SECRET=$(openssl rand -hex 32)
+./runary-linux-x64
 ```
 
-`BOOKTOWER_ENV=production` disables the dev user seed, enables secure cookies, and switches the template engine to precompiled mode.
+`RUNARY_ENV=production` disables the dev user seed, enables secure cookies, and switches the template engine to precompiled mode.

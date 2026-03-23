@@ -1,8 +1,8 @@
-@import org.booktower.web.PageContext
+@import org.runary.web.PageContext
 @param pc: PageContext
 
 
-@template.components.layout(title="${pc.i18n.translate("page.activity.title")} - BookTower", pc=pc, currentPage="activity",
+@template.components.layout(title="${pc.i18n.translate("page.activity.title")} - Runary", pc=pc, currentPage="activity",
     content = @`
 <div class="page-container">
     <div class="flex-center gap-md mb-3">

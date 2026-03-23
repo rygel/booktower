@@ -1,7 +1,7 @@
-@import org.booktower.i18n.I18nService
-@import org.booktower.models.BookDto
-@import org.booktower.models.BookFileDto
-@import org.booktower.models.BookmarkDto
+@import org.runary.i18n.I18nService
+@import org.runary.models.BookDto
+@import org.runary.models.BookFileDto
+@import org.runary.models.BookmarkDto
 @param book: BookDto
 @param bookmarks: List<BookmarkDto>
 @param readerType: String
@@ -15,7 +15,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${book.title} — ${i18n.translate("page.reader.reading")} - BookTower</title>
+    <title>${book.title} — ${i18n.translate("page.reader.reading")} - Runary</title>
     <style id="theme-style" data-theme="${currentTheme}">${themeCss}</style>
     <link rel="stylesheet" href="/static/css/app.css">
     <link rel="stylesheet" href="/static/vendor/remixicon.css">

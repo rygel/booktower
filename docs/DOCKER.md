@@ -1,21 +1,21 @@
 # Docker Deployment Guide
 
-BookTower publishes multi-architecture Docker images (`amd64` and `arm64`) to the GitHub Container Registry.
+Runary publishes multi-architecture Docker images (`amd64` and `arm64`) to the GitHub Container Registry.
 
 ## Quick Start
 
-The fastest way to run BookTower:
+The fastest way to run Runary:
 
 ```bash
 docker run -d \
-  --name booktower \
+  --name runary \
   -p 9999:8080 \
-  -v booktower_db:/data/db \
-  -v booktower_books:/data/books \
-  -v booktower_covers:/data/covers \
-  -e BOOKTOWER_ENV=production \
-  -e BOOKTOWER_JWT_SECRET="$(openssl rand -base64 32)" \
-  ghcr.io/rygel/booktower:latest
+  -v runary_db:/data/db \
+  -v runary_books:/data/books \
+  -v runary_covers:/data/covers \
+  -e RUNARY_ENV=production \
+  -e RUNARY_JWT_SECRET="$(openssl rand -base64 32)" \
+  ghcr.io/rygel/runary:latest
 ```
 
 Open `http://localhost:9999` and create your first account.
@@ -28,29 +28,29 @@ The included `docker-compose.yml` uses an embedded H2 database, which requires n
 
 ```bash
 # 1. Clone the repository (or just grab docker-compose.yml)
-# 2. Edit BOOKTOWER_JWT_SECRET in docker-compose.yml
+# 2. Edit RUNARY_JWT_SECRET in docker-compose.yml
 # 3. Start
 docker compose up -d
 ```
 
-BookTower will be available at `http://localhost:9999`.
+Runary will be available at `http://localhost:9999`.
 
 ### With PostgreSQL (production)
 
 For production workloads, PostgreSQL is recommended. Open `docker-compose.yml` and:
 
 1. Uncomment the `postgres` service block.
-2. Uncomment `booktower_pgdata` in the `volumes` section.
-3. Add the `BOOKTOWER_DB_*` environment variables to the `booktower` service:
+2. Uncomment `runary_pgdata` in the `volumes` section.
+3. Add the `RUNARY_DB_*` environment variables to the `runary` service:
 
 ```yaml
 services:
-  booktower:
+  runary:
     environment:
-      BOOKTOWER_DB_URL: "jdbc:postgresql://postgres:5432/booktower"
-      BOOKTOWER_DB_USERNAME: "booktower"
-      BOOKTOWER_DB_PASSWORD: "change-me-to-a-strong-password"
-      BOOKTOWER_DB_DRIVER: "org.postgresql.Driver"
+      RUNARY_DB_URL: "jdbc:postgresql://postgres:5432/runary"
+      RUNARY_DB_USERNAME: "runary"
+      RUNARY_DB_PASSWORD: "change-me-to-a-strong-password"
+      RUNARY_DB_DRIVER: "org.postgresql.Driver"
     depends_on:
       postgres:
         condition: service_healthy
@@ -63,10 +63,10 @@ services:
 
 | Volume | Container Path | Purpose |
 |--------|---------------|---------|
-| `booktower_db` | `/data/db` | H2 database files (not needed when using PostgreSQL) |
-| `booktower_books` | `/data/books` | Uploaded and managed book files |
-| `booktower_covers` | `/data/covers` | Extracted and uploaded cover images |
-| `booktower_pgdata` | `/var/lib/postgresql/data` | PostgreSQL data (only when using PostgreSQL) |
+| `runary_db` | `/data/db` | H2 database files (not needed when using PostgreSQL) |
+| `runary_books` | `/data/books` | Uploaded and managed book files |
+| `runary_covers` | `/data/covers` | Extracted and uploaded cover images |
+| `runary_pgdata` | `/var/lib/postgresql/data` | PostgreSQL data (only when using PostgreSQL) |
 
 To mount an existing book collection for import:
 
@@ -75,7 +75,7 @@ volumes:
   - /path/to/your/books:/mnt/library:ro
 ```
 
-The `:ro` flag ensures BookTower cannot modify your source files.
+The `:ro` flag ensures Runary cannot modify your source files.
 
 ## Environment Variables
 
@@ -83,33 +83,33 @@ The `:ro` flag ensures BookTower cannot modify your source files.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `BOOKTOWER_ENV` | — | Set to `production` to enforce JWT secret validation |
-| `BOOKTOWER_PORT` | `8080` | Internal HTTP port (rarely needs changing in Docker) |
-| `BOOKTOWER_HOST` | `0.0.0.0` | Bind address |
-| `BOOKTOWER_BASE_URL` | `http://{host}:{port}` | Public-facing URL (used in Kobo sync, OPDS links, email) |
-| `BOOKTOWER_JWT_SECRET` | — | **Required in production.** JWT signing key |
-| `BOOKTOWER_REGISTRATION_OPEN` | `true` | Set to `false` to disable new user registration |
-| `BOOKTOWER_AUTO_SCAN_MINUTES` | `60` | Library auto-scan interval; `0` to disable |
+| `RUNARY_ENV` | — | Set to `production` to enforce JWT secret validation |
+| `RUNARY_PORT` | `8080` | Internal HTTP port (rarely needs changing in Docker) |
+| `RUNARY_HOST` | `0.0.0.0` | Bind address |
+| `RUNARY_BASE_URL` | `http://{host}:{port}` | Public-facing URL (used in Kobo sync, OPDS links, email) |
+| `RUNARY_JWT_SECRET` | — | **Required in production.** JWT signing key |
+| `RUNARY_REGISTRATION_OPEN` | `true` | Set to `false` to disable new user registration |
+| `RUNARY_AUTO_SCAN_MINUTES` | `60` | Library auto-scan interval; `0` to disable |
 
 ### Database
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `BOOKTOWER_DB_URL` | H2 in-memory | JDBC connection string |
-| `BOOKTOWER_DB_USERNAME` | `sa` | Database username |
-| `BOOKTOWER_DB_PASSWORD` | (empty) | Database password |
-| `BOOKTOWER_DB_DRIVER` | `org.h2.Driver` | JDBC driver class |
+| `RUNARY_DB_URL` | H2 in-memory | JDBC connection string |
+| `RUNARY_DB_USERNAME` | `sa` | Database username |
+| `RUNARY_DB_PASSWORD` | (empty) | Database password |
+| `RUNARY_DB_DRIVER` | `org.h2.Driver` | JDBC driver class |
 
 ### SMTP (email)
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `BOOKTOWER_SMTP_HOST` | (empty) | SMTP server hostname |
-| `BOOKTOWER_SMTP_PORT` | `587` | SMTP port |
-| `BOOKTOWER_SMTP_USER` | (empty) | SMTP username |
-| `BOOKTOWER_SMTP_PASS` | (empty) | SMTP password |
-| `BOOKTOWER_SMTP_FROM` | (empty) | Sender address |
-| `BOOKTOWER_SMTP_TLS` | `true` | Enable STARTTLS |
+| `RUNARY_SMTP_HOST` | (empty) | SMTP server hostname |
+| `RUNARY_SMTP_PORT` | `587` | SMTP port |
+| `RUNARY_SMTP_USER` | (empty) | SMTP username |
+| `RUNARY_SMTP_PASS` | (empty) | SMTP password |
+| `RUNARY_SMTP_FROM` | (empty) | Sender address |
+| `RUNARY_SMTP_TLS` | `true` | Enable STARTTLS |
 
 ### OIDC / SSO
 
@@ -128,30 +128,30 @@ The `:ro` flag ensures BookTower cannot modify your source files.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `BOOKTOWER_HARDCOVER_API_KEY` | (empty) | Hardcover API key for book metadata |
-| `BOOKTOWER_COMICVINE_API_KEY` | (empty) | ComicVine API key for comic metadata |
+| `RUNARY_HARDCOVER_API_KEY` | (empty) | Hardcover API key for book metadata |
+| `RUNARY_COMICVINE_API_KEY` | (empty) | ComicVine API key for comic metadata |
 
 ### Full-Text Search
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `BOOKTOWER_FTS_ENABLED` | `false` | Enable full-text search indexing |
-| `BOOKTOWER_FTS_THROTTLE_MS` | `300` | Debounce interval for search queries |
+| `RUNARY_FTS_ENABLED` | `false` | Enable full-text search indexing |
+| `RUNARY_FTS_THROTTLE_MS` | `300` | Debounce interval for search queries |
 
 ## Building from Source
 
 ```bash
-git clone https://github.com/rygel/booktower.git
-cd booktower
-docker build -t booktower:local .
+git clone https://github.com/rygel/runary.git
+cd runary
+docker build -t runary:local .
 ```
 
-Then use `booktower:local` in place of `ghcr.io/rygel/booktower:latest`, or set `build: .` in `docker-compose.yml`.
+Then use `runary:local` in place of `ghcr.io/rygel/runary:latest`, or set `build: .` in `docker-compose.yml`.
 
 The Dockerfile uses a two-stage build:
 
 1. **Build stage** — Maven + JDK 21 compiles the fat JAR (`mvn package -DskipTests`)
-2. **Runtime stage** — Eclipse Temurin 21 JRE runs the JAR as a non-root `booktower` user
+2. **Runtime stage** — Eclipse Temurin 21 JRE runs the JAR as a non-root `runary` user
 
 ## Multi-Architecture Support
 
@@ -161,7 +161,7 @@ To build multi-arch images locally:
 
 ```bash
 docker buildx create --use
-docker buildx build --platform linux/amd64,linux/arm64 -t booktower:local .
+docker buildx build --platform linux/amd64,linux/arm64 -t runary:local .
 ```
 
 ## Updating to New Versions
@@ -177,7 +177,7 @@ docker compose up -d
 Your data is preserved in the named volumes. To pin a specific version instead of `latest`:
 
 ```yaml
-image: ghcr.io/rygel/booktower:0.6.0
+image: ghcr.io/rygel/runary:0.6.0
 ```
 
 ### Backup Before Upgrading
@@ -188,9 +188,9 @@ docker compose down
 
 # Back up volumes
 docker run --rm \
-  -v booktower_db:/data \
+  -v runary_db:/data \
   -v $(pwd)/backup:/backup \
-  alpine tar czf /backup/booktower-db.tar.gz -C /data .
+  alpine tar czf /backup/runary-db.tar.gz -C /data .
 
 # Pull and restart
 docker compose pull
@@ -199,12 +199,12 @@ docker compose up -d
 
 ## Reverse Proxy
 
-When running behind a reverse proxy (nginx, Caddy, Traefik), set `BOOKTOWER_BASE_URL` to your public URL and configure `BOOKTOWER_CSRF_ALLOWED_HOSTS` with your domain:
+When running behind a reverse proxy (nginx, Caddy, Traefik), set `RUNARY_BASE_URL` to your public URL and configure `RUNARY_CSRF_ALLOWED_HOSTS` with your domain:
 
 ```yaml
 environment:
-  BOOKTOWER_BASE_URL: "https://books.example.com"
-  BOOKTOWER_CSRF_ALLOWED_HOSTS: "books.example.com"
+  RUNARY_BASE_URL: "https://books.example.com"
+  RUNARY_CSRF_ALLOWED_HOSTS: "books.example.com"
 ```
 
 Ensure the proxy forwards the `Host`, `X-Forwarded-For`, and `X-Forwarded-Proto` headers.

@@ -196,8 +196,8 @@ jobs:
       - name: Upload JAR
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
         with:
-          name: booktower-jar-${{ matrix.os }}
-          path: target/booktower-*.jar
+          name: runary-jar-${{ matrix.os }}
+          path: target/runary-*.jar
 
   # ── Docker build: verify the image assembles correctly ───────────────────
   docker-build:
@@ -211,14 +211,14 @@ jobs:
           persist-credentials: false
 
       - name: Build Docker image
-        run: docker build --tag booktower:ci .
+        run: docker build --tag runary:ci .
 
       - name: Smoke test Docker container
         run: |
           docker run -d --name bt-smoke -p 9999:8080 \
-            -e BOOKTOWER_QUICKSTART=true \
-            -e BOOKTOWER_JWT_SECRET=ci-test-secret-not-for-production \
-            booktower:ci
+            -e RUNARY_QUICKSTART=true \
+            -e RUNARY_JWT_SECRET=ci-test-secret-not-for-production \
+            runary:ci
           for i in $(seq 1 30); do
             if curl -sf http://localhost:9999/health > /dev/null 2>&1; then
               echo "Container healthy after ${i}s"
@@ -247,13 +247,13 @@ jobs:
       postgres:
         image: postgres:${{ matrix.pg }}-alpine
         env:
-          POSTGRES_USER: booktower
-          POSTGRES_PASSWORD: booktower
-          POSTGRES_DB: booktower
+          POSTGRES_USER: runary
+          POSTGRES_PASSWORD: runary
+          POSTGRES_DB: runary
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U booktower"
+          --health-cmd "pg_isready -U runary"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 5
@@ -271,10 +271,10 @@ jobs:
 
       - name: Run full test suite against PostgreSQL
         env:
-          BOOKTOWER_DB_URL: jdbc:postgresql://localhost:5432/booktower
-          BOOKTOWER_DB_USERNAME: booktower
-          BOOKTOWER_DB_PASSWORD: booktower
-          BOOKTOWER_DB_DRIVER: org.postgresql.Driver
+          RUNARY_DB_URL: jdbc:postgresql://localhost:5432/runary
+          RUNARY_DB_USERNAME: runary
+          RUNARY_DB_PASSWORD: runary
+          RUNARY_DB_DRIVER: org.postgresql.Driver
         run: mvn test -Dflyway.skip=false
 
       - name: Upload PostgreSQL test results
@@ -310,7 +310,7 @@ jobs:
 
       - name: Start application
         run: |
-          java -jar target/booktower-*.jar &
+          java -jar target/runary-*.jar &
           echo "APP_PID=$!" >> "$GITHUB_ENV"
           for i in {1..30}; do
             if curl -sf http://localhost:9999/health > /dev/null; then

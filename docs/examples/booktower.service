@@ -1,0 +1,49 @@
+# Runary — systemd Service Unit
+# Install to: /etc/systemd/system/runary.service
+#
+# Setup:
+#   sudo useradd -r -s /bin/false runary
+#   sudo mkdir -p /opt/runary /var/lib/runary/{books,covers,db}
+#   sudo chown -R runary:runary /opt/runary /var/lib/runary
+#   sudo cp runary-v0.7.1.jar /opt/runary/runary.jar
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now runary
+
+[Unit]
+Description=Runary — Personal Book Manager
+After=network.target
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=runary
+Group=runary
+WorkingDirectory=/opt/runary
+
+ExecStart=/usr/bin/java -Xms128m -Xmx512m -jar /opt/runary/runary.jar
+
+Environment=RUNARY_ENV=production
+Environment=RUNARY_PORT=8080
+Environment=RUNARY_JWT_SECRET=change-me-generate-with-openssl-rand-base64-32
+Environment=RUNARY_BOOKS_PATH=/var/lib/runary/books
+Environment=RUNARY_COVERS_PATH=/var/lib/runary/covers
+
+# Uncomment for PostgreSQL:
+# Environment=RUNARY_DB_URL=jdbc:postgresql://localhost:5432/runary
+# Environment=RUNARY_DB_USERNAME=runary
+# Environment=RUNARY_DB_PASSWORD=change-me
+# Environment=RUNARY_DB_DRIVER=org.postgresql.Driver
+# Environment=RUNARY_FTS_ENABLED=true
+
+Restart=on-failure
+RestartSec=10
+SuccessExitStatus=143
+
+# Security hardening
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/var/lib/runary
+
+[Install]
+WantedBy=multi-user.target

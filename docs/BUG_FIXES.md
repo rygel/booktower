@@ -103,9 +103,9 @@ val existing = handle.createQuery("SELECT id FROM users WHERE username = ?")
 ## Files Modified
 
 ### Core Application
-- `src/main/kotlin/org/booktower/config/TemplateEngine.kt` - Fixed JTE initialization
-- `src/main/kotlin/org/booktower/handlers/AuthHandler2.kt` - Added Jackson Kotlin module
-- `src/main/kotlin/org/booktower/services/AuthService.kt` - Fixed query result handling
+- `src/main/kotlin/org/runary/config/TemplateEngine.kt` - Fixed JTE initialization
+- `src/main/kotlin/org/runary/handlers/AuthHandler2.kt` - Added Jackson Kotlin module
+- `src/main/kotlin/org/runary/services/AuthService.kt` - Fixed query result handling
 
 ### Build Configuration  
 - `pom.xml` - Added Jackson Kotlin module dependency, fixed JTE plugin config
@@ -148,7 +148,7 @@ val existing = handle.createQuery("SELECT id FROM users WHERE username = ?")
 mvn clean compile -DskipTests  # BUILD SUCCESS
 
 # Application Start  
-mvn exec:java -Dexec.mainClass="org.booktower.BookTowerAppKt"  # STARTED SUCCESSFULLY
+mvn exec:java -Dexec.mainClass="org.runary.RunaryAppKt"  # STARTED SUCCESSFULLY
 
 # Health Check
 curl http://localhost:9999/health  # OK
@@ -178,4 +178,4 @@ All critical issues have been resolved:
 ✅ **Maven configuration cleaned** - Daemon mode removed as requested  
 ✅ **Application tested end-to-end** - Server starts and responds correctly  
 
-The BookTower application is now fully functional with proper error handling, dependency management, and script automation.
+The Runary application is now fully functional with proper error handling, dependency management, and script automation.

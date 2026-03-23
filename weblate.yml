@@ -1,4 +1,4 @@
-# Weblate configuration for BookTower
+# Weblate configuration for Runary
 # Add this file to your Weblate project for automatic translation updates
 
 # Weblate configuration file
@@ -20,16 +20,16 @@ languages:
 
 # Project settings
 project:
-  name: BookTower
-  slug: booktower
-  web: https://github.com/yourorg/booktower
-  repo: https://github.com/yourorg/booktower.git
-  push: git@github.com:yourorg/booktower.git
+  name: Runary
+  slug: runary
+  web: https://github.com/yourorg/runary
+  repo: https://github.com/yourorg/runary.git
+  push: git@github.com:yourorg/runary.git
 
 # Component settings
 component:
-  name: BookTower Translations
-  slug: booktower-translations
+  name: Runary Translations
+  slug: runary-translations
   file_format: properties
   format_options:
     - key_separator: "."

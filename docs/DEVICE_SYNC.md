@@ -1,6 +1,6 @@
 # Device Sync Guide
 
-BookTower supports syncing books and reading progress with Kobo e-readers, KOReader, and OPDS catalog clients.
+Runary supports syncing books and reading progress with Kobo e-readers, KOReader, and OPDS catalog clients.
 
 > [!CAUTION]
 > **Device sync features are experimental.** The protocols are implemented based on
@@ -13,34 +13,34 @@ BookTower supports syncing books and reading progress with Kobo e-readers, KORea
 
 > **Status: Experimental** — implemented from protocol analysis, not tested with physical Kobo hardware.
 
-BookTower implements the Kobo sync protocol, allowing Kobo e-readers to download books and sync reading progress directly from your server.
+Runary implements the Kobo sync protocol, allowing Kobo e-readers to download books and sync reading progress directly from your server.
 
 ### Setup
 
-1. **Register a device** in BookTower:
+1. **Register a device** in Runary:
    - Go to **Settings > Devices > Kobo** and click **Add Device**.
    - Give the device a name (e.g., "My Kobo Clara").
-   - BookTower generates a unique device token.
+   - Runary generates a unique device token.
 
-2. **Configure the Kobo** to point at your server. On the Kobo, you need to redirect the sync endpoint to BookTower. The setup URL is:
+2. **Configure the Kobo** to point at your server. On the Kobo, you need to redirect the sync endpoint to Runary. The setup URL is:
 
    ```
-   https://your-booktower-url/kobo/{device-token}/v1/initialization
+   https://your-runary-url/kobo/{device-token}/v1/initialization
    ```
 
-   The device token is shown in the BookTower UI after registration.
+   The device token is shown in the Runary UI after registration.
 
-3. **Sync** the Kobo. When the Kobo performs a library sync, it contacts BookTower instead of the Kobo store, and your books appear on the device.
+3. **Sync** the Kobo. When the Kobo performs a library sync, it contacts Runary instead of the Kobo store, and your books appear on the device.
 
 ### How It Works
 
 - **Library sync** (`POST /kobo/{token}/v1/library/sync`) — returns books added or updated since the last sync. The response uses epoch-millisecond timestamps for delta sync tokens.
 - **Full snapshot** (`GET /kobo/{token}/v1/library/snapshot`) — returns the complete library in one request (used for initial sync).
-- **Reading state** (`PUT /kobo/{token}/v1/library/{bookId}/reading-state`) — the Kobo pushes progress updates (percent read, CFI location) back to BookTower.
+- **Reading state** (`PUT /kobo/{token}/v1/library/{bookId}/reading-state`) — the Kobo pushes progress updates (percent read, CFI location) back to Runary.
 
 ### KEPUB Support
 
-If you enable KEPUB conversion in **Settings > Devices > Kobo**, BookTower serves EPUB files as `.kepub.epub` with the `application/x-kobo-epub+zip` content type. Kobo firmware recognizes this format and enables its enhanced reading UI (better typography, page-turn animations, reading stats).
+If you enable KEPUB conversion in **Settings > Devices > Kobo**, Runary serves EPUB files as `.kepub.epub` with the `application/x-kobo-epub+zip` content type. Kobo firmware recognizes this format and enables its enhanced reading UI (better typography, page-turn animations, reading stats).
 
 ### Managing Devices
 
@@ -51,26 +51,26 @@ If you enable KEPUB conversion in **Settings > Devices > Kobo**, BookTower serve
 
 > **Status: Experimental** — implements the kosync spec, not tested with KOReader on real devices.
 
-BookTower implements the [kosync protocol](https://github.com/koreader/koreader/wiki/Progress-sync), enabling KOReader to sync reading progress across devices.
+Runary implements the [kosync protocol](https://github.com/koreader/koreader/wiki/Progress-sync), enabling KOReader to sync reading progress across devices.
 
 ### Setup
 
-1. **Register a device** in BookTower:
+1. **Register a device** in Runary:
    - Go to **Settings > Devices > KOReader** and click **Add Device**.
-   - BookTower generates a device token.
+   - Runary generates a device token.
 
-2. **Configure KOReader** to use BookTower as its sync server:
+2. **Configure KOReader** to use Runary as its sync server:
    - Open KOReader, go to **Tools > Progress sync**.
    - Set the **Custom sync server** URL to:
      ```
-     https://your-booktower-url/koreader/{device-token}
+     https://your-runary-url/koreader/{device-token}
      ```
    - KOReader identifies books by their content hash (MD5), so the same book on different devices will automatically sync.
 
 ### How It Works
 
 - **Push progress** (`PUT /koreader/{token}/syncs/progress`) — KOReader sends the current reading position, including a progress string and percentage.
-- **Get progress** (`GET /koreader/{token}/syncs/progress/{document}`) — KOReader requests the last-known position for a document. The `document` parameter is the file's MD5 hash. BookTower looks up the book by `file_hash` in its database.
+- **Get progress** (`GET /koreader/{token}/syncs/progress/{document}`) — KOReader requests the last-known position for a document. The `document` parameter is the file's MD5 hash. Runary looks up the book by `file_hash` in its database.
 
 The response format follows the kosync specification:
 
@@ -79,8 +79,8 @@ The response format follows the kosync specification:
   "document": "abc123...",
   "progress": "42",
   "percentage": 0.42,
-  "device": "booktower",
-  "device_id": "booktower",
+  "device": "runary",
+  "device_id": "runary",
   "timestamp": "2025-01-15T10:30:00Z"
 }
 ```
@@ -94,17 +94,17 @@ The response format follows the kosync specification:
 
 > **Status: Experimental** — basic catalog and download work in integration tests, but not verified with all listed client apps.
 
-BookTower exposes an [OPDS 1.2](https://specs.opds.io/opds-1.2) catalog for downloading books to any OPDS-compatible reader app.
+Runary exposes an [OPDS 1.2](https://specs.opds.io/opds-1.2) catalog for downloading books to any OPDS-compatible reader app.
 
 ### Catalog URL
 
 ```
-https://your-booktower-url/opds/catalog
+https://your-runary-url/opds/catalog
 ```
 
 ### Authentication
 
-OPDS endpoints use **HTTP Basic Auth** with your BookTower username and password. JWT cookies are not used. Alternatively, you can authenticate with a **Bearer API token** in the `Authorization` header.
+OPDS endpoints use **HTTP Basic Auth** with your Runary username and password. JWT cookies are not used. Alternatively, you can authenticate with a **Bearer API token** in the `Authorization` header.
 
 You can also configure separate OPDS-specific credentials in **Settings > API Tokens** if you prefer not to use your main account password.
 
