@@ -93,9 +93,13 @@ function getCookie(name) {
 }
 
 function showNotification(message, type = 'success') {
+    // Whitelist allowed notification types to prevent CSS class injection
+    const allowedTypes = ['success', 'error', 'info', 'warning'];
+    const safeType = allowedTypes.includes(type) ? type : 'info';
     const notification = document.createElement('div');
-    notification.className = `toast toast-${type}`;
-    notification.textContent = message;
+    notification.className = 'toast toast-' + safeType;
+    // textContent is safe from XSS — it never parses HTML
+    notification.textContent = String(message).substring(0, 500);
     document.body.appendChild(notification);
 
     setTimeout(() => {

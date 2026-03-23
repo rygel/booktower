@@ -23,7 +23,7 @@ class SecurityIntegrationTest : IntegrationTestBase() {
             app(
                 Request(Method.POST, "/auth/register")
                     .header("Content-Type", "application/json")
-                    .body("""{"username":"$username","email":"$username@test.com","password":"password123"}"""),
+                    .body("""{"username":"$username","email":"$username@test.com","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
             )
         return Json.mapper.readValue(response.bodyString(), LoginResponse::class.java).token
     }
@@ -315,7 +315,7 @@ class SecurityIntegrationTest : IntegrationTestBase() {
                 Request(Method.POST, "/auth/register")
                     .header("X-Forwarded-For", testIp)
                     .header("Content-Type", "application/json")
-                    .body("""{"username":"ratelimituser_$it","email":"rl$it@test.com","password":"password123"}"""),
+                    .body("""{"username":"ratelimituser_$it","email":"rl$it@test.com","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
             )
         }
         val response =
@@ -323,7 +323,7 @@ class SecurityIntegrationTest : IntegrationTestBase() {
                 Request(Method.POST, "/auth/register")
                     .header("X-Forwarded-For", testIp)
                     .header("Content-Type", "application/json")
-                    .body("""{"username":"ratelimituser_overflow","email":"overflow@test.com","password":"password123"}"""),
+                    .body("""{"username":"ratelimituser_overflow","email":"overflow@test.com","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
             )
         assertEquals(Status.TOO_MANY_REQUESTS, response.status)
     }
@@ -356,7 +356,7 @@ class SecurityIntegrationTest : IntegrationTestBase() {
             app(
                 Request(Method.POST, "/auth/register")
                     .header("Content-Type", "application/json")
-                    .body("""{"username":"'; DROP TABLE users; --","email":"x@test.com","password":"password123"}"""),
+                    .body("""{"username":"'; DROP TABLE users; --","email":"x@test.com","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
             )
         // Should be rejected by validation (special chars), not cause a SQL error
         assertEquals(Status.BAD_REQUEST, response.status)
@@ -382,7 +382,7 @@ class SecurityIntegrationTest : IntegrationTestBase() {
             app(
                 Request(Method.POST, "/auth/register")
                     .header("Content-Type", "application/json")
-                    .body("""{"username":"$xssUsername","email":"$xssUsername@test.com","password":"password123"}"""),
+                    .body("""{"username":"$xssUsername","email":"$xssUsername@test.com","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
             )
         assertEquals(Status.CREATED, response.status)
     }

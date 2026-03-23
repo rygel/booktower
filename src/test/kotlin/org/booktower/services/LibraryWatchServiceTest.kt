@@ -29,7 +29,7 @@ class LibraryWatchServiceTest {
         val jwtService = JwtService(config.security)
         val authService = AuthService(jdbi, jwtService)
         val username = "watchtest_${System.nanoTime()}"
-        val result = authService.register(CreateUserRequest(username, "$username@test.com", "password123"))
+        val result = authService.register(CreateUserRequest(username, "$username@test.com", org.booktower.TestPasswords.DEFAULT))
         userId = UUID.fromString(result.getOrThrow().user.id)
         watchService.start()
     }

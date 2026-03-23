@@ -28,14 +28,14 @@ class UiIntegrationTest : IntegrationTestBase() {
         app(
             Request(Method.POST, "/auth/register")
                 .header("Content-Type", "application/json")
-                .body("""{"username":"$username","email":"$knownEmail","password":"password123"}"""),
+                .body("""{"username":"$username","email":"$knownEmail","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
         )
 
         val response =
             app(
                 Request(Method.POST, "/auth/login")
                     .header("Content-Type", "application/json")
-                    .body("""{"username":"$knownEmail","password":"password123"}"""),
+                    .body("""{"username":"$knownEmail","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
             )
         assertEquals(Status.OK, response.status)
         val body = Json.mapper.readValue(response.bodyString(), LoginResponse::class.java)
@@ -49,14 +49,14 @@ class UiIntegrationTest : IntegrationTestBase() {
         app(
             Request(Method.POST, "/auth/register")
                 .header("Content-Type", "application/json")
-                .body("""{"username":"$username","email":"$email","password":"password123"}"""),
+                .body("""{"username":"$username","email":"$email","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
         )
 
         val response =
             app(
                 Request(Method.POST, "/auth/login")
                     .header("Content-Type", "application/x-www-form-urlencoded")
-                    .body("username=${email.replace("@", "%40")}&password=password123"),
+                    .body("username=${email.replace("@", "%40")}&password=${org.booktower.TestPasswords.DEFAULT}"),
             )
         assertEquals(Status.SEE_OTHER, response.status)
         assertNotNull(response.cookies().find { it.name == "token" && it.value.isNotBlank() })

@@ -21,7 +21,7 @@ class AdminIntegrationTest : IntegrationTestBase() {
             app(
                 Request(Method.POST, "/auth/register")
                     .header("Content-Type", "application/json")
-                    .body("""{"username":"$username","email":"$username@test.com","password":"password123"}"""),
+                    .body("""{"username":"$username","email":"$username@test.com","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
             )
         assertEquals(Status.CREATED, registerResponse.status)
         val userId =
@@ -37,7 +37,7 @@ class AdminIntegrationTest : IntegrationTestBase() {
             app(
                 Request(Method.POST, "/auth/login")
                     .header("Content-Type", "application/json")
-                    .body("""{"username":"$username","password":"password123"}"""),
+                    .body("""{"username":"$username","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
             )
         assertEquals(Status.OK, loginResponse.status)
         return Json.mapper.readValue(loginResponse.bodyString(), LoginResponse::class.java).token
@@ -92,7 +92,7 @@ class AdminIntegrationTest : IntegrationTestBase() {
         app(
             Request(Method.POST, "/auth/register")
                 .header("Content-Type", "application/json")
-                .body("""{"username":"$otherUsername","email":"$otherUsername@test.com","password":"password123"}"""),
+                .body("""{"username":"$otherUsername","email":"$otherUsername@test.com","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
         )
         val body =
             app(
@@ -243,7 +243,7 @@ class AdminIntegrationTest : IntegrationTestBase() {
         app(
             Request(Method.POST, "/auth/register")
                 .header("Content-Type", "application/json")
-                .body("""{"username":"$username","email":"$username@test.com","password":"password123"}"""),
+                .body("""{"username":"$username","email":"$username@test.com","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
         )
         app(
             Request(Method.POST, "/auth/forgot-password")
@@ -378,7 +378,7 @@ class AdminIntegrationTest : IntegrationTestBase() {
             app(
                 Request(Method.POST, "/auth/login")
                     .header("Content-Type", "application/json")
-                    .body("""{"username":"admin_${System.nanoTime()}","password":"password123"}"""),
+                    .body("""{"username":"admin_${System.nanoTime()}","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
             )
         // Get the admin's own user ID from the user list
         val users =

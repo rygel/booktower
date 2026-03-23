@@ -27,7 +27,7 @@ class AdminServiceTest {
     private fun registerUser(prefix: String = "admin"): UUID {
         val result =
             authService.register(
-                CreateUserRequest("${prefix}_${System.nanoTime()}", "${prefix}_${System.nanoTime()}@test.com", "password123"),
+                CreateUserRequest("${prefix}_${System.nanoTime()}", "${prefix}_${System.nanoTime()}@test.com", org.booktower.TestPasswords.DEFAULT),
             )
         return jwtService.extractUserId(result.getOrThrow().token)!!
     }
@@ -44,7 +44,7 @@ class AdminServiceTest {
         val nano = System.nanoTime()
         val username = "listcheck_$nano"
         val email = "listcheck_$nano@test.com"
-        authService.register(CreateUserRequest(username, email, "password123"))
+        authService.register(CreateUserRequest(username, email, org.booktower.TestPasswords.DEFAULT))
         val users = adminService.listUsers()
         val match = users.firstOrNull { it.username == username }
         assertNotNull(match)

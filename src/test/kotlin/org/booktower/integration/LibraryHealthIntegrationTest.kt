@@ -75,7 +75,7 @@ class LibraryHealthIntegrationTest {
             app(
                 Request(Method.POST, "/auth/register")
                     .header("Content-Type", "application/json")
-                    .body("""{"username":"$name","email":"$name@test.com","password":"password123"}"""),
+                    .body("""{"username":"$name","email":"$name@test.com","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
             )
         return Json.mapper
             .readTree(resp.bodyString())
@@ -103,7 +103,7 @@ class LibraryHealthIntegrationTest {
         val authService = AuthService(jdbi, jwtService)
 
         val username = "hlthpath_${System.nanoTime()}"
-        val userResult = authService.register(org.booktower.models.CreateUserRequest(username, "$username@t.com", "password123"))
+        val userResult = authService.register(org.booktower.models.CreateUserRequest(username, "$username@t.com", org.booktower.TestPasswords.DEFAULT))
         val userId = java.util.UUID.fromString(userResult.getOrThrow().user.id)
 
         // Raw SQL for library: LibraryService.createLibrary() auto-creates the directory,
@@ -220,14 +220,14 @@ class LibraryHealthIntegrationTest {
         val userId1 =
             java.util.UUID.fromString(
                 authService
-                    .register(org.booktower.models.CreateUserRequest(uname1, "$uname1@t.com", "password123"))
+                    .register(org.booktower.models.CreateUserRequest(uname1, "$uname1@t.com", org.booktower.TestPasswords.DEFAULT))
                     .getOrThrow()
                     .user.id,
             )
         val userId2 =
             java.util.UUID.fromString(
                 authService
-                    .register(org.booktower.models.CreateUserRequest(uname2, "$uname2@t.com", "password123"))
+                    .register(org.booktower.models.CreateUserRequest(uname2, "$uname2@t.com", org.booktower.TestPasswords.DEFAULT))
                     .getOrThrow()
                     .user.id,
             )

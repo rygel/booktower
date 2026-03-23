@@ -23,18 +23,18 @@ class UserManagementE2ETest : IntegrationTestBase() {
     private fun registerJson(
         username: String,
         email: String = "$username@test.com",
-        password: String = "password123",
+        password: String = org.booktower.TestPasswords.DEFAULT,
     ): String = """{"username":"$username","email":"$email","password":"$password"}"""
 
     private fun loginJson(
         username: String,
-        password: String = "password123",
+        password: String = org.booktower.TestPasswords.DEFAULT,
     ): String = """{"username":"$username","password":"$password"}"""
 
     private fun register(
         username: String,
         email: String = "$username@test.com",
-        password: String = "password123",
+        password: String = org.booktower.TestPasswords.DEFAULT,
     ): LoginResponse {
         val resp =
             app(
@@ -48,7 +48,7 @@ class UserManagementE2ETest : IntegrationTestBase() {
 
     private fun login(
         username: String,
-        password: String = "password123",
+        password: String = org.booktower.TestPasswords.DEFAULT,
     ): LoginResponse {
         val resp =
             app(
@@ -256,7 +256,7 @@ class UserManagementE2ETest : IntegrationTestBase() {
                 Request(Method.POST, "/api/auth/change-password")
                     .header("Cookie", "token=$token")
                     .header("Content-Type", "application/json")
-                    .body("""{"currentPassword":"password123","newPassword":"newpassword456"}"""),
+                    .body("""{"currentPassword":"${org.booktower.TestPasswords.DEFAULT}","newPassword":"newpassword456"}"""),
             )
         assertEquals(Status.OK, changeResp.status, "Password change should succeed")
 
@@ -265,7 +265,7 @@ class UserManagementE2ETest : IntegrationTestBase() {
             app(
                 Request(Method.POST, "/auth/login")
                     .header("Content-Type", "application/json")
-                    .body(loginJson(username, "password123")),
+                    .body(loginJson(username, org.booktower.TestPasswords.DEFAULT)),
             )
         assertEquals(Status.UNAUTHORIZED, oldLoginResp.status, "Old password should no longer work")
 
@@ -294,7 +294,7 @@ class UserManagementE2ETest : IntegrationTestBase() {
                 Request(Method.POST, "/api/auth/change-email")
                     .header("Cookie", "token=$token")
                     .header("Content-Type", "application/json")
-                    .body("""{"currentPassword":"password123","newEmail":"$newEmail"}"""),
+                    .body("""{"currentPassword":"${org.booktower.TestPasswords.DEFAULT}","newEmail":"$newEmail"}"""),
             )
         assertEquals(Status.OK, changeResp.status, "Email change should succeed")
 

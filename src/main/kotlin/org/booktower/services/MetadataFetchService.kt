@@ -72,6 +72,90 @@ open class MetadataFetchService(
         return null
     }
 
+    /**
+     * Looks up metadata by ISBN using OpenLibrary and Google Books.
+     * Returns null if no provider finds a match.
+     */
+    open fun fetchMetadataByIsbn(isbn: String): FetchedMetadata? {
+        val cleaned = isbn.replace(Regex("[^0-9X]"), "")
+        if (cleaned.length !in listOf(10, 13)) return null
+
+        // Try OpenLibrary ISBN endpoint first
+        try {
+            val url = "https://openlibrary.org/search.json?isbn=$cleaned&limit=1&fields=title,author_name,description,isbn,publisher,first_publish_year,cover_i,number_of_pages_median"
+            val resp = get(url)
+            if (resp != null) {
+                val root = mapper.readTree(resp)
+                val docs = root.get("docs")
+                if (docs != null && docs.isArray && docs.size() > 0) {
+                    val doc = docs[0]
+                    val result =
+                        FetchedMetadata(
+                            title = doc.textOrNull("title"),
+                            author =
+                                doc
+                                    .get("author_name")
+                                    ?.takeIf { it.isArray && it.size() > 0 }
+                                    ?.get(0)
+                                    ?.asText(),
+                            description = extractOpenLibraryDescription(doc),
+                            isbn = cleaned,
+                            publisher =
+                                doc
+                                    .get("publisher")
+                                    ?.takeIf { it.isArray && it.size() > 0 }
+                                    ?.get(0)
+                                    ?.asText(),
+                            publishedDate = doc.textOrNull("first_publish_year"),
+                            openLibraryCoverId = doc.get("cover_i")?.asLong(),
+                            pageCount = doc.get("number_of_pages_median")?.asInt()?.takeIf { it > 0 },
+                            source = "openlibrary",
+                        )
+                    if (result.title != null) return result
+                }
+            }
+        } catch (e: Exception) {
+            logger.warn("OpenLibrary ISBN lookup failed: ${e.message}")
+        }
+
+        // Fallback to Google Books
+        try {
+            val url = "https://www.googleapis.com/books/v1/volumes?q=isbn:$cleaned&maxResults=1"
+            val resp = get(url)
+            if (resp != null) {
+                val root = mapper.readTree(resp)
+                val items = root.get("items")
+                if (items != null && items.isArray && items.size() > 0) {
+                    val info = items[0].get("volumeInfo") ?: return null
+                    val thumbs = info.get("imageLinks")
+                    val coverUrl = thumbs?.textOrNull("thumbnail") ?: thumbs?.textOrNull("smallThumbnail")
+                    val result =
+                        FetchedMetadata(
+                            title = info.textOrNull("title"),
+                            author =
+                                info
+                                    .get("authors")
+                                    ?.takeIf { it.isArray && it.size() > 0 }
+                                    ?.get(0)
+                                    ?.asText(),
+                            description = info.textOrNull("description"),
+                            isbn = cleaned,
+                            publisher = info.textOrNull("publisher"),
+                            publishedDate = info.textOrNull("publishedDate")?.take(4),
+                            coverUrl = coverUrl,
+                            pageCount = info.get("pageCount")?.asInt()?.takeIf { it > 0 },
+                            source = "googlebooks",
+                        )
+                    if (result.title != null) return result
+                }
+            }
+        } catch (e: Exception) {
+            logger.warn("Google Books ISBN lookup failed: ${e.message}")
+        }
+
+        return null
+    }
+
     // ── Open Library ─────────────────────────────────────────────────────────
 
     private fun fetchFromOpenLibrary(

@@ -28,7 +28,7 @@ class RateLimitIntegrationTest : IntegrationTestBase() {
             Request(Method.POST, "/auth/register")
                 .header("Content-Type", "application/json")
                 .header("X-Forwarded-For", ip)
-                .body("""{"username":"$username","email":"$username@test.com","password":"password123"}"""),
+                .body("""{"username":"$username","email":"$username@test.com","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
         )
 
     private fun loginRequest(ip: String): org.http4k.core.Response =

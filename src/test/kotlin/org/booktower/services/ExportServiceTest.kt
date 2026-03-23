@@ -38,7 +38,7 @@ class ExportServiceTest {
         val nano = System.nanoTime()
         username = "export_$nano"
         email = "export_$nano@test.com"
-        val result = authService.register(CreateUserRequest(username, email, "password123"))
+        val result = authService.register(CreateUserRequest(username, email, org.booktower.TestPasswords.DEFAULT))
         userId = jwtService.extractUserId(result.getOrThrow().token)!!
     }
 
@@ -107,7 +107,7 @@ class ExportServiceTest {
     fun `exportUser does not include another user's libraries`() {
         val otherResult =
             authService.register(
-                CreateUserRequest("exportother_${System.nanoTime()}", "exportother_${System.nanoTime()}@test.com", "password123"),
+                CreateUserRequest("exportother_${System.nanoTime()}", "exportother_${System.nanoTime()}@test.com", org.booktower.TestPasswords.DEFAULT),
             )
         val otherId = jwtService.extractUserId(otherResult.getOrThrow().token)!!
         libraryService.createLibrary(otherId, CreateLibraryRequest("Other Lib", "./data/eo-${System.nanoTime()}"))

@@ -29,7 +29,7 @@ class LibraryServiceTest {
 
         val result =
             authService.register(
-                CreateUserRequest("libuser_${System.nanoTime()}", "lib_${System.nanoTime()}@test.com", "password123"),
+                CreateUserRequest("libuser_${System.nanoTime()}", "lib_${System.nanoTime()}@test.com", org.booktower.TestPasswords.DEFAULT),
             )
         userId = jwtService.extractUserId(result.getOrThrow().token)!!
     }
@@ -85,7 +85,7 @@ class LibraryServiceTest {
         libraryService.createLibrary(userId, CreateLibraryRequest("UserA Lib", "./data/test-ua-${System.nanoTime()}"))
         val otherResult =
             authService.register(
-                CreateUserRequest("other_${System.nanoTime()}", "other_${System.nanoTime()}@test.com", "password123"),
+                CreateUserRequest("other_${System.nanoTime()}", "other_${System.nanoTime()}@test.com", org.booktower.TestPasswords.DEFAULT),
             )
         val otherUserId = jwtService.extractUserId(otherResult.getOrThrow().token)!!
         assertTrue(libraryService.getLibraries(otherUserId).isEmpty())

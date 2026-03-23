@@ -89,7 +89,7 @@ class FtsServiceTest {
             val libraryService = LibraryService(jdbi, pdfMetadataService, libraryAccessService)
             val bookService = BookService(jdbi)
 
-            val userResult = authService.register(CreateUserRequest("ftstest", "fts@test.com", "password123"))
+            val userResult = authService.register(CreateUserRequest("ftstest", "fts@test.com", org.booktower.TestPasswords.DEFAULT))
             val userId = UUID.fromString(userResult.getOrThrow().user.id)
 
             val lib = libraryService.createLibrary(userId, CreateLibraryRequest("FTS Test Lib", "/tmp/fts"))

@@ -363,6 +363,39 @@ class PageHandler(
             .cookie(Cookie("flash_type", "success", path = "/"))
     }
 
+    /** POST /ui/isbn/lookup — looks up metadata by ISBN, returns JSON */
+    fun isbnLookup(req: Request): Response {
+        auth(req) ?: return Response(Status.UNAUTHORIZED)
+        val isbn =
+            req.form("isbn")?.trim()
+                ?: return Response(Status.BAD_REQUEST)
+                    .header("Content-Type", "application/json")
+                    .body("""{"error":"isbn required"}""")
+        val meta =
+            metadataFetchService.fetchMetadataByIsbn(isbn)
+                ?: return Response(Status.OK)
+                    .header("Content-Type", "application/json")
+                    .body("""{"found":false}""")
+        return Response(Status.OK)
+            .header("Content-Type", "application/json")
+            .body(
+                org.booktower.config.Json.mapper.writeValueAsString(
+                    mapOf(
+                        "found" to true,
+                        "title" to meta.title,
+                        "author" to meta.author,
+                        "description" to meta.description,
+                        "isbn" to meta.isbn,
+                        "publisher" to meta.publisher,
+                        "publishedDate" to meta.publishedDate,
+                        "pageCount" to meta.pageCount,
+                        "coverUrl" to meta.coverUrl,
+                        "source" to meta.source,
+                    ),
+                ),
+            )
+    }
+
     fun search(req: Request): Response {
         val userId = auth(req) ?: return redirectToLogin()
         val pc = pageContext(req)

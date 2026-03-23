@@ -71,13 +71,13 @@ class AuditIntegrationTest {
         app(
             Request(Method.POST, "/auth/register")
                 .header("Content-Type", "application/json")
-                .body("""{"username":"$username","email":"$username@test.com","password":"password123"}"""),
+                .body("""{"username":"$username","email":"$username@test.com","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
         )
         // Login
         app(
             Request(Method.POST, "/auth/login")
                 .header("Content-Type", "application/json")
-                .body("""{"username":"$username","password":"password123"}"""),
+                .body("""{"username":"$username","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
         )
 
         val entries = auditService.listRecent(50)
@@ -94,7 +94,7 @@ class AuditIntegrationTest {
         app(
             Request(Method.POST, "/auth/register")
                 .header("Content-Type", "application/json")
-                .body("""{"username":"$username","email":"$username@test.com","password":"password123"}"""),
+                .body("""{"username":"$username","email":"$username@test.com","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
         )
 
         val entries = auditService.listRecent(50)
@@ -112,7 +112,7 @@ class AuditIntegrationTest {
             app(
                 Request(Method.POST, "/auth/register")
                     .header("Content-Type", "application/json")
-                    .body("""{"username":"$username","email":"$username@test.com","password":"password123"}"""),
+                    .body("""{"username":"$username","email":"$username@test.com","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
             )
         val token =
             Json.mapper
@@ -131,7 +131,7 @@ class AuditIntegrationTest {
         val jwtService = JwtService(config.security)
         val authService = AuthService(jdbi, jwtService)
         val username = "auditorder_${System.nanoTime()}"
-        val result = authService.register(org.booktower.models.CreateUserRequest(username, "$username@test.com", "password123"))
+        val result = authService.register(org.booktower.models.CreateUserRequest(username, "$username@test.com", org.booktower.TestPasswords.DEFAULT))
         val userIdStr = result.getOrThrow().user.id
         val userId = java.util.UUID.fromString(userIdStr)
         auditService.record(userId, "testuser", "test.action.1")

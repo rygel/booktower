@@ -22,7 +22,7 @@ class TelemetryIntegrationTest : IntegrationTestBase() {
             app(
                 Request(Method.POST, "/auth/login")
                     .header("Content-Type", "application/json")
-                    .body("""{"username":"${com.auth0.jwt.JWT.decode(token).getClaim("username").asString()}","password":"password123"}"""),
+                    .body("""{"username":"${com.auth0.jwt.JWT.decode(token).getClaim("username").asString()}","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
             )
         return Json.mapper.readValue(loginResp.bodyString(), org.booktower.models.LoginResponse::class.java).token
     }

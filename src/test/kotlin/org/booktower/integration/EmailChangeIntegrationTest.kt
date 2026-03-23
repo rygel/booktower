@@ -23,7 +23,7 @@ class EmailChangeIntegrationTest : IntegrationTestBase() {
     @Test
     fun `change email returns 200 with valid credentials`() {
         val token = registerAndGetToken("em1")
-        val response = changeEmail(token, "new_em1_${System.nanoTime()}@example.com", "password123")
+        val response = changeEmail(token, "new_em1_${System.nanoTime()}@example.com", org.booktower.TestPasswords.DEFAULT)
         assertEquals(Status.OK, response.status)
     }
 
@@ -42,7 +42,7 @@ class EmailChangeIntegrationTest : IntegrationTestBase() {
             app(
                 Request(Method.POST, "/api/auth/change-email")
                     .header("Content-Type", "application/json")
-                    .body("""{"currentPassword":"password123","newEmail":"x@example.com"}"""),
+                    .body("""{"currentPassword":"${org.booktower.TestPasswords.DEFAULT}","newEmail":"x@example.com"}"""),
             )
         assertEquals(Status.UNAUTHORIZED, response.status)
     }
@@ -55,10 +55,10 @@ class EmailChangeIntegrationTest : IntegrationTestBase() {
         app(
             Request(Method.POST, "/auth/register")
                 .header("Content-Type", "application/json")
-                .body("""{"username":"em3c_${System.nanoTime()}","email":"$knownEmail","password":"password123"}"""),
+                .body("""{"username":"em3c_${System.nanoTime()}","email":"$knownEmail","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
         )
         // Try to change token1's email to the already-used email
-        val response = changeEmail(token1, knownEmail, "password123")
+        val response = changeEmail(token1, knownEmail, org.booktower.TestPasswords.DEFAULT)
         assertEquals(Status.BAD_REQUEST, response.status)
         val body = response.bodyString()
         assertTrue(body.contains("use") || body.contains("Email"), "Error should mention email is taken: $body")
@@ -67,7 +67,7 @@ class EmailChangeIntegrationTest : IntegrationTestBase() {
     @Test
     fun `change email fails with invalid email format`() {
         val token = registerAndGetToken("em4")
-        val response = changeEmail(token, "not-an-email", "password123")
+        val response = changeEmail(token, "not-an-email", org.booktower.TestPasswords.DEFAULT)
         assertEquals(Status.BAD_REQUEST, response.status)
     }
 
@@ -85,7 +85,7 @@ class EmailChangeIntegrationTest : IntegrationTestBase() {
     fun `email is actually updated after change`() {
         val token = registerAndGetToken("em6")
         val newEmail = "updated_em6_${System.nanoTime()}@example.com"
-        val changeResp = changeEmail(token, newEmail, "password123")
+        val changeResp = changeEmail(token, newEmail, org.booktower.TestPasswords.DEFAULT)
         assertEquals(Status.OK, changeResp.status)
         // Check profile page shows new email
         val body = app(Request(Method.GET, "/profile").header("Cookie", "token=$token")).bodyString()
@@ -109,7 +109,7 @@ class EmailChangeIntegrationTest : IntegrationTestBase() {
     fun `change email normalises email to lowercase`() {
         val token = registerAndGetToken("em8")
         val newEmail = "Mixed_Case_${System.nanoTime()}@Example.COM"
-        val response = changeEmail(token, newEmail, "password123")
+        val response = changeEmail(token, newEmail, org.booktower.TestPasswords.DEFAULT)
         assertEquals(Status.OK, response.status)
         // Profile should show lowercased version
         val body = app(Request(Method.GET, "/profile").header("Cookie", "token=$token")).bodyString()

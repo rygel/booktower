@@ -25,7 +25,7 @@ class OpdsIntegrationTest : IntegrationTestBase() {
     /** Registers a user and returns (token, username, password). */
     private fun registerUser(prefix: String): Triple<String, String, String> {
         val username = "${prefix}_${System.nanoTime()}"
-        val password = "password123"
+        val password = org.booktower.TestPasswords.DEFAULT
         val response =
             app(
                 Request(Method.POST, "/auth/register")
@@ -86,7 +86,7 @@ class OpdsIntegrationTest : IntegrationTestBase() {
     fun `catalog with email credential also authenticates`() {
         val username = "opds_email_${System.nanoTime()}"
         val email = "$username@test.com"
-        val password = "password123"
+        val password = org.booktower.TestPasswords.DEFAULT
         app(
             Request(Method.POST, "/auth/register")
                 .header("Content-Type", "application/json")

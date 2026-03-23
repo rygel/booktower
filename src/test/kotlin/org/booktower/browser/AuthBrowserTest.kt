@@ -52,7 +52,7 @@ class AuthBrowserTest : BrowserTestBase() {
     fun `login with valid credentials reaches home page`() {
         // Register a user via the API, then log in through the real browser form
         val username = "bauth_${System.nanoTime()}"
-        val password = "password123"
+        val password = org.booktower.TestPasswords.DEFAULT
         app(
             org.http4k.core
                 .Request(org.http4k.core.Method.POST, "/auth/register")

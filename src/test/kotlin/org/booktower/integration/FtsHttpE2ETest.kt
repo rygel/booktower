@@ -476,7 +476,7 @@ class FtsHttpE2ETest {
                 app(
                     Request(Method.POST, "/auth/register")
                         .header("Content-Type", "application/json")
-                        .body("""{"username":"ftshttp","email":"fts@http.com","password":"password123"}"""),
+                        .body("""{"username":"ftshttp","email":"fts@http.com","password":"${org.booktower.TestPasswords.DEFAULT}"}"""),
                 )
             token = Json.mapper.readValue(regResp.bodyString(), LoginResponse::class.java).token
 

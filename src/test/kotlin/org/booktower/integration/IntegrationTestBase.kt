@@ -410,11 +410,12 @@ abstract class IntegrationTestBase {
 
     protected fun registerAndGetToken(prefix: String = "test"): String {
         val username = "${prefix}_${System.nanoTime()}"
+        val pw = org.booktower.TestPasswords.DEFAULT
         val response =
             app(
                 Request(Method.POST, "/auth/register")
                     .header("Content-Type", "application/json")
-                    .body("""{"username":"$username","email":"$username@test.com","password":"password123"}"""),
+                    .body("""{"username":"$username","email":"$username@test.com","password":"$pw"}"""),
             )
         return Json.mapper.readValue(response.bodyString(), LoginResponse::class.java).token
     }
@@ -426,7 +427,7 @@ abstract class IntegrationTestBase {
     protected fun createTestUser(
         username: String = "testuser_${System.nanoTime()}",
         email: String = "$username@test.com",
-        password: String = "password123",
+        password: String = org.booktower.TestPasswords.DEFAULT,
     ): String {
         val jdbi = TestFixture.database.getJdbi()
         val jwtService = org.booktower.services.JwtService(TestFixture.config.security)
