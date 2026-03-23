@@ -10,10 +10,10 @@
 ```bash
 # Clone and enter the directory
 git clone <repo-url>
-cd booktower
+cd runary
 
 # Start the server (compiles and runs)
-mvn exec:java -Dexec.mainClass="org.booktower.BookTowerAppKt"
+mvn exec:java -Dexec.mainClass="org.runary.RunaryAppKt"
 ```
 
 Open `http://localhost:8080` in your browser. Register a new account — the first registered user becomes an admin.
@@ -44,12 +44,12 @@ mvn test -Dtest="BookServiceTest#createBook creates book in library"
 The defaults work for local development with no setup required. For production, set environment variables:
 
 ```bash
-BOOKTOWER_ENV=production \
-BOOKTOWER_JWT_SECRET=your-long-random-secret \
-BOOKTOWER_DB_URL=jdbc:h2:file:/data/booktower \
-BOOKTOWER_BOOKS_PATH=/data/books \
-BOOKTOWER_COVERS_PATH=/data/covers \
-mvn exec:java -Dexec.mainClass="org.booktower.BookTowerAppKt"
+RUNARY_ENV=production \
+RUNARY_JWT_SECRET=your-long-random-secret \
+RUNARY_DB_URL=jdbc:h2:file:/data/runary \
+RUNARY_BOOKS_PATH=/data/books \
+RUNARY_COVERS_PATH=/data/covers \
+mvn exec:java -Dexec.mainClass="org.runary.RunaryAppKt"
 ```
 
 See [CONFIGURATION.md](CONFIGURATION.md) for the full variable reference.
@@ -68,12 +68,12 @@ See [CONFIGURATION.md](CONFIGURATION.md) for the full variable reference.
 
 ```bash
 # Change the port
-BOOKTOWER_PORT=9090 mvn exec:java -Dexec.mainClass="org.booktower.BookTowerAppKt"
+RUNARY_PORT=9090 mvn exec:java -Dexec.mainClass="org.runary.RunaryAppKt"
 ```
 
 **Data directories missing**
 
-BookTower creates `./data/books`, `./data/covers`, and `./data/temp` automatically on startup. If you see a permission error, create them manually or point the env vars at a writable location.
+Runary creates `./data/books`, `./data/covers`, and `./data/temp` automatically on startup. If you see a permission error, create them manually or point the env vars at a writable location.
 
 **Tests fail with H2 errors**
 

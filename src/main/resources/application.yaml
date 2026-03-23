@@ -1,5 +1,5 @@
 app:
-  name: BookTower
+  name: Runary
   host: 0.0.0.0
   port: 9999
 
@@ -11,16 +11,16 @@ app:
 
   database:
     # H2 (default — zero-config, file-backed, PostgreSQL-compatible mode)
-    url: "jdbc:h2:file:./data/booktower;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;INIT=CREATE SCHEMA IF NOT EXISTS public"
+    url: "jdbc:h2:file:./data/runary;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;INIT=CREATE SCHEMA IF NOT EXISTS public"
     username: sa
     password: ""
     driver: org.h2.Driver
     # PostgreSQL — override via environment variables:
-    #   BOOKTOWER_DB_URL, BOOKTOWER_DB_USERNAME, BOOKTOWER_DB_PASSWORD, BOOKTOWER_DB_DRIVER
+    #   RUNARY_DB_URL, RUNARY_DB_USERNAME, RUNARY_DB_PASSWORD, RUNARY_DB_DRIVER
 
   security:
-    jwtSecret: "booktower-secret-key-change-in-production"
-    jwtIssuer: booktower
+    jwtSecret: "runary-secret-key-change-in-production"
+    jwtIssuer: runary
     sessionTimeout: 86400
 
   storage:
@@ -31,5 +31,5 @@ app:
   weblate:
     url: ""
     apiToken: ""
-    component: "booktower/translations"
+    component: "runary/translations"
     enabled: false

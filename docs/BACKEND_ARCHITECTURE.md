@@ -1,8 +1,8 @@
-# BookTower Backend Architecture
+# Runary Backend Architecture
 
 ## Overview
 
-BookTower is a self-hosted digital library management application built with
+Runary is a self-hosted digital library management application built with
 **Kotlin** and **http4k**. It follows a thin handler → service → database
 layering with no annotation magic: all wiring is explicit, making the
 dependency graph trivially readable from the source.
@@ -37,7 +37,7 @@ required.
 ## Directory Structure
 
 ```
-src/main/kotlin/org/booktower/
+src/main/kotlin/org/runary/
 ├── Main.kt                        # Entry point — builds the app via Koin
 ├── config/
 │   ├── AppConfig.kt               # Typed config loaded from application.conf
@@ -189,7 +189,7 @@ AppHandler.routes()        — http4k routing table
 
 **H2** in PostgreSQL-compatibility mode (`MODE=PostgreSQL`) is the default —
 no external service required. Switch to **PostgreSQL** by setting the
-`BOOKTOWER_DB_*` environment variables (see `application.conf`).
+`RUNARY_DB_*` environment variables (see `application.conf`).
 
 ### Migrations
 
@@ -233,16 +233,16 @@ environment variables:
 
 | Env var | Default | Purpose |
 |---|---|---|
-| `BOOKTOWER_HOST` | `0.0.0.0` | Bind address |
-| `BOOKTOWER_PORT` | `9999` | HTTP port |
-| `BOOKTOWER_DB_URL` | H2 file path | JDBC URL |
-| `BOOKTOWER_DB_USERNAME` | `sa` | DB username |
-| `BOOKTOWER_DB_PASSWORD` | `` | DB password |
-| `BOOKTOWER_DB_DRIVER` | `org.h2.Driver` | JDBC driver class |
-| `BOOKTOWER_JWT_SECRET` | dev default | JWT signing key — **change in production** |
-| `BOOKTOWER_BOOKS_PATH` | `./data/books` | Book file storage |
-| `BOOKTOWER_COVERS_PATH` | `./data/covers` | Cover image storage |
-| `BOOKTOWER_AUTO_SCAN_MINUTES` | `0` (disabled) | Library auto-scan interval |
+| `RUNARY_HOST` | `0.0.0.0` | Bind address |
+| `RUNARY_PORT` | `9999` | HTTP port |
+| `RUNARY_DB_URL` | H2 file path | JDBC URL |
+| `RUNARY_DB_USERNAME` | `sa` | DB username |
+| `RUNARY_DB_PASSWORD` | `` | DB password |
+| `RUNARY_DB_DRIVER` | `org.h2.Driver` | JDBC driver class |
+| `RUNARY_JWT_SECRET` | dev default | JWT signing key — **change in production** |
+| `RUNARY_BOOKS_PATH` | `./data/books` | Book file storage |
+| `RUNARY_COVERS_PATH` | `./data/covers` | Cover image storage |
+| `RUNARY_AUTO_SCAN_MINUTES` | `0` (disabled) | Library auto-scan interval |
 
 ---
 
@@ -279,7 +279,7 @@ generation.
 ### Book sharing is instance-internal
 Books can be shared via token-based links, but **only authenticated users** on
 the same instance can view shared books. Anonymous visitors are redirected to
-login. This prevents BookTower from being used as a public file distribution
+login. This prevents Runary from being used as a public file distribution
 server. See [ADR-001](adr/001-book-sharing-authenticated-only.md).
 
 ---
@@ -296,7 +296,7 @@ Design decisions are documented in `docs/adr/`:
 
 ## Testing
 
-Tests live under `src/test/kotlin/org/booktower/` and use JUnit 5.
+Tests live under `src/test/kotlin/org/runary/` and use JUnit 5.
 
 - **Integration tests** (`integration/`) spin up the full `AppHandler` +
   `GlobalErrorFilter` stack in-process against an H2 in-memory database.

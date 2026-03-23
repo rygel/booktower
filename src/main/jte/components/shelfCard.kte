@@ -1,6 +1,6 @@
-@import org.booktower.i18n.I18nService
-@import org.booktower.models.MagicShelfDto
-@import org.booktower.models.ShelfRuleType
+@import org.runary.i18n.I18nService
+@import org.runary.models.MagicShelfDto
+@import org.runary.models.ShelfRuleType
 @param shelf: MagicShelfDto
 @param i18n: I18nService
 

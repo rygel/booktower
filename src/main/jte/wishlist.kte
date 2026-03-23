@@ -1,9 +1,9 @@
-@import org.booktower.services.WishlistItemDto
-@import org.booktower.web.PageContext
+@import org.runary.services.WishlistItemDto
+@import org.runary.web.PageContext
 @param pc: PageContext
 @param items: List<WishlistItemDto>
 
-@template.components.layout(title="${pc.i18n.translate("page.wishlist.title")} - BookTower", pc=pc, currentPage="wishlist",
+@template.components.layout(title="${pc.i18n.translate("page.wishlist.title")} - Runary", pc=pc, currentPage="wishlist",
     searchQuery="", content = @`
 <div class="page-container">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">

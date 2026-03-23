@@ -1,6 +1,6 @@
-@import org.booktower.models.BookDto
-@import org.booktower.models.ReadStatus
-@import org.booktower.web.PageContext
+@import org.runary.models.BookDto
+@import org.runary.models.ReadStatus
+@import org.runary.web.PageContext
 @param pc: PageContext
 @param query: String
 @param books: List<BookDto>
@@ -10,7 +10,7 @@
 @param statusOptions: List<ReadStatus> = emptyList()
 
 
-@template.components.layout(title="${pc.i18n.translate("page.search.title")} - BookTower", pc=pc, currentPage="search",
+@template.components.layout(title="${pc.i18n.translate("page.search.title")} - Runary", pc=pc, currentPage="search",
     searchQuery=query, content = @`
 <div class="page-container">
     <h1 class="page-title">${pc.i18n.translate("page.search.title")}</h1>

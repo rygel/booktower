@@ -1,4 +1,4 @@
-/* BookTower — Global keyboard shortcuts
+/* Runary — Global keyboard shortcuts
  *
  * Escape  → close any open modal/panel
  * /       → focus search input

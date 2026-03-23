@@ -333,7 +333,7 @@ class SettingsHandler(private val settingsService: SettingsService) {
 ### PDF Reader with Backend Logic
 
 ```kotlin
-// Backend: BookTower Web (http4k)
+// Backend: Runary Web (http4k)
 
 // 1. Serve reader page with initial state
 fun pdfReaderPage(bookId: Long, userId: String): String {
@@ -775,7 +775,7 @@ class PdfReaderComponent {
 
 **Moving business logic to the backend is not only possible - it's the recommended approach!**
 
-This transforms BookTower from a complex SPA into a simple hypermedia application:
+This transforms Runary from a complex SPA into a simple hypermedia application:
 
 - **Backend**: Rich domain logic, state management, data persistence
 - **Frontend**: HTML rendering, event capture, minimal local state

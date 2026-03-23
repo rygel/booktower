@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-**Strategy:** Build BookTower v2 from scratch using http4k + HTMX, launching an MVP first, then iterating with user feedback.
+**Strategy:** Build Runary v2 from scratch using http4k + HTMX, launching an MVP first, then iterating with user feedback.
 
 **Timeline:** 12-16 months total, but **MVP launches at Month 4**
 
@@ -304,7 +304,7 @@ data class ReadingProgress(
 **Design:**
 ```
 ┌─────────────────────────────────────┐
-│ BookTower    [Library ▼] [User ▼]   │
+│ Runary    [Library ▼] [User ▼]   │
 ├─────────────────────────────────────┤
 │                                     │
 │  ┌──────┐  ┌──────┐  ┌──────┐     │
@@ -348,7 +348,7 @@ data class ReadingProgress(
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│  BookTower MVP (http4k + HTMX)                       │
+│  Runary MVP (http4k + HTMX)                       │
 │                                                     │
 │  ┌──────────────────────────────────────────────┐  │
 │  │  HTTP Layer (http4k)                         │  │
@@ -450,7 +450,7 @@ CREATE TABLE user_settings (
 );
 ```
 
-**Total tables: 5** (vs 40+ in current BookTower)
+**Total tables: 5** (vs 40+ in current Runary)
 
 ---
 
@@ -636,7 +636,7 @@ CREATE TABLE user_settings (
 
 ### Phase 6: Complete (Month 7-10)
 
-**Goal:** Feature parity with current BookTower
+**Goal:** Feature parity with current Runary
 
 **Features:**
 - CBX reader
@@ -684,7 +684,7 @@ CREATE TABLE user_settings (
 ### Full Launch Success (Month 12)
 
 **Technical:**
-- ✅ Feature parity with current BookTower
+- ✅ Feature parity with current Runary
 - ✅ Better performance
 - ✅ Lower resource usage
 - ✅ Zero data loss
@@ -778,7 +778,7 @@ CREATE TABLE user_settings (
 **What you get:**
 - Month 4: Working PDF library (simple but functional)
 - Month 6: EPUB + metadata (more useful)
-- Month 10: Feature-complete (full BookTower)
+- Month 10: Feature-complete (full Runary)
 - Month 12: Polished (production-ready)
 
 **Key to success:**
@@ -789,4 +789,4 @@ CREATE TABLE user_settings (
 
 This is how successful rewrites happen. Not by rebuilding everything at once, but by building the core, shipping it, and iterating.
 
-**Ready to start?** Let's build BookTower v2, MVP first! 🚀
+**Ready to start?** Let's build Runary v2, MVP first! 🚀

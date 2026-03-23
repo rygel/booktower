@@ -56,15 +56,15 @@ jobs:
         env:
           BETA_TAG: ${{ steps.tag.outputs.tag }}
         run: |
-          FAT=$(find target/ -name "booktower-*-fat.jar" | head -1)
-          cp "$FAT" "target/booktower-${BETA_TAG}.jar"
+          FAT=$(find target/ -name "runary-*-fat.jar" | head -1)
+          cp "$FAT" "target/runary-${BETA_TAG}.jar"
 
       - name: Create beta release
         uses: softprops/action-gh-release@153bb8e04406b158c6c84fc1615b65b24149a1fe # v2
         with:
           tag_name: ${{ steps.tag.outputs.tag }}
           target_commitish: ${{ github.sha }}
-          name: "BookTower ${{ steps.tag.outputs.tag }}"
+          name: "Runary ${{ steps.tag.outputs.tag }}"
           prerelease: true
           generate_release_notes: true
           body: |
@@ -80,13 +80,13 @@ jobs:
             ### Quick start
             ```bash
             # Fat JAR (requires Java 21+)
-            BOOKTOWER_QUICKSTART=true java -jar booktower-${{ steps.tag.outputs.tag }}.jar
+            RUNARY_QUICKSTART=true java -jar runary-${{ steps.tag.outputs.tag }}.jar
 
             # Docker
-            docker run -p 9999:8080 -e BOOKTOWER_QUICKSTART=true ghcr.io/rygel/booktower:beta
+            docker run -p 9999:8080 -e RUNARY_QUICKSTART=true ghcr.io/rygel/runary:beta
             ```
           files: |
-            target/booktower-${{ steps.tag.outputs.tag }}.jar
+            target/runary-${{ steps.tag.outputs.tag }}.jar
 
   # ── Docker beta image — multi-arch, pushed to ghcr.io ─────────────────
   docker-beta:

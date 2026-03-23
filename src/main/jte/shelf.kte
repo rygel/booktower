@@ -1,13 +1,13 @@
-@import org.booktower.models.BookDto
-@import org.booktower.models.MagicShelfDto
-@import org.booktower.models.ShelfRuleType
-@import org.booktower.web.PageContext
+@import org.runary.models.BookDto
+@import org.runary.models.MagicShelfDto
+@import org.runary.models.ShelfRuleType
+@import org.runary.web.PageContext
 @param pc: PageContext
 @param shelf: MagicShelfDto
 @param books: List<BookDto>
 
 
-@template.components.layout(title="${shelf.name} - BookTower", pc=pc, currentPage="libraries",
+@template.components.layout(title="${shelf.name} - Runary", pc=pc, currentPage="libraries",
     content = @`
 <div style="padding:2rem;">
 

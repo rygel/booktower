@@ -1,12 +1,12 @@
 {
-  "realm": "booktower",
+  "realm": "runary",
   "enabled": true,
   "clients": [
     {
-      "clientId": "booktower",
+      "clientId": "runary",
       "enabled": true,
       "publicClient": false,
-      "secret": "booktower-test-secret",
+      "secret": "runary-test-secret",
       "redirectUris": ["*"],
       "webOrigins": ["*"],
       "standardFlowEnabled": true,
@@ -18,7 +18,7 @@
   "users": [
     {
       "username": "testuser",
-      "email": "testuser@booktower.test",
+      "email": "testuser@runary.test",
       "firstName": "Test",
       "lastName": "User",
       "enabled": true,
@@ -29,11 +29,11 @@
           "temporary": false
         }
       ],
-      "groups": ["booktower-users"]
+      "groups": ["runary-users"]
     },
     {
       "username": "adminuser",
-      "email": "admin@booktower.test",
+      "email": "admin@runary.test",
       "firstName": "Admin",
       "lastName": "User",
       "enabled": true,
@@ -44,11 +44,11 @@
           "temporary": false
         }
       ],
-      "groups": ["booktower-admins"]
+      "groups": ["runary-admins"]
     }
   ],
   "groups": [
-    { "name": "booktower-users" },
-    { "name": "booktower-admins" }
+    { "name": "runary-users" },
+    { "name": "runary-admins" }
   ]
 }

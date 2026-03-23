@@ -1,4 +1,4 @@
-# BookTower — Full Production Setup
+# Runary — Full Production Setup
 # PostgreSQL + FTS + OIDC/SSO + SMTP + Reverse Proxy Ready
 #
 # Setup:
@@ -7,9 +7,9 @@
 #   3. docker compose -f docker-compose.full.yml --env-file .env up -d
 
 services:
-  booktower:
-    image: ghcr.io/rygel/booktower:latest
-    container_name: booktower
+  runary:
+    image: ghcr.io/rygel/runary:latest
+    container_name: runary
     restart: unless-stopped
     ports:
       - "9999:8080"
@@ -17,44 +17,44 @@ services:
       postgres:
         condition: service_healthy
     volumes:
-      - booktower_books:/data/books
-      - booktower_covers:/data/covers
+      - runary_books:/data/books
+      - runary_covers:/data/covers
       # Mount your local book collection (read-only):
       # - /path/to/your/books:/mnt/library:ro
     environment:
-      BOOKTOWER_ENV: production
-      BOOKTOWER_JWT_SECRET: "${BOOKTOWER_JWT_SECRET}"
-      BOOKTOWER_BASE_URL: "${BOOKTOWER_BASE_URL}"
-      BOOKTOWER_CSRF_ALLOWED_HOSTS: "${BOOKTOWER_DOMAIN}"
+      RUNARY_ENV: production
+      RUNARY_JWT_SECRET: "${RUNARY_JWT_SECRET}"
+      RUNARY_BASE_URL: "${RUNARY_BASE_URL}"
+      RUNARY_CSRF_ALLOWED_HOSTS: "${RUNARY_DOMAIN}"
       # PostgreSQL
-      BOOKTOWER_DB_URL: "jdbc:postgresql://postgres:5432/booktower"
-      BOOKTOWER_DB_USERNAME: "booktower"
-      BOOKTOWER_DB_PASSWORD: "${DB_PASSWORD}"
-      BOOKTOWER_DB_DRIVER: "org.postgresql.Driver"
+      RUNARY_DB_URL: "jdbc:postgresql://postgres:5432/runary"
+      RUNARY_DB_USERNAME: "runary"
+      RUNARY_DB_PASSWORD: "${DB_PASSWORD}"
+      RUNARY_DB_DRIVER: "org.postgresql.Driver"
       # Full-text search
-      BOOKTOWER_FTS_ENABLED: "true"
+      RUNARY_FTS_ENABLED: "true"
       # Registration
-      BOOKTOWER_REGISTRATION_OPEN: "${REGISTRATION_OPEN:-true}"
+      RUNARY_REGISTRATION_OPEN: "${REGISTRATION_OPEN:-true}"
       # Auto-scan interval (minutes, 0 to disable)
-      BOOKTOWER_AUTO_SCAN_MINUTES: "60"
+      RUNARY_AUTO_SCAN_MINUTES: "60"
       # SMTP (optional — for password reset, book delivery)
-      BOOKTOWER_SMTP_HOST: "${SMTP_HOST:-}"
-      BOOKTOWER_SMTP_PORT: "${SMTP_PORT:-587}"
-      BOOKTOWER_SMTP_USER: "${SMTP_USER:-}"
-      BOOKTOWER_SMTP_PASS: "${SMTP_PASS:-}"
-      BOOKTOWER_SMTP_FROM: "${SMTP_FROM:-}"
-      BOOKTOWER_SMTP_TLS: "true"
+      RUNARY_SMTP_HOST: "${SMTP_HOST:-}"
+      RUNARY_SMTP_PORT: "${SMTP_PORT:-587}"
+      RUNARY_SMTP_USER: "${SMTP_USER:-}"
+      RUNARY_SMTP_PASS: "${SMTP_PASS:-}"
+      RUNARY_SMTP_FROM: "${SMTP_FROM:-}"
+      RUNARY_SMTP_TLS: "true"
       # OIDC / SSO (optional)
       OIDC_ISSUER: "${OIDC_ISSUER:-}"
       OIDC_CLIENT_ID: "${OIDC_CLIENT_ID:-}"
       OIDC_CLIENT_SECRET: "${OIDC_CLIENT_SECRET:-}"
-      OIDC_REDIRECT_URI: "${BOOKTOWER_BASE_URL}/auth/oidc/callback"
+      OIDC_REDIRECT_URI: "${RUNARY_BASE_URL}/auth/oidc/callback"
       OIDC_SCOPE: "openid email profile"
       OIDC_FORCE_ONLY: "${OIDC_FORCE_ONLY:-false}"
       OIDC_ADMIN_GROUP_PATTERN: "${OIDC_ADMIN_GROUP_PATTERN:-}"
       # Metadata provider API keys (optional)
-      BOOKTOWER_HARDCOVER_API_KEY: "${HARDCOVER_API_KEY:-}"
-      BOOKTOWER_COMICVINE_API_KEY: "${COMICVINE_API_KEY:-}"
+      RUNARY_HARDCOVER_API_KEY: "${HARDCOVER_API_KEY:-}"
+      RUNARY_COMICVINE_API_KEY: "${COMICVINE_API_KEY:-}"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
@@ -64,21 +64,21 @@ services:
 
   postgres:
     image: postgres:16-alpine
-    container_name: booktower-postgres
+    container_name: runary-postgres
     restart: unless-stopped
     volumes:
-      - booktower_pgdata:/var/lib/postgresql/data
+      - runary_pgdata:/var/lib/postgresql/data
     environment:
-      POSTGRES_DB: booktower
-      POSTGRES_USER: booktower
+      POSTGRES_DB: runary
+      POSTGRES_USER: runary
       POSTGRES_PASSWORD: "${DB_PASSWORD}"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U booktower"]
+      test: ["CMD-SHELL", "pg_isready -U runary"]
       interval: 10s
       timeout: 5s
       retries: 5
 
 volumes:
-  booktower_books:
-  booktower_covers:
-  booktower_pgdata:
+  runary_books:
+  runary_covers:
+  runary_pgdata:

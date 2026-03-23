@@ -1,10 +1,10 @@
-@import org.booktower.models.SeriesDto
-@import org.booktower.web.PageContext
+@import org.runary.models.SeriesDto
+@import org.runary.web.PageContext
 @param pc: PageContext
 @param series: List<SeriesDto>
 
 
-@template.components.layout(title="${pc.i18n.translate("page.series.title")} - BookTower", pc=pc, currentPage="series",
+@template.components.layout(title="${pc.i18n.translate("page.series.title")} - Runary", pc=pc, currentPage="series",
     content = @`
 <div style="padding:2rem; max-width:72rem; margin:0 auto;">
 

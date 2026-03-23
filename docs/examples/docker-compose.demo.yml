@@ -1,4 +1,4 @@
-# BookTower — Demo Instance
+# Runary — Demo Instance
 # Starts with a pre-seeded demo account and sample library.
 #
 # Run: docker compose -f docker-compose.demo.yml up -d
@@ -6,20 +6,20 @@
 # Login:  demo / demo1234
 
 services:
-  booktower:
-    image: ghcr.io/rygel/booktower:latest
-    container_name: booktower-demo
+  runary:
+    image: ghcr.io/rygel/runary:latest
+    container_name: runary-demo
     restart: unless-stopped
     ports:
       - "9999:8080"
     volumes:
-      - booktower_demo_db:/data/db
-      - booktower_demo_books:/data/books
-      - booktower_demo_covers:/data/covers
+      - runary_demo_db:/data/db
+      - runary_demo_books:/data/books
+      - runary_demo_covers:/data/covers
     environment:
-      BOOKTOWER_QUICKSTART: "true"
-      BOOKTOWER_DEMO_MODE: "true"
-      BOOKTOWER_JWT_SECRET: "demo-instance-not-for-production"
+      RUNARY_QUICKSTART: "true"
+      RUNARY_DEMO_MODE: "true"
+      RUNARY_JWT_SECRET: "demo-instance-not-for-production"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
@@ -28,6 +28,6 @@ services:
       start_period: 15s
 
 volumes:
-  booktower_demo_db:
-  booktower_demo_books:
-  booktower_demo_covers:
+  runary_demo_db:
+  runary_demo_books:
+  runary_demo_covers:

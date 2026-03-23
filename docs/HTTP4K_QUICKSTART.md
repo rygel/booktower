@@ -1,6 +1,6 @@
 # http4k + HTMX Quick Start Guide
 
-This guide helps you get started with the http4k + HTMX migration for BookTower.
+This guide helps you get started with the http4k + HTMX migration for Runary.
 
 ## Prerequisites
 
@@ -13,11 +13,11 @@ This guide helps you get started with the http4k + HTMX migration for BookTower.
 
 ### 1. Create New Module
 
-Create a new directory `booktower-web` in your project:
+Create a new directory `runary-web` in your project:
 
 ```bash
-mkdir booktower-web
-cd booktower-web
+mkdir runary-web
+cd runary-web
 ```
 
 ### 2. Gradle Configuration
@@ -33,7 +33,7 @@ plugins {
     id("io.ktor.plugin") version "2.3.8" // For fat JAR
 }
 
-group = "org.booktower"
+group = "org.runary"
 version = "1.0-SNAPSHOT"
 
 repositories {
@@ -86,14 +86,14 @@ tasks.withType<KotlinCompile> {
 }
 
 application {
-    mainClass.set("org.booktower.web.BookTowerWebAppKt")
+    mainClass.set("org.runary.web.RunaryWebAppKt")
 }
 
 // Fat JAR for Docker
 tasks.shadowJar {
     archiveClassifier.set("fat")
     manifest {
-        attributes["Main-Class"] = "org.booktower.web.BookTowerWebAppKt"
+        attributes["Main-Class"] = "org.runary.web.RunaryWebAppKt"
     }
 }
 ```
@@ -101,19 +101,19 @@ tasks.shadowJar {
 ### 3. Directory Structure
 
 ```bash
-mkdir -p src/main/kotlin/org/booktower/web/{config,handlers,models,services,utils}
+mkdir -p src/main/kotlin/org/runary/web/{config,handlers,models,services,utils}
 mkdir -p src/main/resources/{templates,static/{css,js}}
-mkdir -p src/test/kotlin/org/booktower/web
+mkdir -p src/test/kotlin/org/runary/web
 ```
 
 ## Basic Implementation
 
 ### 4. Main Application
 
-Create `src/main/kotlin/org/booktower/web/BookTowerWebApp.kt`:
+Create `src/main/kotlin/org/runary/web/RunaryWebApp.kt`:
 
 ```kotlin
-package org.booktower.web
+package org.runary.web
 
 import org.http4k.core.HttpHandler
 import org.http4k.core.Method.GET
@@ -143,7 +143,7 @@ fun main() {
     // Routes
     val app: HttpHandler = routes(
         "/" bind GET to { req: Request ->
-            val view = HomePage("BookTower", "Welcome to your library!")
+            val view = HomePage("Runary", "Welcome to your library!")
             Response(OK).body(renderer(view))
         },
         
@@ -178,7 +178,7 @@ Create `src/main/resources/templates/home.html`:
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ title }} - BookTower</title>
+    <title>{{ title }} - Runary</title>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <style>
         body { font-family: system-ui, sans-serif; max-width: 800px; margin: 0 auto; padding: 2rem; }
@@ -200,10 +200,10 @@ Create `src/main/resources/templates/home.html`:
 
 ### 6. API Client
 
-Create `src/main/kotlin/org/booktower/web/services/ApiClient.kt`:
+Create `src/main/kotlin/org/runary/web/services/ApiClient.kt`:
 
 ```kotlin
-package org.booktower.web.services
+package org.runary.web.services
 
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -265,13 +265,13 @@ data class Book(
 
 ### 7. Book Handlers
 
-Create `src/main/kotlin/org/booktower/web/handlers/BookHandlers.kt`:
+Create `src/main/kotlin/org/runary/web/handlers/BookHandlers.kt`:
 
 ```kotlin
-package org.booktower.web.handlers
+package org.runary.web.handlers
 
-import org.booktower.web.services.ApiClient
-import org.booktower.web.services.Book
+import org.runary.web.services.ApiClient
+import org.runary.web.services.Book
 import org.http4k.core.HttpHandler
 import org.http4k.core.Method.GET
 import org.http4k.core.Request
@@ -338,7 +338,7 @@ Create `src/main/resources/application.conf`:
 
 ```hocon
 app {
-  name = "BookTower Web"
+  name = "Runary Web"
   port = 8080
   
   api {
@@ -353,10 +353,10 @@ app {
 }
 ```
 
-Create `src/main/kotlin/org/booktower/web/config/AppConfig.kt`:
+Create `src/main/kotlin/org/runary/web/config/AppConfig.kt`:
 
 ```kotlin
-package org.booktower.web.config
+package org.runary.web.config
 
 import com.typesafe.config.ConfigFactory
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -393,12 +393,12 @@ data class AppConfig(
 ### Local Development
 
 ```bash
-# From booktower-web directory
+# From runary-web directory
 ./gradlew run
 
 # Or build and run JAR
 ./gradlew shadowJar
-java -jar build/libs/booktower-web-1.0-SNAPSHOT-fat.jar
+java -jar build/libs/runary-web-1.0-SNAPSHOT-fat.jar
 ```
 
 ### Docker
@@ -422,46 +422,46 @@ Create `docker-compose.yml`:
 version: '3.8'
 
 services:
-  booktower-web:
-    build: ./booktower-web
+  runary-web:
+    build: ./runary-web
     ports:
       - "8080:8080"
     environment:
-      - API_BASE_URL=http://booktower-api:6060
+      - API_BASE_URL=http://runary-api:6060
       - JWT_SECRET=your-secret-key
     depends_on:
-      - booktower-api
+      - runary-api
   
-  booktower-api:
+  runary-api:
     # Your existing Spring Boot app
-    image: booktower-api:latest
+    image: runary-api:latest
     ports:
       - "6060:6060"
     environment:
-      - DATABASE_URL=jdbc:mariadb://mariadb:3306/booktower
+      - DATABASE_URL=jdbc:mariadb://mariadb:3306/runary
       # ... other env vars
   
   mariadb:
     image: mariadb:11
     environment:
-      - MYSQL_ROOT_PASSWORD=booktower
-      - MYSQL_DATABASE=booktower
+      - MYSQL_ROOT_PASSWORD=runary
+      - MYSQL_DATABASE=runary
 ```
 
 ## Testing
 
-Create a simple test `src/test/kotlin/org/booktower/web/BookHandlerTest.kt`:
+Create a simple test `src/test/kotlin/org/runary/web/BookHandlerTest.kt`:
 
 ```kotlin
-package org.booktower.web
+package org.runary.web
 
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.mockk
-import org.booktower.web.handlers.bookRoutes
-import org.booktower.web.services.ApiClient
-import org.booktower.web.services.Book
+import org.runary.web.handlers.bookRoutes
+import org.runary.web.services.ApiClient
+import org.runary.web.services.Book
 import org.http4k.core.Method.GET
 import org.http4k.core.Request
 import org.http4k.core.Status

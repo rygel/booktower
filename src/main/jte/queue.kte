@@ -1,5 +1,5 @@
-@import org.booktower.models.BookDto
-@import org.booktower.web.PageContext
+@import org.runary.models.BookDto
+@import org.runary.web.PageContext
 @param pc: PageContext
 @param books: List<BookDto>
 @param total: Int
@@ -7,7 +7,7 @@
 @param totalPages: Int = 1
 
 
-@template.components.layout(title="${pc.i18n.translate("page.queue.title")} - BookTower", pc=pc, currentPage="queue",
+@template.components.layout(title="${pc.i18n.translate("page.queue.title")} - Runary", pc=pc, currentPage="queue",
     content = @`
 <div style="padding:2rem; max-width:72rem; margin:0 auto;">
 

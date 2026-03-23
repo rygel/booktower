@@ -1,6 +1,6 @@
 # GitHub Actions Workflows
 
-This directory contains CI/CD workflows for the BookTower project, all using Maven for build and test operations.
+This directory contains CI/CD workflows for the Runary project, all using Maven for build and test operations.
 
 ## Workflows
 

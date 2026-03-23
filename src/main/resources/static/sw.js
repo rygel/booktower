@@ -1,4 +1,4 @@
-var CACHE_NAME = 'booktower-v1';
+var CACHE_NAME = 'runary-v1';
 
 var APP_SHELL = [
   '/static/css/app.css',

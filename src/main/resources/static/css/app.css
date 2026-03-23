@@ -1,4 +1,4 @@
-/* BookTower — app.css
+/* Runary — app.css
    Theme colors are injected server-side as :root { --bt-xxx } via themes.json + ThemeCatalog.
    This file contains only component styles that reference those CSS variables.
 */

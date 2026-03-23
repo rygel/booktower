@@ -1,48 +1,48 @@
 services:
-  booktower:
-    image: ghcr.io/rygel/booktower:latest
+  runary:
+    image: ghcr.io/rygel/runary:latest
     # To build from source instead:
     # build: .
-    container_name: booktower
+    container_name: runary
     restart: unless-stopped
     ports:
       - "9999:8080"
     volumes:
-      - booktower_db:/data/db
-      - booktower_books:/data/books
-      - booktower_covers:/data/covers
+      - runary_db:/data/db
+      - runary_books:/data/books
+      - runary_covers:/data/covers
       # Mount your local book collection (read-only):
       # - /path/to/your/books:/mnt/library:ro
     environment:
-      BOOKTOWER_ENV: production
+      RUNARY_ENV: production
       # REQUIRED in production — generate with: openssl rand -base64 32
-      BOOKTOWER_JWT_SECRET: "change-me-to-a-long-random-string"
+      RUNARY_JWT_SECRET: "change-me-to-a-long-random-string"
       # Base URL — set this to your public-facing URL (used for Kobo sync, OPDS links, etc.)
-      # BOOKTOWER_BASE_URL: "https://books.example.com"
+      # RUNARY_BASE_URL: "https://books.example.com"
       # Registration — set to false to prevent new user sign-ups
-      # BOOKTOWER_REGISTRATION_OPEN: "true"
+      # RUNARY_REGISTRATION_OPEN: "true"
       # Auto-scan interval in minutes (set to 0 to disable)
-      # BOOKTOWER_AUTO_SCAN_MINUTES: "60"
+      # RUNARY_AUTO_SCAN_MINUTES: "60"
       # Full-text search (experimental)
-      # BOOKTOWER_FTS_ENABLED: "false"
+      # RUNARY_FTS_ENABLED: "false"
       # SMTP for email notifications (book delivery, password reset)
-      # BOOKTOWER_SMTP_HOST: ""
-      # BOOKTOWER_SMTP_PORT: "587"
-      # BOOKTOWER_SMTP_USER: ""
-      # BOOKTOWER_SMTP_PASS: ""
-      # BOOKTOWER_SMTP_FROM: ""
-      # BOOKTOWER_SMTP_TLS: "true"
+      # RUNARY_SMTP_HOST: ""
+      # RUNARY_SMTP_PORT: "587"
+      # RUNARY_SMTP_USER: ""
+      # RUNARY_SMTP_PASS: ""
+      # RUNARY_SMTP_FROM: ""
+      # RUNARY_SMTP_TLS: "true"
       # Metadata providers (optional API keys)
-      # BOOKTOWER_HARDCOVER_API_KEY: ""
-      # BOOKTOWER_COMICVINE_API_KEY: ""
+      # RUNARY_HARDCOVER_API_KEY: ""
+      # RUNARY_COMICVINE_API_KEY: ""
       # OIDC / SSO (uncomment and configure to enable)
-      # OIDC_ISSUER: "https://auth.example.com/realms/booktower"
-      # OIDC_CLIENT_ID: "booktower"
+      # OIDC_ISSUER: "https://auth.example.com/realms/runary"
+      # OIDC_CLIENT_ID: "runary"
       # OIDC_CLIENT_SECRET: ""
       # OIDC_REDIRECT_URI: "https://books.example.com/auth/oidc/callback"
       # OIDC_SCOPE: "openid email profile"
       # OIDC_FORCE_ONLY: "false"
-      # OIDC_ADMIN_GROUP_PATTERN: "^booktower-admin$"
+      # OIDC_ADMIN_GROUP_PATTERN: "^runary-admin$"
       # OIDC_GROUPS_CLAIM: "groups"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
@@ -52,38 +52,38 @@ services:
       start_period: 15s
 
   # ── PostgreSQL (optional — uncomment for production) ──────────────────────
-  # By default BookTower uses an embedded H2 database (zero-config).
+  # By default Runary uses an embedded H2 database (zero-config).
   # For production workloads, uncomment the postgres service below and
-  # set the BOOKTOWER_DB_* variables on the booktower service.
+  # set the RUNARY_DB_* variables on the runary service.
   #
   # postgres:
   #   image: postgres:16-alpine
-  #   container_name: booktower-postgres
+  #   container_name: runary-postgres
   #   restart: unless-stopped
   #   volumes:
-  #     - booktower_pgdata:/var/lib/postgresql/data
+  #     - runary_pgdata:/var/lib/postgresql/data
   #   environment:
-  #     POSTGRES_DB: booktower
-  #     POSTGRES_USER: booktower
+  #     POSTGRES_DB: runary
+  #     POSTGRES_USER: runary
   #     POSTGRES_PASSWORD: "change-me-to-a-strong-password"
   #   healthcheck:
-  #     test: ["CMD-SHELL", "pg_isready -U booktower"]
+  #     test: ["CMD-SHELL", "pg_isready -U runary"]
   #     interval: 10s
   #     timeout: 5s
   #     retries: 5
   #
-  # When using PostgreSQL, add these to the booktower service environment:
-  #   BOOKTOWER_DB_URL: "jdbc:postgresql://postgres:5432/booktower"
-  #   BOOKTOWER_DB_USERNAME: "booktower"
-  #   BOOKTOWER_DB_PASSWORD: "change-me-to-a-strong-password"
-  #   BOOKTOWER_DB_DRIVER: "org.postgresql.Driver"
-  # And add to the booktower service:
+  # When using PostgreSQL, add these to the runary service environment:
+  #   RUNARY_DB_URL: "jdbc:postgresql://postgres:5432/runary"
+  #   RUNARY_DB_USERNAME: "runary"
+  #   RUNARY_DB_PASSWORD: "change-me-to-a-strong-password"
+  #   RUNARY_DB_DRIVER: "org.postgresql.Driver"
+  # And add to the runary service:
   #   depends_on:
   #     postgres:
   #       condition: service_healthy
 
 volumes:
-  booktower_db:
-  booktower_books:
-  booktower_covers:
-  # booktower_pgdata:
+  runary_db:
+  runary_books:
+  runary_covers:
+  # runary_pgdata:

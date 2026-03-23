@@ -1,12 +1,12 @@
 # HTMX Test Coverage Summary
 
 ## Overview
-Added comprehensive HTMX testing coverage to BookTower, significantly expanding test suite from 7 to 46 total tests.
+Added comprehensive HTMX testing coverage to Runary, significantly expanding test suite from 7 to 46 total tests.
 
 ## New Test Files
 
 ### 1. HtmxHandlerTest.kt (21 tests)
-**Location**: `src/test/kotlin/org/booktower/handlers/HtmxHandlerTest.kt`
+**Location**: `src/test/kotlin/org/runary/handlers/HtmxHandlerTest.kt`
 
 **Test Categories**:
 - **HTMX Request Detection** (2 tests)
@@ -31,7 +31,7 @@ Added comprehensive HTMX testing coverage to BookTower, significantly expanding 
   - Redirect behavior for non-HTMX requests
 
 ### 2. Enhanced TemplateRenderingTest.kt (+18 tests)
-**Location**: `src/test/kotlin/org/booktower/handlers/TemplateRenderingTest.kt`
+**Location**: `src/test/kotlin/org/runary/handlers/TemplateRenderingTest.kt`
 
 **New HTMX Template Tests**:
 - HTMX attribute validation (hx-post, hx-target, hx-swap, hx-trigger)
@@ -161,4 +161,4 @@ header("HX-Reswap", "none")
 - **http4k**: HTTP framework
 
 ## Conclusion
-The HTMX test suite provides comprehensive coverage of all HTMX functionality in BookTower, ensuring reliable theme and language switching, proper client-server communication, and robust error handling. The 46 tests validate both server-side logic and template rendering, providing confidence in the HTMX implementation.
+The HTMX test suite provides comprehensive coverage of all HTMX functionality in Runary, ensuring reliable theme and language switching, proper client-server communication, and robust error handling. The 46 tests validate both server-side logic and template rendering, providing confidence in the HTMX implementation.

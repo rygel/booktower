@@ -1,6 +1,6 @@
-@import org.booktower.models.BookDto
-@import org.booktower.models.LibraryDto
-@import org.booktower.web.PageContext
+@import org.runary.models.BookDto
+@import org.runary.models.LibraryDto
+@import org.runary.web.PageContext
 @param pc: PageContext
 @param libraries: List<LibraryDto>
 @param recentBooks: List<BookDto>
@@ -16,7 +16,7 @@
 @param totalPagesRead: Int = 0
 
 
-@template.components.layout(title="${pc.i18n.translate("page.dashboard.title")} - BookTower", pc=pc, currentPage="home",
+@template.components.layout(title="${pc.i18n.translate("page.dashboard.title")} - Runary", pc=pc, currentPage="home",
     content = @`
 <div class="page-container" style="max-width:64rem;">
 
