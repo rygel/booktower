@@ -1,0 +1,182 @@
+@import org.booktower.services.KoboDevice
+@import org.booktower.services.KOReaderDevice
+@import org.booktower.web.PageContext
+@param pc: PageContext
+@param koboDevices: List<KoboDevice>
+@param koreaderDevices: List<KOReaderDevice>
+
+@template.components.layout(title="${pc.i18n.translate("page.devices.title")} - BookTower", pc=pc, currentPage="devices",
+    searchQuery="", content = @`
+<div class="page-container">
+    <h1 class="page-title"><i class="ri-tablet-line"></i> ${pc.i18n.translate("page.devices.title")}</h1>
+    <p class="text-sm text-subtle" style="margin-bottom:1.5rem;">${pc.i18n.translate("page.devices.description")}</p>
+
+    <!-- Kobo Devices -->
+    <div style="margin-bottom:2rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+            <h2 style="font-size:1.1rem; color:var(--bt-text);"><i class="ri-tablet-line"></i> ${pc.i18n.translate("page.devices.kobo")}</h2>
+            <button id="add-kobo-btn" class="btn-primary" style="padding:0.5rem 1rem;">
+                <i class="ri-add-line"></i> ${pc.i18n.translate("page.devices.register")}
+            </button>
+        </div>
+
+        <div id="add-kobo-form" style="display:none; margin-bottom:1rem; padding:1rem; background:var(--bt-surface-raised); border-radius:0.5rem; border:1px solid var(--bt-border);">
+            <label style="font-size:0.75rem; color:var(--bt-muted); display:block; margin-bottom:0.2rem;">${pc.i18n.translate("page.devices.name")}</label>
+            <input type="text" id="kobo-name" placeholder="${pc.i18n.translate("page.devices.name.placeholder")}" style="width:100%; padding:0.5rem; margin-bottom:0.5rem;">
+            <div style="display:flex; gap:0.5rem;">
+                <button id="kobo-save-btn" class="btn-primary" style="padding:0.5rem 1rem;">
+                    <i class="ri-save-line"></i> ${pc.i18n.translate("label.save")}
+                </button>
+                <button id="kobo-cancel-btn" class="btn-secondary" style="padding:0.5rem 1rem;">
+                    ${pc.i18n.translate("label.cancel")}
+                </button>
+            </div>
+        </div>
+
+        <div id="kobo-device-list">
+            @if(koboDevices.isEmpty())
+                @template.components.emptyState(icon = "ri-tablet-line", message = pc.i18n.translate("page.devices.empty.kobo"), action = @``)
+            @else
+                @for(device in koboDevices)
+                    <div class="panel" style="margin-bottom:0.75rem; display:flex; justify-content:space-between; align-items:center;" data-device-token="${device.token}">
+                        <div style="flex:1;">
+                            <div style="font-weight:600; font-size:0.9rem; color:var(--bt-text);">
+                                <i class="ri-tablet-line"></i>
+                                @if(device.deviceName != null)
+                                    ${device.deviceName}
+                                @else
+                                    Kobo Device
+                                @endif
+                            </div>
+                            <div class="text-sm text-subtle" style="margin-top:0.15rem;">
+                                ${pc.i18n.translate("page.devices.token")}: <code style="font-size:0.7rem;">${device.token.take(8)}...</code>
+                            </div>
+                            <div class="text-sm text-subtle" style="margin-top:0.15rem;">
+                                @if(device.lastSyncAt != null)
+                                    ${pc.i18n.translate("page.devices.last.sync")}: ${device.lastSyncAt.toString()}
+                                @else
+                                    ${pc.i18n.translate("page.devices.never.synced")}
+                                @endif
+                            </div>
+                        </div>
+                        <button class="btn-icon kobo-delete" data-token="${device.token}" title="${pc.i18n.translate("label.delete")}">
+                            <i class="ri-delete-bin-line" style="color:var(--bt-danger);"></i>
+                        </button>
+                    </div>
+                @endfor
+            @endif
+        </div>
+    </div>
+
+    <!-- KOReader Devices -->
+    <div style="margin-bottom:2rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+            <h2 style="font-size:1.1rem; color:var(--bt-text);"><i class="ri-book-open-line"></i> ${pc.i18n.translate("page.devices.koreader")}</h2>
+            <button id="add-koreader-btn" class="btn-primary" style="padding:0.5rem 1rem;">
+                <i class="ri-add-line"></i> ${pc.i18n.translate("page.devices.register")}
+            </button>
+        </div>
+
+        <div id="add-koreader-form" style="display:none; margin-bottom:1rem; padding:1rem; background:var(--bt-surface-raised); border-radius:0.5rem; border:1px solid var(--bt-border);">
+            <label style="font-size:0.75rem; color:var(--bt-muted); display:block; margin-bottom:0.2rem;">${pc.i18n.translate("page.devices.name")}</label>
+            <input type="text" id="koreader-name" placeholder="${pc.i18n.translate("page.devices.name.placeholder")}" style="width:100%; padding:0.5rem; margin-bottom:0.5rem;">
+            <div style="display:flex; gap:0.5rem;">
+                <button id="koreader-save-btn" class="btn-primary" style="padding:0.5rem 1rem;">
+                    <i class="ri-save-line"></i> ${pc.i18n.translate("label.save")}
+                </button>
+                <button id="koreader-cancel-btn" class="btn-secondary" style="padding:0.5rem 1rem;">
+                    ${pc.i18n.translate("label.cancel")}
+                </button>
+            </div>
+        </div>
+
+        <div id="koreader-device-list">
+            @if(koreaderDevices.isEmpty())
+                @template.components.emptyState(icon = "ri-book-open-line", message = pc.i18n.translate("page.devices.empty.koreader"), action = @``)
+            @else
+                @for(device in koreaderDevices)
+                    <div class="panel" style="margin-bottom:0.75rem; display:flex; justify-content:space-between; align-items:center;" data-device-token="${device.token}">
+                        <div style="flex:1;">
+                            <div style="font-weight:600; font-size:0.9rem; color:var(--bt-text);">
+                                <i class="ri-book-open-line"></i>
+                                @if(device.deviceName != null)
+                                    ${device.deviceName}
+                                @else
+                                    KOReader Device
+                                @endif
+                            </div>
+                            <div class="text-sm text-subtle" style="margin-top:0.15rem;">
+                                ${pc.i18n.translate("page.devices.token")}: <code style="font-size:0.7rem;">${device.token.take(8)}...</code>
+                            </div>
+                            <div class="text-sm text-subtle" style="margin-top:0.15rem;">
+                                @if(device.lastSyncAt != null)
+                                    ${pc.i18n.translate("page.devices.last.sync")}: ${device.lastSyncAt.toString()}
+                                @else
+                                    ${pc.i18n.translate("page.devices.never.synced")}
+                                @endif
+                            </div>
+                        </div>
+                        <button class="btn-icon koreader-delete" data-token="${device.token}" title="${pc.i18n.translate("label.delete")}">
+                            <i class="ri-delete-bin-line" style="color:var(--bt-danger);"></i>
+                        </button>
+                    </div>
+                @endfor
+            @endif
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    // Kobo registration
+    var addKoboBtn = document.getElementById('add-kobo-btn');
+    var koboForm = document.getElementById('add-kobo-form');
+    var koboCancelBtn = document.getElementById('kobo-cancel-btn');
+    var koboSaveBtn = document.getElementById('kobo-save-btn');
+
+    addKoboBtn.addEventListener('click', function() { koboForm.style.display = 'block'; addKoboBtn.style.display = 'none'; });
+    koboCancelBtn.addEventListener('click', function() { koboForm.style.display = 'none'; addKoboBtn.style.display = ''; });
+    koboSaveBtn.addEventListener('click', function() {
+        var name = document.getElementById('kobo-name').value.trim();
+        fetch('/api/kobo/devices', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ deviceName: name || 'Kobo' })
+        }).then(function(r) { if (r.ok) window.location.reload(); });
+    });
+
+    // KOReader registration
+    var addKoreaderBtn = document.getElementById('add-koreader-btn');
+    var koreaderForm = document.getElementById('add-koreader-form');
+    var koreaderCancelBtn = document.getElementById('koreader-cancel-btn');
+    var koreaderSaveBtn = document.getElementById('koreader-save-btn');
+
+    addKoreaderBtn.addEventListener('click', function() { koreaderForm.style.display = 'block'; addKoreaderBtn.style.display = 'none'; });
+    koreaderCancelBtn.addEventListener('click', function() { koreaderForm.style.display = 'none'; addKoreaderBtn.style.display = ''; });
+    koreaderSaveBtn.addEventListener('click', function() {
+        var name = document.getElementById('koreader-name').value.trim();
+        fetch('/api/koreader/devices', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ deviceName: name || 'KOReader' })
+        }).then(function(r) { if (r.ok) window.location.reload(); });
+    });
+
+    // Delete handlers
+    document.querySelectorAll('.kobo-delete').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            fetch('/api/kobo/devices/' + btn.dataset.token, { method: 'DELETE' }).then(function(r) {
+                if (r.ok) btn.closest('.panel').remove();
+            });
+        });
+    });
+    document.querySelectorAll('.koreader-delete').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            fetch('/api/koreader/devices/' + btn.dataset.token, { method: 'DELETE' }).then(function(r) {
+                if (r.ok) btn.closest('.panel').remove();
+            });
+        });
+    });
+})();
+</script>
+`)

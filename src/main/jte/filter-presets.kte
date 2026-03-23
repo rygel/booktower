@@ -1,0 +1,93 @@
+@import org.booktower.services.FilterPresetDto
+@import org.booktower.web.PageContext
+@param pc: PageContext
+@param presets: List<FilterPresetDto>
+
+@template.components.layout(title="${pc.i18n.translate("page.filterpresets.title")} - BookTower", pc=pc, currentPage="filter-presets",
+    searchQuery="", content = @`
+<div class="page-container">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+        <h1 class="page-title"><i class="ri-filter-3-line"></i> ${pc.i18n.translate("page.filterpresets.title")}</h1>
+        <button id="add-preset-btn" class="btn-primary" style="padding:0.6rem 1.25rem;">
+            <i class="ri-add-line"></i> ${pc.i18n.translate("page.filterpresets.create")}
+        </button>
+    </div>
+
+    <p class="text-sm text-subtle" style="margin-bottom:1.5rem;">${pc.i18n.translate("page.filterpresets.description")}</p>
+
+    <div id="add-preset-form" style="display:none; margin-bottom:1.5rem; padding:1.25rem; background:var(--bt-surface-raised); border-radius:0.5rem; border:1px solid var(--bt-border);">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+            <div>
+                <label style="font-size:0.75rem; color:var(--bt-muted); display:block; margin-bottom:0.2rem;">${pc.i18n.translate("page.filterpresets.name")}</label>
+                <input type="text" id="preset-name" placeholder="${pc.i18n.translate("page.filterpresets.name.placeholder")}" style="width:100%; padding:0.5rem;">
+            </div>
+            <div>
+                <label style="font-size:0.75rem; color:var(--bt-muted); display:block; margin-bottom:0.2rem;">${pc.i18n.translate("page.filterpresets.filters")}</label>
+                <input type="text" id="preset-filters" placeholder='{"status":"READING"}' style="width:100%; padding:0.5rem;">
+            </div>
+        </div>
+        <div style="display:flex; gap:0.5rem; margin-top:0.75rem;">
+            <button id="preset-save-btn" class="btn-primary" style="padding:0.5rem 1rem;">
+                <i class="ri-save-line"></i> ${pc.i18n.translate("label.save")}
+            </button>
+            <button id="preset-cancel-btn" class="btn-secondary" style="padding:0.5rem 1rem;">
+                ${pc.i18n.translate("label.cancel")}
+            </button>
+        </div>
+    </div>
+
+    <div id="preset-list">
+        @if(presets.isEmpty())
+            @template.components.emptyState(icon = "ri-filter-3-line", message = pc.i18n.translate("page.filterpresets.empty"), action = @``)
+        @else
+            @for(preset in presets)
+                <div class="panel" style="margin-bottom:0.75rem; display:flex; justify-content:space-between; align-items:center;" data-preset-id="${preset.id}">
+                    <div style="flex:1;">
+                        <div style="font-weight:600; font-size:0.9rem; color:var(--bt-text);">${preset.name}</div>
+                        <div class="text-sm text-subtle" style="margin-top:0.15rem;">
+                            <code style="font-size:0.7rem;">${preset.filters}</code>
+                        </div>
+                    </div>
+                    <button class="btn-icon preset-delete" data-id="${preset.id}" title="${pc.i18n.translate("label.delete")}">
+                        <i class="ri-delete-bin-line" style="color:var(--bt-danger);"></i>
+                    </button>
+                </div>
+            @endfor
+        @endif
+    </div>
+</div>
+
+<script>
+(function() {
+    var addBtn = document.getElementById('add-preset-btn');
+    var form = document.getElementById('add-preset-form');
+    var cancelBtn = document.getElementById('preset-cancel-btn');
+    var saveBtn = document.getElementById('preset-save-btn');
+
+    addBtn.addEventListener('click', function() { form.style.display = 'block'; addBtn.style.display = 'none'; });
+    cancelBtn.addEventListener('click', function() { form.style.display = 'none'; addBtn.style.display = ''; });
+
+    saveBtn.addEventListener('click', function() {
+        var name = document.getElementById('preset-name').value.trim();
+        var filtersStr = document.getElementById('preset-filters').value.trim() || '{}';
+        if (!name) return;
+        var filters;
+        try { filters = JSON.parse(filtersStr); } catch(e) { return; }
+
+        fetch('/api/user/filter-presets', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: name, filters: filters })
+        }).then(function(r) { if (r.ok) window.location.reload(); });
+    });
+
+    document.querySelectorAll('.preset-delete').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            fetch('/api/user/filter-presets/' + btn.dataset.id, { method: 'DELETE' }).then(function(r) {
+                if (r.ok) btn.closest('.panel').remove();
+            });
+        });
+    });
+})();
+</script>
+`)
