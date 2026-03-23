@@ -1,0 +1,70 @@
+@import org.booktower.services.BookTimeEstimate
+@import org.booktower.services.SessionSpeed
+@import org.booktower.web.PageContext
+@param pc: PageContext
+@param avgPagesPerHour: Double
+@param totalReadingMinutes: Long
+@param currentBookEstimate: BookTimeEstimate?
+@param recentSessions: List<SessionSpeed>
+
+@template.components.layout(title="${pc.i18n.translate("page.speed.title")} - BookTower", pc=pc, currentPage="reading-speed",
+    searchQuery="", content = @`
+<div class="page-container">
+    <h1 class="page-title"><i class="ri-speed-line"></i> ${pc.i18n.translate("page.speed.title")}</h1>
+    <p class="text-sm text-subtle" style="margin-bottom:1.5rem;">${pc.i18n.translate("page.speed.description")}</p>
+
+    <!-- Stats cards -->
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:1rem; margin-bottom:2rem;">
+        <div class="panel" style="padding:1.25rem; text-align:center;" id="speed-avg-card">
+            <div class="text-sm text-subtle">${pc.i18n.translate("page.speed.avg")}</div>
+            <div style="font-size:2rem; font-weight:700; color:var(--bt-accent-dim);">${String.format("%.1f", avgPagesPerHour)}</div>
+            <div class="text-sm text-subtle">${pc.i18n.translate("page.speed.pages.per.hour")}</div>
+        </div>
+        <div class="panel" style="padding:1.25rem; text-align:center;" id="speed-total-card">
+            <div class="text-sm text-subtle">${pc.i18n.translate("page.speed.total.time")}</div>
+            <div style="font-size:2rem; font-weight:700; color:var(--bt-accent-dim);">
+                @if(totalReadingMinutes >= 60)
+                    ${totalReadingMinutes / 60}h ${totalReadingMinutes % 60}m
+                @else
+                    ${totalReadingMinutes}m
+                @endif
+            </div>
+            <div class="text-sm text-subtle">${pc.i18n.translate("page.speed.reading")}</div>
+        </div>
+        @if(currentBookEstimate != null)
+        <div class="panel" style="padding:1.25rem; text-align:center;" id="speed-estimate-card">
+            <div class="text-sm text-subtle">${pc.i18n.translate("page.speed.current.book")}</div>
+            <div style="font-size:1.1rem; font-weight:600; color:var(--bt-text); margin:0.5rem 0;">${currentBookEstimate.title}</div>
+            <div class="text-sm text-subtle">${currentBookEstimate.pagesRemaining} ${pc.i18n.translate("page.speed.pages.left")} &middot;
+                @if(currentBookEstimate.estimatedMinutes >= 60)
+                    ~${currentBookEstimate.estimatedMinutes / 60}h ${currentBookEstimate.estimatedMinutes % 60}m
+                @else
+                    ~${currentBookEstimate.estimatedMinutes}m
+                @endif
+            </div>
+        </div>
+        @endif
+    </div>
+
+    <!-- Recent sessions -->
+    <h2 style="font-size:1.1rem; margin-bottom:1rem; color:var(--bt-text);">${pc.i18n.translate("page.speed.recent")}</h2>
+    <div id="session-list">
+        @if(recentSessions.isEmpty())
+            @template.components.emptyState(icon = "ri-speed-line", message = pc.i18n.translate("page.speed.empty"), action = @``)
+        @else
+            @for(session in recentSessions)
+                <div class="panel" style="margin-bottom:0.5rem; padding:0.75rem; display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <div style="font-weight:600; font-size:0.85rem; color:var(--bt-text);">${session.bookTitle}</div>
+                        <div class="text-sm text-subtle">${session.sessionAt}</div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="font-weight:600; color:var(--bt-accent-dim);">${String.format("%.1f", session.pagesPerHour)} p/h</div>
+                        <div class="text-sm text-subtle">${session.pagesRead} pages &middot; ${session.durationMinutes}m</div>
+                    </div>
+                </div>
+            @endfor
+        @endif
+    </div>
+</div>
+`)

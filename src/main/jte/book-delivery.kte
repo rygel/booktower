@@ -1,0 +1,88 @@
+@import org.booktower.services.EmailRecipient
+@import org.booktower.web.PageContext
+@param pc: PageContext
+@param recipients: List<EmailRecipient>
+
+@template.components.layout(title="${pc.i18n.translate("page.delivery.title")} - BookTower", pc=pc, currentPage="book-delivery",
+    searchQuery="", content = @`
+<div class="page-container">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+        <h1 class="page-title"><i class="ri-mail-send-line"></i> ${pc.i18n.translate("page.delivery.title")}</h1>
+        <button id="add-recipient-btn" class="btn-primary" style="padding:0.6rem 1.25rem;">
+            <i class="ri-add-line"></i> ${pc.i18n.translate("page.delivery.add")}
+        </button>
+    </div>
+
+    <p class="text-sm text-subtle" style="margin-bottom:1.5rem;">${pc.i18n.translate("page.delivery.description")}</p>
+
+    <div id="add-recipient-form" style="display:none; margin-bottom:1.5rem; padding:1.25rem; background:var(--bt-surface-raised); border-radius:0.5rem; border:1px solid var(--bt-border);">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+            <div>
+                <label style="font-size:0.75rem; color:var(--bt-muted); display:block; margin-bottom:0.2rem;">${pc.i18n.translate("page.delivery.label")}</label>
+                <input type="text" id="rcpt-label" placeholder="${pc.i18n.translate("page.delivery.label.placeholder")}" style="width:100%; padding:0.5rem;">
+            </div>
+            <div>
+                <label style="font-size:0.75rem; color:var(--bt-muted); display:block; margin-bottom:0.2rem;">${pc.i18n.translate("page.delivery.email")}</label>
+                <input type="email" id="rcpt-email" placeholder="${pc.i18n.translate("page.delivery.email.placeholder")}" style="width:100%; padding:0.5rem;">
+            </div>
+        </div>
+        <div style="display:flex; gap:0.5rem; margin-top:0.75rem;">
+            <button id="rcpt-save-btn" class="btn-primary" style="padding:0.5rem 1rem;">
+                <i class="ri-save-line"></i> ${pc.i18n.translate("label.save")}
+            </button>
+            <button id="rcpt-cancel-btn" class="btn-secondary" style="padding:0.5rem 1rem;">
+                ${pc.i18n.translate("label.cancel")}
+            </button>
+        </div>
+    </div>
+
+    <div id="recipient-list">
+        @if(recipients.isEmpty())
+            @template.components.emptyState(icon = "ri-mail-send-line", message = pc.i18n.translate("page.delivery.empty"), action = @``)
+        @else
+            @for(rcpt in recipients)
+                <div class="panel" style="margin-bottom:0.75rem; display:flex; justify-content:space-between; align-items:center;" data-recipient-id="${rcpt.id}">
+                    <div style="flex:1;">
+                        <div style="font-weight:600; font-size:0.9rem; color:var(--bt-text);"><i class="ri-mail-line"></i> ${rcpt.label}</div>
+                        <div class="text-sm text-subtle" style="margin-top:0.15rem;">${rcpt.email}</div>
+                    </div>
+                    <button class="btn-icon rcpt-delete" data-id="${rcpt.id}" title="${pc.i18n.translate("label.delete")}">
+                        <i class="ri-delete-bin-line" style="color:var(--bt-danger);"></i>
+                    </button>
+                </div>
+            @endfor
+        @endif
+    </div>
+</div>
+
+<script>
+(function() {
+    var addBtn = document.getElementById('add-recipient-btn');
+    var form = document.getElementById('add-recipient-form');
+    var cancelBtn = document.getElementById('rcpt-cancel-btn');
+    var saveBtn = document.getElementById('rcpt-save-btn');
+
+    addBtn.addEventListener('click', function() { form.style.display = 'block'; addBtn.style.display = 'none'; });
+    cancelBtn.addEventListener('click', function() { form.style.display = 'none'; addBtn.style.display = ''; });
+
+    saveBtn.addEventListener('click', function() {
+        var label = document.getElementById('rcpt-label').value.trim();
+        var email = document.getElementById('rcpt-email').value.trim();
+        if (!label || !email) return;
+        fetch('/api/user/book-delivery/recipients', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ label: label, email: email })
+        }).then(function(r) { if (r.ok) window.location.reload(); });
+    });
+
+    document.querySelectorAll('.rcpt-delete').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            fetch('/api/user/book-delivery/recipients/' + btn.dataset.id, { method: 'DELETE' }).then(function(r) {
+                if (r.ok) btn.closest('.panel').remove();
+            });
+        });
+    });
+})();
+</script>
+`)

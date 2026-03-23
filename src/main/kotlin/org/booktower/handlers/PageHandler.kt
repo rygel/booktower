@@ -64,6 +64,10 @@ class PageHandler(
     private val scheduledTaskService: org.booktower.services.ScheduledTaskService? = null,
     private val opdsCredentialsService: org.booktower.services.OpdsCredentialsService? = null,
     private val contentRestrictionsService: org.booktower.services.ContentRestrictionsService? = null,
+    private val readingSpeedService: org.booktower.services.ReadingSpeedService? = null,
+    private val libraryHealthService: org.booktower.services.LibraryHealthService? = null,
+    private val hardcoverSyncService: org.booktower.services.HardcoverSyncService? = null,
+    private val bookDeliveryService: org.booktower.services.BookDeliveryService? = null,
 ) {
     /** Build a PageContext for any authenticated request. */
     private fun pageContext(req: Request): org.booktower.web.PageContext =
@@ -670,6 +674,64 @@ class PageHandler(
                     "maxAgeRating" to (restrictions?.maxAgeRating ?: ""),
                     "blockedTags" to (restrictions?.blockedTags?.joinToString(", ") ?: ""),
                 ),
+            ),
+        )
+    }
+
+    fun readingSpeed(req: Request): Response {
+        val userId = auth(req) ?: return redirectToLogin()
+        val pc = pageContext(req)
+        val stats = readingSpeedService?.getStats(userId)
+        return htmlOk(
+            templateRenderer.render(
+                "reading-speed.kte",
+                pc.toMap(
+                    "avgPagesPerHour" to (stats?.averagePagesPerHour ?: 0.0),
+                    "totalReadingMinutes" to (stats?.totalReadingMinutes ?: 0L),
+                    "currentBookEstimate" to stats?.currentBookEstimate,
+                    "recentSessions" to (stats?.recentSessions ?: emptyList<Any>()),
+                ),
+            ),
+        )
+    }
+
+    fun libraryHealth(req: Request): Response {
+        val userId = auth(req) ?: return redirectToLogin()
+        val pc = pageContext(req)
+        val summary = libraryHealthService?.check(userId)
+        return htmlOk(
+            templateRenderer.render(
+                "library-health.kte",
+                pc.toMap(
+                    "totalIssues" to (summary?.totalIssues ?: 0),
+                    "libraries" to (summary?.libraries ?: emptyList<Any>()),
+                ),
+            ),
+        )
+    }
+
+    fun hardcoverSettings(req: Request): Response {
+        val userId = auth(req) ?: return redirectToLogin()
+        val pc = pageContext(req)
+        val hasKey = hardcoverSyncService?.hasApiKey(userId) ?: false
+        return htmlOk(
+            templateRenderer.render(
+                "hardcover-settings.kte",
+                pc.toMap(
+                    "hasApiKey" to hasKey,
+                ),
+            ),
+        )
+    }
+
+    fun bookDelivery(req: Request): Response {
+        val userId = auth(req) ?: return redirectToLogin()
+        val pc = pageContext(req)
+        val recipients = bookDeliveryService?.listRecipients(userId) ?: emptyList()
+        return htmlOk(
+            templateRenderer.render(
+                "book-delivery.kte",
+                pc.toMap("recipients" to recipients),
             ),
         )
     }

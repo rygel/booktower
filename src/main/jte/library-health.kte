@@ -1,0 +1,57 @@
+@import org.booktower.services.LibraryHealthReport
+@import org.booktower.web.PageContext
+@param pc: PageContext
+@param totalIssues: Int
+@param libraries: List<LibraryHealthReport>
+
+@template.components.layout(title="${pc.i18n.translate("page.health.title")} - BookTower", pc=pc, currentPage="library-health",
+    searchQuery="", content = @`
+<div class="page-container">
+    <h1 class="page-title"><i class="ri-heart-pulse-line"></i> ${pc.i18n.translate("page.health.title")}</h1>
+    <p class="text-sm text-subtle" style="margin-bottom:1.5rem;">${pc.i18n.translate("page.health.description")}</p>
+
+    <div class="panel" style="padding:1rem; margin-bottom:1.5rem;" id="health-summary">
+        @if(totalIssues == 0)
+            <div style="display:flex; align-items:center; gap:0.5rem;">
+                <i class="ri-check-double-line" style="font-size:1.5rem; color:var(--bt-accent-dim);"></i>
+                <span style="font-weight:600; color:var(--bt-text);">${pc.i18n.translate("page.health.all.good")}</span>
+            </div>
+        @else
+            <div style="display:flex; align-items:center; gap:0.5rem;">
+                <i class="ri-alert-line" style="font-size:1.5rem; color:var(--bt-danger);"></i>
+                <span style="font-weight:600; color:var(--bt-text);">${totalIssues} ${pc.i18n.translate("page.health.issues.found")}</span>
+            </div>
+        @endif
+    </div>
+
+    <div id="health-library-list">
+        @for(lib in libraries)
+            <div class="panel" style="margin-bottom:1rem; padding:1rem;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+                    <div style="font-weight:600; font-size:0.95rem; color:var(--bt-text);">
+                        <i class="ri-stack-line"></i> ${lib.libraryName}
+                    </div>
+                    <div>
+                        @if(lib.pathAccessible)
+                            <span class="text-sm" style="color:var(--bt-accent-dim);"><i class="ri-check-line"></i> ${pc.i18n.translate("page.health.accessible")}</span>
+                        @else
+                            <span class="text-sm" style="color:var(--bt-danger);"><i class="ri-close-line"></i> ${pc.i18n.translate("page.health.inaccessible")}</span>
+                        @endif
+                    </div>
+                </div>
+                <div class="text-sm text-subtle" style="margin-bottom:0.5rem;">
+                    ${lib.totalBooks} ${pc.i18n.translate("label.books")} &middot; ${lib.issueCount} ${pc.i18n.translate("page.health.issues")}
+                </div>
+                @if(lib.issues.isNotEmpty())
+                    @for(issue in lib.issues)
+                        <div style="padding:0.4rem 0.6rem; margin-top:0.3rem; background:var(--bt-icon-bg); border-radius:0.25rem; font-size:0.8rem;">
+                            <span style="color:var(--bt-danger);"><i class="ri-error-warning-line"></i></span>
+                            <strong>${issue.bookTitle}</strong>: ${issue.issue}
+                        </div>
+                    @endfor
+                @endif
+            </div>
+        @endfor
+    </div>
+</div>
+`)
