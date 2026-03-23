@@ -284,6 +284,7 @@ val appModule =
                 getOrNull<org.booktower.services.LibraryStatsService>(),
                 getOrNull<org.booktower.services.WebhookService>(),
                 getOrNull<org.booktower.services.ReadingTimelineService>(),
+                getOrNull<org.booktower.services.DiscoveryService>(),
             )
         }
         single { BackgroundTaskHandler(get(), get()) }
