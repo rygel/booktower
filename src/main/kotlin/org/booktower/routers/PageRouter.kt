@@ -70,6 +70,7 @@ class PageRouter(
             "/library-health" bind Method.GET to filters.auth.then(pageHandler::libraryHealth),
             "/hardcover-settings" bind Method.GET to filters.auth.then(pageHandler::hardcoverSettings),
             "/book-delivery" bind Method.GET to filters.auth.then(pageHandler::bookDelivery),
+            "/ui/isbn/lookup" bind Method.POST to pageHandler::isbnLookup,
             "/ui/preferences/analytics" bind Method.POST to pageHandler::setAnalytics,
             "/admin" bind Method.GET to filters.admin.then(adminHandler::adminPage),
             // HTMX UI mutations
