@@ -250,6 +250,13 @@ abstract class IntegrationTestBase {
                 null, // discoveryService
                 org.booktower.services.ReadingListService(jdbi),
                 org.booktower.services.WishlistService(jdbi),
+                org.booktower.services.CollectionService(jdbi),
+                koboSyncService,
+                koreaderSyncService,
+                filterPresetService,
+                scheduledTaskService,
+                opdsCredentialsService,
+                contentRestrictionsService,
             )
         val backgroundTaskHandler = BackgroundTaskHandler(backgroundTaskService)
         val journalHandler = JournalHandler(journalService)
@@ -330,6 +337,7 @@ abstract class IntegrationTestBase {
                 readingListService = org.booktower.services.ReadingListService(jdbi),
                 wishlistService = org.booktower.services.WishlistService(jdbi),
                 annotationService = annotationService,
+                collectionService = org.booktower.services.CollectionService(jdbi),
             )
         val adminApiRouter =
             AdminApiRouter(

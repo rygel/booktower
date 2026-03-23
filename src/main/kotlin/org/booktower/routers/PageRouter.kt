@@ -58,6 +58,12 @@ class PageRouter(
             "/webhooks" bind Method.GET to filters.auth.then(pageHandler::webhooks),
             "/reading-lists" bind Method.GET to filters.auth.then(pageHandler::readingLists),
             "/wishlist" bind Method.GET to filters.auth.then(pageHandler::wishlist),
+            "/collections" bind Method.GET to filters.auth.then(pageHandler::collections),
+            "/devices" bind Method.GET to filters.auth.then(pageHandler::devices),
+            "/filter-presets" bind Method.GET to filters.auth.then(pageHandler::filterPresets),
+            "/scheduled-tasks" bind Method.GET to filters.admin.then(pageHandler::scheduledTasks),
+            "/opds-settings" bind Method.GET to filters.auth.then(pageHandler::opdsSettings),
+            "/content-restrictions" bind Method.GET to filters.auth.then(pageHandler::contentRestrictions),
             "/ui/preferences/analytics" bind Method.POST to pageHandler::setAnalytics,
             "/admin" bind Method.GET to filters.admin.then(adminHandler::adminPage),
             // HTMX UI mutations

@@ -57,6 +57,13 @@ class PageHandler(
     private val discoveryService: org.booktower.services.DiscoveryService? = null,
     private val readingListService: org.booktower.services.ReadingListService? = null,
     private val wishlistService: org.booktower.services.WishlistService? = null,
+    private val collectionService: org.booktower.services.CollectionService? = null,
+    private val koboSyncService: org.booktower.services.KoboSyncService? = null,
+    private val koreaderSyncService: org.booktower.services.KOReaderSyncService? = null,
+    private val filterPresetService: org.booktower.services.FilterPresetService? = null,
+    private val scheduledTaskService: org.booktower.services.ScheduledTaskService? = null,
+    private val opdsCredentialsService: org.booktower.services.OpdsCredentialsService? = null,
+    private val contentRestrictionsService: org.booktower.services.ContentRestrictionsService? = null,
 ) {
     /** Build a PageContext for any authenticated request. */
     private fun pageContext(req: Request): org.booktower.web.PageContext =
@@ -580,6 +587,89 @@ class PageHandler(
             templateRenderer.render(
                 "readinglists.kte",
                 pc.toMap("lists" to lists),
+            ),
+        )
+    }
+
+    fun collections(req: Request): Response {
+        val userId = auth(req) ?: return redirectToLogin()
+        val pc = pageContext(req)
+        val collections = collectionService?.getCollections(userId) ?: emptyList()
+        return htmlOk(
+            templateRenderer.render(
+                "collections.kte",
+                pc.toMap("collections" to collections),
+            ),
+        )
+    }
+
+    fun devices(req: Request): Response {
+        val userId = auth(req) ?: return redirectToLogin()
+        val pc = pageContext(req)
+        val koboDevices = koboSyncService?.listDevices(userId) ?: emptyList()
+        val koreaderDevices = koreaderSyncService?.listDevices(userId) ?: emptyList()
+        return htmlOk(
+            templateRenderer.render(
+                "devices.kte",
+                pc.toMap(
+                    "koboDevices" to koboDevices,
+                    "koreaderDevices" to koreaderDevices,
+                ),
+            ),
+        )
+    }
+
+    fun filterPresets(req: Request): Response {
+        val userId = auth(req) ?: return redirectToLogin()
+        val pc = pageContext(req)
+        val presets = filterPresetService?.list(userId) ?: emptyList()
+        return htmlOk(
+            templateRenderer.render(
+                "filter-presets.kte",
+                pc.toMap("presets" to presets),
+            ),
+        )
+    }
+
+    fun scheduledTasks(req: Request): Response {
+        val userId = auth(req) ?: return redirectToLogin()
+        if (!authIsAdmin(req)) return Response(Status.FORBIDDEN)
+        val pc = pageContext(req)
+        val tasks = scheduledTaskService?.list() ?: emptyList()
+        return htmlOk(
+            templateRenderer.render(
+                "scheduled-tasks.kte",
+                pc.toMap("tasks" to tasks),
+            ),
+        )
+    }
+
+    fun opdsSettings(req: Request): Response {
+        val userId = auth(req) ?: return redirectToLogin()
+        val pc = pageContext(req)
+        val creds = opdsCredentialsService?.getCredentials(userId)
+        return htmlOk(
+            templateRenderer.render(
+                "opds-settings.kte",
+                pc.toMap(
+                    "hasCredentials" to (creds != null),
+                    "opdsUsername" to (creds?.opdsUsername ?: ""),
+                ),
+            ),
+        )
+    }
+
+    fun contentRestrictions(req: Request): Response {
+        val userId = auth(req) ?: return redirectToLogin()
+        val pc = pageContext(req)
+        val restrictions = contentRestrictionsService?.get(userId)
+        return htmlOk(
+            templateRenderer.render(
+                "content-restrictions.kte",
+                pc.toMap(
+                    "maxAgeRating" to (restrictions?.maxAgeRating ?: ""),
+                    "blockedTags" to (restrictions?.blockedTags?.joinToString(", ") ?: ""),
+                ),
             ),
         )
     }

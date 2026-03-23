@@ -132,6 +132,10 @@
                     <i class="ri-list-ordered"></i>
                     ${pc.i18n.translate("page.readinglists.title")}
                 </a>
+                <a href="/collections" class="sidebar-link ${if (currentPage == "collections") "active" else ""}">
+                    <i class="ri-folder-line"></i>
+                    ${pc.i18n.translate("page.collections.title")}
+                </a>
                 <a href="/wishlist" class="sidebar-link ${if (currentPage == "wishlist") "active" else ""}">
                     <i class="ri-heart-line"></i>
                     ${pc.i18n.translate("page.wishlist.title")}
@@ -151,6 +155,22 @@
                 <a href="/downloads" class="sidebar-link ${if (currentPage == "downloads") "active" else ""}">
                     <i class="ri-download-line"></i>
                     ${pc.i18n.translate("nav.downloads")}
+                </a>
+                <a href="/devices" class="sidebar-link ${if (currentPage == "devices") "active" else ""}">
+                    <i class="ri-tablet-line"></i>
+                    ${pc.i18n.translate("page.devices.title")}
+                </a>
+                <a href="/filter-presets" class="sidebar-link ${if (currentPage == "filter-presets") "active" else ""}">
+                    <i class="ri-filter-3-line"></i>
+                    ${pc.i18n.translate("page.filterpresets.title")}
+                </a>
+                <a href="/opds-settings" class="sidebar-link ${if (currentPage == "opds-settings") "active" else ""}">
+                    <i class="ri-rss-line"></i>
+                    ${pc.i18n.translate("page.opds.title")}
+                </a>
+                <a href="/content-restrictions" class="sidebar-link ${if (currentPage == "content-restrictions") "active" else ""}">
+                    <i class="ri-shield-check-line"></i>
+                    ${pc.i18n.translate("page.restrictions.title")}
                 </a>
                 <a href="/profile" class="sidebar-link ${if (currentPage == "profile") "active" else ""}">
                     <i class="ri-user-settings-line"></i>

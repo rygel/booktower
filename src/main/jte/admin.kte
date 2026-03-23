@@ -404,4 +404,59 @@
     function escHtml(s) { var d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
 }());
 </script>
+
+<!-- Batch Import from Directory -->
+<div class="card card-pad" style="margin-top:1rem;" id="batch-import-section">
+    <h2 class="profile-section-title">
+        <i class="ri-folder-add-line"></i>
+        ${pc.i18n.translate("page.admin.import.title")}
+    </h2>
+    <p class="text-sm text-subtle" style="margin-bottom:1rem;">${pc.i18n.translate("page.admin.import.description")}</p>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; margin-bottom:0.75rem;">
+        <div>
+            <label class="text-sm text-subtle" style="display:block; margin-bottom:0.2rem;">${pc.i18n.translate("page.admin.import.path")}</label>
+            <input type="text" id="import-path" placeholder="/data/books" style="width:100%; padding:0.5rem;">
+        </div>
+        <div>
+            <label class="text-sm text-subtle" style="display:block; margin-bottom:0.2rem;">${pc.i18n.translate("page.admin.import.library")}</label>
+            <select id="import-library" style="width:100%; padding:0.5rem;">
+                <option value="">—</option>
+            </select>
+        </div>
+    </div>
+    <button id="import-btn" class="btn-primary flex-center gap-sm" style="padding:0.6rem 1.25rem;">
+        <i class="ri-upload-line"></i> ${pc.i18n.translate("page.admin.import.start")}
+    </button>
+    <span id="import-status" class="text-sm text-subtle" style="margin-left:0.75rem;"></span>
+</div>
+
+<script>
+(function() {
+    // Load libraries into select
+    fetch('/api/settings').catch(function(){});
+    var libSelect = document.getElementById('import-library');
+    // We need to get libraries - use a simple approach
+    var importBtn = document.getElementById('import-btn');
+    var importStatus = document.getElementById('import-status');
+
+    importBtn.addEventListener('click', function() {
+        var path = document.getElementById('import-path').value.trim();
+        var libraryId = libSelect.value;
+        if (!path) { importStatus.textContent = 'Path is required'; return; }
+        if (!libraryId) { importStatus.textContent = 'Select a library'; return; }
+        importStatus.textContent = 'Importing...';
+        fetch('/api/admin/import/directory', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: path, libraryId: libraryId })
+        }).then(function(r) { return r.json(); }).then(function(data) {
+            importStatus.textContent = data.queued + ' file(s) queued, ' + data.alreadyImported + ' already imported.';
+            importStatus.style.color = '#34d399';
+        }).catch(function(e) {
+            importStatus.textContent = 'Failed: ' + e.message;
+            importStatus.style.color = 'var(--bt-danger)';
+        });
+    });
+}());
+</script>
 `)

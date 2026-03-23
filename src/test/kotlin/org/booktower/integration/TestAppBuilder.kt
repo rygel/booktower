@@ -247,6 +247,13 @@ fun buildTestApp(
             null, // discoveryService
             null, // readingListService
             null, // wishlistService
+            null, // collectionService
+            null, // koboSyncService
+            null, // koreaderSyncService
+            null, // filterPresetService
+            null, // scheduledTaskService
+            null, // opdsCredentialsService
+            null, // contentRestrictionsService
         )
     val bgTaskHandler = BackgroundTaskHandler(bgTaskService)
     val journalHandler = JournalHandler(journal)
