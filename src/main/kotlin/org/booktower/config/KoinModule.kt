@@ -431,6 +431,12 @@ val appModule =
                 get<BookDropService>(),
             )
         }
+        single { org.booktower.handlers.CollectionApiHandler(get<org.booktower.services.CollectionService>()) }
+        single { org.booktower.handlers.ReadingListApiHandler(get<org.booktower.services.ReadingListService>()) }
+        single { org.booktower.handlers.WishlistApiHandler(get<org.booktower.services.WishlistService>()) }
+        single { org.booktower.handlers.WebhookApiHandler(get<org.booktower.services.WebhookService>()) }
+        single { org.booktower.handlers.NotificationApiHandler(get<NotificationService>()) }
+        single { org.booktower.handlers.CustomFieldApiHandler(get<org.booktower.services.CustomFieldService>()) }
         single {
             UserApiRouter(
                 filters = get<FilterSet>(),
@@ -444,28 +450,28 @@ val appModule =
                 filterPresetService = get<FilterPresetService>(),
                 telemetryService = get<TelemetryService>(),
                 bookDeliveryService = get<BookDeliveryService>(),
-                notificationService = get<NotificationService>(),
                 backgroundTaskHandler = get<BackgroundTaskHandler>(),
                 apiTokenHandler = get<ApiTokenHandler>(),
                 exportHandler = get<ExportHandler>(),
                 goodreadsImportHandler = get<GoodreadsImportHandler>(),
-                collectionService = get<org.booktower.services.CollectionService>(),
+                collectionApiHandler = get<org.booktower.handlers.CollectionApiHandler>(),
                 auditService = get<org.booktower.services.AuditService>(),
                 libraryStatsService = get<org.booktower.services.LibraryStatsService>(),
-                webhookService = get<org.booktower.services.WebhookService>(),
+                webhookApiHandler = get<org.booktower.handlers.WebhookApiHandler>(),
                 readingTimelineService = get<org.booktower.services.ReadingTimelineService>(),
                 readingGoalService = get<org.booktower.services.ReadingGoalService>(),
                 annotationExportService = get<org.booktower.services.AnnotationExportService>(),
                 discoveryService = get<org.booktower.services.DiscoveryService>(),
                 positionSyncService = get<org.booktower.services.PositionSyncService>(),
-                customFieldService = get<org.booktower.services.CustomFieldService>(),
+                customFieldApiHandler = get<org.booktower.handlers.CustomFieldApiHandler>(),
                 publicProfileService = get<org.booktower.services.PublicProfileService>(),
                 readingSpeedService = get<org.booktower.services.ReadingSpeedService>(),
                 bookConditionService = get<org.booktower.services.BookConditionService>(),
-                readingListService = get<org.booktower.services.ReadingListService>(),
+                readingListApiHandler = get<org.booktower.handlers.ReadingListApiHandler>(),
                 annotationService = get<org.booktower.services.AnnotationService>(),
-                wishlistService = get<org.booktower.services.WishlistService>(),
+                wishlistApiHandler = get<org.booktower.handlers.WishlistApiHandler>(),
                 advancedSearchService = get<org.booktower.services.AdvancedSearchService>(),
+                notificationApiHandler = get<org.booktower.handlers.NotificationApiHandler>(),
             )
         }
         single {
