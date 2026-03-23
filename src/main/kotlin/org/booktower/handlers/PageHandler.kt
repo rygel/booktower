@@ -451,6 +451,7 @@ class PageHandler(
         val libraries = libraryService.getLibraries(userId)
         val prefDarkTheme = userSettingsService.get(userId, "pref.theme.dark") ?: "catppuccin-mocha"
         val prefLightTheme = userSettingsService.get(userId, "pref.theme.light") ?: "catppuccin-latte"
+        val profilePublic = userSettingsService.get(userId, "profile.public") == "true"
         return htmlOk(
             templateRenderer.render(
                 "profile.kte",
@@ -462,6 +463,7 @@ class PageHandler(
                     "libraries" to libraries,
                     "prefDarkTheme" to prefDarkTheme,
                     "prefLightTheme" to prefLightTheme,
+                    "profilePublic" to profilePublic,
                 ),
             ),
         )
