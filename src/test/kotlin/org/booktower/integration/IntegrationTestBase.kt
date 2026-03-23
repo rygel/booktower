@@ -313,6 +313,13 @@ abstract class IntegrationTestBase {
                 org.booktower.services.BookSharingService(jdbi, bookService),
             )
         val libraryApiRouter = LibraryApiRouter(filters, libraryHandler, libraryService, null, null)
+        val collectionApiHandler = org.booktower.handlers.CollectionApiHandler(org.booktower.services.CollectionService(jdbi))
+        val customFieldService = org.booktower.services.CustomFieldService(jdbi)
+        val customFieldApiHandler = org.booktower.handlers.CustomFieldApiHandler(customFieldService)
+        val webhookApiHandler = org.booktower.handlers.WebhookApiHandler(org.booktower.services.WebhookService(jdbi))
+        val notificationApiHandler = org.booktower.handlers.NotificationApiHandler(notificationService)
+        val readingListApiHandler = org.booktower.handlers.ReadingListApiHandler(org.booktower.services.ReadingListService(jdbi))
+        val wishlistApiHandler = org.booktower.handlers.WishlistApiHandler(org.booktower.services.WishlistService(jdbi))
         val userApiRouter =
             UserApiRouter(
                 filters,
@@ -326,20 +333,20 @@ abstract class IntegrationTestBase {
                 filterPresetService,
                 telemetryService,
                 null,
-                notificationService,
                 backgroundTaskHandler,
                 apiTokenHandler,
                 exportHandler,
                 goodreadsImportHandler,
-                webhookService = org.booktower.services.WebhookService(jdbi),
+                collectionApiHandler = collectionApiHandler,
+                webhookApiHandler = webhookApiHandler,
                 annotationExportService = org.booktower.services.AnnotationExportService(jdbi),
-                customFieldService = org.booktower.services.CustomFieldService(jdbi),
+                customFieldApiHandler = customFieldApiHandler,
                 publicProfileService = org.booktower.services.PublicProfileService(jdbi, userSettingsService),
-                bookConditionService = org.booktower.services.BookConditionService(org.booktower.services.CustomFieldService(jdbi)),
-                readingListService = org.booktower.services.ReadingListService(jdbi),
-                wishlistService = org.booktower.services.WishlistService(jdbi),
+                bookConditionService = org.booktower.services.BookConditionService(customFieldService),
+                readingListApiHandler = readingListApiHandler,
+                wishlistApiHandler = wishlistApiHandler,
                 annotationService = annotationService,
-                collectionService = org.booktower.services.CollectionService(jdbi),
+                notificationApiHandler = notificationApiHandler,
             )
         val adminApiRouter =
             AdminApiRouter(
