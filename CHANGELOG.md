@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.2] - 2026-03-23
+
+### Changed
+
+- **PageHandler refactored** — split 1,279-line god class (33 params, 70 methods) into 5 focused domain handlers: PageHandler (slimmed), BrowsePageHandler, StatsPageHandler, SettingsPageHandler, DiscoveryPageHandler
+- **UserApiRouter refactored** — extracted 33 inline methods (1,381 → 906 lines) into 6 dedicated API handlers: CollectionApiHandler, ReadingListApiHandler, WishlistApiHandler, WebhookApiHandler, NotificationApiHandler, CustomFieldApiHandler
+- **BookService.getBooks() deduplicated** — consolidated 4 near-identical SQL queries into 2 using shared clause builder
+
+### Added
+
+- Caffeine caching for UserSettingsService (5min TTL) and LibraryService.getLibraries() (10min TTL) with proper invalidation on mutations
+- API utility functions: `jsonResponse()`, `jsonError()`, `Request.lastPathUuid()`, `Request.secondToLastPathUuid()`
+- TestPageHandlers factory — centralizes handler construction across all 4 test sites
+- V13 migration: composite index on `book_moods(user_id, mood)`
+- Comprehensive installation guide (`docs/INSTALLATION.md`)
+- Demo instance setup guide (`docs/DEMO.md`)
+- Example configs in `docs/examples/`: 4 Docker Compose variants, Nginx, Caddy, systemd, .env template
+
 ## [0.7.1] - 2026-03-23
 
 ### Fixed
