@@ -149,34 +149,8 @@ class PreferencesIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `all 24 themes render valid CSS`() {
-        val themes =
-            listOf(
-                "dark",
-                "dracula",
-                "one-dark",
-                "monokai",
-                "tokyo-night",
-                "tokyo-storm",
-                "ayu-dark",
-                "night-owl",
-                "rose-pine",
-                "rose-pine-moon",
-                "gruvbox-dark",
-                "everforest",
-                "nord",
-                "material",
-                "github-dark",
-                "solarized-dark",
-                "catppuccin-mocha",
-                "catppuccin-macchiato",
-                "catppuccin-frappe",
-                "catppuccin-latte",
-                "rose-pine-dawn",
-                "gruvbox-light",
-                "solarized-light",
-                "light",
-            )
+    fun `all themes render valid CSS`() {
+        val themes = org.runary.model.ThemeCatalog.allThemes().map { it.id }
         for (themeId in themes) {
             val response =
                 app(
