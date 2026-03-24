@@ -540,7 +540,10 @@ class SeedService(
             }
         }
 
-        logger.info("Demo seed complete for $userId: ${SEED_LIBRARIES.size} libraries, $bookCount books (covers fetching in background)")
+        // Auto-trigger file downloads so books are actually readable
+        seedFiles(userId)
+
+        logger.info("Demo seed complete for $userId: ${SEED_LIBRARIES.size} libraries, $bookCount books (covers + files fetching in background)")
         return SeedResult(SEED_LIBRARIES.size, bookCount)
     }
 
