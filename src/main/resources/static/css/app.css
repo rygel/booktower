@@ -115,8 +115,24 @@ input:focus, select:focus, textarea:focus {
 }
 .bt-sidebar-section {
   font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.1em;
-  color: var(--bt-subtle); padding: 0 0.5rem; margin: 0 0 0.625rem; font-weight: 600;
+  color: var(--bt-subtle); padding: 0 0.5rem; margin: 0 0 0.25rem; font-weight: 600;
 }
+.bt-sidebar-group { border: none; margin: 0; padding: 0; }
+.bt-sidebar-group + .bt-sidebar-group { margin-top: 0.25rem; padding-top: 0.5rem; border-top: 1px solid var(--bt-border); }
+.bt-sidebar-group > summary {
+  font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--bt-subtle); padding: 0.25rem 0.5rem; margin: 0 0 0.25rem; font-weight: 600;
+  list-style: none; cursor: pointer; display: flex; align-items: center; gap: 0.35rem;
+  user-select: none; border-radius: 0.25rem;
+}
+.bt-sidebar-group > summary:hover { color: var(--bt-text); background: var(--bt-hover); }
+.bt-sidebar-group > summary::-webkit-details-marker { display: none; }
+.bt-sidebar-group > summary::before {
+  content: '\ea6e'; font-family: 'remixicon'; font-size: 0.65rem;
+  transition: transform 0.15s ease; display: inline-block;
+}
+.bt-sidebar-group[open] > summary::before { transform: rotate(90deg); }
+.bt-sidebar-group > .bt-sidebar-group-links { display: flex; flex-direction: column; gap: 0.25rem; }
 .bt-sidebar-version {
   padding: 0.5rem 0.875rem; border-top: 1px solid var(--bt-border);
 }
