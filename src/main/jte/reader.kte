@@ -1534,6 +1534,8 @@ var BT_DEVICE = (function() {
                     : '';
             }
 
+            var lastLocation = null;
+
             function initLocations() {
                 var cached = null;
                 try { cached = localStorage.getItem(LOC_KEY); } catch(_) {}
@@ -1559,7 +1561,6 @@ var BT_DEVICE = (function() {
                 }).catch(function() {});
             }
 
-            var lastLocation = null;
             rendition.on('relocated', function (location) {
                 lastLocation = location;
                 updateLocDisplay(location);
