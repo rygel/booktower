@@ -40,7 +40,7 @@ class AuthHandler2(
     private val oidcForceOnly: Boolean = false,
 ) {
     fun register(req: Request): Response {
-        if (!registrationOpen) {
+        if (!registrationOpen && authService.hasUsers()) {
             return Response(Status.FORBIDDEN)
                 .header("Content-Type", "application/json")
                 .body(Json.mapper.writeValueAsString(ErrorResponse("REGISTRATION_CLOSED", "Registration is closed on this server")))

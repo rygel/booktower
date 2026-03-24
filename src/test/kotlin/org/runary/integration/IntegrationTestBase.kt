@@ -285,7 +285,7 @@ abstract class IntegrationTestBase {
         // ── Domain routers ───────────────────────────────────────────────
         val authRouter = AuthRouter(authHandler, filters)
         val oidcRouter = OidcRouter(oidcHandler)
-        val pageRouter = PageRouter(filters, pageHandler, adminHandler, jwtService, TestFixture.templateRenderer, registrationOpen, null, browsePageHandler, statsPageHandler, settingsPageHandler, discoveryPageHandler)
+        val pageRouter = PageRouter(filters, pageHandler, adminHandler, jwtService, TestFixture.templateRenderer, registrationOpen, null, null, browsePageHandler, statsPageHandler, settingsPageHandler, discoveryPageHandler)
         val bookApiRouter =
             BookApiRouter(
                 filters,

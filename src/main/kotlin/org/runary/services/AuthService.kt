@@ -40,6 +40,14 @@ class AuthService(
             return Result.failure(IllegalArgumentException("Username already exists"))
         }
 
+        val isFirstUser =
+            jdbi.withHandle<Int, Exception> { handle ->
+                handle
+                    .createQuery("SELECT COUNT(*) FROM users")
+                    .mapTo(Int::class.java)
+                    .first()
+            } == 0
+
         jdbi.useHandle<Exception> { handle ->
             handle
                 .createUpdate(
@@ -53,8 +61,12 @@ class AuthService(
                 .bind(3, passwordHash)
                 .bind(4, now.toString())
                 .bind(5, now.toString())
-                .bind(6, false)
+                .bind(6, isFirstUser)
                 .execute()
+        }
+
+        if (isFirstUser) {
+            logger.info("First user registered — granted admin rights: ${request.username}")
         }
 
         val user =
@@ -65,7 +77,7 @@ class AuthService(
                 passwordHash = passwordHash,
                 createdAt = now,
                 updatedAt = now,
-                isAdmin = false,
+                isAdmin = isFirstUser,
             )
         val token = jwtService.generateToken(user)
         val refreshToken = issueRefreshToken(userId)
@@ -324,6 +336,14 @@ class AuthService(
             } ?: return null
         return if (BCrypt.checkpw(password, user.passwordHash)) user else null
     }
+
+    fun hasUsers(): Boolean =
+        jdbi.withHandle<Int, Exception> { handle ->
+            handle
+                .createQuery("SELECT COUNT(*) FROM users")
+                .mapTo(Int::class.java)
+                .first()
+        } > 0
 
     fun getUserById(userId: UUID): User? =
         jdbi.withHandle<User?, Exception> { handle ->

@@ -8,6 +8,7 @@ import org.runary.handlers.PageHandler
 import org.runary.handlers.SettingsPageHandler
 import org.runary.handlers.StatsPageHandler
 import org.runary.model.ThemeCatalog
+import org.runary.services.AuthService
 import org.runary.services.JwtService
 import org.runary.services.UserSettingsService
 import org.runary.web.WebContext
@@ -29,12 +30,16 @@ class PageRouter(
     private val jwtService: JwtService,
     private val templateRenderer: TemplateRenderer,
     private val registrationOpen: Boolean,
+    private val authService: AuthService? = null,
     private val userSettingsService: UserSettingsService? = null,
     private val browsePageHandler: BrowsePageHandler? = null,
     private val statsPageHandler: StatsPageHandler? = null,
     private val settingsPageHandler: SettingsPageHandler? = null,
     private val discoveryPageHandler: DiscoveryPageHandler? = null,
 ) {
+    /** Registration is allowed if explicitly enabled OR no users exist yet (initial setup). */
+    private fun isRegistrationAllowed(): Boolean =
+        registrationOpen || !(authService?.hasUsers() ?: true)
     fun routes(): List<RoutingHttpHandler> =
         listOf(
             // HTML pages
@@ -126,7 +131,7 @@ class PageRouter(
                     "libraries" to null,
                     "showLogin" to false,
                     "showRegister" to false,
-                    "registrationOpen" to registrationOpen,
+                    "registrationOpen" to isRegistrationAllowed(),
                     "themeCss" to ctx.themeCss,
                     "currentTheme" to ctx.theme,
                     "lang" to ctx.lang,
@@ -148,7 +153,7 @@ class PageRouter(
                     "libraries" to null,
                     "showLogin" to true,
                     "showRegister" to false,
-                    "registrationOpen" to registrationOpen,
+                    "registrationOpen" to isRegistrationAllowed(),
                     "themeCss" to ctx.themeCss,
                     "currentTheme" to ctx.theme,
                     "lang" to ctx.lang,
@@ -159,7 +164,7 @@ class PageRouter(
     }
 
     private fun registerPage(req: Request): Response {
-        if (!registrationOpen) {
+        if (!isRegistrationAllowed()) {
             return Response(Status.SEE_OTHER).header("Location", "/login")
         }
         val ctx = WebContext(req)
