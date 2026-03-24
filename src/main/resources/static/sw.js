@@ -2,7 +2,6 @@ var CACHE_NAME = 'runary-v1';
 
 var APP_SHELL = [
   '/static/css/app.css',
-  '/static/css/style.css',
   '/static/vendor/remixicon.css',
   '/static/vendor/remixicon.woff2',
   '/static/vendor/htmx.min.js'
