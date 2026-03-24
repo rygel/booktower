@@ -29,7 +29,7 @@ data class AppConfig(
     val csrf: CsrfConfig = CsrfConfig(),
     val smtp: SmtpConfig = SmtpConfig(),
     val baseUrl: String = "",
-    val registrationOpen: Boolean = true,
+    val registrationOpen: Boolean = false,
     val autoScanMinutes: Long = 60L,
     val oidc: OidcConfig = OidcConfig(),
     val metadata: MetadataConfig = MetadataConfig(),
@@ -56,7 +56,7 @@ data class AppConfig(
                     host = env("RUNARY_HOST") ?: app.host,
                     port = env("RUNARY_PORT")?.toIntOrNull() ?: app.port,
                     baseUrl = env("RUNARY_BASE_URL") ?: app.baseUrl.ifBlank { "http://${app.host}:${app.port}" },
-                    registrationOpen = env("RUNARY_REGISTRATION_OPEN")?.lowercase() != "false" && app.registrationOpen,
+                    registrationOpen = env("RUNARY_REGISTRATION_OPEN")?.lowercase() == "true" || app.registrationOpen,
                     autoScanMinutes = env("RUNARY_AUTO_SCAN_MINUTES")?.toLongOrNull() ?: app.autoScanMinutes,
                     demoMode = env("RUNARY_DEMO_MODE")?.lowercase() == "true" || app.demoMode,
                     database =
