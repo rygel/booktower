@@ -108,11 +108,19 @@
         } catch (e) {}
     }
 
+    function stopPolling() {
+        if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+        if (sse) { sse.close(); sse = null; }
+    }
+
     function startPolling() {
         if (pollTimer) return;
         pollTimer = setInterval(function () {
             fetch('/api/notifications/count', { credentials: 'same-origin' })
-                .then(function (r) { return r.ok ? r.json() : null; })
+                .then(function (r) {
+                    if (r.status === 401 || r.status === 403) { stopPolling(); return null; }
+                    return r.ok ? r.json() : null;
+                })
                 .then(function (d) {
                     if (!d) return;
                     if (d.count > knownCount) {
@@ -127,17 +135,24 @@
         }, POLL_INTERVAL);
     }
 
+    var sseRetries = 0;
+    var MAX_SSE_RETRIES = 3;
+
     function startSSE() {
         if (!window.EventSource) { startPolling(); return; }
         sse = new EventSource('/api/notifications/stream');
-        sse.addEventListener('notification', function (e) { onNotification(e.data); });
-        sse.addEventListener('heartbeat', function () {});
+        sse.addEventListener('notification', function (e) { sseRetries = 0; onNotification(e.data); });
+        sse.addEventListener('heartbeat', function () { sseRetries = 0; });
         sse.onerror = function () {
             sse.close();
             sse = null;
-            // EventSource auto-reconnects but also start polling as backup
+            sseRetries++;
+            if (sseRetries > MAX_SSE_RETRIES) {
+                // Too many failures (likely 401) — stop all polling
+                stopPolling();
+                return;
+            }
             startPolling();
-            // Try re-opening SSE after POLL_INTERVAL
             setTimeout(function () {
                 if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
                 startSSE();
@@ -147,7 +162,10 @@
 
     // Initial count fetch + start real-time transport
     fetch('/api/notifications/count', { credentials: 'same-origin' })
-        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (r) {
+            if (r.status === 401 || r.status === 403) return null;
+            return r.ok ? r.json() : null;
+        })
         .then(function (d) { if (d) setBadge(d.count); })
         .catch(function () {});
 

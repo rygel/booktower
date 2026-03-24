@@ -10,9 +10,15 @@
         document.dispatchEvent(new CustomEvent('showToast', {detail: {message: message, type: type || 'info'}}));
     }
 
+    var authFailed = false;
+
     function pollTasks() {
+        if (authFailed) return;
         fetch('/api/tasks')
-            .then(function(r) { return r.ok ? r.json() : []; })
+            .then(function(r) {
+                if (r.status === 401 || r.status === 403) { authFailed = true; return []; }
+                return r.ok ? r.json() : [];
+            })
             .then(function(tasks) {
                 var running = tasks.filter(function(t) { return t.status === 'RUNNING'; });
                 var runningIds = new Set(running.map(function(t) { return t.id; }));
