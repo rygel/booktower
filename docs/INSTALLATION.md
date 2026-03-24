@@ -235,7 +235,8 @@ Caddy is the easiest reverse proxy — it automatically provisions HTTPS via Let
 
 ```bash
 curl -O https://raw.githubusercontent.com/rygel/runary/main/docs/examples/docker-compose.caddy.yml
-# Edit the file — change domain, JWT secret, and passwords
+curl -O https://raw.githubusercontent.com/rygel/runary/main/docs/examples/Caddyfile
+# Edit both files — set your domain, JWT secret, and passwords
 docker compose -f docker-compose.caddy.yml up -d
 ```
 
@@ -244,7 +245,11 @@ See [`docs/examples/docker-compose.caddy.yml`](examples/docker-compose.caddy.yml
 **Or manually** — add to your existing Caddyfile:
 ```
 books.example.com {
-    reverse_proxy localhost:9999
+    # Standalone Caddy on the host:
+    reverse_proxy localhost:8080
+
+    # Or if Caddy runs in Docker on the same network as Runary:
+    # reverse_proxy runary:8080
 }
 ```
 
@@ -255,6 +260,12 @@ RUNARY_CSRF_ALLOWED_HOSTS=books.example.com
 ```
 
 Caddy automatically forwards `Host`, `X-Forwarded-For`, and `X-Forwarded-Proto` headers.
+
+> [!WARNING]
+> **Docker networking pitfall:** When Caddy and Runary run in Docker on the same network, Caddy must use the **container port** (default `8080`), not the host-mapped port. For example, if your `docker-compose.yml` maps `"9999:8080"`, the Caddyfile must still use `reverse_proxy runary:8080`. Using the host port (9999) from inside Docker will result in "connection refused" errors.
+
+> [!IMPORTANT]
+> **CSRF configuration:** Every domain that accesses Runary must be listed in `RUNARY_CSRF_ALLOWED_HOSTS`. Without this, POST requests (login, logout, uploads) will fail with 403 errors. If you run multiple instances (e.g. production and demo), each needs its own `RUNARY_CSRF_ALLOWED_HOSTS` matching its own domain.
 
 ## Device Sync
 
