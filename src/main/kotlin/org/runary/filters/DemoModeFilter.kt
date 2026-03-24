@@ -25,7 +25,7 @@ class DemoModeFilter(
         { req: Request ->
             if (enabled &&
                 req.method in mutatingMethods &&
-                req.uri.path.startsWith("/api/") &&
+                (req.uri.path.startsWith("/api/") || req.uri.path.startsWith("/ui/")) &&
                 req.uri.path !in allowedPostPaths
             ) {
                 demoBlockedResponse

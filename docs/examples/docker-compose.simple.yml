@@ -16,6 +16,9 @@ services:
     environment:
       RUNARY_ENV: production
       RUNARY_JWT_SECRET: "change-me-generate-with-openssl-rand-base64-32"
+      # If accessing from a domain or IP (not localhost), set these:
+      # RUNARY_CSRF_ALLOWED_HOSTS: "yourdomain.com"
+      # RUNARY_BASE_URL: "https://yourdomain.com"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
