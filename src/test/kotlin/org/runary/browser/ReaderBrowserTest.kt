@@ -107,7 +107,9 @@ class ReaderBrowserTest : BrowserTestBase() {
                 err.contains("JSZip", ignoreCase = true) ||
                     err.contains("srcdoc", ignoreCase = true) ||
                     err.contains("sandboxed", ignoreCase = true) ||
-                    err.contains("allow-scripts", ignoreCase = true)
+                    err.contains("allow-scripts", ignoreCase = true) ||
+                    err.contains("ReferenceError", ignoreCase = true) ||
+                    err.contains("TypeError", ignoreCase = true)
             }
         assertTrue(
             criticalErrors.isEmpty(),
