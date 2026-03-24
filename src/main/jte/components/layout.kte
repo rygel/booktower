@@ -221,7 +221,7 @@
     <footer class="bt-footer">
         <div class="bt-footer-inner">
             <span>&copy; 2026 Runary v${org.runary.services.VersionService.info.display}. ${pc.i18n.translate("footer.rights")}</span>
-            <span>${pc.i18n.translate("footer.made.with")} <i class="ri-heart-fill" style="color:var(--bt-danger);"></i> Kotlin &amp; http4k</span>
+            <span>${pc.i18n.translate("footer.made.with")} <i class="ri-book-shelf-line" style="color:var(--bt-danger);"></i></span>
         </div>
     </footer>
 
