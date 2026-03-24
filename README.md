@@ -2,7 +2,7 @@
 
 A self-hosted personal book, audiobook, and comic manager with a built-in reader and rich metadata support.
 
-[![Version](https://img.shields.io/badge/version-0.7.2-blue)](https://github.com/rygel/runary/releases)
+[![Version](https://img.shields.io/badge/version-0.7.3-blue)](https://github.com/rygel/runary/releases)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-green)](LICENSE)
 [![Docker](https://img.shields.io/badge/docker-ghcr.io%2Frygel%2Frunary-blue)](https://ghcr.io/rygel/runary)
 

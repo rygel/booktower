@@ -6,7 +6,7 @@
 
     <groupId>org.runary</groupId>
     <artifactId>runary</artifactId>
-    <version>0.7.2</version>
+    <version>0.7.3</version>
     <packaging>jar</packaging>
 
     <properties>
