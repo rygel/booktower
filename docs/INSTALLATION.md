@@ -19,6 +19,12 @@ docker run -d --name runary \
 
 Open http://localhost:9999 and register your first account. The first registered user becomes admin.
 
+> **Accessing from a domain or IP other than localhost?** You must set `RUNARY_CSRF_ALLOWED_HOSTS` to your domain/IP, otherwise you'll get a "Cross-site request blocked" error:
+> ```bash
+> -e RUNARY_CSRF_ALLOWED_HOSTS="yourdomain.com"
+> -e RUNARY_BASE_URL="https://yourdomain.com"
+> ```
+
 ## Docker Compose (Recommended)
 
 ### Simple Setup (H2 Embedded Database)
@@ -223,7 +229,43 @@ RUNARY_CSRF_ALLOWED_HOSTS=books.example.com
 
 ### Caddy
 
-See [`docs/examples/Caddyfile`](examples/Caddyfile). Caddy auto-provisions HTTPS and forwards all required headers.
+Caddy is the easiest reverse proxy — it automatically provisions HTTPS via Let's Encrypt with zero configuration.
+
+**Quick start with Caddy + Docker Compose:**
+
+```bash
+curl -O https://raw.githubusercontent.com/rygel/runary/main/docs/examples/docker-compose.caddy.yml
+curl -O https://raw.githubusercontent.com/rygel/runary/main/docs/examples/Caddyfile
+# Edit both files — set your domain, JWT secret, and passwords
+docker compose -f docker-compose.caddy.yml up -d
+```
+
+See [`docs/examples/docker-compose.caddy.yml`](examples/docker-compose.caddy.yml) and [`docs/examples/Caddyfile`](examples/Caddyfile).
+
+**Or manually** — add to your existing Caddyfile:
+```
+books.example.com {
+    # Standalone Caddy on the host:
+    reverse_proxy localhost:8080
+
+    # Or if Caddy runs in Docker on the same network as Runary:
+    # reverse_proxy runary:8080
+}
+```
+
+Then set on the Runary container:
+```bash
+RUNARY_BASE_URL=https://books.example.com
+RUNARY_CSRF_ALLOWED_HOSTS=books.example.com
+```
+
+Caddy automatically forwards `Host`, `X-Forwarded-For`, and `X-Forwarded-Proto` headers.
+
+> [!WARNING]
+> **Docker networking pitfall:** When Caddy and Runary run in Docker on the same network, Caddy must use the **container port** (default `8080`), not the host-mapped port. For example, if your `docker-compose.yml` maps `"9999:8080"`, the Caddyfile must still use `reverse_proxy runary:8080`. Using the host port (9999) from inside Docker will result in "connection refused" errors.
+
+> [!IMPORTANT]
+> **CSRF configuration:** Every domain that accesses Runary must be listed in `RUNARY_CSRF_ALLOWED_HOSTS`. Without this, POST requests (login, logout, uploads) will fail with 403 errors. If you run multiple instances (e.g. production and demo), each needs its own `RUNARY_CSRF_ALLOWED_HOSTS` matching its own domain.
 
 ## Device Sync
 
@@ -313,6 +355,7 @@ All example configurations are in [`docs/examples/`](examples/):
 | [`docker-compose.simple.yml`](examples/docker-compose.simple.yml) | Simple setup with H2 |
 | [`docker-compose.postgres.yml`](examples/docker-compose.postgres.yml) | PostgreSQL + FTS |
 | [`docker-compose.full.yml`](examples/docker-compose.full.yml) | Full production (PG + OIDC + SMTP) |
+| [`docker-compose.caddy.yml`](examples/docker-compose.caddy.yml) | Caddy reverse proxy (auto HTTPS) |
 | [`docker-compose.demo.yml`](examples/docker-compose.demo.yml) | Demo instance with sample data |
 | [`.env.example`](examples/.env.example) | Environment variable template |
 | [`nginx.conf`](examples/nginx.conf) | Nginx reverse proxy |

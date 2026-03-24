@@ -74,9 +74,11 @@
                     @endif
                     <span class="bt-username">${pc.username}</span>
                 </a>
-                <button hx-post="/auth/logout" class="btn-outline btn-danger">
-                    ${pc.i18n.translate("auth.logout")}
-                </button>
+                <form action="/auth/logout" method="post" style="display:inline;">
+                    <button type="submit" class="btn-outline btn-danger">
+                        ${pc.i18n.translate("auth.logout")}
+                    </button>
+                </form>
             </div>
         </div>
     </header>

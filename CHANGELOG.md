@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.3] - 2026-03-24
+
+### Added
+
+- **First registered user auto-admin** — the first user to register becomes admin automatically, and registration closes after that
+- Docker Compose + Caddy example with automatic HTTPS (`docker-compose.caddy.yml`)
+- CSRF setup guide and Docker networking pitfall documentation
+- PostgreSQL Docker Compose example in docs
+
+### Fixed
+
+- **Logout button not working** — changed from HTMX POST (silently failed CSRF) to regular form POST
+- **Demo mode not blocking UI mutations** — DemoModeFilter now blocks `/ui/*` POST/PUT/DELETE in addition to `/api/*`
+- **Service worker cache error** — removed non-existent `/static/css/style.css` from APP_SHELL cache list
+- **EPUB reader `lastLocation` ReferenceError** — moved variable declaration before function that references it
+- **Demo seed not downloading book files** — `seed()` now auto-triggers `seedFiles()` so books are readable, not just metadata
+- **Flaky Windows search test** — `UserWorkflowE2ETest` now falls back to list endpoint when async EPUB title extraction races
+
 ## [0.7.2] - 2026-03-23
 
 ### Changed

@@ -1,0 +1,98 @@
+# Runary — Docker Compose with Caddy (automatic HTTPS)
+# Caddy provisions Let's Encrypt certificates automatically.
+#
+# Setup:
+#   1. Edit this file — set your domain and passwords
+#   2. Edit the Caddyfile — set your domain
+#   3. Point your domain's DNS to this server's IP
+#   4. docker compose -f docker-compose.caddy.yml up -d
+#   5. Access at: https://yourdomain.com
+#
+# The first user to register becomes admin.
+# After that, registration is closed unless you set RUNARY_REGISTRATION_OPEN=true.
+
+services:
+  runary:
+    image: ghcr.io/rygel/runary:latest
+    container_name: runary
+    restart: unless-stopped
+    # No host ports — Caddy handles external traffic via the Docker network.
+    # IMPORTANT: Caddy connects to the *container* port (8080), not a host-mapped port.
+    expose:
+      - "8080"
+    volumes:
+      - runary_db:/data/db
+      - runary_books:/data/books
+      - runary_covers:/data/covers
+      # Mount your local book collection (read-only):
+      # - /path/to/your/books:/mnt/library:ro
+    environment:
+      RUNARY_ENV: production
+      # REQUIRED — generate with: openssl rand -base64 32
+      RUNARY_JWT_SECRET: "change-me-generate-with-openssl-rand-base64-32"
+      # Set to your domain
+      RUNARY_BASE_URL: "https://books.example.com"
+      RUNARY_CSRF_ALLOWED_HOSTS: "books.example.com"
+      # Registration — open for first user, then closed by default.
+      # Set to "true" to allow new sign-ups after the admin account is created.
+      # RUNARY_REGISTRATION_OPEN: "true"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  # ── PostgreSQL (recommended for production) ─────────────────────────────────
+  # Uncomment this section and the RUNARY_DB_* variables above for PostgreSQL.
+  # Without it, Runary uses an embedded H2 file-based database (zero-config).
+  #
+  # postgres:
+  #   image: postgres:16-alpine
+  #   container_name: runary-postgres
+  #   restart: unless-stopped
+  #   volumes:
+  #     - runary_pgdata:/var/lib/postgresql/data
+  #   environment:
+  #     POSTGRES_DB: runary
+  #     POSTGRES_USER: runary
+  #     POSTGRES_PASSWORD: "change-me-to-a-strong-password"
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U runary"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+  #
+  # When using PostgreSQL, add these to the runary service environment:
+  #   RUNARY_DB_URL: "jdbc:postgresql://postgres:5432/runary"
+  #   RUNARY_DB_USERNAME: "runary"
+  #   RUNARY_DB_PASSWORD: "change-me-to-a-strong-password"
+  #   RUNARY_DB_DRIVER: "org.postgresql.Driver"
+  # And add to the runary service:
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: runary-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"  # HTTP/3
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      runary:
+        condition: service_healthy
+
+volumes:
+  runary_db:
+  runary_books:
+  runary_covers:
+  # runary_pgdata:
+  caddy_data:
+  caddy_config:

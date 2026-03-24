@@ -40,7 +40,7 @@ class PageIntegrationTest : IntegrationTestBase() {
 
         val response = app(Request(Method.GET, "/libraries").header("Cookie", "token=$token"))
         assertEquals(Status.OK, response.status)
-        assertTrue(response.bodyString().contains("hx-post=\"/auth/logout\""))
+        assertTrue(response.bodyString().contains("action=\"/auth/logout\""))
     }
 
     @Test

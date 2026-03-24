@@ -156,7 +156,7 @@ class FormSubmissionIntegrationTest : IntegrationTestBase() {
 
         val indexResponse = app(Request(Method.GET, "/libraries").header("Cookie", "token=$token"))
         assertEquals(Status.OK, indexResponse.status)
-        assertTrue(indexResponse.bodyString().contains("hx-post=\"/auth/logout\""))
+        assertTrue(indexResponse.bodyString().contains("action=\"/auth/logout\""))
     }
 
     @Test

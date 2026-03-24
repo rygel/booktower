@@ -388,6 +388,7 @@ val appModule =
                 get<JwtService>(),
                 get<TemplateRenderer>(),
                 get<AppConfig>().registrationOpen,
+                get<AuthService>(),
                 get<UserSettingsService>(),
                 get<BrowsePageHandler>(),
                 get<StatsPageHandler>(),

@@ -337,7 +337,7 @@ class FtsHttpE2ETest {
             val authRouter = org.runary.routers.AuthRouter(authHandler, filters)
             val oidcRouter = org.runary.routers.OidcRouter(null)
             val pageRouter =
-                org.runary.routers.PageRouter(filters, pageHandler, adminHandler, jwtService, templateRenderer, true, null, browsePageHandler, statsPageHandler, settingsPageHandler, discoveryPageHandler)
+                org.runary.routers.PageRouter(filters, pageHandler, adminHandler, jwtService, templateRenderer, true, null, null, browsePageHandler, statsPageHandler, settingsPageHandler, discoveryPageHandler)
             val bookApiRouter =
                 org.runary.routers.BookApiRouter(
                     filters,

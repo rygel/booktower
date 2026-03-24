@@ -202,7 +202,7 @@ class AlternativeCoverIntegrationTest {
         // Routers — inject stubCoverService into BookApiRouter
         val authRouter = AuthRouter(authHandler, filters)
         val oidcRouter = OidcRouter(null)
-        val pageRouter = PageRouter(filters, pageHandler, adminHandler, jwtService, TestFixture.templateRenderer, true, null, browsePageHandler, statsPageHandler, settingsPageHandler, discoveryPageHandler)
+        val pageRouter = PageRouter(filters, pageHandler, adminHandler, jwtService, TestFixture.templateRenderer, true, null, null, browsePageHandler, statsPageHandler, settingsPageHandler, discoveryPageHandler)
         val bookApiRouter =
             BookApiRouter(
                 filters,
