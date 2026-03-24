@@ -261,35 +261,6 @@
     }
   },
   {
-    "id": "gruvbox-dark",
-    "name": "Gruvbox Dark",
-    "type": "dark",
-    "colors": {
-      "bg": "#282828",
-      "surface": "#3c3836",
-      "border": "#504945",
-      "borderInput": "#665c54",
-      "text": "#ebdbb2",
-      "textDim": "#d5c4a1",
-      "muted": "#bdae93",
-      "subtle": "#928374",
-      "faint": "#7c6f64",
-      "accent": "#fabd2f",
-      "accentDark": "#e6a920",
-      "accentDim": "#ffd153",
-      "danger": "#fb4934",
-      "dangerBg": "rgba(251,73,52,0.1)",
-      "inputBg": "#3c3836",
-      "badgeBg": "#3c3836",
-      "badgeText": "#fabd2f",
-      "iconBg": "#504945",
-      "iconText": "#fabd2f",
-      "scrollTrack": "#282828",
-      "scrollThumb": "#504945",
-      "scrollHover": "#665c54"
-    }
-  },
-  {
     "id": "everforest",
     "name": "Everforest",
     "type": "dark",
@@ -345,35 +316,6 @@
       "scrollTrack": "#2e3440",
       "scrollThumb": "#434c5e",
       "scrollHover": "#4c566a"
-    }
-  },
-  {
-    "id": "material",
-    "name": "Material Dark",
-    "type": "dark",
-    "colors": {
-      "bg": "#263238",
-      "surface": "#2e3c43",
-      "border": "#37474f",
-      "borderInput": "#546e7a",
-      "text": "#eeffff",
-      "textDim": "#b2ccd6",
-      "muted": "#89a1aa",
-      "subtle": "#546e7a",
-      "faint": "#37474f",
-      "accent": "#82aaff",
-      "accentDark": "#6094f7",
-      "accentDim": "#9fbfff",
-      "danger": "#ef5350",
-      "dangerBg": "rgba(239,83,80,0.1)",
-      "inputBg": "#2e3c43",
-      "badgeBg": "#37474f",
-      "badgeText": "#82aaff",
-      "iconBg": "#37474f",
-      "iconText": "#82aaff",
-      "scrollTrack": "#263238",
-      "scrollThumb": "#37474f",
-      "scrollHover": "#546e7a"
     }
   },
   {
@@ -577,35 +519,6 @@
       "scrollTrack": "#faf4ed",
       "scrollThumb": "#dfdad9",
       "scrollHover": "#cecacd"
-    }
-  },
-  {
-    "id": "gruvbox-light",
-    "name": "Gruvbox Light",
-    "type": "light",
-    "colors": {
-      "bg": "#fbf1c7",
-      "surface": "#f2e5bc",
-      "border": "#ebdbb2",
-      "borderInput": "#d5c4a1",
-      "text": "#3c3836",
-      "textDim": "#504945",
-      "muted": "#665c54",
-      "subtle": "#7c6f64",
-      "faint": "#928374",
-      "accent": "#b57614",
-      "accentDark": "#9c6409",
-      "accentDim": "#d19a1e",
-      "danger": "#9d0006",
-      "dangerBg": "rgba(157,0,6,0.1)",
-      "inputBg": "#f9edbe",
-      "badgeBg": "#ebdbb2",
-      "badgeText": "#b57614",
-      "iconBg": "#ebdbb2",
-      "iconText": "#b57614",
-      "scrollTrack": "#fbf1c7",
-      "scrollThumb": "#d5c4a1",
-      "scrollHover": "#bdae93"
     }
   },
   {
