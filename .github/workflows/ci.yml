@@ -309,6 +309,8 @@ jobs:
         run: mvn package -DskipTests -Dflyway.skip=true
 
       - name: Start application
+        env:
+          RUNARY_REGISTRATION_OPEN: "true"
         run: |
           java -jar target/runary-*.jar &
           echo "APP_PID=$!" >> "$GITHUB_ENV"
