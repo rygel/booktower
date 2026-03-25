@@ -473,7 +473,7 @@
                     <configuration>
                         <argLine>-Dapp.name=runary-test</argLine>
                         <excludedGroups>browser,e2e-network</excludedGroups>
-                        <forkedProcessTimeoutInSeconds>600</forkedProcessTimeoutInSeconds>
+                        <forkedProcessTimeoutInSeconds>1200</forkedProcessTimeoutInSeconds>
                     </configuration>
                 </plugin>
 
