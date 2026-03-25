@@ -86,7 +86,7 @@ class AuthService(
         return Result.success(
             LoginResponse(
                 token = token,
-                user = UserDto(userId.toString(), request.username, request.email, now.toString(), false),
+                user = UserDto(userId.toString(), request.username, request.email, now.toString(), isFirstUser),
                 refreshToken = refreshToken,
             ),
         )

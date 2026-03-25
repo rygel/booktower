@@ -35,7 +35,7 @@ class AuthHandler2(
     private val passwordResetService: PasswordResetService,
     private val emailService: EmailService,
     private val appBaseUrl: String,
-    private val registrationOpen: Boolean = true,
+    private val registrationOpen: Boolean = false,
     private val auditService: AuditService? = null,
     private val oidcForceOnly: Boolean = false,
 ) {
