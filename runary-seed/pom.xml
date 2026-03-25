@@ -24,12 +24,6 @@
             <artifactId>runary-persistence</artifactId>
             <version>${project.version}</version>
         </dependency>
-
-        <!-- Database (SeedService uses JDBI directly) -->
-        <dependency>
-            <groupId>org.jdbi</groupId>
-            <artifactId>jdbi3-core</artifactId>
-        </dependency>
     </dependencies>
 
     <build>

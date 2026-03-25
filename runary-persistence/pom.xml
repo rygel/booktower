@@ -61,12 +61,6 @@
             <artifactId>http4k-core</artifactId>
         </dependency>
 
-        <!-- Caching -->
-        <dependency>
-            <groupId>com.github.ben-manes.caffeine</groupId>
-            <artifactId>caffeine</artifactId>
-        </dependency>
-
         <!-- File processing (metadata services) -->
         <dependency>
             <groupId>org.apache.pdfbox</groupId>

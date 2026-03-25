@@ -391,7 +391,7 @@
                     <version>${kotlin.version}</version>
                     <configuration>
                         <jvmTarget>21</jvmTarget>
-                        <useDaemon>false</useDaemon>
+                        <useDaemon>true</useDaemon>
                     </configuration>
                     <executions>
                         <execution>
@@ -473,6 +473,7 @@
                     <configuration>
                         <argLine>-Dapp.name=runary-test</argLine>
                         <excludedGroups>browser,e2e-network</excludedGroups>
+                        <forkedProcessTimeoutInSeconds>300</forkedProcessTimeoutInSeconds>
                     </configuration>
                 </plugin>
 
