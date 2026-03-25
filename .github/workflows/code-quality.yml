@@ -79,7 +79,7 @@ jobs:
           cache: maven
 
       - name: Run PMD
-        run: mvn pmd:check
+        run: mvn compile pmd:check -DskipTests
 
       - name: Upload PMD report
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
@@ -105,7 +105,7 @@ jobs:
           cache: maven
 
       - name: Run SpotBugs
-        run: mvn spotbugs:check
+        run: mvn compile spotbugs:check -DskipTests
 
       - name: Upload SpotBugs report
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
