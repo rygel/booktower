@@ -1,24 +1,23 @@
 package org.runary.handlers
 
+import org.http4k.core.Request
+import org.http4k.core.Response
+import org.http4k.core.Status
 import org.runary.config.Json
 import org.runary.filters.AuthenticatedUser
 import org.runary.services.CreateWebhookRequest
 import org.runary.services.WebhookService
-import org.http4k.core.Request
-import org.http4k.core.Response
-import org.http4k.core.Status
 
 class WebhookApiHandler(
     private val webhookService: WebhookService,
 ) {
-    fun listWebhooks(req: Request): Response {
-        return Response(Status.OK)
+    fun listWebhooks(req: Request): Response =
+        Response(Status.OK)
             .header("Content-Type", "application/json")
             .body(
                 Json.mapper
                     .writeValueAsString(webhookService.list(AuthenticatedUser.from(req))),
             )
-    }
 
     fun createWebhook(req: Request): Response {
         val body =

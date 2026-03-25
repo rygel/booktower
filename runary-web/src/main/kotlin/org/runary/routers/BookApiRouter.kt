@@ -1,5 +1,12 @@
 package org.runary.routers
 
+import org.http4k.core.Method
+import org.http4k.core.Request
+import org.http4k.core.Response
+import org.http4k.core.Status
+import org.http4k.core.then
+import org.http4k.routing.RoutingHttpHandler
+import org.http4k.routing.bind
 import org.runary.config.StorageConfig
 import org.runary.filters.AuthenticatedUser
 import org.runary.handlers.BookHandler2
@@ -26,13 +33,6 @@ import org.runary.services.MagicShelfService
 import org.runary.services.RecommendationService
 import org.runary.services.UpdateNotebookRequest
 import org.runary.services.UpdateReviewRequest
-import org.http4k.core.Method
-import org.http4k.core.Request
-import org.http4k.core.Response
-import org.http4k.core.Status
-import org.http4k.core.then
-import org.http4k.routing.RoutingHttpHandler
-import org.http4k.routing.bind
 import org.slf4j.LoggerFactory
 
 private val logger = LoggerFactory.getLogger("runary.BookApiRouter")

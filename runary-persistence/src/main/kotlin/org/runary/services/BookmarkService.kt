@@ -1,8 +1,8 @@
 package org.runary.services
 
+import org.jdbi.v3.core.Jdbi
 import org.runary.models.BookmarkDto
 import org.runary.models.CreateBookmarkRequest
-import org.jdbi.v3.core.Jdbi
 import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.util.UUID

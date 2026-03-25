@@ -1,5 +1,11 @@
 package org.runary.integration
 
+import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty
 import org.runary.config.Database
 import org.runary.config.DatabaseConfig
 import org.runary.models.CreateBookRequest
@@ -14,12 +20,6 @@ import org.runary.services.JwtService
 import org.runary.services.LibraryAccessService
 import org.runary.services.LibraryService
 import org.runary.services.PdfMetadataService
-import org.junit.jupiter.api.AfterAll
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.condition.EnabledIfSystemProperty
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers

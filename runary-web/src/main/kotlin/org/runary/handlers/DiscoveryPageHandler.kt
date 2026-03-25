@@ -1,12 +1,12 @@
 package org.runary.handlers
 
+import org.http4k.core.Request
+import org.http4k.core.Response
 import org.runary.config.TemplateRenderer
 import org.runary.services.AuthService
 import org.runary.services.BookService
 import org.runary.services.JwtService
 import org.runary.services.LibraryService
-import org.http4k.core.Request
-import org.http4k.core.Response
 
 class DiscoveryPageHandler(
     private val jwtService: JwtService,

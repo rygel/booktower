@@ -1,24 +1,23 @@
 package org.runary.handlers
 
+import org.http4k.core.Request
+import org.http4k.core.Response
+import org.http4k.core.Status
 import org.runary.config.Json
 import org.runary.filters.AuthenticatedUser
 import org.runary.services.CreateReadingListRequest
 import org.runary.services.ReadingListService
-import org.http4k.core.Request
-import org.http4k.core.Response
-import org.http4k.core.Status
 
 class ReadingListApiHandler(
     private val readingListService: ReadingListService,
 ) {
-    fun listReadingLists(req: Request): Response {
-        return Response(Status.OK)
+    fun listReadingLists(req: Request): Response =
+        Response(Status.OK)
             .header("Content-Type", "application/json")
             .body(
                 Json.mapper
                     .writeValueAsString(readingListService.getLists(AuthenticatedUser.from(req))),
             )
-    }
 
     fun createReadingList(req: Request): Response {
         val body =

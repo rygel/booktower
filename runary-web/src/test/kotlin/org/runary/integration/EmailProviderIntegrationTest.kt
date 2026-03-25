@@ -1,7 +1,5 @@
 package org.runary.integration
 
-import org.runary.config.Json
-import org.runary.models.LoginResponse
 import org.http4k.core.Method
 import org.http4k.core.Request
 import org.http4k.core.Status
@@ -9,6 +7,8 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.runary.config.Json
+import org.runary.models.LoginResponse
 
 class EmailProviderIntegrationTest : IntegrationTestBase() {
     private val validProvider = """{"name":"Test SMTP","host":"smtp.example.com","port":587,"username":"user@example.com","password":"secret","fromAddress":"noreply@example.com","useTls":true,"isDefault":false}"""

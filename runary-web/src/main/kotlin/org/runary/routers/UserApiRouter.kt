@@ -1,5 +1,12 @@
 package org.runary.routers
 
+import org.http4k.core.Method
+import org.http4k.core.Request
+import org.http4k.core.Response
+import org.http4k.core.Status
+import org.http4k.core.then
+import org.http4k.routing.RoutingHttpHandler
+import org.http4k.routing.bind
 import org.runary.filters.AuthenticatedUser
 import org.runary.handlers.ApiTokenHandler
 import org.runary.handlers.BackgroundTaskHandler
@@ -22,13 +29,6 @@ import org.runary.services.ReadingStatsService
 import org.runary.services.SaveFilterPresetRequest
 import org.runary.services.TelemetryService
 import org.runary.services.UserSettingsService
-import org.http4k.core.Method
-import org.http4k.core.Request
-import org.http4k.core.Response
-import org.http4k.core.Status
-import org.http4k.core.then
-import org.http4k.routing.RoutingHttpHandler
-import org.http4k.routing.bind
 
 class UserApiRouter(
     private val filters: FilterSet,

@@ -1,13 +1,13 @@
 package org.runary.integration
 
-import org.runary.config.Json
-import org.runary.models.LoginResponse
 import org.http4k.core.Method
 import org.http4k.core.Request
 import org.http4k.core.Status
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.runary.config.Json
+import org.runary.models.LoginResponse
 
 /**
  * End-to-end tests for the ISBN barcode scanner feature.
@@ -41,35 +41,38 @@ class IsbnScannerTest : IntegrationTestBase() {
 
     @Test
     fun `isbn lookup endpoint requires authentication`() {
-        val resp = app(
-            Request(Method.POST, "/ui/isbn/lookup")
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .body("isbn=9780140449136"),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/ui/isbn/lookup")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("isbn=9780140449136"),
+            )
         assertEquals(Status.UNAUTHORIZED, resp.status)
     }
 
     @Test
     fun `isbn lookup endpoint requires isbn parameter`() {
         val token = registerAndGetToken()
-        val resp = app(
-            Request(Method.POST, "/ui/isbn/lookup")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .body(""),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/ui/isbn/lookup")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body(""),
+            )
         assertEquals(Status.BAD_REQUEST, resp.status)
     }
 
     @Test
     fun `isbn lookup endpoint returns not found for invalid isbn`() {
         val token = registerAndGetToken()
-        val resp = app(
-            Request(Method.POST, "/ui/isbn/lookup")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .body("isbn=0000000000"),
-        )
+        val resp =
+            app(
+                Request(Method.POST, "/ui/isbn/lookup")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .body("isbn=0000000000"),
+            )
         assertEquals(Status.OK, resp.status)
         val body = resp.bodyString()
         assertTrue(body.contains("\"found\""), "Response should have found field")

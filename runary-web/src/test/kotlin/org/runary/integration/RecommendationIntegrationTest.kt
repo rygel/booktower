@@ -1,5 +1,12 @@
 package org.runary.integration
 
+import org.http4k.core.HttpHandler
+import org.http4k.core.Method
+import org.http4k.core.Request
+import org.http4k.core.Status
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import org.runary.TestFixture
 import org.runary.config.Json
 import org.runary.models.LoginResponse
@@ -23,13 +30,6 @@ import org.runary.services.ReadingSessionService
 import org.runary.services.RecommendationService
 import org.runary.services.SeedService
 import org.runary.services.UserSettingsService
-import org.http4k.core.HttpHandler
-import org.http4k.core.Method
-import org.http4k.core.Request
-import org.http4k.core.Status
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
 
 class RecommendationIntegrationTest {
     private val config = TestFixture.config

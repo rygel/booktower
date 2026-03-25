@@ -1,9 +1,9 @@
 package org.runary.services
 
-import org.runary.models.*
 import org.jdbi.v3.core.Jdbi
 import org.jdbi.v3.core.result.RowView
 import org.mindrot.jbcrypt.BCrypt
+import org.runary.models.*
 import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.time.LocalDateTime

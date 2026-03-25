@@ -1,10 +1,10 @@
 package org.runary.weblate
 
-import org.runary.config.Json
-import org.runary.config.WeblateConfig
 import org.http4k.core.Request
 import org.http4k.core.Response
 import org.http4k.core.Status
+import org.runary.config.Json
+import org.runary.config.WeblateConfig
 
 class WeblateHandler(
     private val config: WeblateConfig,

@@ -59,31 +59,65 @@ data class TestPageHandlers(
         ): TestPageHandlers {
             val pageHandler =
                 PageHandler(
-                    jwtService, authService, libraryService, bookService, bookmarkService,
-                    userSettingsService, analyticsService, annotationService, metadataFetchService,
-                    magicShelfService, templateRenderer, readingSessionService, libraryWatchService,
-                    bookLinkService, bookSharingService, backgroundTaskService,
+                    jwtService,
+                    authService,
+                    libraryService,
+                    bookService,
+                    bookmarkService,
+                    userSettingsService,
+                    analyticsService,
+                    annotationService,
+                    metadataFetchService,
+                    magicShelfService,
+                    templateRenderer,
+                    readingSessionService,
+                    libraryWatchService,
+                    bookLinkService,
+                    bookSharingService,
+                    backgroundTaskService,
                 )
             val browsePageHandler =
                 BrowsePageHandler(jwtService, authService, bookService, magicShelfService, templateRenderer)
             val statsPageHandler =
                 StatsPageHandler(
-                    jwtService, authService, analyticsService, templateRenderer,
-                    readingSessionService, libraryStatsService, readingTimelineService,
-                    readingSpeedService, libraryHealthService,
+                    jwtService,
+                    authService,
+                    analyticsService,
+                    templateRenderer,
+                    readingSessionService,
+                    libraryStatsService,
+                    readingTimelineService,
+                    readingSpeedService,
+                    libraryHealthService,
                 )
             val settingsPageHandler =
                 SettingsPageHandler(
-                    jwtService, authService, templateRenderer,
-                    koboSyncService, koreaderSyncService, filterPresetService,
-                    scheduledTaskService, opdsCredentialsService, contentRestrictionsService,
-                    hardcoverSyncService, bookDeliveryService,
+                    jwtService,
+                    authService,
+                    templateRenderer,
+                    koboSyncService,
+                    koreaderSyncService,
+                    filterPresetService,
+                    scheduledTaskService,
+                    opdsCredentialsService,
+                    contentRestrictionsService,
+                    hardcoverSyncService,
+                    bookDeliveryService,
                 )
             val discoveryPageHandler =
                 DiscoveryPageHandler(
-                    jwtService, authService, libraryService, bookService, templateRenderer,
-                    discoveryService, readingListService, wishlistService, collectionService,
-                    webhookService, bookDropService, metadataProposalService,
+                    jwtService,
+                    authService,
+                    libraryService,
+                    bookService,
+                    templateRenderer,
+                    discoveryService,
+                    readingListService,
+                    wishlistService,
+                    collectionService,
+                    webhookService,
+                    bookDropService,
+                    metadataProposalService,
                 )
             return TestPageHandlers(pageHandler, browsePageHandler, statsPageHandler, settingsPageHandler, discoveryPageHandler)
         }

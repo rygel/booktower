@@ -1,5 +1,7 @@
 package org.runary.config
 
+import org.http4k.core.then
+import org.koin.dsl.module
 import org.runary.filters.RateLimitFilter
 import org.runary.filters.adminFilter
 import org.runary.filters.jwtAuthFilter
@@ -11,7 +13,9 @@ import org.runary.handlers.AuthHandler2
 import org.runary.handlers.BackgroundTaskHandler
 import org.runary.handlers.BookHandler2
 import org.runary.handlers.BookmarkHandler
+import org.runary.handlers.BrowsePageHandler
 import org.runary.handlers.BulkBookHandler
+import org.runary.handlers.DiscoveryPageHandler
 import org.runary.handlers.ExportHandler
 import org.runary.handlers.FileHandler
 import org.runary.handlers.FontHandler
@@ -22,12 +26,10 @@ import org.runary.handlers.KoboSyncHandler
 import org.runary.handlers.LibraryHandler2
 import org.runary.handlers.OidcHandler
 import org.runary.handlers.OpdsHandler
-import org.runary.handlers.BrowsePageHandler
-import org.runary.handlers.DiscoveryPageHandler
 import org.runary.handlers.PageHandler
+import org.runary.handlers.ReaderPreferencesHandler
 import org.runary.handlers.SettingsPageHandler
 import org.runary.handlers.StatsPageHandler
-import org.runary.handlers.ReaderPreferencesHandler
 import org.runary.handlers.UserSettingsHandler
 import org.runary.routers.AdminApiRouter
 import org.runary.routers.AudiobookApiRouter
@@ -103,8 +105,6 @@ import org.runary.services.TelemetryService
 import org.runary.services.UserPermissionsService
 import org.runary.services.UserSettingsService
 import org.runary.weblate.WeblateHandler
-import org.http4k.core.then
-import org.koin.dsl.module
 
 // ── Core: config, template engine, services with no DB dependency ───────────
 

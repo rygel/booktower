@@ -1,6 +1,7 @@
 package org.runary.services
 
 import com.fasterxml.jackson.databind.JsonNode
+import org.jdbi.v3.core.Jdbi
 import org.runary.config.Json
 import org.runary.models.CreateBookRequest
 import org.runary.models.CreateBookmarkRequest
@@ -9,7 +10,6 @@ import org.runary.models.CreateMagicShelfRequest
 import org.runary.models.ReadStatus
 import org.runary.models.ShelfRuleType
 import org.runary.models.UpdateBookRequest
-import org.jdbi.v3.core.Jdbi
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.time.Instant

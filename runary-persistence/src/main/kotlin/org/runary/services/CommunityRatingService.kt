@@ -1,8 +1,8 @@
 package org.runary.services
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import org.runary.models.CommunityRatingDto
 import org.jdbi.v3.core.Jdbi
+import org.runary.models.CommunityRatingDto
 import org.slf4j.LoggerFactory
 import java.net.URI
 import java.net.URLEncoder

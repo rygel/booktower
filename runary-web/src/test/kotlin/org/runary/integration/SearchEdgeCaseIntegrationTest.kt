@@ -1,11 +1,11 @@
 package org.runary.integration
 
-import org.runary.config.Json
-import org.runary.models.BookListDto
 import org.http4k.core.Method
 import org.http4k.core.Request
 import org.http4k.core.Status
 import org.junit.jupiter.api.Test
+import org.runary.config.Json
+import org.runary.models.BookListDto
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 

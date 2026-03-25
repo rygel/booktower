@@ -1,11 +1,5 @@
 package org.runary.routers
 
-import org.runary.filters.AuthenticatedUser
-import org.runary.services.AuthorMetadataService
-import org.runary.services.BookService
-import org.runary.services.MetadataFetchService
-import org.runary.services.MetadataLockService
-import org.runary.services.MetadataProposalService
 import org.http4k.core.Method
 import org.http4k.core.Request
 import org.http4k.core.Response
@@ -13,6 +7,12 @@ import org.http4k.core.Status
 import org.http4k.core.then
 import org.http4k.routing.RoutingHttpHandler
 import org.http4k.routing.bind
+import org.runary.filters.AuthenticatedUser
+import org.runary.services.AuthorMetadataService
+import org.runary.services.BookService
+import org.runary.services.MetadataFetchService
+import org.runary.services.MetadataLockService
+import org.runary.services.MetadataProposalService
 
 class MetadataApiRouter(
     private val filters: FilterSet,

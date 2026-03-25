@@ -2,6 +2,14 @@
 
 package org.runary.handlers
 
+import org.http4k.core.Method
+import org.http4k.core.Response
+import org.http4k.core.Status
+import org.http4k.routing.ResourceLoader
+import org.http4k.routing.RoutingHttpHandler
+import org.http4k.routing.bind
+import org.http4k.routing.routes
+import org.http4k.routing.static
 import org.runary.config.StorageConfig
 import org.runary.routers.AdminApiRouter
 import org.runary.routers.AudiobookApiRouter
@@ -14,14 +22,6 @@ import org.runary.routers.OidcRouter
 import org.runary.routers.PageRouter
 import org.runary.routers.UserApiRouter
 import org.runary.services.VersionService
-import org.http4k.core.Method
-import org.http4k.core.Response
-import org.http4k.core.Status
-import org.http4k.routing.ResourceLoader
-import org.http4k.routing.RoutingHttpHandler
-import org.http4k.routing.bind
-import org.http4k.routing.routes
-import org.http4k.routing.static
 
 /** All book/audio formats supported by Runary, with MIME types. */
 val SUPPORTED_FORMATS: Map<String, String> =

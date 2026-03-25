@@ -1,10 +1,10 @@
 package org.runary.services
 
-import org.runary.TestFixture
-import org.runary.models.CreateUserRequest
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.runary.TestFixture
+import org.runary.models.CreateUserRequest
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

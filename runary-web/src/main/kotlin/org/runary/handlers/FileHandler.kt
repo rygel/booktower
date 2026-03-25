@@ -1,5 +1,8 @@
 package org.runary.handlers
 
+import org.http4k.core.Request
+import org.http4k.core.Response
+import org.http4k.core.Status
 import org.runary.config.Json
 import org.runary.config.StorageConfig
 import org.runary.filters.AuthenticatedUser
@@ -9,9 +12,6 @@ import org.runary.services.CalibreConversionService
 import org.runary.services.EpubMetadataService
 import org.runary.services.Fb2ReaderService
 import org.runary.services.PdfMetadataService
-import org.http4k.core.Request
-import org.http4k.core.Response
-import org.http4k.core.Status
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.util.UUID
@@ -66,8 +66,7 @@ class FileHandler(
             .replace(Regex("[^a-z0-9]"), "")
 
     /** Sanitize a filename for use in Content-Disposition headers (strip control chars and quotes). */
-    private fun sanitizeFilename(name: String): String =
-        name.replace(Regex("[\"\\\\\\r\\n]"), "_").take(200)
+    private fun sanitizeFilename(name: String): String = name.replace(Regex("[\"\\\\\\r\\n]"), "_").take(200)
 
     fun upload(req: Request): Response {
         val userId = AuthenticatedUser.from(req)

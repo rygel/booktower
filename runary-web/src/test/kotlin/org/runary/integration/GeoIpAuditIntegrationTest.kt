@@ -1,8 +1,5 @@
 package org.runary.integration
 
-import org.runary.services.AuditService
-import org.runary.services.GeoIpService
-import org.runary.services.GeoLocation
 import org.http4k.core.Method
 import org.http4k.core.Request
 import org.http4k.core.Status
@@ -10,6 +7,9 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
+import org.runary.services.AuditService
+import org.runary.services.GeoIpService
+import org.runary.services.GeoLocation
 
 class GeoIpAuditIntegrationTest : IntegrationTestBase() {
     private fun auditService(): AuditService {

@@ -2,12 +2,12 @@ package org.runary.integration
 
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
-import org.runary.config.Json
-import org.runary.models.LoginResponse
 import org.http4k.core.Method
 import org.http4k.core.Request
 import org.http4k.core.Status
 import org.junit.jupiter.api.Test
+import org.runary.config.Json
+import org.runary.models.LoginResponse
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.UUID

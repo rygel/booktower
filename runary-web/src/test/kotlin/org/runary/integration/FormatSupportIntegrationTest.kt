@@ -1,10 +1,10 @@
 package org.runary.integration
 
-import org.runary.services.Fb2ReaderService
 import org.http4k.core.Method
 import org.http4k.core.Request
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.runary.services.Fb2ReaderService
 import java.nio.file.Files
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue

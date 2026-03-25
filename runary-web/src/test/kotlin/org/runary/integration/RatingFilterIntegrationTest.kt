@@ -1,5 +1,10 @@
 package org.runary.integration
 
+import org.http4k.core.Method
+import org.http4k.core.Request
+import org.http4k.core.Status
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import org.runary.TestFixture
 import org.runary.models.CreateBookRequest
 import org.runary.models.CreateLibraryRequest
@@ -12,11 +17,6 @@ import org.runary.services.JwtService
 import org.runary.services.LibraryService
 import org.runary.services.PdfMetadataService
 import org.runary.services.UserSettingsService
-import org.http4k.core.Method
-import org.http4k.core.Request
-import org.http4k.core.Status
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

@@ -1,12 +1,12 @@
 package org.runary.integration
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import org.runary.config.Json
-import org.runary.models.BookmarkDto
 import org.http4k.core.Method
 import org.http4k.core.Request
 import org.http4k.core.Status
 import org.junit.jupiter.api.Test
+import org.runary.config.Json
+import org.runary.models.BookmarkDto
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue

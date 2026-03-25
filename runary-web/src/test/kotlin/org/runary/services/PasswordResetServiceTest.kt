@@ -1,10 +1,10 @@
 package org.runary.services
 
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import org.runary.TestFixture
 import org.runary.models.CreateUserRequest
 import org.runary.models.LoginRequest
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull

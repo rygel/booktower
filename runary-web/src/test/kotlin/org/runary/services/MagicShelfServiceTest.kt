@@ -1,13 +1,13 @@
 package org.runary.services
 
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import org.runary.TestFixture
 import org.runary.models.CreateBookRequest
 import org.runary.models.CreateLibraryRequest
 import org.runary.models.CreateMagicShelfRequest
 import org.runary.models.CreateUserRequest
 import org.runary.models.ShelfRuleType
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

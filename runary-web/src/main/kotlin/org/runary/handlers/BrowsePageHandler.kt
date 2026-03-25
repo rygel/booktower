@@ -1,5 +1,9 @@
 package org.runary.handlers
 
+import org.http4k.core.Request
+import org.http4k.core.Response
+import org.http4k.core.Status
+import org.http4k.core.body.form
 import org.runary.config.TemplateRenderer
 import org.runary.models.CreateMagicShelfRequest
 import org.runary.models.ShelfRuleType
@@ -8,10 +12,6 @@ import org.runary.services.BookService
 import org.runary.services.JwtService
 import org.runary.services.MagicShelfService
 import org.runary.web.WebContext
-import org.http4k.core.Request
-import org.http4k.core.Response
-import org.http4k.core.Status
-import org.http4k.core.body.form
 
 class BrowsePageHandler(
     private val jwtService: JwtService,
@@ -53,15 +53,28 @@ class BrowsePageHandler(
             }
         val ruleValue: String? =
             when (ruleType) {
-                ShelfRuleType.STATUS ->
+                ShelfRuleType.STATUS -> {
                     req.form("ruleValueStatus")?.takeIf { it.isNotBlank() }
                         ?: return Response(Status.BAD_REQUEST).body("Status is required")
-                ShelfRuleType.TAG ->
-                    req.form("ruleValueTag")?.trim()?.lowercase()?.takeIf { it.isNotBlank() }
+                }
+
+                ShelfRuleType.TAG -> {
+                    req
+                        .form("ruleValueTag")
+                        ?.trim()
+                        ?.lowercase()
+                        ?.takeIf { it.isNotBlank() }
                         ?: return Response(Status.BAD_REQUEST).body("Tag is required")
-                ShelfRuleType.RATING_GTE ->
-                    req.form("ruleValueRating")?.toIntOrNull()?.coerceIn(1, 5)?.toString()
+                }
+
+                ShelfRuleType.RATING_GTE -> {
+                    req
+                        .form("ruleValueRating")
+                        ?.toIntOrNull()
+                        ?.coerceIn(1, 5)
+                        ?.toString()
                         ?: return Response(Status.BAD_REQUEST).body("Rating is required")
+                }
             }
         val shelf = magicShelfService.createShelf(userId, CreateMagicShelfRequest(name, ruleType, ruleValue))
         val rendered = templateRenderer.render("components/shelfCard.kte", mapOf("shelf" to shelf, "i18n" to ctx.i18n))

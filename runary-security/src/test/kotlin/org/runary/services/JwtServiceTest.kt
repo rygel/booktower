@@ -1,9 +1,9 @@
 package org.runary.services
 
-import org.runary.config.SecurityConfig
-import org.runary.models.User
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.runary.config.SecurityConfig
+import org.runary.models.User
 import java.time.Instant
 import java.util.UUID
 import kotlin.test.assertEquals

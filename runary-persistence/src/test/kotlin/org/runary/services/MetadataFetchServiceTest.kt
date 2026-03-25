@@ -1,7 +1,7 @@
 package org.runary.services
 
-import org.runary.models.FetchedMetadata
 import org.junit.jupiter.api.Test
+import org.runary.models.FetchedMetadata
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull

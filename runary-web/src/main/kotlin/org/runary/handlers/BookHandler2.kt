@@ -1,5 +1,8 @@
 package org.runary.handlers
 
+import org.http4k.core.Request
+import org.http4k.core.Response
+import org.http4k.core.Status
 import org.runary.config.Json
 import org.runary.filters.AuthenticatedUser
 import org.runary.models.CreateBookRequest
@@ -9,9 +12,6 @@ import org.runary.models.UpdateBookRequest
 import org.runary.models.UpdateProgressRequest
 import org.runary.services.BookService
 import org.runary.services.ReadingSessionService
-import org.http4k.core.Request
-import org.http4k.core.Response
-import org.http4k.core.Status
 import org.slf4j.LoggerFactory
 import java.util.UUID
 

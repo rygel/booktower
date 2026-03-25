@@ -1,5 +1,15 @@
 package org.runary
 
+import org.http4k.core.Method
+import org.http4k.core.Response
+import org.http4k.core.Status.Companion.OK
+import org.http4k.core.then
+import org.http4k.routing.bind
+import org.http4k.routing.routes
+import org.http4k.server.Jetty
+import org.http4k.server.asServer
+import org.koin.core.context.GlobalContext
+import org.koin.core.context.startKoin
 import org.runary.config.AppConfig
 import org.runary.config.Database
 import org.runary.config.appModule
@@ -24,16 +34,6 @@ import org.runary.services.PdfMetadataService
 import org.runary.services.ScanScheduleService
 import org.runary.services.UserSettingsService
 import org.runary.web.WebContext
-import org.http4k.core.Method
-import org.http4k.core.Response
-import org.http4k.core.Status.Companion.OK
-import org.http4k.core.then
-import org.http4k.routing.bind
-import org.http4k.routing.routes
-import org.http4k.server.Jetty
-import org.http4k.server.asServer
-import org.koin.core.context.GlobalContext
-import org.koin.core.context.startKoin
 import org.slf4j.LoggerFactory
 
 fun main() {

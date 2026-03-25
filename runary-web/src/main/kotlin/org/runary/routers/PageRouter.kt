@@ -1,5 +1,15 @@
 package org.runary.routers
 
+import org.http4k.core.Method
+import org.http4k.core.Request
+import org.http4k.core.Response
+import org.http4k.core.Status
+import org.http4k.core.body.form
+import org.http4k.core.cookie.Cookie
+import org.http4k.core.cookie.cookie
+import org.http4k.core.then
+import org.http4k.routing.RoutingHttpHandler
+import org.http4k.routing.bind
 import org.runary.config.TemplateRenderer
 import org.runary.handlers.AdminHandler
 import org.runary.handlers.BrowsePageHandler
@@ -12,16 +22,6 @@ import org.runary.services.AuthService
 import org.runary.services.JwtService
 import org.runary.services.UserSettingsService
 import org.runary.web.WebContext
-import org.http4k.core.Method
-import org.http4k.core.Request
-import org.http4k.core.Response
-import org.http4k.core.Status
-import org.http4k.core.body.form
-import org.http4k.core.cookie.Cookie
-import org.http4k.core.cookie.cookie
-import org.http4k.core.then
-import org.http4k.routing.RoutingHttpHandler
-import org.http4k.routing.bind
 
 class PageRouter(
     private val filters: FilterSet,
@@ -38,8 +38,8 @@ class PageRouter(
     private val discoveryPageHandler: DiscoveryPageHandler? = null,
 ) {
     /** Registration is allowed if explicitly enabled OR no users exist yet (initial setup). */
-    private fun isRegistrationAllowed(): Boolean =
-        registrationOpen || !(authService?.hasUsers() ?: true)
+    private fun isRegistrationAllowed(): Boolean = registrationOpen || !(authService?.hasUsers() ?: true)
+
     fun routes(): List<RoutingHttpHandler> =
         listOf(
             // HTML pages

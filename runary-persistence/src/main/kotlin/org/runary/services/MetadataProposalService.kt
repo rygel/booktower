@@ -1,8 +1,8 @@
 package org.runary.services
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import org.runary.models.FetchedMetadata
 import org.jdbi.v3.core.Jdbi
+import org.runary.models.FetchedMetadata
 import java.time.Instant
 import java.util.UUID
 

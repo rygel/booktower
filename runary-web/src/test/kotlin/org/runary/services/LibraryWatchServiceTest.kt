@@ -1,11 +1,11 @@
 package org.runary.services
 
-import org.runary.TestFixture
-import org.runary.models.CreateLibraryRequest
-import org.runary.models.CreateUserRequest
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.runary.TestFixture
+import org.runary.models.CreateLibraryRequest
+import org.runary.models.CreateUserRequest
 import java.io.File
 import java.nio.file.Files
 import java.util.UUID

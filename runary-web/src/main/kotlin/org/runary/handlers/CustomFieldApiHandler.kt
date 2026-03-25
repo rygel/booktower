@@ -1,24 +1,23 @@
 package org.runary.handlers
 
+import org.http4k.core.Request
+import org.http4k.core.Response
+import org.http4k.core.Status
 import org.runary.config.Json
 import org.runary.filters.AuthenticatedUser
 import org.runary.services.CreateFieldDefinitionRequest
 import org.runary.services.CustomFieldService
-import org.http4k.core.Request
-import org.http4k.core.Response
-import org.http4k.core.Status
 
 class CustomFieldApiHandler(
     private val customFieldService: CustomFieldService,
 ) {
-    fun listFieldDefinitions(req: Request): Response {
-        return Response(Status.OK)
+    fun listFieldDefinitions(req: Request): Response =
+        Response(Status.OK)
             .header("Content-Type", "application/json")
             .body(
                 Json.mapper
                     .writeValueAsString(customFieldService.getDefinitions(AuthenticatedUser.from(req))),
             )
-    }
 
     fun createFieldDefinition(req: Request): Response {
         val body =

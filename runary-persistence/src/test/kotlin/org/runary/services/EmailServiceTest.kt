@@ -3,9 +3,9 @@ package org.runary.services
 import com.icegreen.greenmail.configuration.GreenMailConfiguration
 import com.icegreen.greenmail.junit5.GreenMailExtension
 import com.icegreen.greenmail.util.ServerSetupTest
-import org.runary.config.SmtpConfig
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
+import org.runary.config.SmtpConfig
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 

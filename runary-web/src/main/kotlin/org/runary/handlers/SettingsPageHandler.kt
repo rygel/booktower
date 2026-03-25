@@ -1,11 +1,11 @@
 package org.runary.handlers
 
-import org.runary.config.TemplateRenderer
-import org.runary.services.AuthService
-import org.runary.services.JwtService
 import org.http4k.core.Request
 import org.http4k.core.Response
 import org.http4k.core.Status
+import org.runary.config.TemplateRenderer
+import org.runary.services.AuthService
+import org.runary.services.JwtService
 
 class SettingsPageHandler(
     private val jwtService: JwtService,

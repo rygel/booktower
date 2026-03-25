@@ -1,5 +1,12 @@
 package org.runary.routers
 
+import org.http4k.core.Method
+import org.http4k.core.Request
+import org.http4k.core.Response
+import org.http4k.core.Status
+import org.http4k.core.then
+import org.http4k.routing.RoutingHttpHandler
+import org.http4k.routing.bind
 import org.runary.filters.AuthenticatedUser
 import org.runary.handlers.AdminHandler
 import org.runary.handlers.BackgroundTaskHandler
@@ -13,13 +20,6 @@ import org.runary.services.TelemetryService
 import org.runary.services.UpdateEmailProviderRequest
 import org.runary.services.UpdateScheduledTaskRequest
 import org.runary.weblate.WeblateHandler
-import org.http4k.core.Method
-import org.http4k.core.Request
-import org.http4k.core.Response
-import org.http4k.core.Status
-import org.http4k.core.then
-import org.http4k.routing.RoutingHttpHandler
-import org.http4k.routing.bind
 
 class AdminApiRouter(
     private val filters: FilterSet,

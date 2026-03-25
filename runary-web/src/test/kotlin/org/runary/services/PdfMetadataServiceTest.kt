@@ -2,10 +2,10 @@ package org.runary.services
 
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.pdmodel.PDPage
-import org.runary.TestFixture
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
+import org.runary.TestFixture
 import java.io.File
 import java.nio.file.Path
 import java.util.UUID

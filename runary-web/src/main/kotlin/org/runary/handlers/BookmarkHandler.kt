@@ -1,14 +1,14 @@
 package org.runary.handlers
 
+import org.http4k.core.Request
+import org.http4k.core.Response
+import org.http4k.core.Status
 import org.runary.config.Json
 import org.runary.filters.AuthenticatedUser
 import org.runary.models.CreateBookmarkRequest
 import org.runary.models.ErrorResponse
 import org.runary.models.SuccessResponse
 import org.runary.services.BookmarkService
-import org.http4k.core.Request
-import org.http4k.core.Response
-import org.http4k.core.Status
 import org.slf4j.LoggerFactory
 import java.util.UUID
 

@@ -1,8 +1,8 @@
 package org.runary.services
 
-import org.runary.models.*
 import org.jdbi.v3.core.Jdbi
 import org.jdbi.v3.core.result.RowView
+import org.runary.models.*
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.time.Instant

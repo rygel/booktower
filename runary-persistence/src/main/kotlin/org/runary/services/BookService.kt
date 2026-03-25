@@ -1,10 +1,10 @@
 package org.runary.services
 
+import org.jdbi.v3.core.Jdbi
+import org.jdbi.v3.core.result.RowView
 import org.runary.models.*
 import org.runary.models.FetchedMetadata
 import org.runary.models.ReadStatus
-import org.jdbi.v3.core.Jdbi
-import org.jdbi.v3.core.result.RowView
 import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.util.UUID

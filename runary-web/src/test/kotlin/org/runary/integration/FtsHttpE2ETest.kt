@@ -1,5 +1,18 @@
 package org.runary.integration
 
+import org.http4k.core.Body
+import org.http4k.core.HttpHandler
+import org.http4k.core.Method
+import org.http4k.core.Request
+import org.http4k.core.Status
+import org.http4k.core.then
+import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.MethodOrderer
+import org.junit.jupiter.api.Order
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestMethodOrder
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty
 import org.runary.config.Database
 import org.runary.config.DatabaseConfig
 import org.runary.config.Json
@@ -14,19 +27,6 @@ import org.runary.models.BookListDto
 import org.runary.models.LoginResponse
 import org.runary.routers.FilterSet
 import org.runary.services.*
-import org.http4k.core.Body
-import org.http4k.core.HttpHandler
-import org.http4k.core.Method
-import org.http4k.core.Request
-import org.http4k.core.Status
-import org.http4k.core.then
-import org.junit.jupiter.api.AfterAll
-import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.MethodOrderer
-import org.junit.jupiter.api.Order
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.TestMethodOrder
-import org.junit.jupiter.api.condition.EnabledIfSystemProperty
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
@@ -292,9 +292,17 @@ class FtsHttpE2ETest {
                 )
             val handlers =
                 TestPageHandlers.create(
-                    jwtService, authService, libraryService, bookService, bookmarkService,
-                    userSettingsService, analyticsService, annotationService, metadataFetchService,
-                    magicShelfService, templateRenderer,
+                    jwtService,
+                    authService,
+                    libraryService,
+                    bookService,
+                    bookmarkService,
+                    userSettingsService,
+                    analyticsService,
+                    annotationService,
+                    metadataFetchService,
+                    magicShelfService,
+                    templateRenderer,
                     readingSessionService = readingSessionService,
                     backgroundTaskService = backgroundTaskService,
                 )

@@ -1,14 +1,14 @@
 package org.runary.routers
 
-import org.runary.handlers.KOReaderSyncHandler
-import org.runary.handlers.KoboSyncHandler
-import org.runary.handlers.OpdsHandler
 import org.http4k.core.Method
 import org.http4k.core.Response
 import org.http4k.core.Status
 import org.http4k.core.then
 import org.http4k.routing.RoutingHttpHandler
 import org.http4k.routing.bind
+import org.runary.handlers.KOReaderSyncHandler
+import org.runary.handlers.KoboSyncHandler
+import org.runary.handlers.OpdsHandler
 
 class DeviceSyncRouter(
     private val filters: FilterSet,

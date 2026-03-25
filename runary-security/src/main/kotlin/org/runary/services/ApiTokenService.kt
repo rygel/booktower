@@ -1,8 +1,8 @@
 package org.runary.services
 
+import org.jdbi.v3.core.Jdbi
 import org.runary.models.ApiTokenDto
 import org.runary.models.CreatedApiTokenResponse
-import org.jdbi.v3.core.Jdbi
 import org.slf4j.LoggerFactory
 import java.security.SecureRandom
 import java.time.Instant

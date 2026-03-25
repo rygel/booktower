@@ -1,12 +1,12 @@
 package org.runary.integration
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import org.runary.models.FetchedMetadata
-import org.runary.services.MetadataFetchService
 import org.http4k.core.Method
 import org.http4k.core.Request
 import org.http4k.core.Status
 import org.junit.jupiter.api.Test
+import org.runary.models.FetchedMetadata
+import org.runary.services.MetadataFetchService
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 

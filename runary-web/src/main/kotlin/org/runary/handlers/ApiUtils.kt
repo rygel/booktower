@@ -1,10 +1,10 @@
 package org.runary.handlers
 
-import org.runary.config.Json
-import org.runary.models.ErrorResponse
 import org.http4k.core.Request
 import org.http4k.core.Response
 import org.http4k.core.Status
+import org.runary.config.Json
+import org.runary.models.ErrorResponse
 import java.util.UUID
 
 /** Build a JSON response with the given status and body. */

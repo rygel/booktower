@@ -1,5 +1,7 @@
 package org.runary.integration
 
+import org.http4k.core.HttpHandler
+import org.http4k.core.then
 import org.runary.TestFixture
 import org.runary.config.OidcConfig
 import org.runary.config.SmtpConfig
@@ -16,7 +18,9 @@ import org.runary.handlers.AuthHandler2
 import org.runary.handlers.BackgroundTaskHandler
 import org.runary.handlers.BookHandler2
 import org.runary.handlers.BookmarkHandler
+import org.runary.handlers.BrowsePageHandler
 import org.runary.handlers.BulkBookHandler
+import org.runary.handlers.DiscoveryPageHandler
 import org.runary.handlers.ExportHandler
 import org.runary.handlers.FileHandler
 import org.runary.handlers.FontHandler
@@ -24,12 +28,10 @@ import org.runary.handlers.GoodreadsImportHandler
 import org.runary.handlers.JournalHandler
 import org.runary.handlers.LibraryHandler2
 import org.runary.handlers.OpdsHandler
-import org.runary.handlers.BrowsePageHandler
-import org.runary.handlers.DiscoveryPageHandler
 import org.runary.handlers.PageHandler
+import org.runary.handlers.ReaderPreferencesHandler
 import org.runary.handlers.SettingsPageHandler
 import org.runary.handlers.StatsPageHandler
-import org.runary.handlers.ReaderPreferencesHandler
 import org.runary.handlers.UserSettingsHandler
 import org.runary.routers.AdminApiRouter
 import org.runary.routers.AudiobookApiRouter
@@ -101,8 +103,6 @@ import org.runary.services.TelemetryService
 import org.runary.services.UserPermissionsService
 import org.runary.services.UserSettingsService
 import org.runary.weblate.WeblateHandler
-import org.http4k.core.HttpHandler
-import org.http4k.core.then
 
 /**
  * Standalone builder for the test application.
@@ -229,8 +229,17 @@ fun buildTestApp(
         )
     val handlers =
         TestPageHandlers.create(
-            jwt, auth, lib, book, bookmarkService, userSettingsService, analyticsService,
-            annotationService, metaFetch, magicShelfService, TestFixture.templateRenderer,
+            jwt,
+            auth,
+            lib,
+            book,
+            bookmarkService,
+            userSettingsService,
+            analyticsService,
+            annotationService,
+            metaFetch,
+            magicShelfService,
+            TestFixture.templateRenderer,
             readingSessionService = readingSessionService,
             backgroundTaskService = bgTaskService,
             libraryStatsService = org.runary.services.LibraryStatsService(jdbi),

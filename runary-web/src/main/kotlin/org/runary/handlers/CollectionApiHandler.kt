@@ -1,13 +1,13 @@
 package org.runary.handlers
 
-import org.runary.config.Json
-import org.runary.filters.AuthenticatedUser
-import org.runary.services.CollectionService
-import org.runary.services.CreateCollectionRequest
 import org.http4k.core.Request
 import org.http4k.core.Response
 import org.http4k.core.Status
 import org.http4k.core.body.form
+import org.runary.config.Json
+import org.runary.filters.AuthenticatedUser
+import org.runary.services.CollectionService
+import org.runary.services.CreateCollectionRequest
 
 class CollectionApiHandler(
     private val collectionService: CollectionService,

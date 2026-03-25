@@ -1,13 +1,13 @@
 package org.runary.integration
 
-import org.runary.config.Json
-import org.runary.models.LoginResponse
 import org.http4k.core.Method
 import org.http4k.core.Request
 import org.http4k.core.Status
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.runary.config.Json
+import org.runary.models.LoginResponse
 
 /**
  * End-to-end tests for the device management page.
@@ -35,12 +35,13 @@ class DeviceManagementPageTest : IntegrationTestBase() {
     fun `devices page shows registered Kobo device`() {
         val token = registerAndGetToken()
         // Register a Kobo device via API
-        val regResp = app(
-            Request(Method.POST, "/api/kobo/devices")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"deviceName":"My Test Kobo"}"""),
-        )
+        val regResp =
+            app(
+                Request(Method.POST, "/api/kobo/devices")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"deviceName":"My Test Kobo"}"""),
+            )
         assertTrue(regResp.status == Status.OK || regResp.status == Status.CREATED)
 
         val resp = app(Request(Method.GET, "/devices").header("Cookie", "token=$token"))
@@ -54,12 +55,13 @@ class DeviceManagementPageTest : IntegrationTestBase() {
     fun `devices page shows registered KOReader device`() {
         val token = registerAndGetToken()
         // Register a KOReader device via API
-        val regResp = app(
-            Request(Method.POST, "/api/koreader/devices")
-                .header("Cookie", "token=$token")
-                .header("Content-Type", "application/json")
-                .body("""{"deviceName":"My KOReader"}"""),
-        )
+        val regResp =
+            app(
+                Request(Method.POST, "/api/koreader/devices")
+                    .header("Cookie", "token=$token")
+                    .header("Content-Type", "application/json")
+                    .body("""{"deviceName":"My KOReader"}"""),
+            )
         assertTrue(regResp.status == Status.OK || regResp.status == Status.CREATED)
 
         val resp = app(Request(Method.GET, "/devices").header("Cookie", "token=$token"))

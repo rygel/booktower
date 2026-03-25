@@ -1,12 +1,12 @@
 package org.runary.handlers
 
-import org.runary.services.AuthService
-import org.runary.services.JwtService
 import org.http4k.core.Request
 import org.http4k.core.Response
 import org.http4k.core.Status
 import org.http4k.core.cookie.Cookie
 import org.http4k.core.cookie.cookie
+import org.runary.services.AuthService
+import org.runary.services.JwtService
 import java.util.UUID
 
 /** Shared utilities for page handlers. */
@@ -33,7 +33,9 @@ fun pageContext(
     req: Request,
     jwtService: JwtService,
     authService: AuthService,
-): org.runary.web.PageContext = org.runary.web.PageContext.from(req, jwtService, authService)
+): org.runary.web.PageContext =
+    org.runary.web.PageContext
+        .from(req, jwtService, authService)
 
 fun redirectToLogin(): Response =
     Response(Status.SEE_OTHER)

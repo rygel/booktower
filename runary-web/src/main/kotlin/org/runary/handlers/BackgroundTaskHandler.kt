@@ -1,14 +1,14 @@
 package org.runary.handlers
 
+import org.http4k.core.Request
+import org.http4k.core.Response
+import org.http4k.core.Status
 import org.runary.config.Json
 import org.runary.filters.AuthenticatedUser
 import org.runary.models.ErrorResponse
 import org.runary.services.BackgroundTaskService
 import org.runary.services.SeedService
 import org.runary.services.TaskStatus
-import org.http4k.core.Request
-import org.http4k.core.Response
-import org.http4k.core.Status
 
 class BackgroundTaskHandler(
     private val taskService: BackgroundTaskService,

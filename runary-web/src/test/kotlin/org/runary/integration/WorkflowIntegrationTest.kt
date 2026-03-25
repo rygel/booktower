@@ -2,10 +2,6 @@ package org.runary.integration
 
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.pdmodel.PDPage
-import org.runary.config.Json
-import org.runary.models.BookmarkDto
-import org.runary.models.LibraryDto
-import org.runary.models.LoginResponse
 import org.http4k.core.Method
 import org.http4k.core.Request
 import org.http4k.core.Status
@@ -15,6 +11,10 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.runary.config.Json
+import org.runary.models.BookmarkDto
+import org.runary.models.LibraryDto
+import org.runary.models.LoginResponse
 import java.io.ByteArrayOutputStream
 
 /**

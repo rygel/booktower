@@ -1,10 +1,10 @@
 package org.runary.filters
 
-import org.runary.config.Json
-import org.runary.models.ErrorResponse
 import org.http4k.core.Filter
 import org.http4k.core.Response
 import org.http4k.core.Status
+import org.runary.config.Json
+import org.runary.models.ErrorResponse
 
 fun adminFilter(): Filter =
     Filter { next ->

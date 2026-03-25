@@ -1,10 +1,10 @@
 package org.runary.routers
 
-import org.runary.handlers.AuthHandler2
 import org.http4k.core.Method
 import org.http4k.core.then
 import org.http4k.routing.RoutingHttpHandler
 import org.http4k.routing.bind
+import org.runary.handlers.AuthHandler2
 
 class AuthRouter(
     private val authHandler: AuthHandler2,

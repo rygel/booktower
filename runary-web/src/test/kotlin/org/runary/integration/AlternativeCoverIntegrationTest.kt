@@ -1,5 +1,14 @@
 package org.runary.integration
 
+import org.http4k.core.HttpHandler
+import org.http4k.core.Method
+import org.http4k.core.Request
+import org.http4k.core.Status
+import org.http4k.core.then
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
 import org.runary.TestFixture
 import org.runary.config.Json
 import org.runary.config.SmtpConfig
@@ -15,14 +24,14 @@ import org.runary.handlers.AuthHandler2
 import org.runary.handlers.BackgroundTaskHandler
 import org.runary.handlers.BookHandler2
 import org.runary.handlers.BookmarkHandler
+import org.runary.handlers.BrowsePageHandler
 import org.runary.handlers.BulkBookHandler
+import org.runary.handlers.DiscoveryPageHandler
 import org.runary.handlers.ExportHandler
 import org.runary.handlers.FileHandler
 import org.runary.handlers.GoodreadsImportHandler
 import org.runary.handlers.LibraryHandler2
 import org.runary.handlers.OpdsHandler
-import org.runary.handlers.BrowsePageHandler
-import org.runary.handlers.DiscoveryPageHandler
 import org.runary.handlers.PageHandler
 import org.runary.handlers.SettingsPageHandler
 import org.runary.handlers.StatsPageHandler
@@ -64,15 +73,6 @@ import org.runary.services.ReadingSessionService
 import org.runary.services.SeedService
 import org.runary.services.UserSettingsService
 import org.runary.weblate.WeblateHandler
-import org.http4k.core.HttpHandler
-import org.http4k.core.Method
-import org.http4k.core.Request
-import org.http4k.core.Status
-import org.http4k.core.then
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Path
 
 class AlternativeCoverIntegrationTest {
@@ -170,9 +170,17 @@ class AlternativeCoverIntegrationTest {
             )
         val handlers =
             TestPageHandlers.create(
-                jwtService, authService, libraryService, bookService, bookmarkService,
-                userSettingsService, analyticsService, annotationService, MetadataFetchService(),
-                magicShelfService, TestFixture.templateRenderer,
+                jwtService,
+                authService,
+                libraryService,
+                bookService,
+                bookmarkService,
+                userSettingsService,
+                analyticsService,
+                annotationService,
+                MetadataFetchService(),
+                magicShelfService,
+                TestFixture.templateRenderer,
                 readingSessionService = readingSessionService,
             )
         val pageHandler = handlers.pageHandler

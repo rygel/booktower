@@ -1,7 +1,7 @@
 package org.runary.services
 
-import org.runary.models.ComicMetadataRequest
 import org.jdbi.v3.core.Jdbi
+import org.runary.models.ComicMetadataRequest
 import java.time.Instant
 
 data class ComicMetadata(

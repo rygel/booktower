@@ -1,14 +1,14 @@
 package org.runary.integration
 
-import org.runary.config.Json
-import org.runary.models.FetchedMetadata
-import org.runary.services.MetadataFetchService
 import org.http4k.core.Method
 import org.http4k.core.Request
 import org.http4k.core.Status
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.runary.config.Json
+import org.runary.models.FetchedMetadata
+import org.runary.services.MetadataFetchService
 
 class MetadataProposalIntegrationTest : IntegrationTestBase() {
     private val stubMeta =

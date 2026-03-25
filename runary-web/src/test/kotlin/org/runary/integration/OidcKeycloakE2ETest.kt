@@ -1,11 +1,11 @@
 package org.runary.integration
 
-import org.runary.config.OidcConfig
-import org.runary.services.OidcService
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty
+import org.runary.config.OidcConfig
+import org.runary.services.OidcService
 import org.slf4j.LoggerFactory
 import org.testcontainers.containers.GenericContainer
 import org.testcontainers.containers.wait.strategy.Wait

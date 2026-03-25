@@ -1,12 +1,12 @@
 package org.runary.integration
 
-import org.runary.config.Json
-import org.runary.models.ScanResult
 import org.http4k.core.Method
 import org.http4k.core.Request
 import org.http4k.core.Status
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
+import org.runary.config.Json
+import org.runary.models.ScanResult
 import java.io.File
 import java.nio.file.Files
 import kotlin.test.assertEquals

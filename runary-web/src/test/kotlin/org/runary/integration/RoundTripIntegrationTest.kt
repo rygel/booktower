@@ -1,5 +1,17 @@
 package org.runary.integration
 
+import org.http4k.client.JettyClient
+import org.http4k.core.Method
+import org.http4k.core.Request
+import org.http4k.core.Status
+import org.http4k.core.Status.Companion.OK
+import org.http4k.core.then
+import org.http4k.server.Jetty
+import org.http4k.server.asServer
+import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInstance
 import org.runary.TestFixture
 import org.runary.config.Json
 import org.runary.filters.csrfFilter
@@ -20,18 +32,6 @@ import org.runary.services.MetadataFetchService
 import org.runary.services.PdfMetadataService
 import org.runary.services.ReadingSessionService
 import org.runary.services.UserSettingsService
-import org.http4k.client.JettyClient
-import org.http4k.core.Method
-import org.http4k.core.Request
-import org.http4k.core.Status
-import org.http4k.core.Status.Companion.OK
-import org.http4k.core.then
-import org.http4k.server.Jetty
-import org.http4k.server.asServer
-import org.junit.jupiter.api.AfterAll
-import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.TestInstance
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue

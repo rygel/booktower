@@ -1,10 +1,5 @@
 package org.runary.routers
 
-import org.runary.filters.AuthenticatedUser
-import org.runary.handlers.LibraryHandler2
-import org.runary.services.BookDropService
-import org.runary.services.LibraryHealthService
-import org.runary.services.LibraryService
 import org.http4k.core.Method
 import org.http4k.core.Request
 import org.http4k.core.Response
@@ -12,6 +7,11 @@ import org.http4k.core.Status
 import org.http4k.core.then
 import org.http4k.routing.RoutingHttpHandler
 import org.http4k.routing.bind
+import org.runary.filters.AuthenticatedUser
+import org.runary.handlers.LibraryHandler2
+import org.runary.services.BookDropService
+import org.runary.services.LibraryHealthService
+import org.runary.services.LibraryService
 
 class LibraryApiRouter(
     private val filters: FilterSet,

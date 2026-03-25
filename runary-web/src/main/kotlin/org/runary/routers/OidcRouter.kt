@@ -1,11 +1,11 @@
 package org.runary.routers
 
-import org.runary.handlers.OidcHandler
 import org.http4k.core.Method
 import org.http4k.core.Response
 import org.http4k.core.Status
 import org.http4k.routing.RoutingHttpHandler
 import org.http4k.routing.bind
+import org.runary.handlers.OidcHandler
 
 class OidcRouter(
     private val oidcHandler: OidcHandler?,

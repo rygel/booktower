@@ -1,6 +1,5 @@
 package org.runary.integration
 
-import org.runary.config.Json
 import org.http4k.core.Method
 import org.http4k.core.Request
 import org.http4k.core.Status
@@ -9,6 +8,7 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
+import org.runary.config.Json
 import java.io.File
 import java.nio.file.Path
 

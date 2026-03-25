@@ -1,5 +1,11 @@
 package org.runary.integration
 
+import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Test
+import org.koin.core.context.GlobalContext
+import org.koin.core.context.startKoin
+import org.koin.core.context.stopKoin
 import org.runary.config.AppConfig
 import org.runary.config.Database
 import org.runary.config.TemplateRenderer
@@ -42,12 +48,6 @@ import org.runary.services.FtsService
 import org.runary.services.JwtService
 import org.runary.services.LibraryService
 import org.runary.services.SeedService
-import org.junit.jupiter.api.AfterAll
-import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Test
-import org.koin.core.context.GlobalContext
-import org.koin.core.context.startKoin
-import org.koin.core.context.stopKoin
 import kotlin.test.assertNotNull
 
 /**

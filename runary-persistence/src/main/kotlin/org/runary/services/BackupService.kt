@@ -1,7 +1,7 @@
 package org.runary.services
 
-import org.runary.config.Json
 import org.jdbi.v3.core.Jdbi
+import org.runary.config.Json
 import org.slf4j.LoggerFactory
 import java.io.InputStream
 import java.time.Instant

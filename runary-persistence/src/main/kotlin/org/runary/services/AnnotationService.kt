@@ -1,7 +1,7 @@
 package org.runary.services
 
-import org.runary.models.AnnotationDto
 import org.jdbi.v3.core.Jdbi
+import org.runary.models.AnnotationDto
 import java.time.Instant
 import java.util.UUID
 

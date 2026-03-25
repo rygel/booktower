@@ -1,10 +1,10 @@
 package org.runary.integration
 
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
 import org.runary.TestFixture
 import org.runary.services.ComicPageHashService
 import org.runary.services.ComicService
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Test
 import java.awt.Color
 import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream

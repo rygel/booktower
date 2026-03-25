@@ -1,11 +1,5 @@
 package org.runary.routers
 
-import org.runary.config.StorageConfig
-import org.runary.filters.AuthenticatedUser
-import org.runary.services.AudiobookMetaService
-import org.runary.services.ListeningSessionService
-import org.runary.services.ListeningStatsService
-import org.runary.services.UpdateAudiobookMetaRequest
 import org.http4k.core.Method
 import org.http4k.core.Request
 import org.http4k.core.Response
@@ -13,6 +7,12 @@ import org.http4k.core.Status
 import org.http4k.core.then
 import org.http4k.routing.RoutingHttpHandler
 import org.http4k.routing.bind
+import org.runary.config.StorageConfig
+import org.runary.filters.AuthenticatedUser
+import org.runary.services.AudiobookMetaService
+import org.runary.services.ListeningSessionService
+import org.runary.services.ListeningStatsService
+import org.runary.services.UpdateAudiobookMetaRequest
 import org.slf4j.LoggerFactory
 
 private val logger = LoggerFactory.getLogger("runary.AudiobookApiRouter")

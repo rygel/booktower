@@ -1,9 +1,9 @@
 package org.runary.handlers
 
+import org.junit.jupiter.api.Test
 import org.runary.TestFixture
 import org.runary.i18n.I18nService
 import org.runary.model.ThemeCatalog
-import org.junit.jupiter.api.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
