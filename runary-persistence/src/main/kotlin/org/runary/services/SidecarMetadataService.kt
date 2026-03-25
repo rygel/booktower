@@ -52,7 +52,7 @@ object SidecarMetadataService {
 
     // ── OPF parser ────────────────────────────────────────────────────────────
 
-    fun parseOpf(file: File): FetchedMetadata? {
+    internal fun parseOpf(file: File): FetchedMetadata? {
         return try {
             val doc =
                 DocumentBuilderFactory
@@ -122,7 +122,7 @@ object SidecarMetadataService {
 
     // ── NFO parser ────────────────────────────────────────────────────────────
 
-    fun parseNfo(file: File): FetchedMetadata? {
+    internal fun parseNfo(file: File): FetchedMetadata? {
         return try {
             val doc =
                 DocumentBuilderFactory
