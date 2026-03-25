@@ -34,7 +34,7 @@ jobs:
         if: always()
         with:
           name: detekt-reports
-          path: target/detekt-reports/
+          path: '**/target/detekt-reports/'
 
   checkstyle:
     name: Checkstyle Analysis
@@ -60,7 +60,7 @@ jobs:
         if: always()
         with:
           name: checkstyle-reports
-          path: target/checkstyle-result.xml
+          path: '**/target/checkstyle-result.xml'
 
   pmd:
     name: PMD Analysis
@@ -79,14 +79,14 @@ jobs:
           cache: maven
 
       - name: Run PMD
-        run: mvn pmd:check
+        run: mvn compile pmd:check -DskipTests
 
       - name: Upload PMD report
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
         if: always()
         with:
           name: pmd-reports
-          path: target/pmd/
+          path: '**/target/pmd/'
 
   spotbugs:
     name: SpotBugs Analysis
@@ -105,14 +105,14 @@ jobs:
           cache: maven
 
       - name: Run SpotBugs
-        run: mvn spotbugs:check
+        run: mvn compile spotbugs:check -DskipTests
 
       - name: Upload SpotBugs report
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
         if: always()
         with:
           name: spotbugs-reports
-          path: target/spotbugs/
+          path: '**/target/spotbugs/'
 
   coverage:
     name: Code Coverage
@@ -138,7 +138,7 @@ jobs:
         if: always()
         with:
           name: jacoco-reports
-          path: target/site/jacoco/
+          path: '**/target/site/jacoco/'
 
   all-quality-checks:
     name: All Quality Checks

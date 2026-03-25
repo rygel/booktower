@@ -3,14 +3,23 @@ FROM maven:3.9.12-eclipse-temurin-21 AS build
 
 WORKDIR /build
 
-# Cache dependencies first
+# Cache dependencies first — copy all pom files for multi-module resolution
 COPY pom.xml .
+COPY runary-core/pom.xml runary-core/
+COPY runary-security/pom.xml runary-security/
+COPY runary-persistence/pom.xml runary-persistence/
+COPY runary-seed/pom.xml runary-seed/
+COPY runary-web/pom.xml runary-web/
 # go-offline pre-warms the dependency cache; || true so a transient repo
 # failure (e.g. sonar-maven-plugin not yet in Central) never breaks the build.
 RUN mvn dependency:go-offline -q || true
 
 # Copy source and build fat jar
-COPY src ./src
+COPY runary-core/src runary-core/src
+COPY runary-security/src runary-security/src
+COPY runary-persistence/src runary-persistence/src
+COPY runary-seed/src runary-seed/src
+COPY runary-web/src runary-web/src
 RUN mvn package -DskipTests -q
 
 # ── Runtime stage ─────────────────────────────────────────────────────────────
@@ -23,7 +32,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf 
     groupadd -r runary && useradd -r -g runary runary
 
 # Copy fat jar (the -fat.jar variant has the main manifest)
-COPY --from=build /build/target/runary-*-fat.jar app.jar
+COPY --from=build /build/runary-web/target/runary-*-fat.jar app.jar
 
 # Data directories (override with volumes in docker-compose)
 RUN mkdir -p /data/books /data/covers /data/db && \
