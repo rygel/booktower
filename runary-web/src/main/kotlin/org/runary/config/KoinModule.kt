@@ -114,12 +114,9 @@ val coreModule =
         single { TemplateRenderer() }
         single { ComicService() }
         single { GeoIpService() }
-        single { AuthorMetadataService() }
-        single { AlternativeCoverService() }
         single { BackgroundTaskService() }
         single { EmailService(get<AppConfig>().smtp) }
         single { MetadataFetchService(get<AppConfig>().metadata) }
-        single { OidcService(get<AppConfig>().oidc) }
     }
 
 // ── Security: auth, JWT, permissions, rate limiting ─────────────────────────
@@ -133,6 +130,7 @@ val securityModule =
         single { PasswordResetService(get<Database>().getJdbi()) }
         single { ApiTokenService(get<Database>().getJdbi()) }
         single { OpdsCredentialsService(get<Database>().getJdbi()) }
+        single { OidcService(get<AppConfig>().oidc) }
     }
 
 // ── Persistence: database connection, JDBI-backed services ──────────────────
@@ -223,6 +221,9 @@ val persistenceModule =
         single { org.runary.services.PositionSyncService(get<Database>().getJdbi()) }
         single { org.runary.services.WishlistService(get<Database>().getJdbi()) }
         single { org.runary.services.AdvancedSearchService(get<Database>().getJdbi(), getOrNull()) }
+        single { AuthorMetadataService() }
+        single { AlternativeCoverService() }
+        single { CalibreConversionService(java.io.File(get<AppConfig>().storage.tempPath, "calibre-cache")) }
     }
 
 // ── Seed: demo data generation ──────────────────────────────────────────────
@@ -266,8 +267,7 @@ val webModule =
         single { BookHandler2(get(), get()) }
         single { BookmarkHandler(get()) }
         single {
-            val calibreService = CalibreConversionService(java.io.File(get<AppConfig>().storage.tempPath, "calibre-cache"))
-            FileHandler(get(), get(), get(), get<AppConfig>().storage, calibreService = calibreService, ftsService = get())
+            FileHandler(get(), get(), get(), get<AppConfig>().storage, calibreService = get(), ftsService = get())
         }
         single { UserSettingsHandler(get()) }
         single {
