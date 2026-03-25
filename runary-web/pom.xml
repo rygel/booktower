@@ -83,27 +83,6 @@
         <testSourceDirectory>src/test/kotlin</testSourceDirectory>
         <plugins>
             <plugin>
-                <groupId>org.flywaydb</groupId>
-                <artifactId>flyway-maven-plugin</artifactId>
-                <version>${flyway-maven-plugin.version}</version>
-                <configuration>
-                    <locations>classpath:db/migration</locations>
-                    <baselineOnMigrate>true</baselineOnMigrate>
-                    <url>jdbc:h2:mem:runary;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE</url>
-                    <user>sa</user>
-                    <password></password>
-                    <driver>org.h2.Driver</driver>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>flyway-migrate</id>
-                        <phase>process-classes</phase>
-                        <goals><goal>migrate</goal></goals>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <plugin>
                 <groupId>gg.jte</groupId>
                 <artifactId>jte-maven-plugin</artifactId>
                 <version>${jte.version}</version>
