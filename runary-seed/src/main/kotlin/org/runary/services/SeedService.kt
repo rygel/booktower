@@ -365,35 +365,33 @@ private data class SeedComic(
     val tags: List<String> = emptyList(),
 )
 
-private const val COMICS_LIBRARY_NAME = "Open-Source Comics"
+private const val COMICS_LIBRARY_NAME = "Public Domain Comics"
 
-// Pepper & Carrot by David Revoy — CC BY 4.0 (https://www.peppercarrot.com/)
-// Attribution: David Revoy, www.davidrevoy.com
 private val COMIC_SEED_BOOKS =
     listOf(
         SeedComic(
-            title = "Pepper & Carrot — Episode 1: The Potion of Flight",
-            author = "David Revoy",
-            description = "Young witch Pepper and her cat Carrot brew a potion of flight, but things don't go as planned. The first episode of an open-source fantasy webcomic, published under Creative Commons CC BY 4.0.",
-            archiveId = "peppercarrot-en",
-            fileName = "peppercarrot_episode01.cbz",
-            tags = listOf("fantasy", "comic", "creative-commons"),
+            title = "Dances With Demons #4",
+            author = "Marvel UK",
+            description = "Dark supernatural comic from 1993, featuring occult themes and horror elements in a British setting.",
+            archiveId = "199312DancesWithDemonsV1004",
+            fileName = "199312 Dances with Demons v1 004.cbz",
+            tags = listOf("horror", "supernatural", "comic"),
         ),
         SeedComic(
-            title = "Pepper & Carrot — Episode 2: The Witches' Market",
-            author = "David Revoy",
-            description = "Pepper visits the bustling witches' market to sell her latest potions. A charming fantasy adventure, published under Creative Commons CC BY 4.0.",
-            archiveId = "peppercarrot-en",
-            fileName = "peppercarrot_episode02.cbz",
-            tags = listOf("fantasy", "comic", "creative-commons"),
+            title = "Daring Comics #11",
+            author = "Timely Comics",
+            description = "Golden age superhero comic from 1945, published by Timely Comics (the predecessor to Marvel). Features wartime heroes and adventure stories.",
+            archiveId = "daring-comics-011-timely-1945",
+            fileName = "Daring Comics 011 (Timely, 1945) (c2c) (Mark Bowen+Superscan).cbz",
+            tags = listOf("superhero", "golden-age", "comic"),
         ),
         SeedComic(
-            title = "Pepper & Carrot — Episode 3: The Dream Catcher",
-            author = "David Revoy",
-            description = "Pepper's latest invention captures dreams — but whose dreams are they? A whimsical open-source comic, published under Creative Commons CC BY 4.0.",
-            archiveId = "peppercarrot-en",
-            fileName = "peppercarrot_episode03.cbz",
-            tags = listOf("fantasy", "comic", "creative-commons"),
+            title = "Detective Comics #26",
+            author = "DC Comics",
+            description = "Early detective and mystery anthology comic from 1939, published by DC Comics before Batman's debut issue. Features hard-boiled detective stories.",
+            archiveId = "detective-comics-026",
+            fileName = "Detective Comics 026 (DC) (Apr 1939) (c2c) (Mark Bowen+Superscan).cbz",
+            tags = listOf("detective", "mystery", "golden-age", "comic"),
         ),
     )
 
