@@ -10,41 +10,78 @@ import org.http4k.core.Method
 import org.http4k.core.Request
 import org.http4k.core.Status
 import org.junit.jupiter.api.Test
+import org.runary.TestFixture
+import java.awt.Color
+import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
+import java.io.File
+import javax.imageio.ImageIO
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /**
- * Verifies that auto-generated cover images from PDF uploads are valid JPEG files,
- * not just non-empty byte sequences. Checks JPEG magic bytes and that the image
- * dimensions are reasonable.
+ * Verifies that cover images are served correctly — valid JPEG, proper headers, correct URLs.
  *
- * Complements CoverIntegrationTest which only checks status codes and Content-Type.
+ * Most tests bypass the slow PDF→JPEG extraction pipeline by placing a pre-built JPEG
+ * directly into the covers directory. Only [uploading a second PDF regenerates cover]
+ * exercises the full upload+extraction path.
  */
 class CoverValidityIntegrationTest : IntegrationTestBase() {
-    /** Build a minimal but valid multi-page PDF with some content on the first page. */
-    private fun pdfWithContent(pageCount: Int = 2): ByteArray {
-        val doc = PDDocument()
-        repeat(pageCount) { i ->
-            val page = PDPage(PDRectangle.A4)
-            doc.addPage(page)
-            if (i == 0) {
-                // Put a tiny bit of content on the first page so cover render has something
-                PDPageContentStream(doc, page).use { cs ->
-                    cs.beginText()
-                    cs.setFont(PDType1Font(Standard14Fonts.FontName.HELVETICA), 12f)
-                    cs.newLineAtOffset(100f, 700f)
-                    cs.showText("Cover Test Page")
-                    cs.endText()
+    companion object {
+        /** A small valid JPEG, built once per JVM. */
+        private val TEST_JPEG: ByteArray by lazy {
+            val img = BufferedImage(200, 300, BufferedImage.TYPE_INT_RGB)
+            val g = img.createGraphics()
+            g.color = Color.DARK_GRAY
+            g.fillRect(0, 0, 200, 300)
+            g.color = Color.WHITE
+            g.drawString("Test Cover", 50, 150)
+            g.dispose()
+            ByteArrayOutputStream().also { ImageIO.write(img, "JPEG", it) }.toByteArray()
+        }
+
+        /** A minimal valid PDF, built once per JVM. */
+        private val TEST_PDF: ByteArray by lazy { buildTestPdf(2) }
+
+        private val TEST_PDF_3_PAGES: ByteArray by lazy { buildTestPdf(3) }
+
+        private fun buildTestPdf(pageCount: Int): ByteArray {
+            val doc = PDDocument()
+            repeat(pageCount) { i ->
+                val page = PDPage(PDRectangle.A4)
+                doc.addPage(page)
+                if (i == 0) {
+                    PDPageContentStream(doc, page).use { cs ->
+                        cs.beginText()
+                        cs.setFont(PDType1Font(Standard14Fonts.FontName.HELVETICA), 12f)
+                        cs.newLineAtOffset(100f, 700f)
+                        cs.showText("Cover Test Page")
+                        cs.endText()
+                    }
                 }
             }
+            return ByteArrayOutputStream()
+                .also {
+                    doc.save(it)
+                    doc.close()
+                }.toByteArray()
         }
-        return ByteArrayOutputStream()
-            .also {
-                doc.save(it)
-                doc.close()
-            }.toByteArray()
+    }
+
+    /** Place a pre-built cover JPEG directly in the covers directory, bypassing PDF extraction. */
+    private fun placeCover(bookId: String) {
+        val coversDir = File(TestFixture.config.storage.coversPath)
+        coversDir.mkdirs()
+        File(coversDir, "$bookId.jpg").writeBytes(TEST_JPEG)
+        // Update DB so the app knows a cover exists
+        TestFixture.database.getJdbi().useHandle<Exception> { h ->
+            h
+                .createUpdate("UPDATE books SET cover_path = ? WHERE id = ?")
+                .bind(0, "$bookId.jpg")
+                .bind(1, bookId)
+                .execute()
+        }
     }
 
     private fun uploadPdf(
@@ -70,16 +107,13 @@ class CoverValidityIntegrationTest : IntegrationTestBase() {
         val token = registerAndGetToken("cov1")
         val libId = createLibrary(token)
         val bookId = createBook(token, libId, "Cover Validity Book")
-
-        uploadPdf(token, bookId, pdfWithContent())
-        Thread.sleep(2500) // wait for async extraction
+        placeCover(bookId)
 
         val resp = app(Request(Method.GET, "/covers/$bookId.jpg"))
-        assertEquals(Status.OK, resp.status, "Cover should be available after extraction")
+        assertEquals(Status.OK, resp.status, "Cover should be available")
 
         val bytes = resp.body.stream.readBytes()
         assertTrue(bytes.size >= 3, "Cover should have at least 3 bytes")
-        // JPEG magic: FF D8 FF
         assertEquals(0xFF.toByte(), bytes[0], "First byte should be 0xFF (JPEG SOI)")
         assertEquals(0xD8.toByte(), bytes[1], "Second byte should be 0xD8 (JPEG SOI)")
         assertEquals(0xFF.toByte(), bytes[2], "Third byte should be 0xFF (JPEG APP marker)")
@@ -90,14 +124,11 @@ class CoverValidityIntegrationTest : IntegrationTestBase() {
         val token = registerAndGetToken("cov2")
         val libId = createLibrary(token)
         val bookId = createBook(token, libId, "Cover Size Book")
-
-        uploadPdf(token, bookId, pdfWithContent())
-        Thread.sleep(2500)
+        placeCover(bookId)
 
         val resp = app(Request(Method.GET, "/covers/$bookId.jpg"))
         assertEquals(Status.OK, resp.status)
         val bytes = resp.body.stream.readBytes()
-        // A blank-ish JPEG should still be at least 1 KB
         assertTrue(bytes.size >= 1024, "Cover should be at least 1 KB, got ${bytes.size} bytes")
     }
 
@@ -108,17 +139,12 @@ class CoverValidityIntegrationTest : IntegrationTestBase() {
         val token = registerAndGetToken("cov3")
         val libId = createLibrary(token)
         val bookId = createBook(token, libId, "Cover Type Book")
-
-        uploadPdf(token, bookId, pdfWithContent())
-        Thread.sleep(2500)
+        placeCover(bookId)
 
         val resp = app(Request(Method.GET, "/covers/$bookId.jpg"))
         assertEquals(Status.OK, resp.status)
         val contentType = resp.header("Content-Type") ?: ""
-        assertTrue(
-            contentType.contains("image/jpeg"),
-            "Content-Type should be image/jpeg, got: $contentType",
-        )
+        assertTrue(contentType.contains("image/jpeg"), "Content-Type should be image/jpeg, got: $contentType")
     }
 
     @Test
@@ -126,17 +152,12 @@ class CoverValidityIntegrationTest : IntegrationTestBase() {
         val token = registerAndGetToken("cov4")
         val libId = createLibrary(token)
         val bookId = createBook(token, libId, "Cover Cache Book")
-
-        uploadPdf(token, bookId, pdfWithContent())
-        Thread.sleep(2500)
+        placeCover(bookId)
 
         val resp = app(Request(Method.GET, "/covers/$bookId.jpg"))
         assertEquals(Status.OK, resp.status)
         val cacheControl = resp.header("Cache-Control") ?: ""
-        assertTrue(
-            cacheControl.contains("max-age"),
-            "Cover should include Cache-Control: max-age, got: $cacheControl",
-        )
+        assertTrue(cacheControl.contains("max-age"), "Cover should include Cache-Control: max-age, got: $cacheControl")
     }
 
     // ── Cover URL reflected in book DTO ──────────────────────────────────────
@@ -146,17 +167,12 @@ class CoverValidityIntegrationTest : IntegrationTestBase() {
         val token = registerAndGetToken("cov5")
         val libId = createLibrary(token)
         val bookId = createBook(token, libId, "Cover DTO Book")
-
-        uploadPdf(token, bookId, pdfWithContent())
-        Thread.sleep(2500)
+        placeCover(bookId)
 
         val bookResp = app(Request(Method.GET, "/api/books/$bookId").header("Cookie", "token=$token"))
         assertEquals(Status.OK, bookResp.status)
         val body = bookResp.bodyString()
-        assertTrue(
-            body.contains("/covers/$bookId.jpg"),
-            "book DTO should contain coverUrl pointing to /covers/$bookId.jpg",
-        )
+        assertTrue(body.contains("/covers/$bookId.jpg"), "book DTO should contain coverUrl pointing to /covers/$bookId.jpg")
     }
 
     @Test
@@ -164,20 +180,15 @@ class CoverValidityIntegrationTest : IntegrationTestBase() {
         val token = registerAndGetToken("cov6")
         val libId = createLibrary(token)
         val bookId = createBook(token, libId, "Cover HTML Book")
-
-        uploadPdf(token, bookId, pdfWithContent())
-        Thread.sleep(2500)
+        placeCover(bookId)
 
         val pageResp = app(Request(Method.GET, "/books/$bookId").header("Cookie", "token=$token"))
         assertEquals(Status.OK, pageResp.status)
         val html = pageResp.bodyString()
-        assertTrue(
-            html.contains("/covers/$bookId.jpg"),
-            "Book detail page should render <img> pointing to /covers/$bookId.jpg",
-        )
+        assertTrue(html.contains("/covers/$bookId.jpg"), "Book detail page should render <img> pointing to /covers/$bookId.jpg")
     }
 
-    // ── Second upload regenerates cover ──────────────────────────────────────
+    // ── Upload + extraction round-trip (exercises the full pipeline once) ────
 
     @Test
     fun `uploading a second PDF regenerates and serves a new valid cover`() {
@@ -185,23 +196,19 @@ class CoverValidityIntegrationTest : IntegrationTestBase() {
         val libId = createLibrary(token)
         val bookId = createBook(token, libId, "Cover Regen Book")
 
-        // First upload
-        uploadPdf(token, bookId, pdfWithContent(1))
+        uploadPdf(token, bookId, TEST_PDF)
         Thread.sleep(2500)
 
         val firstResp = app(Request(Method.GET, "/covers/$bookId.jpg"))
         assertEquals(Status.OK, firstResp.status)
-        val firstBytes = firstResp.body.stream.readBytes()
 
-        // Second upload
-        uploadPdf(token, bookId, pdfWithContent(3))
+        uploadPdf(token, bookId, TEST_PDF_3_PAGES)
         Thread.sleep(2500)
 
         val secondResp = app(Request(Method.GET, "/covers/$bookId.jpg"))
         assertEquals(Status.OK, secondResp.status)
         val secondBytes = secondResp.body.stream.readBytes()
 
-        // Both should be valid JPEGs
         assertEquals(0xFF.toByte(), secondBytes[0])
         assertEquals(0xD8.toByte(), secondBytes[1])
         assertTrue(secondBytes.size >= 1024, "Regenerated cover should be at least 1 KB")
