@@ -257,7 +257,7 @@ class CombinedFeaturesIntegrationTest : IntegrationTestBase() {
         val prog = Json.mapper.readValue(r.bodyString(), ReadingProgressDto::class.java)
         // percentage may be null if pageCount not yet extracted; if set it should be 100.0
         if (prog.percentage != null) {
-            assertEquals(100.0, prog.percentage, 0.01)
+            assertEquals(100.0, prog.percentage as Double, 0.01)
         }
     }
 

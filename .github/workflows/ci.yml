@@ -47,25 +47,25 @@ jobs:
         if: always()
         with:
           name: checkstyle-report
-          path: target/checkstyle-result.xml
+          path: '**/target/checkstyle-result.xml'
 
       - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
         if: always()
         with:
           name: spotbugs-report
-          path: target/spotbugsXml.xml
+          path: '**/target/spotbugsXml.xml'
 
       - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
         if: always()
         with:
           name: pmd-report
-          path: target/pmd.xml
+          path: '**/target/pmd.xml'
 
       - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
         if: always()
         with:
           name: detekt-report
-          path: target/detekt-reports/
+          path: '**/target/detekt-reports/'
 
   # ── Tests: Linux first (fast, gates downstream) ──────────────────────────
   test-linux:
@@ -92,14 +92,14 @@ jobs:
         if: always()
         with:
           name: test-results-ubuntu-latest
-          path: target/surefire-reports/
+          path: '**/target/surefire-reports/'
 
       - name: Upload coverage report
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
         if: always()
         with:
           name: jacoco-report-ubuntu-latest
-          path: target/site/jacoco/
+          path: '**/target/site/jacoco/'
 
   # ── Cross-platform tests: macOS + Windows (parallel, non-blocking) ──────
   test-cross-platform:
@@ -131,7 +131,7 @@ jobs:
         if: always()
         with:
           name: test-results-${{ matrix.os }}
-          path: target/surefire-reports/
+          path: '**/target/surefire-reports/'
 
   # ── Browser tests: Playwright on Linux (headless Chromium) ──────────────
   browser-tests:
@@ -166,7 +166,7 @@ jobs:
         if: always()
         with:
           name: browser-test-results
-          path: target/surefire-reports/
+          path: '**/target/surefire-reports/'
 
   # ── Build: verify the JAR assembles (Linux gates downstream, others parallel) ─
   build:
@@ -197,7 +197,7 @@ jobs:
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
         with:
           name: runary-jar-${{ matrix.os }}
-          path: target/runary-*.jar
+          path: runary-web/target/runary-*.jar
 
   # ── Docker build: verify the image assembles correctly ───────────────────
   docker-build:
@@ -282,7 +282,7 @@ jobs:
         if: always()
         with:
           name: pg${{ matrix.pg }}-test-results
-          path: target/surefire-reports/
+          path: '**/target/surefire-reports/'
 
   # ── E2E tests: Linux only (bash-based test script) ────────────────────────
   e2e-tests:
@@ -312,7 +312,7 @@ jobs:
         env:
           RUNARY_REGISTRATION_OPEN: "true"
         run: |
-          java -jar target/runary-*.jar &
+          java -jar runary-web/target/runary-*-fat.jar &
           echo "APP_PID=$!" >> "$GITHUB_ENV"
           for i in {1..30}; do
             if curl -sf http://localhost:9999/health > /dev/null; then

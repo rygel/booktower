@@ -48,7 +48,7 @@ object FilenameMetadataService {
         }
     }
 
-    internal fun parse(raw: String): FilenameMetadata {
+    fun parse(raw: String): FilenameMetadata {
         var remainder = raw.trim()
 
         // 1. Extract series + index from parentheses/brackets

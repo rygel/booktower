@@ -188,7 +188,7 @@ class ComicPageHashService(
      * Scale to 8×8 grayscale, threshold each pixel against the mean → 64-bit Long.
      * Returns null when the image cannot be decoded.
      */
-    internal fun aHash(bytes: ByteArray): Long? =
+    fun aHash(bytes: ByteArray): Long? =
         try {
             val img = ImageIO.read(ByteArrayInputStream(bytes)) ?: return null
             val gray = BufferedImage(8, 8, BufferedImage.TYPE_BYTE_GRAY)
@@ -210,7 +210,7 @@ class ComicPageHashService(
         }
 
     /** Hamming distance between two 64-bit hashes. Values ≤ 10 indicate near-duplicates. */
-    internal fun hammingDistance(
+    fun hammingDistance(
         a: Long,
         b: Long,
     ): Int = java.lang.Long.bitCount(a xor b)

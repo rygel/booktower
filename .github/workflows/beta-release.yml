@@ -56,8 +56,8 @@ jobs:
         env:
           BETA_TAG: ${{ steps.tag.outputs.tag }}
         run: |
-          FAT=$(find target/ -name "runary-*-fat.jar" | head -1)
-          cp "$FAT" "target/runary-${BETA_TAG}.jar"
+          FAT=$(find runary-web/target/ -name "runary-*-fat.jar" | head -1)
+          cp "$FAT" "runary-web/target/runary-${BETA_TAG}.jar"
 
       - name: Create beta release
         uses: softprops/action-gh-release@153bb8e04406b158c6c84fc1615b65b24149a1fe # v2
@@ -86,7 +86,7 @@ jobs:
             docker run -p 9999:8080 -e RUNARY_QUICKSTART=true ghcr.io/rygel/runary:beta
             ```
           files: |
-            target/runary-${{ steps.tag.outputs.tag }}.jar
+            runary-web/target/runary-${{ steps.tag.outputs.tag }}.jar
 
   # ── Docker beta image — multi-arch, pushed to ghcr.io ─────────────────
   docker-beta:
