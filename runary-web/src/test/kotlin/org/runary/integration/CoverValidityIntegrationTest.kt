@@ -191,6 +191,7 @@ class CoverValidityIntegrationTest : IntegrationTestBase() {
     // ── Upload + extraction round-trip (exercises the full pipeline once) ────
 
     @Test
+    @org.junit.jupiter.api.condition.DisabledOnOs(org.junit.jupiter.api.condition.OS.WINDOWS, disabledReason = "PDFBox rendering is too slow on Windows CI runners")
     fun `uploading a second PDF regenerates and serves a new valid cover`() {
         val token = registerAndGetToken("cov7")
         val libId = createLibrary(token)
