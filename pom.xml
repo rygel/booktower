@@ -471,7 +471,7 @@
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>${maven-surefire-plugin.version}</version>
                     <configuration>
-                        <argLine>-Dapp.name=runary-test</argLine>
+                        <argLine>-Dapp.name=runary-test -Djunit.jupiter.execution.timeout.default=120s</argLine>
                         <excludedGroups>browser,e2e-network</excludedGroups>
                         <forkedProcessTimeoutInSeconds>1200</forkedProcessTimeoutInSeconds>
                     </configuration>

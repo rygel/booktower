@@ -25,7 +25,6 @@ class LibraryWatchServiceTest {
 
     @BeforeEach
     fun setup() {
-        // Create a test user via AuthService.register()
         val jwtService = JwtService(config.security)
         val authService = AuthService(jdbi, jwtService)
         val username = "watchtest_${System.nanoTime()}"
@@ -46,6 +45,21 @@ class LibraryWatchServiceTest {
         return dir
     }
 
+    /** Poll the database until a condition is met, checking every 200ms up to [timeoutMs]. */
+    private fun <T> awaitCondition(
+        timeoutMs: Long = 15_000,
+        poll: () -> T,
+        check: (T) -> Boolean,
+    ): T {
+        val deadline = System.currentTimeMillis() + timeoutMs
+        while (System.currentTimeMillis() < deadline) {
+            val result = poll()
+            if (check(result)) return result
+            Thread.sleep(200)
+        }
+        return poll() // final attempt — let the assertion handle the failure
+    }
+
     @Test
     fun `watcher detects new PDF file and scans it into library`() {
         val dir = tempLibraryDir()
@@ -57,18 +71,19 @@ class LibraryWatchServiceTest {
         val pdf = File(dir, "newbook.pdf")
         pdf.writeBytes(ByteArray(100) { it.toByte() })
 
-        // Give the watcher time to detect and scan.
-        // macOS WatchService uses polling (up to ~10s per poll interval); allow extra time.
-        Thread.sleep(5000)
-
         val books =
-            jdbi.withHandle<List<String>, Exception> { handle ->
-                handle
-                    .createQuery("SELECT title FROM books WHERE library_id = ?")
-                    .bind(0, library.id)
-                    .mapTo(String::class.java)
-                    .list()
-            }
+            awaitCondition(
+                poll = {
+                    jdbi.withHandle<List<String>, Exception> { handle ->
+                        handle
+                            .createQuery("SELECT title FROM books WHERE library_id = ?")
+                            .bind(0, library.id)
+                            .mapTo(String::class.java)
+                            .list()
+                    }
+                },
+                check = { it.any { title -> title.contains("newbook") } },
+            )
         assertTrue(books.any { it.contains("newbook") }, "Expected newbook to be scanned in, got: $books")
     }
 
@@ -99,17 +114,19 @@ class LibraryWatchServiceTest {
         // Delete the file
         epub.delete()
 
-        // macOS WatchService uses polling (up to ~10s per poll interval); allow extra time.
-        Thread.sleep(12000)
-
         val missing =
-            jdbi.withHandle<String?, Exception> { handle ->
-                handle
-                    .createQuery("SELECT CAST(file_missing AS VARCHAR) FROM books WHERE id = ?")
-                    .bind(0, bookId)
-                    .mapTo(String::class.java)
-                    .firstOrNull()
-            }
+            awaitCondition(
+                poll = {
+                    jdbi.withHandle<String?, Exception> { handle ->
+                        handle
+                            .createQuery("SELECT CAST(file_missing AS VARCHAR) FROM books WHERE id = ?")
+                            .bind(0, bookId)
+                            .mapTo(String::class.java)
+                            .firstOrNull()
+                    }
+                },
+                check = { it == "TRUE" || it == "true" || it == "1" },
+            )
         assertTrue(missing == "TRUE" || missing == "true" || missing == "1", "Book should be marked as missing, got: $missing")
     }
 
@@ -123,6 +140,8 @@ class LibraryWatchServiceTest {
         File(dir, "readme.txt").writeText("not a book")
         File(dir, "cover.jpg").writeBytes(ByteArray(10))
 
+        // Wait a bit then verify nothing was scanned — short sleep is fine here since
+        // we're asserting the ABSENCE of an event, not waiting for one.
         Thread.sleep(1500)
 
         val count =

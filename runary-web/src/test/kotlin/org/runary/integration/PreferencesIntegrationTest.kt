@@ -150,7 +150,10 @@ class PreferencesIntegrationTest : IntegrationTestBase() {
 
     @Test
     fun `all themes render valid CSS`() {
-        val themes = org.runary.model.ThemeCatalog.allThemes().map { it.id }
+        val themes =
+            org.runary.model.ThemeCatalog
+                .allThemes()
+                .map { it.id }
         for (themeId in themes) {
             val response =
                 app(
