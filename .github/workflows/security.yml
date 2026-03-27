@@ -46,7 +46,7 @@ jobs:
           zizmor --format sarif .github/workflows/ > zizmor.sarif || true
 
       - name: Upload zizmor SARIF to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@38697555549f1db7851b81482ff19f1fa5c4fedc # v4
+        uses: github/codeql-action/upload-sarif@c10b8064de6f491fea524254123dbe5e09572f13 # v4
         if: always()
         with:
           sarif_file: zizmor.sarif
@@ -74,7 +74,7 @@ jobs:
           cache: maven
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@38697555549f1db7851b81482ff19f1fa5c4fedc # v4
+        uses: github/codeql-action/init@c10b8064de6f491fea524254123dbe5e09572f13 # v4
         with:
           languages: java-kotlin
 
@@ -82,7 +82,7 @@ jobs:
         run: mvn package -DskipTests -Dflyway.skip=true -q
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@38697555549f1db7851b81482ff19f1fa5c4fedc # v4
+        uses: github/codeql-action/analyze@c10b8064de6f491fea524254123dbe5e09572f13 # v4
         with:
           category: codeql-java-kotlin
 
@@ -122,7 +122,7 @@ jobs:
           no-fail: true
 
       - name: Upload Hadolint SARIF to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@38697555549f1db7851b81482ff19f1fa5c4fedc # v4
+        uses: github/codeql-action/upload-sarif@c10b8064de6f491fea524254123dbe5e09572f13 # v4
         if: always()
         with:
           sarif_file: hadolint.sarif
@@ -139,7 +139,7 @@ jobs:
           persist-credentials: false
 
       - name: Run Checkov
-        uses: bridgecrewio/checkov-action@2fd3901c8feb52417f27f0d9800259a106c1ec1e # v12
+        uses: bridgecrewio/checkov-action@0ce65fae06c148e349f955c3c35ad049c11e838c # v12
         with:
           directory: .
           framework: dockerfile
@@ -156,7 +156,7 @@ jobs:
           else echo "file=" >> "$GITHUB_OUTPUT"; echo "No SARIF file found"; fi
 
       - name: Upload Checkov SARIF to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@38697555549f1db7851b81482ff19f1fa5c4fedc # v4
+        uses: github/codeql-action/upload-sarif@c10b8064de6f491fea524254123dbe5e09572f13 # v4
         if: always() && steps.find-sarif.outputs.file != ''
         with:
           sarif_file: ${{ steps.find-sarif.outputs.file }}
@@ -186,7 +186,7 @@ jobs:
           publish_results: true
 
       - name: Upload Scorecard SARIF to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@38697555549f1db7851b81482ff19f1fa5c4fedc # v4
+        uses: github/codeql-action/upload-sarif@c10b8064de6f491fea524254123dbe5e09572f13 # v4
         if: always()
         with:
           sarif_file: scorecard.sarif

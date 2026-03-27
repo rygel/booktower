@@ -38,12 +38,12 @@
         <maven-surefire-plugin.version>3.5.5</maven-surefire-plugin.version>
         <maven-enforcer-plugin.version>3.6.2</maven-enforcer-plugin.version>
         <maven-resources-plugin.version>3.5.0</maven-resources-plugin.version>
-        <flyway-maven-plugin.version>12.1.1</flyway-maven-plugin.version>
+        <flyway-maven-plugin.version>12.2.0</flyway-maven-plugin.version>
         <exec-maven-plugin.version>3.6.3</exec-maven-plugin.version>
         <jte-maven-plugin.version>3.2.3</jte-maven-plugin.version>
         <detekt-maven-plugin.version>1.23.8</detekt-maven-plugin.version>
         <jacoco-maven-plugin.version>0.8.14</jacoco-maven-plugin.version>
-        <native-maven-plugin.version>0.11.5</native-maven-plugin.version>
+        <native-maven-plugin.version>1.0.0</native-maven-plugin.version>
         <maven-shade-plugin.version>3.6.2</maven-shade-plugin.version>
         <fizzed-watcher-maven-plugin.version>1.10.6</fizzed-watcher-maven-plugin.version>
 
@@ -86,7 +86,7 @@
         <pdfbox.version>3.0.7</pdfbox.version>
         <jdbi3.version>3.52.0</jdbi3.version>
         <hikari.version>7.0.2</hikari.version>
-        <http4k.version>6.37.0.0</http4k.version>
+        <http4k.version>6.38.0.0</http4k.version>
         <kotlin-logging.version>8.0.01</kotlin-logging.version>
         <testcontainers.version>1.21.4</testcontainers.version>
         <commons-compress.version>1.28.0</commons-compress.version>
