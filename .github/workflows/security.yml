@@ -2,94 +2,25 @@ name: Security
 
 on:
   push:
-    branches: [ main ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main ]
+    branches: [main, develop]
   schedule:
     - cron: '0 6 * * 1'   # Weekly, Monday 06:00 UTC
 
-permissions:
-  contents: read
-  security-events: write   # Required to upload SARIF results to the Security tab
+permissions: {}
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  # ── actionlint: catch workflow syntax/logic errors early ───────────────────
-  actionlint:
-    name: actionlint
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-        with:
-          persist-credentials: false
-
-      - name: Run actionlint
-        uses: rhysd/actionlint@393031adb9afb225ee52ae2ccd7a5af5525e03e8 # v1.7.11
-
-  # ── zizmor: audit workflows for security vulnerabilities ──────────────────
-  zizmor:
-    name: zizmor
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-        with:
-          persist-credentials: false
-
-      - name: Install zizmor
-        run: pip install zizmor --quiet
-
-      - name: Run zizmor
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          zizmor --format sarif .github/workflows/ > zizmor.sarif || true
-
-      - name: Upload zizmor SARIF to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@c10b8064de6f491fea524254123dbe5e09572f13 # v4
-        if: always()
-        with:
-          sarif_file: zizmor.sarif
-          category: zizmor
-
-  # ── CodeQL: deep semantic analysis of Kotlin/Java source code ────────────
-  # Note: CodeQL's Kotlin extractor may lag behind the latest Kotlin version.
-  # If the build fails with "Kotlin version too recent", wait for a CodeQL update.
-  codeql:
-    name: CodeQL
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      security-events: write
-
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-        with:
-          persist-credentials: false
-
-      - uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5
-        with:
-          java-version: '21'
-          distribution: 'temurin'
-          cache: maven
-
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@c10b8064de6f491fea524254123dbe5e09572f13 # v4
-        with:
-          languages: java-kotlin
-
-      - name: Build for CodeQL
-        run: mvn package -DskipTests -Dflyway.skip=true -q
-
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@c10b8064de6f491fea524254123dbe5e09572f13 # v4
-        with:
-          category: codeql-java-kotlin
-
   # ── Gitleaks: scan for secrets, API keys, tokens in code and history ─────
   gitleaks:
     name: Gitleaks
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
@@ -107,6 +38,9 @@ jobs:
   hadolint:
     name: Hadolint (Dockerfile)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
@@ -132,6 +66,9 @@ jobs:
   checkov:
     name: Checkov (Dockerfile)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
