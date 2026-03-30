@@ -86,7 +86,7 @@
         <pdfbox.version>3.0.7</pdfbox.version>
         <jdbi3.version>3.52.0</jdbi3.version>
         <hikari.version>7.0.2</hikari.version>
-        <http4k.version>6.38.0.0</http4k.version>
+        <http4k.version>6.39.0.0</http4k.version>
         <kotlin-logging.version>8.0.01</kotlin-logging.version>
         <testcontainers.version>1.21.4</testcontainers.version>
         <commons-compress.version>1.28.0</commons-compress.version>
