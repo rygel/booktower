@@ -62,9 +62,9 @@
         <spotbugs.version>4.9.8</spotbugs.version>
         <checkstyle.version>3.6.0</checkstyle.version>
         <pmd.version>3.28.0</pmd.version>
-        <errorprone.version>2.48.0</errorprone.version>
+        <errorprone.version>2.49.0</errorprone.version>
         <spotless.version>3.4.0</spotless.version>
-        <ktlint.version>3.5.0</ktlint.version>
+        <ktlint.version>3.7.1</ktlint.version>
         <sonar-scanner.version>5.5.0.6356</sonar-scanner.version>
         <duplicate-finder.version>2.0.1</duplicate-finder.version>
         <forbidden-apis.version>3.10</forbidden-apis.version>
@@ -92,9 +92,9 @@
         <commons-compress.version>1.28.0</commons-compress.version>
         <commons-csv.version>1.14.1</commons-csv.version>
         <commons-io.version>2.21.0</commons-io.version>
-        <junrar.version>7.5.8</junrar.version>
+        <junrar.version>7.5.9</junrar.version>
         <hoplite.version>2.9.0</hoplite.version>
-        <koin.version>4.2.0</koin.version>
+        <koin.version>4.2.1</koin.version>
         <simplejavamail.version>8.12.6</simplejavamail.version>
         <greenmail.version>2.1.8</greenmail.version>
         <testcontainers-keycloak.version>3.7.0</testcontainers-keycloak.version>
