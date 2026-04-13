@@ -98,7 +98,7 @@
         <simplejavamail.version>8.12.6</simplejavamail.version>
         <greenmail.version>2.1.8</greenmail.version>
         <testcontainers-keycloak.version>3.7.0</testcontainers-keycloak.version>
-        <playwright.version>1.58.0</playwright.version>
+        <playwright.version>1.59.0</playwright.version>
     </properties>
 
     <dependencyManagement>
