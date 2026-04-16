@@ -24,7 +24,7 @@ jobs:
           persist-credentials: false
 
       - name: Run actionlint
-        uses: rhysd/actionlint@393031adb9afb225ee52ae2ccd7a5af5525e03e8 # v1.7.11
+        uses: rhysd/actionlint@914e7df21a07ef503a81201c76d2b11c789d3fca # v1.7.12
 
   # ── zizmor: audit workflows for security vulnerabilities ──────────────────
   zizmor:
@@ -139,7 +139,7 @@ jobs:
           persist-credentials: false
 
       - name: Run Checkov
-        uses: bridgecrewio/checkov-action@0ce65fae06c148e349f955c3c35ad049c11e838c # v12
+        uses: bridgecrewio/checkov-action@1f64b282b7fd1cb3897c4b6123ac37a81ef6b214 # v12
         with:
           directory: .
           framework: dockerfile

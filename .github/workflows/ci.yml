@@ -43,25 +43,25 @@ jobs:
       - name: Run quality checks (no tests, no Sonar)
         run: mvn verify -DskipTests -Dflyway.skip=true -Dsonar.skip=true
 
-      - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         if: always()
         with:
           name: checkstyle-report
           path: '**/target/checkstyle-result.xml'
 
-      - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         if: always()
         with:
           name: spotbugs-report
           path: '**/target/spotbugsXml.xml'
 
-      - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         if: always()
         with:
           name: pmd-report
           path: '**/target/pmd.xml'
 
-      - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         if: always()
         with:
           name: detekt-report
@@ -88,14 +88,14 @@ jobs:
         run: mvn test -Dflyway.skip=true
 
       - name: Upload test results
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         if: always()
         with:
           name: test-results-ubuntu-latest
           path: '**/target/surefire-reports/'
 
       - name: Upload coverage report
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         if: always()
         with:
           name: jacoco-report-ubuntu-latest
@@ -127,7 +127,7 @@ jobs:
         run: mvn test -Dflyway.skip=true -Dsurefire.forkCount=1.5C
 
       - name: Upload test results
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         if: always()
         with:
           name: test-results-${{ matrix.os }}
@@ -162,7 +162,7 @@ jobs:
         run: mvn test -P browser-tests -Dflyway.skip=true
 
       - name: Upload browser test results
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         if: always()
         with:
           name: browser-test-results
@@ -194,7 +194,7 @@ jobs:
         run: mvn package -DskipTests -Dflyway.skip=true
 
       - name: Upload JAR
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: runary-jar-${{ matrix.os }}
           path: runary-web/target/runary-*.jar
@@ -278,7 +278,7 @@ jobs:
         run: mvn test -Dflyway.skip=false
 
       - name: Upload PostgreSQL test results
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         if: always()
         with:
           name: pg${{ matrix.pg }}-test-results
@@ -334,7 +334,7 @@ jobs:
         if: always()
         run: kill "$APP_PID" 2>/dev/null || true
 
-      - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         if: always()
         with:
           name: e2e-test-results

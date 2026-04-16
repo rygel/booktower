@@ -36,7 +36,7 @@ jobs:
           FAT=$(find runary-web/target/ -name "runary-*-fat.jar" | head -1)
           cp "$FAT" "runary-web/target/runary-${REF_NAME}.jar"
 
-      - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: fat-jar
           path: runary-web/target/runary-${{ github.ref_name }}.jar
@@ -84,7 +84,7 @@ jobs:
 
       # GraalVM CE — includes native-image out of the box
       - name: Set up GraalVM
-        uses: graalvm/setup-graalvm@f744c72a42b1995d7b0cbc314bde4bace7ac1fe1 # v1.5.0
+        uses: graalvm/setup-graalvm@60c26726de13f8b90771df4bc1641a52a3159994 # v1.5.2
         with:
           java-version: '25'
           distribution: 'graalvm-community'
@@ -137,7 +137,7 @@ jobs:
         run: |
           cp "runary-web/target/${MATRIX_BINARY}" "runary-web/target/${MATRIX_ASSET}"
 
-      - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: native-${{ matrix.label }}
           path: runary-web/target/${{ matrix.asset }}
@@ -188,7 +188,7 @@ jobs:
         uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4
 
       - name: Log in to GitHub Container Registry
-        uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -206,7 +206,7 @@ jobs:
           echo "major_minor=$MAJOR_MINOR" >> "$GITHUB_OUTPUT"
 
       - name: Build and push
-        uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294 # v7
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7
         with:
           context: docker-build
           file: docker-build/Dockerfile
@@ -241,7 +241,7 @@ jobs:
         run: find dist/ -type f | sort
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@153bb8e04406b158c6c84fc1615b65b24149a1fe # v2
+        uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v2
         with:
           tag_name: ${{ github.ref_name }}
           name: Runary ${{ github.ref_name }}
