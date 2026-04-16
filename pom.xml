@@ -38,7 +38,7 @@
         <maven-surefire-plugin.version>3.5.5</maven-surefire-plugin.version>
         <maven-enforcer-plugin.version>3.6.2</maven-enforcer-plugin.version>
         <maven-resources-plugin.version>3.5.0</maven-resources-plugin.version>
-        <flyway-maven-plugin.version>12.2.0</flyway-maven-plugin.version>
+        <flyway-maven-plugin.version>12.3.0</flyway-maven-plugin.version>
         <exec-maven-plugin.version>3.6.3</exec-maven-plugin.version>
         <jte-maven-plugin.version>3.2.3</jte-maven-plugin.version>
         <detekt-maven-plugin.version>1.23.8</detekt-maven-plugin.version>
@@ -84,7 +84,7 @@
         <jwt.version>4.5.1</jwt.version>
         <bcrypt.version>0.4</bcrypt.version>
         <pdfbox.version>3.0.7</pdfbox.version>
-        <jdbi3.version>3.52.0</jdbi3.version>
+        <jdbi3.version>3.52.1</jdbi3.version>
         <hikari.version>7.0.2</hikari.version>
         <http4k.version>6.38.0.0</http4k.version>
         <kotlin-logging.version>8.0.01</kotlin-logging.version>
