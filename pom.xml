@@ -85,7 +85,7 @@
         <commons-compress.version>1.28.0</commons-compress.version>
         <commons-csv.version>1.14.1</commons-csv.version>
         <commons-io.version>2.21.0</commons-io.version>
-        <junrar.version>7.5.8</junrar.version>
+        <junrar.version>7.5.10</junrar.version>
         <hoplite.version>2.9.0</hoplite.version>
         <koin.version>4.2.0</koin.version>
         <simplejavamail.version>8.12.6</simplejavamail.version>
